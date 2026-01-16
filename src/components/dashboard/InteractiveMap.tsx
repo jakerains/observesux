@@ -1,0 +1,413 @@
+'use client'
+
+import { useEffect, useState, useCallback } from 'react'
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
+import { DashboardCard } from './DashboardCard'
+import { Badge } from "@/components/ui/badge"
+import { useCameras, useRivers, useTrafficEvents, useSnowplows } from '@/lib/hooks/useDataFetching'
+import { Map, Layers, Camera, Waves, AlertTriangle, CloudRain, Snowflake } from 'lucide-react'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
+
+// Fix Leaflet default marker icon issue
+delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+})
+
+// Custom marker icons
+const cameraIcon = new L.Icon({
+  iconUrl: 'data:image/svg+xml,' + encodeURIComponent(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10" fill="#3b82f6" fill-opacity="0.2"/>
+      <path d="m16.24 7.76-2.12 6.36-6.36 2.12 2.12-6.36 6.36-2.12z" fill="#3b82f6"/>
+    </svg>
+  `),
+  iconSize: [24, 24],
+  iconAnchor: [12, 12],
+  popupAnchor: [0, -12],
+})
+
+const riverIcon = new L.Icon({
+  iconUrl: 'data:image/svg+xml,' + encodeURIComponent(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10" fill="#06b6d4" fill-opacity="0.2"/>
+      <path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" stroke="#06b6d4"/>
+      <path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" stroke="#06b6d4"/>
+      <path d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" stroke="#06b6d4"/>
+    </svg>
+  `),
+  iconSize: [28, 28],
+  iconAnchor: [14, 14],
+  popupAnchor: [0, -14],
+})
+
+const eventIcon = new L.Icon({
+  iconUrl: 'data:image/svg+xml,' + encodeURIComponent(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10" fill="#ef4444" fill-opacity="0.2"/>
+      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" fill="#ef4444"/>
+      <path d="M12 9v4" stroke="white"/>
+      <path d="M12 17h.01" stroke="white"/>
+    </svg>
+  `),
+  iconSize: [28, 28],
+  iconAnchor: [14, 28],
+  popupAnchor: [0, -28],
+})
+
+const snowplowIcon = new L.Icon({
+  iconUrl: 'data:image/svg+xml,' + encodeURIComponent(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10" fill="#f97316" fill-opacity="0.3"/>
+      <rect x="3" y="11" width="18" height="6" rx="1" fill="#f97316"/>
+      <path d="M6 11V6a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v5" fill="#f97316"/>
+      <circle cx="7" cy="17" r="2" fill="white" stroke="#f97316"/>
+      <circle cx="17" cy="17" r="2" fill="white" stroke="#f97316"/>
+    </svg>
+  `),
+  iconSize: [32, 32],
+  iconAnchor: [16, 16],
+  popupAnchor: [0, -16],
+})
+
+// Sioux City center coordinates
+const SIOUX_CITY_CENTER: [number, number] = [42.4997, -96.4003]
+const DEFAULT_ZOOM = 12
+
+// RainViewer API for radar overlay
+const RAINVIEWER_API = 'https://api.rainviewer.com/public/weather-maps.json'
+
+interface RainViewerData {
+  radar: {
+    past: Array<{ path: string; time: number }>
+    nowcast: Array<{ path: string; time: number }>
+  }
+}
+
+interface LayerToggleProps {
+  layers: {
+    cameras: boolean
+    rivers: boolean
+    events: boolean
+    radar: boolean
+    snowplows: boolean
+  }
+  onToggle: (layer: keyof LayerToggleProps['layers']) => void
+  radarTime?: string
+}
+
+function LayerToggle({ layers, onToggle, radarTime }: LayerToggleProps) {
+  return (
+    <div className="absolute top-2 right-2 z-[1000] bg-background/95 backdrop-blur rounded-lg shadow-lg p-2">
+      <div className="text-xs font-medium mb-2 flex items-center gap-1">
+        <Layers className="h-3 w-3" />
+        Layers
+      </div>
+      <div className="space-y-1">
+        <button
+          onClick={() => onToggle('radar')}
+          className={`flex items-center gap-2 w-full px-2 py-1 rounded text-xs transition-colors ${
+            layers.radar ? 'bg-green-500/20 text-green-500' : 'hover:bg-muted'
+          }`}
+        >
+          <CloudRain className="h-3 w-3" />
+          Radar
+          {layers.radar && radarTime && (
+            <span className="text-[10px] opacity-70 ml-auto">{radarTime}</span>
+          )}
+        </button>
+        <button
+          onClick={() => onToggle('cameras')}
+          className={`flex items-center gap-2 w-full px-2 py-1 rounded text-xs transition-colors ${
+            layers.cameras ? 'bg-blue-500/20 text-blue-500' : 'hover:bg-muted'
+          }`}
+        >
+          <Camera className="h-3 w-3" />
+          Cameras
+        </button>
+        <button
+          onClick={() => onToggle('rivers')}
+          className={`flex items-center gap-2 w-full px-2 py-1 rounded text-xs transition-colors ${
+            layers.rivers ? 'bg-cyan-500/20 text-cyan-500' : 'hover:bg-muted'
+          }`}
+        >
+          <Waves className="h-3 w-3" />
+          Rivers
+        </button>
+        <button
+          onClick={() => onToggle('events')}
+          className={`flex items-center gap-2 w-full px-2 py-1 rounded text-xs transition-colors ${
+            layers.events ? 'bg-red-500/20 text-red-500' : 'hover:bg-muted'
+          }`}
+        >
+          <AlertTriangle className="h-3 w-3" />
+          Events
+        </button>
+        <button
+          onClick={() => onToggle('snowplows')}
+          className={`flex items-center gap-2 w-full px-2 py-1 rounded text-xs transition-colors ${
+            layers.snowplows ? 'bg-orange-500/20 text-orange-500' : 'hover:bg-muted'
+          }`}
+        >
+          <Snowflake className="h-3 w-3" />
+          Snowplows
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function MapController() {
+  const map = useMap()
+
+  useEffect(() => {
+    // Fix map container size issues
+    setTimeout(() => {
+      map.invalidateSize()
+    }, 100)
+  }, [map])
+
+  return null
+}
+
+// Radar layer component
+function RadarLayer({ radarPath }: { radarPath: string | null }) {
+  const map = useMap()
+
+  useEffect(() => {
+    if (!radarPath) return
+
+    const radarLayer = L.tileLayer(
+      `https://tilecache.rainviewer.com${radarPath}/256/{z}/{x}/{y}/2/1_1.png`,
+      {
+        opacity: 0.6,
+        zIndex: 100,
+      }
+    )
+
+    radarLayer.addTo(map)
+
+    return () => {
+      map.removeLayer(radarLayer)
+    }
+  }, [map, radarPath])
+
+  return null
+}
+
+export function InteractiveMap() {
+  const [layers, setLayers] = useState({
+    cameras: true,
+    rivers: true,
+    events: true,
+    radar: true,
+    snowplows: true,
+  })
+
+  const [radarData, setRadarData] = useState<RainViewerData | null>(null)
+  const [radarFrame, setRadarFrame] = useState(0)
+
+  const { data: camerasData } = useCameras()
+  const { data: riversData } = useRivers()
+  const { data: eventsData } = useTrafficEvents()
+  const { data: snowplowsData } = useSnowplows()
+
+  const cameras = camerasData?.data || []
+  const rivers = riversData?.data || []
+  const events = eventsData?.data || []
+  const snowplows = snowplowsData?.data || []
+
+  // Fetch radar data from RainViewer
+  useEffect(() => {
+    async function fetchRadar() {
+      try {
+        const res = await fetch(RAINVIEWER_API)
+        const data: RainViewerData = await res.json()
+        setRadarData(data)
+        // Set to most recent frame
+        if (data.radar.past.length > 0) {
+          setRadarFrame(data.radar.past.length - 1)
+        }
+      } catch (error) {
+        console.error('Failed to fetch radar data:', error)
+      }
+    }
+
+    fetchRadar()
+    // Refresh radar every 5 minutes
+    const interval = setInterval(fetchRadar, 5 * 60 * 1000)
+    return () => clearInterval(interval)
+  }, [])
+
+  // Animate radar frames
+  useEffect(() => {
+    if (!layers.radar || !radarData) return
+
+    const interval = setInterval(() => {
+      setRadarFrame(prev => {
+        const maxFrames = radarData.radar.past.length
+        return (prev + 1) % maxFrames
+      })
+    }, 500) // Animate every 500ms
+
+    return () => clearInterval(interval)
+  }, [layers.radar, radarData])
+
+  const toggleLayer = (layer: keyof typeof layers) => {
+    setLayers(prev => ({ ...prev, [layer]: !prev[layer] }))
+  }
+
+  const currentRadarPath = radarData?.radar.past[radarFrame]?.path || null
+  const radarTime = radarData?.radar.past[radarFrame]?.time
+    ? new Date(radarData.radar.past[radarFrame].time * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : undefined
+
+  return (
+    <DashboardCard
+      title="Interactive Map"
+      icon={<Map className="h-4 w-4" />}
+      status="live"
+    >
+      <div className="relative h-[400px] rounded-lg overflow-hidden">
+        <MapContainer
+          center={SIOUX_CITY_CENTER}
+          zoom={DEFAULT_ZOOM}
+          className="h-full w-full"
+          scrollWheelZoom={true}
+        >
+          <MapController />
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+
+          {/* Radar Overlay */}
+          {layers.radar && <RadarLayer radarPath={currentRadarPath} />}
+
+          {/* Camera Markers */}
+          {layers.cameras && cameras.map((camera) => (
+            <Marker
+              key={camera.id}
+              position={[camera.latitude, camera.longitude]}
+              icon={cameraIcon}
+            >
+              <Popup>
+                <div className="min-w-[200px]">
+                  <h4 className="font-medium text-sm mb-1">{camera.name}</h4>
+                  {camera.snapshotUrl && (
+                    <img
+                      src={`${camera.snapshotUrl}?t=${Date.now()}`}
+                      alt={camera.name}
+                      className="w-full h-auto rounded mb-2"
+                    />
+                  )}
+                  {camera.roadway && (
+                    <p className="text-xs text-muted-foreground">
+                      {camera.roadway} {camera.direction && `(${camera.direction})`}
+                    </p>
+                  )}
+                </div>
+              </Popup>
+            </Marker>
+          ))}
+
+          {/* River Markers */}
+          {layers.rivers && rivers.map((river) => (
+            <Marker
+              key={river.siteId}
+              position={[river.latitude, river.longitude]}
+              icon={riverIcon}
+            >
+              <Popup>
+                <div className="min-w-[180px]">
+                  <h4 className="font-medium text-sm mb-1">{river.siteName}</h4>
+                  <div className="text-xs space-y-1">
+                    <p>Gauge Height: <strong>{river.gaugeHeight?.toFixed(1)} ft</strong></p>
+                    <p>Stage: <Badge variant="outline" className="text-xs">{river.floodStage}</Badge></p>
+                    {river.discharge && <p>Discharge: {river.discharge.toLocaleString()} cfs</p>}
+                  </div>
+                </div>
+              </Popup>
+            </Marker>
+          ))}
+
+          {/* Traffic Event Markers */}
+          {layers.events && events.map((event) => (
+            <Marker
+              key={event.id}
+              position={[event.latitude, event.longitude]}
+              icon={eventIcon}
+            >
+              <Popup>
+                <div className="min-w-[200px]">
+                  <h4 className="font-medium text-sm mb-1">{event.headline}</h4>
+                  <Badge variant="destructive" className="text-xs mb-2">
+                    {event.type} - {event.severity}
+                  </Badge>
+                  <p className="text-xs text-muted-foreground">
+                    {event.roadway} {event.direction && `(${event.direction})`}
+                  </p>
+                  {event.description && (
+                    <p className="text-xs mt-1 line-clamp-2">{event.description}</p>
+                  )}
+                </div>
+              </Popup>
+            </Marker>
+          ))}
+
+          {/* Snowplow Markers */}
+          {layers.snowplows && snowplows.map((plow) => (
+            <Marker
+              key={plow.id}
+              position={[plow.latitude, plow.longitude]}
+              icon={snowplowIcon}
+            >
+              <Popup>
+                <div className="min-w-[180px]">
+                  <h4 className="font-medium text-sm mb-1">{plow.name}</h4>
+                  <div className="text-xs space-y-1">
+                    <p>Activity: <Badge variant="outline" className="text-xs capitalize">{plow.activity}</Badge></p>
+                    <p>Speed: {plow.speed.toFixed(0)} mph</p>
+                    <p>Heading: {plow.heading}°</p>
+                  </div>
+                </div>
+              </Popup>
+            </Marker>
+          ))}
+        </MapContainer>
+
+        {/* Layer Controls */}
+        <LayerToggle layers={layers} onToggle={toggleLayer} radarTime={radarTime} />
+      </div>
+
+      {/* Map Legend */}
+      <div className="mt-3 pt-2 border-t flex flex-wrap gap-4 text-xs text-muted-foreground">
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full bg-green-500" />
+          <span>Radar {layers.radar && radarTime && `(${radarTime})`}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full bg-blue-500" />
+          <span>Cameras ({cameras.length})</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full bg-cyan-500" />
+          <span>Rivers ({rivers.length})</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full bg-red-500" />
+          <span>Events ({events.length})</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full bg-orange-500" />
+          <span>Snowplows ({snowplows.length})</span>
+        </div>
+      </div>
+    </DashboardCard>
+  )
+}
+
+export default InteractiveMap
