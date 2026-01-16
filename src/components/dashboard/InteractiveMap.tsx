@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import { DashboardCard } from './DashboardCard'
 import { Badge } from "@/components/ui/badge"
@@ -97,9 +97,12 @@ interface LayerToggleProps {
   }
   onToggle: (layer: keyof LayerToggleProps['layers']) => void
   radarTime?: string
+  radarFrame?: number
+  totalFrames?: number
+  radarLoading?: boolean
 }
 
-function LayerToggle({ layers, onToggle, radarTime }: LayerToggleProps) {
+function LayerToggle({ layers, onToggle, radarTime, radarFrame = 0, totalFrames = 1, radarLoading }: LayerToggleProps) {
   return (
     <div className="absolute top-2 right-2 z-[1000] bg-background/95 backdrop-blur rounded-lg shadow-lg p-2">
       <div className="text-xs font-medium mb-2 flex items-center gap-1">
@@ -113,12 +116,27 @@ function LayerToggle({ layers, onToggle, radarTime }: LayerToggleProps) {
             layers.radar ? 'bg-green-500/20 text-green-500' : 'hover:bg-muted'
           }`}
         >
-          <CloudRain className="h-3 w-3" />
+          <CloudRain className={`h-3 w-3 ${radarLoading ? 'animate-pulse' : ''}`} />
           Radar
           {layers.radar && radarTime && (
             <span className="text-[10px] opacity-70 ml-auto">{radarTime}</span>
           )}
         </button>
+        {/* Radar timeline indicator */}
+        {layers.radar && totalFrames > 1 && (
+          <div className="px-2 py-1">
+            <div className="h-1 bg-muted rounded-full overflow-hidden">
+              <div
+                className="h-full bg-green-500 transition-all duration-200"
+                style={{ width: `${((radarFrame + 1) / totalFrames) * 100}%` }}
+              />
+            </div>
+            <div className="flex justify-between text-[9px] text-muted-foreground mt-0.5">
+              <span>-2h</span>
+              <span>Now</span>
+            </div>
+          </div>
+        )}
         <button
           onClick={() => onToggle('cameras')}
           className={`flex items-center gap-2 w-full px-2 py-1 rounded text-xs transition-colors ${
@@ -173,27 +191,48 @@ function MapController() {
   return null
 }
 
-// Radar layer component
-function RadarLayer({ radarPath }: { radarPath: string | null }) {
+// Radar layer component with improved visibility
+function RadarLayer({ radarPath, colorScheme = 6 }: { radarPath: string | null; colorScheme?: number }) {
   const map = useMap()
+  const layerRef = React.useRef<L.TileLayer | null>(null)
 
   useEffect(() => {
-    if (!radarPath) return
-
-    const radarLayer = L.tileLayer(
-      `https://tilecache.rainviewer.com${radarPath}/256/{z}/{x}/{y}/2/1_1.png`,
-      {
-        opacity: 0.6,
-        zIndex: 100,
+    if (!radarPath) {
+      // Remove existing layer if path is null
+      if (layerRef.current) {
+        map.removeLayer(layerRef.current)
+        layerRef.current = null
       }
-    )
+      return
+    }
+
+    // Color schemes: 0=Black, 1=White, 2=Universal Blue, 3=TITAN, 4=Weather Channel, 5=Meteored, 6=NEXRAD, 7=Rainbow, 8=Dark Sky
+    // Using NEXRAD (6) for better snow visibility - it shows snow in blue/purple tones
+    // Options: 1_1 = smooth rendering + snow detection enabled
+    const tileUrl = `https://tilecache.rainviewer.com${radarPath}/256/{z}/{x}/{y}/${colorScheme}/1_1.png`
+
+    // Remove old layer before adding new one (prevents stacking)
+    if (layerRef.current) {
+      map.removeLayer(layerRef.current)
+    }
+
+    const radarLayer = L.tileLayer(tileUrl, {
+      opacity: 0.75, // Increased opacity for better visibility
+      zIndex: 100,
+      tileSize: 256,
+      attribution: '<a href="https://rainviewer.com">RainViewer</a>',
+    })
 
     radarLayer.addTo(map)
+    layerRef.current = radarLayer
 
     return () => {
-      map.removeLayer(radarLayer)
+      if (layerRef.current) {
+        map.removeLayer(layerRef.current)
+        layerRef.current = null
+      }
     }
-  }, [map, radarPath])
+  }, [map, radarPath, colorScheme])
 
   return null
 }
@@ -209,6 +248,7 @@ export function InteractiveMap() {
 
   const [radarData, setRadarData] = useState<RainViewerData | null>(null)
   const [radarFrame, setRadarFrame] = useState(0)
+  const [radarLoading, setRadarLoading] = useState(true)
 
   const { data: camerasData } = useCameras()
   const { data: riversData } = useRivers()
@@ -223,6 +263,7 @@ export function InteractiveMap() {
   // Fetch radar data from RainViewer
   useEffect(() => {
     async function fetchRadar() {
+      setRadarLoading(true)
       try {
         const res = await fetch(RAINVIEWER_API)
         const data: RainViewerData = await res.json()
@@ -233,6 +274,8 @@ export function InteractiveMap() {
         }
       } catch (error) {
         console.error('Failed to fetch radar data:', error)
+      } finally {
+        setRadarLoading(false)
       }
     }
 
@@ -242,7 +285,7 @@ export function InteractiveMap() {
     return () => clearInterval(interval)
   }, [])
 
-  // Animate radar frames
+  // Animate radar frames - slower for better visibility
   useEffect(() => {
     if (!layers.radar || !radarData) return
 
@@ -251,7 +294,7 @@ export function InteractiveMap() {
         const maxFrames = radarData.radar.past.length
         return (prev + 1) % maxFrames
       })
-    }, 500) // Animate every 500ms
+    }, 1000) // Animate every 1 second for better visibility
 
     return () => clearInterval(interval)
   }, [layers.radar, radarData])
@@ -380,7 +423,14 @@ export function InteractiveMap() {
         </MapContainer>
 
         {/* Layer Controls */}
-        <LayerToggle layers={layers} onToggle={toggleLayer} radarTime={radarTime} />
+        <LayerToggle
+          layers={layers}
+          onToggle={toggleLayer}
+          radarTime={radarTime}
+          radarFrame={radarFrame}
+          totalFrames={radarData?.radar.past.length || 0}
+          radarLoading={radarLoading}
+        />
       </div>
 
       {/* Map Legend */}
