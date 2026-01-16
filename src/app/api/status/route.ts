@@ -4,10 +4,8 @@ export const dynamic = 'force-dynamic'
 
 // Simple health check endpoint for all data sources
 export async function GET(request: NextRequest) {
-  // Construct base URL from the request or Vercel environment
-  const protocol = process.env.VERCEL_URL ? 'https' : 'http'
-  const host = process.env.VERCEL_URL || request.headers.get('host') || 'localhost:3000'
-  const baseUrl = `${protocol}://${host}`
+  // Use the request's origin to construct base URL (works on both Vercel and localhost)
+  const baseUrl = new URL(request.url).origin
 
   // Check each endpoint with a timeout
   async function checkEndpoint(path: string): Promise<boolean> {
