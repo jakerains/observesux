@@ -77,7 +77,13 @@ const snowplowIcon = new L.Icon({
 const SIOUX_CITY_CENTER: [number, number] = [42.4997, -96.4003]
 const DEFAULT_ZOOM = 12
 
-// RainViewer API for radar overlay
+// NWS NEXRAD Radar via Iowa Environmental Mesonet (IEM) WMS
+// This is the official NWS radar data served as map tiles
+// n0q = Base Reflectivity (best for precipitation)
+// Updates every ~5 minutes
+const NWS_RADAR_WMS = 'https://mesonet.agron.iastate.edu/cgi-bin/wms/nexrad/n0q.cgi'
+
+// RainViewer API as fallback for animated radar
 const RAINVIEWER_API = 'https://api.rainviewer.com/public/weather-maps.json'
 
 interface RainViewerData {
@@ -86,6 +92,8 @@ interface RainViewerData {
     nowcast: Array<{ path: string; time: number }>
   }
 }
+
+type RadarSource = 'nws' | 'rainviewer'
 
 interface LayerToggleProps {
   layers: {
@@ -96,15 +104,17 @@ interface LayerToggleProps {
     snowplows: boolean
   }
   onToggle: (layer: keyof LayerToggleProps['layers']) => void
+  radarSource: RadarSource
+  onRadarSourceChange: (source: RadarSource) => void
   radarTime?: string
   radarFrame?: number
   totalFrames?: number
   radarLoading?: boolean
 }
 
-function LayerToggle({ layers, onToggle, radarTime, radarFrame = 0, totalFrames = 1, radarLoading }: LayerToggleProps) {
+function LayerToggle({ layers, onToggle, radarSource, onRadarSourceChange, radarTime, radarFrame = 0, totalFrames = 1, radarLoading }: LayerToggleProps) {
   return (
-    <div className="absolute top-2 right-2 z-[1000] bg-background/95 backdrop-blur rounded-lg shadow-lg p-2">
+    <div className="absolute top-2 right-2 z-[1000] bg-background/95 backdrop-blur rounded-lg shadow-lg p-2 min-w-[140px]">
       <div className="text-xs font-medium mb-2 flex items-center gap-1">
         <Layers className="h-3 w-3" />
         Layers
@@ -122,19 +132,51 @@ function LayerToggle({ layers, onToggle, radarTime, radarFrame = 0, totalFrames 
             <span className="text-[10px] opacity-70 ml-auto">{radarTime}</span>
           )}
         </button>
-        {/* Radar timeline indicator */}
-        {layers.radar && totalFrames > 1 && (
-          <div className="px-2 py-1">
-            <div className="h-1 bg-muted rounded-full overflow-hidden">
-              <div
-                className="h-full bg-green-500 transition-all duration-200"
-                style={{ width: `${((radarFrame + 1) / totalFrames) * 100}%` }}
-              />
+        {/* Radar source selector */}
+        {layers.radar && (
+          <div className="px-2 py-1 space-y-1">
+            <div className="flex gap-1">
+              <button
+                onClick={() => onRadarSourceChange('nws')}
+                className={`flex-1 px-2 py-0.5 rounded text-[10px] transition-colors ${
+                  radarSource === 'nws'
+                    ? 'bg-green-500 text-white'
+                    : 'bg-muted hover:bg-muted/80'
+                }`}
+              >
+                NWS
+              </button>
+              <button
+                onClick={() => onRadarSourceChange('rainviewer')}
+                className={`flex-1 px-2 py-0.5 rounded text-[10px] transition-colors ${
+                  radarSource === 'rainviewer'
+                    ? 'bg-green-500 text-white'
+                    : 'bg-muted hover:bg-muted/80'
+                }`}
+              >
+                Animated
+              </button>
             </div>
-            <div className="flex justify-between text-[9px] text-muted-foreground mt-0.5">
-              <span>-2h</span>
-              <span>Now</span>
-            </div>
+            {/* Timeline for animated radar */}
+            {radarSource === 'rainviewer' && totalFrames > 1 && (
+              <div>
+                <div className="h-1 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-green-500 transition-all duration-200"
+                    style={{ width: `${((radarFrame + 1) / totalFrames) * 100}%` }}
+                  />
+                </div>
+                <div className="flex justify-between text-[9px] text-muted-foreground mt-0.5">
+                  <span>-2h</span>
+                  <span>Now</span>
+                </div>
+              </div>
+            )}
+            {radarSource === 'nws' && (
+              <div className="text-[9px] text-muted-foreground text-center">
+                Live NEXRAD
+              </div>
+            )}
           </div>
         )}
         <button
@@ -191,14 +233,59 @@ function MapController() {
   return null
 }
 
-// Radar layer component with improved visibility
-function RadarLayer({ radarPath, colorScheme = 6 }: { radarPath: string | null; colorScheme?: number }) {
+// NWS NEXRAD Radar Layer via Iowa Environmental Mesonet WMS
+function NWSRadarLayer() {
   const map = useMap()
-  const layerRef = React.useRef<L.TileLayer | null>(null)
+  const layerRef = useRef<L.TileLayer.WMS | null>(null)
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  useEffect(() => {
+    // Remove old layer if exists
+    if (layerRef.current) {
+      map.removeLayer(layerRef.current)
+    }
+
+    // Create WMS layer for NWS NEXRAD radar
+    // n0q = Base Reflectivity (0.5° tilt) - best for precipitation detection
+    // Adding timestamp to bust cache
+    const wmsLayer = L.tileLayer.wms(`${NWS_RADAR_WMS}?_t=${refreshKey}`, {
+      layers: 'nexrad-n0q-900913', // NEXRAD base reflectivity in web mercator
+      format: 'image/png',
+      transparent: true,
+      opacity: 0.7,
+      attribution: '<a href="https://mesonet.agron.iastate.edu">IEM NEXRAD</a>',
+    })
+
+    wmsLayer.addTo(map)
+    layerRef.current = wmsLayer
+
+    return () => {
+      if (layerRef.current) {
+        map.removeLayer(layerRef.current)
+        layerRef.current = null
+      }
+    }
+  }, [map, refreshKey])
+
+  // Refresh radar every 5 minutes (NWS updates ~every 5 min)
+  useEffect(() => {
+    const refreshInterval = setInterval(() => {
+      setRefreshKey(k => k + 1)
+    }, 5 * 60 * 1000)
+
+    return () => clearInterval(refreshInterval)
+  }, [])
+
+  return null
+}
+
+// RainViewer animated radar layer (fallback/alternative)
+function RainViewerRadarLayer({ radarPath, colorScheme = 6 }: { radarPath: string | null; colorScheme?: number }) {
+  const map = useMap()
+  const layerRef = useRef<L.TileLayer | null>(null)
 
   useEffect(() => {
     if (!radarPath) {
-      // Remove existing layer if path is null
       if (layerRef.current) {
         map.removeLayer(layerRef.current)
         layerRef.current = null
@@ -207,17 +294,15 @@ function RadarLayer({ radarPath, colorScheme = 6 }: { radarPath: string | null; 
     }
 
     // Color schemes: 0=Black, 1=White, 2=Universal Blue, 3=TITAN, 4=Weather Channel, 5=Meteored, 6=NEXRAD, 7=Rainbow, 8=Dark Sky
-    // Using NEXRAD (6) for better snow visibility - it shows snow in blue/purple tones
     // Options: 1_1 = smooth rendering + snow detection enabled
     const tileUrl = `https://tilecache.rainviewer.com${radarPath}/256/{z}/{x}/{y}/${colorScheme}/1_1.png`
 
-    // Remove old layer before adding new one (prevents stacking)
     if (layerRef.current) {
       map.removeLayer(layerRef.current)
     }
 
     const radarLayer = L.tileLayer(tileUrl, {
-      opacity: 0.75, // Increased opacity for better visibility
+      opacity: 0.75,
       zIndex: 100,
       tileSize: 256,
       attribution: '<a href="https://rainviewer.com">RainViewer</a>',
@@ -249,6 +334,7 @@ export function InteractiveMap() {
   const [radarData, setRadarData] = useState<RainViewerData | null>(null)
   const [radarFrame, setRadarFrame] = useState(0)
   const [radarLoading, setRadarLoading] = useState(true)
+  const [radarSource, setRadarSource] = useState<RadarSource>('nws') // Default to NWS
 
   const { data: camerasData } = useCameras()
   const { data: riversData } = useRivers()
@@ -328,7 +414,9 @@ export function InteractiveMap() {
           />
 
           {/* Radar Overlay */}
-          {layers.radar && <RadarLayer radarPath={currentRadarPath} />}
+          {/* Radar Overlays - NWS or RainViewer based on selection */}
+          {layers.radar && radarSource === 'nws' && <NWSRadarLayer />}
+          {layers.radar && radarSource === 'rainviewer' && <RainViewerRadarLayer radarPath={currentRadarPath} />}
 
           {/* Camera Markers */}
           {layers.cameras && cameras.map((camera) => (
@@ -426,6 +514,8 @@ export function InteractiveMap() {
         <LayerToggle
           layers={layers}
           onToggle={toggleLayer}
+          radarSource={radarSource}
+          onRadarSourceChange={setRadarSource}
           radarTime={radarTime}
           radarFrame={radarFrame}
           totalFrames={radarData?.radar.past.length || 0}
