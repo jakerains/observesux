@@ -16,6 +16,7 @@ import {
   XCircle
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import packageJson from '../../../package.json'
 
 const STATUS_ITEMS = [
   { key: 'cameras', icon: Camera, label: 'Cameras' },
@@ -32,7 +33,7 @@ export function StatusBar() {
   const { data: status, isLoading } = useDashboardStatus()
 
   const healthyCount = status
-    ? Object.values(status).filter(v => v === true).length - 1 // Subtract timestamp
+    ? Object.values(status).filter(v => v === true).length // timestamp is a string, already excluded
     : 0
   const totalCount = STATUS_ITEMS.length
 
@@ -44,8 +45,8 @@ export function StatusBar() {
 
   return (
     <TooltipProvider>
-      <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t z-50">
-        <div className="container px-4 py-2 flex items-center justify-between">
+      <div className="hidden md:block fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t z-50">
+        <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-2 flex items-center justify-between">
           {/* Overall Status */}
           <div className="flex items-center gap-2">
             <Badge
@@ -74,34 +75,39 @@ export function StatusBar() {
             </span>
           </div>
 
-          {/* Individual Status Indicators */}
-          <div className="flex items-center gap-1">
-            {STATUS_ITEMS.map(({ key, icon: Icon, label }) => {
-              const isHealthy = status?.[key as keyof typeof status] === true
+          {/* Individual Status Indicators + Version */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1">
+              {STATUS_ITEMS.map(({ key, icon: Icon, label }) => {
+                const isHealthy = status?.[key as keyof typeof status] === true
 
-              return (
-                <Tooltip key={key}>
-                  <TooltipTrigger asChild>
-                    <div
-                      className={cn(
-                        "p-1.5 rounded transition-colors",
-                        isLoading && "animate-pulse",
-                        isHealthy
-                          ? "text-green-500"
-                          : "text-red-500"
-                      )}
-                    >
-                      <Icon className="h-4 w-4" />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">
-                    <p className="text-xs">
-                      {label}: {isHealthy ? 'Online' : 'Offline'}
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              )
-            })}
+                return (
+                  <Tooltip key={key}>
+                    <TooltipTrigger asChild>
+                      <div
+                        className={cn(
+                          "p-1.5 rounded transition-colors",
+                          isLoading && "animate-pulse",
+                          isHealthy
+                            ? "text-green-500"
+                            : "text-red-500"
+                        )}
+                      >
+                        <Icon className="h-4 w-4" />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                      <p className="text-xs">
+                        {label}: {isHealthy ? 'Online' : 'Offline'}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                )
+              })}
+            </div>
+            <span className="text-xs text-muted-foreground/60 border-l pl-3">
+              v{packageJson.version}
+            </span>
           </div>
         </div>
       </div>

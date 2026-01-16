@@ -1,151 +1,325 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { DashboardCard } from './DashboardCard'
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Slider } from "@/components/ui/slider"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Radio, Volume2, VolumeX, ExternalLink } from 'lucide-react'
-import type { ScannerFeed } from '@/types'
+import { Radio, Play, Pause, Volume2, VolumeX, Loader2 } from 'lucide-react'
 
-// Predefined scanner feeds for Sioux City area
+// Scanner feed configuration - uses our proxy to bypass CORS
+interface ScannerFeed {
+  id: string
+  feedId: string // Broadcastify feed ID
+  name: string
+  shortName: string
+  description: string
+  type: 'fire' | 'ems' | 'aviation' | 'combined'
+  icon: string
+}
+
 const SCANNER_FEEDS: ScannerFeed[] = [
   {
-    id: 'sioux-city-metro',
-    name: 'Sioux City Metro',
-    description: 'Police, Fire, and EMS Dispatch',
-    type: 'combined',
-    provider: 'broadcastify',
+    id: 'le-mars-fire',
     feedId: '15277',
-    isLive: true
-  },
-  {
-    id: 'sioux-county-fire',
-    name: 'Sioux County Fire/EMS',
-    description: 'Fire and EMS Dispatch',
+    name: 'Le Mars Fire and Rescue',
+    shortName: 'Le Mars',
+    description: 'Fire and Rescue Dispatch',
     type: 'fire',
-    provider: 'broadcastify',
-    feedId: '46141',
-    isLive: true
+    icon: '🚒'
   },
   {
-    id: 'medical-helicopter',
-    name: 'Medical Helicopter',
+    id: 'sioux-county',
+    feedId: '46141',
+    name: 'Sioux County Fire and EMS',
+    shortName: 'Sioux Co',
+    description: 'Fire and EMS Dispatch',
+    type: 'combined',
+    icon: '📡'
+  },
+  {
+    id: 'life-net',
+    feedId: '46227',
+    name: 'Life Net-Air Methods West',
+    shortName: 'Life Net',
     description: 'Air Ambulance Communications',
     type: 'aviation',
-    provider: 'broadcastify',
-    feedId: '46227',
-    isLive: true
+    icon: '🚁'
   }
 ]
 
-function getTypeIcon(type: ScannerFeed['type']) {
-  switch (type) {
-    case 'police': return '🚔'
-    case 'fire': return '🚒'
-    case 'ems': return '🚑'
-    case 'aviation': return '🚁'
-    case 'combined': return '📡'
-    default: return '📻'
-  }
+// Generate stream URL via our proxy API
+function getStreamUrl(feedId: string): string {
+  return `/api/scanner/stream?feed=${feedId}`
 }
 
-function getTypeBadgeVariant(type: ScannerFeed['type']) {
-  switch (type) {
-    case 'police': return 'default'
-    case 'fire': return 'destructive'
-    case 'ems': return 'default'
-    case 'aviation': return 'secondary'
-    default: return 'outline'
-  }
-}
+type StreamStatus = 'idle' | 'connecting' | 'playing' | 'error'
 
-interface FeedPlayerProps {
+interface AudioPlayerProps {
   feed: ScannerFeed
+  isActive: boolean
 }
 
-function FeedPlayer({ feed }: FeedPlayerProps) {
-  const [isMuted, setIsMuted] = useState(true)
-  const [isExpanded, setIsExpanded] = useState(false)
+function AudioPlayer({ feed, isActive }: AudioPlayerProps) {
+  const audioRef = useRef<HTMLAudioElement>(null)
+  const isMountedRef = useRef(true)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [volume, setVolume] = useState(0.7)
+  const [status, setStatus] = useState<StreamStatus>('idle')
+  const [isMuted, setIsMuted] = useState(false)
 
-  // Broadcastify embed URL
-  const embedUrl = `https://www.broadcastify.com/webPlayer/${feed.feedId}`
+  // Track mounted state
+  useEffect(() => {
+    isMountedRef.current = true
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
+
+  // Handle play/pause
+  const togglePlay = useCallback(async () => {
+    const audio = audioRef.current
+    if (!audio) return
+
+    if (isPlaying) {
+      audio.pause()
+      setIsPlaying(false)
+      setStatus('idle')
+    } else {
+      setStatus('connecting')
+      audio.src = getStreamUrl(feed.feedId)
+      audio.load()
+
+      try {
+        await audio.play()
+        // Only update state if still mounted
+        if (isMountedRef.current) {
+          setStatus('playing')
+          setIsPlaying(true)
+        }
+      } catch (error) {
+        // Ignore AbortError - happens when audio is removed during play request
+        if (error instanceof Error && error.name === 'AbortError') {
+          console.log('Play request was interrupted')
+          return
+        }
+        console.error('Audio play error:', error)
+        if (isMountedRef.current) {
+          setStatus('error')
+        }
+      }
+    }
+  }, [isPlaying, feed.feedId])
+
+  // Handle volume change
+  const handleVolumeChange = useCallback((value: number[]) => {
+    const newVolume = value[0]
+    setVolume(newVolume)
+    if (audioRef.current) {
+      audioRef.current.volume = newVolume
+    }
+    if (newVolume === 0) {
+      setIsMuted(true)
+    } else {
+      setIsMuted(false)
+    }
+  }, [])
+
+  // Toggle mute
+  const toggleMute = useCallback(() => {
+    if (audioRef.current) {
+      if (isMuted) {
+        audioRef.current.volume = volume || 0.7
+        setIsMuted(false)
+      } else {
+        audioRef.current.volume = 0
+        setIsMuted(true)
+      }
+    }
+  }, [isMuted, volume])
+
+  // Audio event handlers
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return
+
+    const handleWaiting = () => {
+      if (isMountedRef.current) {
+        setStatus('connecting')
+      }
+    }
+
+    const handlePlaying = () => {
+      if (isMountedRef.current) {
+        setStatus('playing')
+        setIsPlaying(true)
+      }
+    }
+
+    const handleError = () => {
+      // Ignore errors if not mounted or if audio has no valid src
+      if (!isMountedRef.current) return
+      // Check if src is empty or just the base URL (no actual stream)
+      if (!audio.src || audio.src === window.location.href || audio.src === '') return
+
+      // Get detailed error info from MediaError
+      const mediaError = audio.error
+      if (mediaError) {
+        const errorMessages: Record<number, string> = {
+          1: 'MEDIA_ERR_ABORTED - Playback aborted',
+          2: 'MEDIA_ERR_NETWORK - Network error',
+          3: 'MEDIA_ERR_DECODE - Decode error',
+          4: 'MEDIA_ERR_SRC_NOT_SUPPORTED - Source not supported'
+        }
+        console.error('Audio error:', errorMessages[mediaError.code] || `Unknown error code: ${mediaError.code}`)
+      }
+
+      setStatus('error')
+      setIsPlaying(false)
+    }
+
+    const handlePause = () => {
+      if (isMountedRef.current) {
+        setIsPlaying(false)
+        setStatus('idle')
+      }
+    }
+
+    audio.addEventListener('waiting', handleWaiting)
+    audio.addEventListener('playing', handlePlaying)
+    audio.addEventListener('error', handleError)
+    audio.addEventListener('pause', handlePause)
+
+    return () => {
+      // Clean up: pause and remove src on unmount
+      audio.pause()
+      audio.src = ''
+      audio.removeEventListener('waiting', handleWaiting)
+      audio.removeEventListener('playing', handlePlaying)
+      audio.removeEventListener('error', handleError)
+      audio.removeEventListener('pause', handlePause)
+    }
+  }, [])
+
+  // Stop audio when switching tabs or becoming inactive
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!isActive && audio) {
+      audio.pause()
+      audio.src = '' // Clear source to prevent AbortError
+      setIsPlaying(false)
+      setStatus('idle')
+    }
+  }, [isActive])
+
+  // Set initial volume
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume
+    }
+  }, [volume])
 
   return (
-    <div className="border rounded-lg p-3 space-y-3">
+    <div className="space-y-4">
+      {/* Hidden audio element */}
+      <audio ref={audioRef} preload="none" />
+
+      {/* Feed Info Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-lg">{getTypeIcon(feed.type)}</span>
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">{feed.icon}</span>
           <div>
-            <h4 className="font-medium text-sm">{feed.name}</h4>
-            <p className="text-xs text-muted-foreground">{feed.description}</p>
+            <h4 className="font-medium">{feed.name}</h4>
+            <p className="text-sm text-muted-foreground">{feed.description}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Badge variant={getTypeBadgeVariant(feed.type) as "default" | "secondary" | "destructive" | "outline"}>
-            {feed.type}
-          </Badge>
-          {feed.isLive && (
-            <Badge variant="outline" className="text-green-500 border-green-500">
-              <span className="w-2 h-2 rounded-full bg-green-500 mr-1 animate-pulse" />
-              Live
-            </Badge>
+        <Badge
+          variant={status === 'playing' ? 'default' : status === 'error' ? 'destructive' : 'secondary'}
+          className="shrink-0"
+        >
+          {status === 'playing' && (
+            <span className="w-2 h-2 rounded-full bg-green-500 mr-1.5 animate-pulse" />
           )}
-        </div>
+          {status === 'connecting' && (
+            <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
+          )}
+          {status === 'idle' ? 'Ready' : status === 'connecting' ? 'Connecting' : status === 'playing' ? 'Live' : 'Error'}
+        </Badge>
       </div>
 
-      {/* Player Controls */}
-      <div className="flex items-center gap-2">
+      {/* Main Play Button */}
+      <div className="flex flex-col items-center py-4">
         <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsMuted(!isMuted)}
-          className="flex-1"
+          size="lg"
+          variant={isPlaying ? 'secondary' : 'default'}
+          onClick={togglePlay}
+          disabled={status === 'connecting'}
+          className="w-20 h-20 rounded-full"
         >
-          {isMuted ? (
-            <>
-              <VolumeX className="h-4 w-4 mr-2" />
-              Tap to Listen
-            </>
+          {status === 'connecting' ? (
+            <Loader2 className="h-8 w-8 animate-spin" />
+          ) : isPlaying ? (
+            <Pause className="h-8 w-8" />
           ) : (
-            <>
-              <Volume2 className="h-4 w-4 mr-2" />
-              Listening...
-            </>
+            <Play className="h-8 w-8 ml-1" />
           )}
         </Button>
+        <p className="text-sm text-muted-foreground mt-2">
+          {isPlaying ? 'Tap to stop' : 'Tap to listen'}
+        </p>
+      </div>
 
+      {/* Volume Control */}
+      <div className="flex items-center gap-3 px-2">
         <Button
           variant="ghost"
           size="icon"
-          asChild
+          onClick={toggleMute}
+          className="shrink-0"
         >
-          <a
-            href={`https://www.broadcastify.com/listen/feed/${feed.feedId}`}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <ExternalLink className="h-4 w-4" />
-          </a>
+          {isMuted || volume === 0 ? (
+            <VolumeX className="h-5 w-5" />
+          ) : (
+            <Volume2 className="h-5 w-5" />
+          )}
         </Button>
+        <Slider
+          value={[isMuted ? 0 : volume]}
+          onValueChange={handleVolumeChange}
+          max={1}
+          step={0.01}
+          className="flex-1"
+        />
+        <span className="text-xs text-muted-foreground w-8 text-right">
+          {Math.round((isMuted ? 0 : volume) * 100)}%
+        </span>
       </div>
 
-      {/* Embedded Player (shown when not muted) */}
-      {!isMuted && (
-        <div className="relative bg-black rounded overflow-hidden">
-          <iframe
-            src={embedUrl}
-            width="100%"
-            height="120"
-            frameBorder="0"
-            scrolling="no"
-            allow="autoplay"
-            title={`${feed.name} Scanner`}
-            className="w-full"
-          />
-          <p className="text-xs text-muted-foreground mt-1 text-center">
-            Click play button in player above • Audio by Broadcastify
+      {/* Error Message */}
+      {status === 'error' && (
+        <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-sm text-center">
+          <p className="text-destructive">Unable to connect to stream</p>
+          <p className="text-muted-foreground text-xs mt-1">
+            The feed may be temporarily offline. Try again later.
           </p>
+        </div>
+      )}
+
+      {/* Audio Visualization Placeholder (when playing) */}
+      {status === 'playing' && (
+        <div className="flex items-center justify-center gap-1 h-8">
+          {[...Array(12)].map((_, i) => (
+            <div
+              key={i}
+              className="w-1 bg-primary rounded-full animate-pulse"
+              style={{
+                height: `${Math.random() * 24 + 8}px`,
+                animationDelay: `${i * 0.1}s`,
+                animationDuration: `${0.5 + Math.random() * 0.5}s`
+              }}
+            />
+          ))}
         </div>
       )}
     </div>
@@ -153,30 +327,32 @@ function FeedPlayer({ feed }: FeedPlayerProps) {
 }
 
 export function ScannerPlayer() {
+  const [activeTab, setActiveTab] = useState(SCANNER_FEEDS[0].id)
+
   return (
     <DashboardCard
       title="Emergency Scanner"
       icon={<Radio className="h-4 w-4" />}
       status="live"
     >
-      <Tabs defaultValue={SCANNER_FEEDS[0].id} className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           {SCANNER_FEEDS.map((feed) => (
-            <TabsTrigger key={feed.id} value={feed.id} className="text-xs">
-              {getTypeIcon(feed.type)} {feed.name.split(' ')[0]}
+            <TabsTrigger key={feed.id} value={feed.id} className="text-xs px-2">
+              {feed.icon} {feed.shortName}
             </TabsTrigger>
           ))}
         </TabsList>
 
         {SCANNER_FEEDS.map((feed) => (
-          <TabsContent key={feed.id} value={feed.id} className="mt-3">
-            <FeedPlayer feed={feed} />
+          <TabsContent key={feed.id} value={feed.id} className="mt-4">
+            <AudioPlayer feed={feed} isActive={activeTab === feed.id} />
           </TabsContent>
         ))}
       </Tabs>
 
       {/* Disclaimer */}
-      <div className="mt-3 pt-2 border-t text-xs text-muted-foreground">
+      <div className="mt-4 pt-3 border-t text-xs text-muted-foreground text-center">
         <p>
           Scanner feeds provided by Broadcastify. Audio may be delayed.
           For emergencies, always call 911.

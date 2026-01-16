@@ -61,6 +61,19 @@ function determineFloodStage(
   return 'normal'
 }
 
+// Validate river data values - USGS returns sentinel values like -999999 for missing data
+function isValidGaugeHeight(value: number): boolean {
+  return value >= 0 && value < 100 // 0-100 ft is reasonable
+}
+
+function isValidDischarge(value: number): boolean {
+  return value >= 0 && value < 1000000 // 0-1M cfs is reasonable
+}
+
+function isValidWaterTemp(value: number): boolean {
+  return value >= -40 && value <= 120 // -40 to 120°F is reasonable
+}
+
 export async function fetchRiverGauges(): Promise<RiverGaugeReading[]> {
   try {
     const siteIds = Object.values(GAUGE_SITES).join(',')
@@ -107,13 +120,20 @@ export async function fetchRiverGauges(): Promise<RiverGaugeReading[]> {
 
         switch (variableCode) {
           case '00065': // Gauge height (ft)
-            reading.gaugeHeight = value
+            if (isValidGaugeHeight(value)) {
+              reading.gaugeHeight = value
+            }
             break
           case '00060': // Discharge (cfs)
-            reading.discharge = value
+            if (isValidDischarge(value)) {
+              reading.discharge = value
+            }
             break
           case '00010': // Water temperature (C)
-            reading.waterTemp = Math.round((value * 9/5 + 32) * 10) / 10 // Convert to F
+            const tempF = Math.round((value * 9/5 + 32) * 10) / 10 // Convert to F
+            if (isValidWaterTemp(tempF)) {
+              reading.waterTemp = tempF
+            }
             break
         }
       }

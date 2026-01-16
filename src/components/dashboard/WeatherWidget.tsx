@@ -1,10 +1,12 @@
 'use client'
 
 import { DashboardCard } from './DashboardCard'
+import { MiniTrendChart, TrendIndicator } from './MiniTrendChart'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useWeather, useWeatherAlerts } from '@/lib/hooks/useDataFetching'
+import { useWeatherHistory } from '@/lib/hooks/useHistory'
 import {
   Cloud,
   CloudRain,
@@ -42,6 +44,13 @@ function getSeverityColor(severity: string) {
 export function WeatherWidget() {
   const { data: weatherData, error: weatherError, isLoading: weatherLoading } = useWeather()
   const { data: alertsData, error: alertsError } = useWeatherAlerts()
+  const { data: historyData } = useWeatherHistory(24)
+
+  // Transform history data for the trend chart
+  const temperatureTrend = historyData?.weather?.map(point => ({
+    time: point.time,
+    value: point.temperature
+  })) || []
 
   const weather = weatherData?.data
   const alerts = alertsData?.data || []
@@ -143,6 +152,23 @@ export function WeatherWidget() {
         <div className="mt-3 p-2 bg-yellow-500/10 border border-yellow-500/20 rounded text-sm">
           <Wind className="inline h-4 w-4 mr-1" />
           Wind gusts up to {weather.windGust} mph
+        </div>
+      )}
+
+      {/* Temperature Trend (24h) */}
+      {temperatureTrend.length > 0 && (
+        <div className="mt-4 pt-3 border-t">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs text-muted-foreground">24h Temperature Trend</span>
+            <TrendIndicator data={temperatureTrend} unit="°" />
+          </div>
+          <MiniTrendChart
+            data={temperatureTrend}
+            color="#f97316"
+            gradientId="tempGradient"
+            unit="°F"
+            height={50}
+          />
         </div>
       )}
     </DashboardCard>

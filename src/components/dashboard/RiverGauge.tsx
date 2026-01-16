@@ -1,13 +1,20 @@
 'use client'
 
 import { DashboardCard } from './DashboardCard'
+import { MiniTrendChart } from './MiniTrendChart'
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useRivers } from '@/lib/hooks/useDataFetching'
+import { useRiverHistory } from '@/lib/hooks/useHistory'
 import { Waves, TrendingUp, TrendingDown, Minus, AlertTriangle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { RiverGaugeReading, FloodStage } from '@/types'
+
+interface DataPoint {
+  time: string
+  value: number
+}
 
 function getStageColor(stage: FloodStage): string {
   switch (stage) {
@@ -37,7 +44,7 @@ function getTrendIcon(trend?: string) {
   }
 }
 
-function GaugeDisplay({ reading }: { reading: RiverGaugeReading }) {
+function GaugeDisplay({ reading, trendData }: { reading: RiverGaugeReading, trendData?: DataPoint[] }) {
   // Calculate progress percentage based on major flood stage
   const maxStage = reading.majorFloodStage || 40
   const currentHeight = reading.gaugeHeight || 0
@@ -115,18 +122,46 @@ function GaugeDisplay({ reading }: { reading: RiverGaugeReading }) {
           <span>{reading.waterTemp}°F</span>
         )}
       </div>
+
+      {/* 24h Trend Chart */}
+      {trendData && trendData.length > 1 && (
+        <div className="mt-2 pt-2 border-t border-dashed">
+          <span className="text-xs text-muted-foreground">24h Level</span>
+          <MiniTrendChart
+            data={trendData}
+            color="#3b82f6"
+            gradientId={`river-${reading.siteId}`}
+            unit=" ft"
+            height={35}
+          />
+        </div>
+      )}
     </div>
   )
 }
 
 export function RiverGauge() {
   const { data: riversData, error, isLoading } = useRivers()
+  const { data: historyData } = useRiverHistory(24)
 
   const rivers = riversData?.data || []
   const status = error ? 'error' : isLoading ? 'loading' : 'live'
 
   // Check for any flood conditions
   const hasFloodCondition = rivers.some(r => r.floodStage !== 'normal')
+
+  // Get trend data for a specific river
+  const getTrendData = (siteId: string): DataPoint[] => {
+    if (!historyData?.rivers) return []
+    // Big Sioux site ID starts with 06485950, Missouri starts with 06486000
+    if (siteId.includes('06485950') && historyData.rivers.bigSioux) {
+      return historyData.rivers.bigSioux.map(p => ({ time: p.time, value: p.gaugeHeight }))
+    }
+    if (siteId.includes('06486000') && historyData.rivers.missouri) {
+      return historyData.rivers.missouri.map(p => ({ time: p.time, value: p.gaugeHeight }))
+    }
+    return []
+  }
 
   if (isLoading) {
     return (
@@ -158,7 +193,7 @@ export function RiverGauge() {
       <div className="space-y-3">
         {rivers.length > 0 ? (
           rivers.map((reading) => (
-            <GaugeDisplay key={reading.siteId} reading={reading} />
+            <GaugeDisplay key={reading.siteId} reading={reading} trendData={getTrendData(reading.siteId)} />
           ))
         ) : (
           <div className="text-center text-muted-foreground py-4">

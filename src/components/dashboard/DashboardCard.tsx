@@ -39,8 +39,8 @@ export function DashboardCard({
   }
 
   return (
-    <Card className={cn("relative overflow-hidden", className)}>
-      <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+    <Card className={cn("relative overflow-hidden flex flex-col", className)}>
+      <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0 shrink-0">
         <CardTitle className="text-sm font-medium flex items-center gap-2">
           {icon}
           <span>{title}</span>
@@ -62,10 +62,12 @@ export function DashboardCard({
           </Badge>
         </div>
       </CardHeader>
-      <CardContent>
-        {children}
+      <CardContent className="flex-1 flex flex-col">
+        <div className="flex-1">
+          {children}
+        </div>
         {lastUpdated && (
-          <p className="text-xs text-muted-foreground mt-3 pt-2 border-t">
+          <p className="text-xs text-muted-foreground mt-3 pt-2 border-t shrink-0">
             Updated {formatDistanceToNow(lastUpdated, { addSuffix: true })}
           </p>
         )}

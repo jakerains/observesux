@@ -11,8 +11,9 @@ export interface WidgetConfig {
   size: 'small' | 'medium' | 'large' | 'full' // Grid span size
 }
 
-// Default widget configuration
+// Default widget configuration - Interactive Map first for prominent display
 export const DEFAULT_WIDGETS: WidgetConfig[] = [
+  { id: 'map', name: 'Interactive Map', description: 'Full map with all data layers', enabled: true, size: 'full' },
   { id: 'weather', name: 'Weather', description: 'Current weather conditions and alerts', enabled: true, size: 'small' },
   { id: 'river', name: 'River Levels', description: 'Missouri & Big Sioux river gauges', enabled: true, size: 'small' },
   { id: 'air-quality', name: 'Air Quality', description: 'AQI and pollutant levels', enabled: true, size: 'small' },
@@ -21,9 +22,8 @@ export const DEFAULT_WIDGETS: WidgetConfig[] = [
   { id: 'scanner', name: 'Emergency Scanner', description: 'Police, Fire, EMS audio feeds', enabled: true, size: 'small' },
   { id: 'outages', name: 'Power Outages', description: 'MidAmerican & Woodbury REC status', enabled: true, size: 'small' },
   { id: 'flights', name: 'Airport Flights', description: 'SUX arrivals and departures', enabled: true, size: 'small' },
-  { id: 'news', name: 'Local News', description: 'KTIV, Siouxland Proud, SC Journal', enabled: true, size: 'small' },
+  { id: 'news', name: 'Local News', description: 'KTIV, Siouxland Proud, SC Journal', enabled: true, size: 'large' },
   { id: 'earthquakes', name: 'Seismic Activity', description: 'Recent earthquakes within 500km', enabled: true, size: 'small' },
-  { id: 'map', name: 'Interactive Map', description: 'Full map with all data layers', enabled: true, size: 'full' },
 ]
 
 const STORAGE_KEY = 'sioux-city-dashboard-layout'

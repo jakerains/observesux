@@ -1,10 +1,12 @@
 'use client'
 
 import { DashboardCard } from './DashboardCard'
+import { MiniTrendChart, TrendIndicator } from './MiniTrendChart'
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useAirQuality } from '@/lib/hooks/useDataFetching'
+import { useAirQualityHistory } from '@/lib/hooks/useHistory'
 import { Wind, AlertTriangle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getAQIColor } from '@/types'
@@ -43,9 +45,16 @@ function getAQIEmoji(category: AQICategory): string {
 
 export function AirQualityCard() {
   const { data: aqData, error, isLoading } = useAirQuality()
+  const { data: historyData } = useAirQualityHistory(24)
 
   const airQuality = aqData?.data
   const status = error ? 'error' : isLoading ? 'loading' : 'live'
+
+  // Transform history data for the trend chart
+  const aqiTrend = historyData?.airQuality?.map(point => ({
+    time: point.time,
+    value: point.aqi
+  })) || []
 
   if (isLoading) {
     return (
@@ -153,6 +162,23 @@ export function AirQualityCard() {
               <span>{airQuality.ozone} AQI</span>
             </div>
           )}
+        </div>
+      )}
+
+      {/* AQI Trend (24h) */}
+      {aqiTrend.length > 0 && (
+        <div className="mt-4 pt-3 border-t">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs text-muted-foreground">24h AQI Trend</span>
+            <TrendIndicator data={aqiTrend} unit="" />
+          </div>
+          <MiniTrendChart
+            data={aqiTrend}
+            color={color}
+            gradientId="aqiGradient"
+            unit=" AQI"
+            height={50}
+          />
         </div>
       )}
     </DashboardCard>

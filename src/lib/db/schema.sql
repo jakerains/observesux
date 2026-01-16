@@ -1,0 +1,104 @@
+-- Sioux City Observatory - Database Schema
+-- Run this in your Neon database to set up tables
+
+-- Weather observations history (for trend charts)
+CREATE TABLE IF NOT EXISTS weather_observations (
+  id SERIAL PRIMARY KEY,
+  station_id VARCHAR(10) NOT NULL DEFAULT 'KSUX',
+  temperature_f DECIMAL(5,2),
+  feels_like_f DECIMAL(5,2),
+  humidity INTEGER,
+  wind_speed_mph DECIMAL(5,2),
+  wind_direction VARCHAR(10),
+  wind_gust_mph DECIMAL(5,2),
+  conditions TEXT,
+  visibility_miles DECIMAL(5,2),
+  pressure_mb DECIMAL(7,2),
+  observed_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- River gauge readings history
+CREATE TABLE IF NOT EXISTS river_readings (
+  id SERIAL PRIMARY KEY,
+  site_id VARCHAR(20) NOT NULL,
+  site_name VARCHAR(100),
+  gauge_height_ft DECIMAL(6,2),
+  discharge_cfs DECIMAL(12,2),
+  water_temp_f DECIMAL(5,2),
+  flood_stage VARCHAR(20),
+  observed_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Air quality readings history
+CREATE TABLE IF NOT EXISTS air_quality_readings (
+  id SERIAL PRIMARY KEY,
+  latitude DECIMAL(9,6) DEFAULT 42.5,
+  longitude DECIMAL(9,6) DEFAULT -96.4,
+  aqi INTEGER,
+  category VARCHAR(50),
+  primary_pollutant VARCHAR(20),
+  pm25 DECIMAL(6,2),
+  pm10 DECIMAL(6,2),
+  ozone DECIMAL(6,4),
+  source VARCHAR(50),
+  observed_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Weather alerts history
+CREATE TABLE IF NOT EXISTS weather_alerts (
+  id SERIAL PRIMARY KEY,
+  alert_id VARCHAR(100) UNIQUE NOT NULL,
+  event_type VARCHAR(100) NOT NULL,
+  severity VARCHAR(20),
+  certainty VARCHAR(20),
+  urgency VARCHAR(20),
+  headline TEXT,
+  description TEXT,
+  instruction TEXT,
+  area_desc TEXT,
+  effective_at TIMESTAMP WITH TIME ZONE,
+  expires_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Traffic incidents history
+CREATE TABLE IF NOT EXISTS traffic_incidents (
+  id SERIAL PRIMARY KEY,
+  incident_id VARCHAR(100),
+  event_type VARCHAR(50),
+  severity VARCHAR(20),
+  road_name VARCHAR(200),
+  description TEXT,
+  latitude DECIMAL(9,6),
+  longitude DECIMAL(9,6),
+  start_time TIMESTAMP WITH TIME ZONE,
+  end_time TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- System health/API status logs
+CREATE TABLE IF NOT EXISTS system_logs (
+  id SERIAL PRIMARY KEY,
+  service_name VARCHAR(50) NOT NULL,
+  status VARCHAR(20) NOT NULL, -- 'success', 'error', 'timeout'
+  response_time_ms INTEGER,
+  error_message TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Indexes for efficient queries
+CREATE INDEX IF NOT EXISTS idx_weather_obs_time ON weather_observations(observed_at DESC);
+CREATE INDEX IF NOT EXISTS idx_river_site_time ON river_readings(site_id, observed_at DESC);
+CREATE INDEX IF NOT EXISTS idx_air_quality_time ON air_quality_readings(observed_at DESC);
+CREATE INDEX IF NOT EXISTS idx_alerts_expires ON weather_alerts(expires_at);
+CREATE INDEX IF NOT EXISTS idx_traffic_time ON traffic_incidents(start_time DESC);
+CREATE INDEX IF NOT EXISTS idx_system_logs_service ON system_logs(service_name, created_at DESC);
+
+-- Clean up old data (run periodically via cron or pg_cron)
+-- DELETE FROM weather_observations WHERE created_at < NOW() - INTERVAL '30 days';
+-- DELETE FROM river_readings WHERE created_at < NOW() - INTERVAL '30 days';
+-- DELETE FROM air_quality_readings WHERE created_at < NOW() - INTERVAL '30 days';
+-- DELETE FROM system_logs WHERE created_at < NOW() - INTERVAL '7 days';

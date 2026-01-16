@@ -3,6 +3,9 @@ import { NextResponse } from 'next/server'
 export const dynamic = 'force-dynamic'
 export const revalidate = 300 // Revalidate every 5 minutes
 
+// Only show news from the last 3 days (72 hours)
+const MAX_AGE_HOURS = 72
+
 interface NewsItem {
   id: string
   title: string
@@ -17,6 +20,34 @@ interface ApiResponse {
   data: NewsItem[]
   timestamp: Date
   source: string
+}
+
+// Parse various date formats commonly found in RSS feeds
+function parseRSSDate(dateStr: string | undefined): Date | null {
+  if (!dateStr) return null
+
+  try {
+    // Try standard Date parsing first
+    const date = new Date(dateStr)
+    if (!isNaN(date.getTime())) {
+      // Validate the year is reasonable (2020-2030)
+      const year = date.getFullYear()
+      if (year >= 2020 && year <= 2030) {
+        return date
+      }
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
+// Check if a date is within the allowed age
+function isRecentEnough(date: Date | null): boolean {
+  if (!date) return false
+  const now = new Date()
+  const ageInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60)
+  return ageInHours <= MAX_AGE_HOURS && ageInHours >= 0 // Also filter out future dates
 }
 
 // RSS feed URLs for Sioux City area news
@@ -49,10 +80,18 @@ function parseRSSItem(item: string, source: string): NewsItem | null {
     const title = getTagContent('title', item)
     const link = getTagContent('link', item)
     const description = getTagContent('description', item)
-    const pubDate = getTagContent('pubDate', item)
+    const pubDateStr = getTagContent('pubDate', item)
     const category = getTagContent('category', item)
 
     if (!title || !link) return null
+
+    // Parse and validate the date
+    const pubDate = parseRSSDate(pubDateStr)
+
+    // Skip articles without valid dates or that are too old
+    if (!isRecentEnough(pubDate)) {
+      return null
+    }
 
     // Create a more unique ID using source + link hash
     const hashCode = (str: string) => {
@@ -65,12 +104,24 @@ function parseRSSItem(item: string, source: string): NewsItem | null {
       return Math.abs(hash).toString(36)
     }
 
+    // Decode HTML entities in title
+    const decodeHtml = (str: string) => str
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#039;/g, "'")
+      .replace(/&#39;/g, "'")
+      .replace(/&apos;/g, "'")
+      .replace(/&#x27;/g, "'")
+      .replace(/&nbsp;/g, ' ')
+
     return {
       id: `${source.toLowerCase().replace(/\s+/g, '-')}-${hashCode(link)}-${hashCode(title)}`,
-      title: title.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"'),
+      title: decodeHtml(title),
       link,
-      description: description?.replace(/<[^>]+>/g, '').slice(0, 200),
-      pubDate: pubDate ? new Date(pubDate) : new Date(),
+      description: description ? decodeHtml(description.replace(/<[^>]+>/g, '')).slice(0, 200) : undefined,
+      pubDate: pubDate!, // We know it's valid because isRecentEnough passed
       source,
       category
     }
