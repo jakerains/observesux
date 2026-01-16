@@ -1,10 +1,13 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
 // Simple health check endpoint for all data sources
-export async function GET() {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+export async function GET(request: NextRequest) {
+  // Construct base URL from the request or Vercel environment
+  const protocol = process.env.VERCEL_URL ? 'https' : 'http'
+  const host = process.env.VERCEL_URL || request.headers.get('host') || 'localhost:3000'
+  const baseUrl = `${protocol}://${host}`
 
   // Check each endpoint with a timeout
   async function checkEndpoint(path: string): Promise<boolean> {
