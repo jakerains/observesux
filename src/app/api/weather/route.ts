@@ -11,9 +11,11 @@ export async function GET() {
     const observation = await fetchNWSObservations()
 
     // Store observation to database for historical tracking (non-blocking)
+    // Use windChill or heatIndex as "feels like" depending on conditions
+    const feelsLike = observation.windChill ?? observation.heatIndex ?? observation.temperature
     storeWeatherObservation({
       temperature: observation.temperature,
-      feelsLike: observation.feelsLike,
+      feelsLike,
       humidity: observation.humidity,
       windSpeed: observation.windSpeed,
       windDirection: observation.windDirection,

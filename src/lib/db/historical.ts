@@ -21,18 +21,21 @@ export interface AirQualityDataPoint {
 
 // Store weather observation
 export async function storeWeatherObservation(data: {
-  temperature: number
-  feelsLike: number
-  humidity: number
-  windSpeed: number
-  windDirection: string
-  windGust?: number
+  temperature: number | null
+  feelsLike: number | null
+  humidity: number | null
+  windSpeed: number | null
+  windDirection: string | null
+  windGust?: number | null
   conditions: string
-  visibility?: number
-  pressure?: number
+  visibility?: number | null
+  pressure?: number | null
   observedAt: Date
 }) {
   if (!isDatabaseConfigured()) return
+
+  // Skip storing if we don't have core weather data
+  if (data.temperature === null) return
 
   try {
     await sql`
@@ -42,8 +45,8 @@ export async function storeWeatherObservation(data: {
         pressure_mb, observed_at
       ) VALUES (
         ${data.temperature}, ${data.feelsLike}, ${data.humidity},
-        ${data.windSpeed}, ${data.windDirection}, ${data.windGust || null},
-        ${data.conditions}, ${data.visibility || null}, ${data.pressure || null},
+        ${data.windSpeed}, ${data.windDirection}, ${data.windGust ?? null},
+        ${data.conditions}, ${data.visibility ?? null}, ${data.pressure ?? null},
         ${data.observedAt.toISOString()}
       )
       ON CONFLICT DO NOTHING
