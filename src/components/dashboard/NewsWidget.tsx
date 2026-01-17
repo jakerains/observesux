@@ -7,6 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Newspaper, ExternalLink, Clock } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import useSWR from 'swr'
+import { RefreshAction } from './RefreshAction'
 
 interface NewsItem {
   id: string
@@ -85,7 +86,7 @@ function NewsItemRow({ item }: NewsItemRowProps) {
 }
 
 export function NewsWidget() {
-  const { data: newsData, error, isLoading } = useSWR<NewsResponse>(
+  const { data: newsData, error, isLoading, isValidating, mutate: refreshNews } = useSWR<NewsResponse>(
     '/api/news',
     fetcher,
     {
@@ -98,12 +99,22 @@ export function NewsWidget() {
   const news = newsData?.data || []
   const status = error ? 'error' : isLoading ? 'loading' : 'live'
 
+  const refreshAction = (
+    <RefreshAction
+      onRefresh={() => refreshNews()}
+      isLoading={isLoading}
+      isValidating={isValidating}
+      label="Refresh news"
+    />
+  )
+
   if (isLoading) {
     return (
       <DashboardCard
         title="Local News"
         icon={<Newspaper className="h-4 w-4" />}
         status="loading"
+        action={refreshAction}
       >
         <div className="space-y-3">
           {[...Array(4)].map((_, i) => (
@@ -124,6 +135,7 @@ export function NewsWidget() {
       icon={<Newspaper className="h-4 w-4" />}
       status={status}
       lastUpdated={newsData?.timestamp ? new Date(newsData.timestamp) : undefined}
+      action={refreshAction}
     >
       {news.length > 0 ? (
         <ScrollArea className="h-[300px] -mx-2">

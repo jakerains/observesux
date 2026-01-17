@@ -148,7 +148,8 @@ export function RiverGauge() {
   const { data: historyData } = useRiverHistory(24)
 
   const rivers = riversData?.data || []
-  const lastUpdated = rivers[0]?.timestamp ? new Date(rivers[0].timestamp) : undefined
+  // Use API response timestamp (when we fetched), not USGS observation time
+  const lastUpdated = riversData?.timestamp ? new Date(riversData.timestamp) : undefined
   const status = error
     ? 'error'
     : isLoading

@@ -2,9 +2,9 @@
 
 ### Real-Time Observability Dashboard for Sioux City, Iowa
 
-A comprehensive, real-time monitoring dashboard that aggregates live data from traffic cameras, emergency scanners, weather services, river gauges, air quality sensors, and more — all in one sleek, responsive interface.
+A comprehensive, real-time monitoring dashboard that aggregates live data from traffic cameras, emergency scanners, weather services, river gauges, air quality sensors, transit tracking, and more — all in one sleek, responsive interface.
 
-![Next.js](https://img.shields.io/badge/Next.js-15-black?style=flat-square&logo=next.js)
+![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js)
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-06B6D4?style=flat-square&logo=tailwindcss)
@@ -13,6 +13,14 @@ A comprehensive, real-time monitoring dashboard that aggregates live data from t
 ---
 
 ## Features
+
+### Interactive Map
+- **Leaflet-powered map** with multiple toggleable layers
+- NWS NEXRAD radar via Iowa Environmental Mesonet (live precipitation)
+- RainViewer animated radar option
+- Traffic camera locations, river gauges, traffic events
+- Real-time bus positions with smooth interpolation
+- Snowplow tracking during winter operations
 
 ### Live Traffic Cameras
 - **Iowa DOT camera network** with HLS video streaming
@@ -28,8 +36,14 @@ A comprehensive, real-time monitoring dashboard that aggregates live data from t
 ### Weather & Alerts
 - Real-time conditions from NWS (KSUX station)
 - Active weather alerts and warnings
+- **Expandable 7-day forecast** with hourly details
 - 24-hour temperature trend charts
-- Iowa Mesonet integration
+
+### Aviation Weather
+- **METAR** (current conditions) for KSUX airport
+- **TAF** (terminal forecast) with decoded conditions
+- **NOTAMs** tab for pilot notices
+- Flight category indicators (VFR/MVFR/IFR/LIFR)
 
 ### River Monitoring
 - **Missouri River** gauge at Sioux City
@@ -42,11 +56,12 @@ A comprehensive, real-time monitoring dashboard that aggregates live data from t
 - PM2.5, Ozone, and pollutant breakdowns
 - Health category indicators
 
-### Interactive Map
-- Leaflet-powered map with multiple layers
-- Traffic camera locations
-- Weather radar overlay (RainViewer)
-- Real-time incident markers
+### Transit Tracking
+- **Sioux City Transit** real-time bus positions
+- Passio GO GTFS integration
+- **Expandable view** showing all routes and buses
+- Click bus/route to highlight on map
+- Smooth position interpolation between updates
 
 ### Flight Information
 - Sioux Gateway Airport (SUX/KSUX) arrivals & departures
@@ -56,13 +71,10 @@ A comprehensive, real-time monitoring dashboard that aggregates live data from t
 - MidAmerican Energy outage tracking
 - Woodbury County REC coverage
 
-### Transit Tracking
-- Sioux City Transit real-time bus positions
-- Passio GO integration
-
 ### Local News
-- Aggregated RSS feeds from KTIV and Siouxland Proud
+- Aggregated from **Google News**, KTIV, Siouxland Proud, Sioux City Journal
 - Filtered to show only recent stories (last 72 hours)
+- Auto-deduplication across sources
 
 ### Seismic Activity
 - USGS earthquake data within 500km radius
@@ -74,7 +86,7 @@ A comprehensive, real-time monitoring dashboard that aggregates live data from t
 
 | Layer | Technology |
 |-------|------------|
-| **Framework** | Next.js 15 (App Router) |
+| **Framework** | Next.js 16 (App Router, Turbopack) |
 | **UI Library** | React 19 |
 | **Styling** | Tailwind CSS v4 + shadcn/ui |
 | **Database** | Neon Serverless PostgreSQL |
@@ -94,15 +106,17 @@ All data is sourced from **free, public APIs**:
 | Source | Data Provided |
 |--------|---------------|
 | [Iowa DOT](https://iowadot.gov) | Traffic cameras, 511 events, snowplows |
-| [National Weather Service](https://weather.gov) | Weather observations & alerts |
-| [Iowa Mesonet](https://mesonet.agron.iastate.edu) | Enhanced weather data |
+| [National Weather Service](https://weather.gov) | Weather observations, alerts, forecasts |
+| [Iowa Environmental Mesonet](https://mesonet.agron.iastate.edu) | NWS NEXRAD radar tiles |
+| [AviationWeather.gov](https://aviationweather.gov) | METAR, TAF, NOTAMs |
 | [USGS Water Services](https://waterservices.usgs.gov) | River gauge readings |
 | [NOAA Water Prediction](https://water.noaa.gov) | Flood forecasts |
 | [AirNow](https://airnow.gov) | Air quality index |
 | [Broadcastify](https://broadcastify.com) | Emergency scanner audio |
 | [USGS Earthquakes](https://earthquake.usgs.gov) | Seismic activity |
-| [RainViewer](https://rainviewer.com) | Weather radar tiles |
-| [Passio GO](https://passiogo.com) | Transit tracking |
+| [RainViewer](https://rainviewer.com) | Animated weather radar |
+| [Passio GO](https://passiogo.com) | Transit tracking (GTFS) |
+| [Google News](https://news.google.com) | Aggregated local news |
 
 ---
 
@@ -142,6 +156,11 @@ DATABASE_URL=postgresql://user:pass@host/db?sslmode=require
 
 # Optional - API keys for enhanced data
 AIRNOW_API_KEY=your_airnow_key
+
+# Optional - Voice Agent (ElevenLabs)
+ELEVENLABS_API_KEY=your_key
+ELEVENLABS_AGENT_ID=your_agent_id
+NEXT_PUBLIC_VOICE_AGENT_ENABLED=true
 ```
 
 ---
@@ -150,7 +169,7 @@ AIRNOW_API_KEY=your_airnow_key
 
 ObserveSUX is fully responsive with platform-specific optimizations:
 
-- **Desktop**: Full dashboard grid with status bar showing all service indicators
+- **Desktop**: Full dashboard grid with status bar showing all 12 service indicators
 - **Tablet**: Adaptive 2-column layout
 - **Mobile**: iOS-style bottom navigation with smooth scroll-to-section, optimized touch targets
 
@@ -164,15 +183,20 @@ Customize your dashboard layout by dragging widgets to your preferred positions.
 ### Widget Visibility Settings
 Toggle individual widgets on/off via the settings panel. Perfect for focusing on the data that matters most to you.
 
+### Expandable Widgets
+Weather and Transit widgets can be expanded to show additional details (forecast, all routes/buses).
+
 ### Dark/Light Mode
 Full theme support with system preference detection and manual toggle.
 
 ### Real-Time Updates
 All widgets auto-refresh at appropriate intervals:
+- Transit: 30 seconds (with position interpolation)
 - Weather: 60 seconds
 - Cameras: 2 minutes
+- Aviation: 2 minutes
 - River gauges: 5 minutes
-- Traffic events: 2 minutes
+- Traffic events: 5 minutes
 
 ### Historical Trends
 Mini sparkline charts show 24-hour trends for weather, river levels, and air quality.
@@ -188,7 +212,9 @@ src/
 │   │   ├── cameras/
 │   │   ├── weather/
 │   │   ├── rivers/
-│   │   ├── scanner/
+│   │   ├── transit/
+│   │   ├── aviation/
+│   │   ├── news/
 │   │   └── ...
 │   ├── layout.tsx
 │   └── page.tsx       # Main dashboard
@@ -197,7 +223,8 @@ src/
 │   │   ├── WeatherWidget.tsx
 │   │   ├── RiverGauge.tsx
 │   │   ├── CameraGrid.tsx
-│   │   ├── ScannerPlayer.tsx
+│   │   ├── TransitWidget.tsx
+│   │   ├── InteractiveMap.tsx
 │   │   └── ...
 │   └── ui/            # shadcn/ui components
 ├── lib/
@@ -240,8 +267,14 @@ This project is open source and available under the [MIT License](LICENSE).
 
 - Data provided by Iowa DOT, NWS, USGS, AirNow, and other public agencies
 - Built with [shadcn/ui](https://ui.shadcn.com) components
-- Weather radar from [RainViewer](https://rainviewer.com)
+- Weather radar from [Iowa Environmental Mesonet](https://mesonet.agron.iastate.edu) and [RainViewer](https://rainviewer.com)
 - Scanner audio from [Broadcastify](https://broadcastify.com)
+
+---
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for a detailed history of changes.
 
 ---
 

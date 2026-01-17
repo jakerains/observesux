@@ -51,7 +51,15 @@ function isRecentEnough(date: Date | null): boolean {
 }
 
 // RSS feed URLs for Sioux City area news
+// Note: Google News RSS aggregates from many sources, providing fresher content
 const NEWS_FEEDS = [
+  {
+    // Google News RSS for Sioux City - aggregates from many sources, very fresh
+    url: 'https://news.google.com/rss/search?q=Sioux+City+Iowa&hl=en-US&gl=US&ceid=US:en',
+    source: 'Google News',
+    fallbackUrl: 'https://news.google.com/search?q=Sioux%20City%20Iowa',
+    isGoogleNews: true
+  },
   {
     url: 'https://www.ktiv.com/search/?f=rss&t=article&c=news/local&l=50&s=start_time&sd=desc',
     source: 'KTIV',
@@ -70,20 +78,37 @@ const NEWS_FEEDS = [
 ]
 
 // Simple XML parser for RSS feeds
-function parseRSSItem(item: string, source: string): NewsItem | null {
+function parseRSSItem(item: string, defaultSource: string, isGoogleNews: boolean = false): NewsItem | null {
   try {
     const getTagContent = (tag: string, xml: string): string | undefined => {
       const match = xml.match(new RegExp(`<${tag}[^>]*><!\\[CDATA\\[([^\\]]+)\\]\\]></${tag}>|<${tag}[^>]*>([^<]+)</${tag}>`, 'i'))
       return match ? (match[1] || match[2])?.trim() : undefined
     }
 
-    const title = getTagContent('title', item)
+    let title = getTagContent('title', item)
     const link = getTagContent('link', item)
     const description = getTagContent('description', item)
     const pubDateStr = getTagContent('pubDate', item)
     const category = getTagContent('category', item)
 
     if (!title || !link) return null
+
+    // For Google News, extract the original source from <source> tag or title
+    let source = defaultSource
+    if (isGoogleNews) {
+      // Google News RSS has a <source> tag with the original publisher
+      const sourceTag = getTagContent('source', item)
+      if (sourceTag) {
+        source = sourceTag
+      } else if (title.includes(' - ')) {
+        // Fallback: extract source from title format "Article Title - Source Name"
+        const lastDash = title.lastIndexOf(' - ')
+        if (lastDash > 0) {
+          source = title.substring(lastDash + 3).trim()
+          title = title.substring(0, lastDash).trim()
+        }
+      }
+    }
 
     // Parse and validate the date
     const pubDate = parseRSSDate(pubDateStr)
@@ -104,7 +129,7 @@ function parseRSSItem(item: string, source: string): NewsItem | null {
       return Math.abs(hash).toString(36)
     }
 
-    // Decode HTML entities in title
+    // Decode HTML entities
     const decodeHtml = (str: string) => str
       .replace(/&amp;/g, '&')
       .replace(/&lt;/g, '<')
@@ -116,11 +141,24 @@ function parseRSSItem(item: string, source: string): NewsItem | null {
       .replace(/&#x27;/g, "'")
       .replace(/&nbsp;/g, ' ')
 
+    // Strip HTML tags (must be done AFTER decoding entities for Google News)
+    const stripHtml = (str: string) => str
+      .replace(/<[^>]+>/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+
+    // Clean description: decode entities first, then strip resulting HTML tags
+    const cleanDescription = (desc: string) => {
+      const decoded = decodeHtml(desc)
+      const stripped = stripHtml(decoded)
+      return stripped.slice(0, 200)
+    }
+
     return {
       id: `${source.toLowerCase().replace(/\s+/g, '-')}-${hashCode(link)}-${hashCode(title)}`,
       title: decodeHtml(title),
       link,
-      description: description ? decodeHtml(description.replace(/<[^>]+>/g, '')).slice(0, 200) : undefined,
+      description: description ? cleanDescription(description) : undefined,
       pubDate: pubDate!, // We know it's valid because isRecentEnough passed
       source,
       category
@@ -157,8 +195,9 @@ async function fetchRSSFeed(feedConfig: typeof NEWS_FEEDS[0]): Promise<NewsItem[
     const itemMatches = xml.match(/<item[^>]*>[\s\S]*?<\/item>/gi) || []
 
     const items: NewsItem[] = []
-    for (const itemXml of itemMatches.slice(0, 10)) {
-      const item = parseRSSItem(itemXml, feedConfig.source)
+    const isGoogleNews = 'isGoogleNews' in feedConfig && feedConfig.isGoogleNews === true
+    for (const itemXml of itemMatches.slice(0, 15)) { // Get more items from Google News
+      const item = parseRSSItem(itemXml, feedConfig.source, isGoogleNews)
       if (item) {
         items.push(item)
       }
@@ -171,6 +210,34 @@ async function fetchRSSFeed(feedConfig: typeof NEWS_FEEDS[0]): Promise<NewsItem[
   }
 }
 
+// Normalize title for deduplication (lowercase, remove punctuation, etc.)
+function normalizeTitle(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^\w\s]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+// Check if two titles are similar enough to be duplicates
+function areTitlesSimilar(title1: string, title2: string): boolean {
+  const norm1 = normalizeTitle(title1)
+  const norm2 = normalizeTitle(title2)
+
+  // Exact match after normalization
+  if (norm1 === norm2) return true
+
+  // One contains the other (for shortened headlines)
+  if (norm1.includes(norm2) || norm2.includes(norm1)) return true
+
+  // Check if first 50 chars match (for similar headlines)
+  const prefix1 = norm1.substring(0, 50)
+  const prefix2 = norm2.substring(0, 50)
+  if (prefix1 === prefix2 && prefix1.length >= 30) return true
+
+  return false
+}
+
 export async function GET() {
   try {
     // Fetch all feeds in parallel
@@ -178,11 +245,25 @@ export async function GET() {
       NEWS_FEEDS.map(feed => fetchRSSFeed(feed))
     )
 
-    // Combine and sort by date
-    const allNews = feedResults
-      .flat()
+    // Combine all news items
+    const allNewsRaw = feedResults.flat()
+
+    // Deduplicate based on title similarity
+    // Prefer items from direct sources over Google News aggregation
+    const seenTitles: string[] = []
+    const deduped = allNewsRaw.filter(item => {
+      const isDuplicate = seenTitles.some(seen => areTitlesSimilar(seen, item.title))
+      if (!isDuplicate) {
+        seenTitles.push(item.title)
+        return true
+      }
+      return false
+    })
+
+    // Sort by date and take top 20
+    const allNews = deduped
       .sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime())
-      .slice(0, 20) // Keep top 20 most recent
+      .slice(0, 20)
 
     const response: ApiResponse = {
       data: allNews,

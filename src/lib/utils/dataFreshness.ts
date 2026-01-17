@@ -9,7 +9,7 @@ interface DataFreshnessOptions {
 export function getDataFreshness({
   lastUpdated,
   refreshInterval,
-  multiplier = 2,
+  multiplier = 3, // Allow 3x refresh interval before showing stale
 }: DataFreshnessOptions): DataFreshness {
   if (!lastUpdated || refreshInterval <= 0) {
     return 'stale'

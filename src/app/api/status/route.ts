@@ -26,17 +26,33 @@ export async function GET(request: NextRequest) {
   }
 
   // Check all endpoints in parallel
-  const [cameras, weather, rivers, airQuality, transit, outages, flights, earthquakes] =
-    await Promise.all([
-      checkEndpoint('/api/cameras'),
-      checkEndpoint('/api/weather'),
-      checkEndpoint('/api/rivers'),
-      checkEndpoint('/api/air-quality'),
-      checkEndpoint('/api/transit'),
-      checkEndpoint('/api/outages'),
-      checkEndpoint('/api/flights'),
-      checkEndpoint('/api/earthquakes')
-    ])
+  const [
+    cameras,
+    weather,
+    rivers,
+    airQuality,
+    transit,
+    outages,
+    flights,
+    earthquakes,
+    trafficEvents,
+    snowplows,
+    news,
+    aviation
+  ] = await Promise.all([
+    checkEndpoint('/api/cameras'),
+    checkEndpoint('/api/weather'),
+    checkEndpoint('/api/rivers'),
+    checkEndpoint('/api/air-quality'),
+    checkEndpoint('/api/transit'),
+    checkEndpoint('/api/outages'),
+    checkEndpoint('/api/flights'),
+    checkEndpoint('/api/earthquakes'),
+    checkEndpoint('/api/traffic-events'),
+    checkEndpoint('/api/snowplows'),
+    checkEndpoint('/api/news'),
+    checkEndpoint('/api/aviation')
+  ])
 
   return NextResponse.json({
     cameras,
@@ -47,6 +63,10 @@ export async function GET(request: NextRequest) {
     outages,
     flights,
     earthquakes,
+    trafficEvents,
+    snowplows,
+    news,
+    aviation,
     timestamp: new Date().toISOString()
   })
 }

@@ -28,7 +28,8 @@ export function OutageMap() {
   const { data: outagesData, error, isLoading, isValidating, mutate: refreshOutages } = useOutages(refreshInterval)
 
   const outages = outagesData?.data || []
-  const lastUpdated = outages[0]?.lastUpdated ? new Date(outages[0].lastUpdated) : undefined
+  // Use API response timestamp (when we fetched), not provider's update time
+  const lastUpdated = outagesData?.timestamp ? new Date(outagesData.timestamp) : undefined
   const status = error
     ? 'error'
     : isLoading

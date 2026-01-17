@@ -494,3 +494,36 @@ export interface PaginatedResponse<T> {
   pageSize: number
   hasMore: boolean
 }
+
+// ============================================
+// City Summary (Voice Agent)
+// ============================================
+
+export interface CitySummaryAnomaly {
+  type: 'weather' | 'river' | 'air_quality' | 'traffic' | 'alert'
+  severity: 'info' | 'attention' | 'alert'
+  message: string
+}
+
+export interface CitySummary {
+  overall_status: 'normal' | 'attention' | 'alert'
+  weather: {
+    current: WeatherObservation | null
+    alerts: WeatherAlert[]
+    anomalies: CitySummaryAnomaly[]
+  }
+  rivers: {
+    readings: RiverGaugeReading[]
+    anomalies: CitySummaryAnomaly[]
+  }
+  airQuality: {
+    current: AirQualityReading | null
+    anomalies: CitySummaryAnomaly[]
+  }
+  traffic: {
+    incidents: TrafficEvent[]
+    anomalies: CitySummaryAnomaly[]
+  }
+  narrative_summary: string
+  timestamp: Date
+}

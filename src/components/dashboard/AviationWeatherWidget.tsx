@@ -345,7 +345,8 @@ export function AviationWeatherWidget() {
   const taf = aviationData?.taf
   const notams = aviationData?.notams || []
 
-  const lastUpdated = aviationData?.lastUpdated ? new Date(aviationData.lastUpdated) : undefined
+  // Use API response timestamp (when we fetched), not aviation data observation time
+  const lastUpdated = data?.timestamp ? new Date(data.timestamp) : undefined
   const status = error
     ? 'error'
     : isLoading

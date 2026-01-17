@@ -13,9 +13,14 @@ import {
   Plane,
   Activity,
   CheckCircle,
-  XCircle
+  XCircle,
+  AlertTriangle,
+  Snowflake,
+  Newspaper,
+  Navigation
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { ChangelogModal } from './ChangelogModal'
 import packageJson from '../../../package.json'
 
 const STATUS_ITEMS = [
@@ -24,9 +29,13 @@ const STATUS_ITEMS = [
   { key: 'rivers', icon: Waves, label: 'Rivers' },
   { key: 'airQuality', icon: Wind, label: 'Air Quality' },
   { key: 'transit', icon: Bus, label: 'Transit' },
+  { key: 'trafficEvents', icon: AlertTriangle, label: 'Traffic' },
   { key: 'outages', icon: Zap, label: 'Outages' },
   { key: 'flights', icon: Plane, label: 'Flights' },
   { key: 'earthquakes', icon: Activity, label: 'Seismic' },
+  { key: 'snowplows', icon: Snowflake, label: 'Snowplows' },
+  { key: 'news', icon: Newspaper, label: 'News' },
+  { key: 'aviation', icon: Navigation, label: 'Aviation' },
 ] as const
 
 export function StatusBar() {
@@ -105,9 +114,11 @@ export function StatusBar() {
                 )
               })}
             </div>
-            <span className="text-xs text-muted-foreground/60 border-l pl-3">
-              v{packageJson.version}
-            </span>
+            <ChangelogModal>
+              <button className="text-xs text-muted-foreground/60 border-l pl-3 hover:text-foreground transition-colors cursor-pointer">
+                v{packageJson.version}
+              </button>
+            </ChangelogModal>
           </div>
         </div>
       </div>

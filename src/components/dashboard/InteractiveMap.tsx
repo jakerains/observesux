@@ -5,6 +5,8 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import { DashboardCard } from './DashboardCard'
 import { Badge } from "@/components/ui/badge"
 import { useCameras, useRivers, useTrafficEvents, useSnowplows, useTransit } from '@/lib/hooks/useDataFetching'
+import { useBusInterpolation } from '@/lib/hooks/useBusInterpolation'
+import { useTransitSelection } from '@/lib/contexts/TransitContext'
 import { Map, Layers, Camera, Waves, AlertTriangle, CloudRain, Snowflake, Bus } from 'lucide-react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -74,10 +76,12 @@ const snowplowIcon = new L.Icon({
 })
 
 // Function to create bus icon with route color
-const createBusIcon = (color: string) => new L.Icon({
+const createBusIcon = (color: string, isHighlighted: boolean = false) => new L.Icon({
   iconUrl: 'data:image/svg+xml,' + encodeURIComponent(`
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="12" cy="12" r="10" fill="${color}" fill-opacity="0.3"/>
+      ${isHighlighted ? `<circle cx="12" cy="12" r="11" fill="none" stroke="#ffffff" stroke-width="3"/>` : ''}
+      ${isHighlighted ? `<circle cx="12" cy="12" r="11" fill="none" stroke="${color}" stroke-width="2" stroke-dasharray="4 2"/>` : ''}
+      <circle cx="12" cy="12" r="10" fill="${color}" fill-opacity="${isHighlighted ? '0.5' : '0.3'}"/>
       <path d="M8 6v10" stroke="${color}"/>
       <path d="M16 6v10" stroke="${color}"/>
       <rect x="4" y="3" width="16" height="16" rx="2" fill="${color}"/>
@@ -86,9 +90,9 @@ const createBusIcon = (color: string) => new L.Icon({
       <path d="M4 11h16" stroke="white" stroke-width="1"/>
     </svg>
   `),
-  iconSize: [28, 28],
-  iconAnchor: [14, 14],
-  popupAnchor: [0, -14],
+  iconSize: isHighlighted ? [36, 36] : [28, 28],
+  iconAnchor: isHighlighted ? [18, 18] : [14, 14],
+  popupAnchor: [0, isHighlighted ? -18 : -14],
 })
 
 // Sioux City center coordinates
@@ -379,7 +383,13 @@ export function InteractiveMap() {
   const rivers = riversData?.data || []
   const events = eventsData?.data || []
   const snowplows = snowplowsData?.data || []
-  const buses = transitData?.buses || []
+  const rawBuses = transitData?.buses || []
+
+  // Interpolate bus positions for smooth movement
+  const buses = useBusInterpolation(rawBuses, 30000)
+
+  // Transit selection for highlighting
+  const { selectedBusId, selectedRouteId, clearSelection } = useTransitSelection()
 
   // Fetch radar data from RainViewer
   useEffect(() => {
@@ -430,6 +440,7 @@ export function InteractiveMap() {
     : undefined
 
   return (
+    <div id="interactive-map">
     <DashboardCard
       title="Interactive Map"
       icon={<Map className="h-4 w-4" />}
@@ -544,26 +555,40 @@ export function InteractiveMap() {
             </Marker>
           ))}
 
-          {/* Bus/Transit Markers */}
-          {layers.transit && buses.map((bus) => (
-            <Marker
-              key={bus.vehicleId}
-              position={[bus.latitude, bus.longitude]}
-              icon={createBusIcon(bus.routeColor || '#10b981')}
-            >
-              <Popup>
-                <div className="min-w-[180px]">
-                  <h4 className="font-medium text-sm mb-1">{bus.routeName}</h4>
-                  <div className="text-xs space-y-1">
-                    <p>Vehicle: <Badge variant="outline" className="text-xs">{bus.vehicleId}</Badge></p>
-                    <p>Speed: {bus.speed.toFixed(0)} mph</p>
-                    <p>Heading: {bus.heading}°</p>
-                    {bus.nextStop && <p>Next Stop: {bus.nextStop}</p>}
+          {/* Bus/Transit Markers - with smooth interpolation */}
+          {layers.transit && buses.map((bus) => {
+            const isHighlighted = selectedBusId === bus.vehicleId ||
+              (selectedRouteId !== null && bus.routeId === selectedRouteId)
+
+            return (
+              <Marker
+                key={bus.vehicleId}
+                position={[bus.interpolatedLat, bus.interpolatedLng]}
+                icon={createBusIcon(bus.routeColor || '#10b981', isHighlighted)}
+                zIndexOffset={isHighlighted ? 1000 : 0}
+              >
+                <Popup>
+                  <div className="min-w-[180px]">
+                    <h4 className="font-medium text-sm mb-1">{bus.routeName}</h4>
+                    <div className="text-xs space-y-1">
+                      <p>Vehicle: <Badge variant="outline" className="text-xs">{bus.vehicleId}</Badge></p>
+                      <p>Speed: {bus.speed.toFixed(0)} mph</p>
+                      <p>Heading: {bus.heading}°</p>
+                      {bus.nextStop && <p>Next Stop: {bus.nextStop}</p>}
+                    </div>
+                    {isHighlighted && (
+                      <button
+                        onClick={clearSelection}
+                        className="mt-2 w-full text-xs bg-muted hover:bg-muted/80 px-2 py-1 rounded"
+                      >
+                        Clear selection
+                      </button>
+                    )}
                   </div>
-                </div>
-              </Popup>
-            </Marker>
-          ))}
+                </Popup>
+              </Marker>
+            )
+          })}
         </MapContainer>
 
         {/* Layer Controls */}
@@ -608,6 +633,7 @@ export function InteractiveMap() {
         </div>
       </div>
     </DashboardCard>
+    </div>
   )
 }
 

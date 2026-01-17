@@ -158,7 +158,8 @@ export function WeatherWidget() {
   const forecast = forecastData?.data?.forecast
   const hourlyForecast = forecastData?.data?.hourly
 
-  const lastUpdated = weather?.timestamp ? new Date(weather.timestamp) : undefined
+  // Use API response timestamp (when we fetched), not source observation time
+  const lastUpdated = weatherData?.timestamp ? new Date(weatherData.timestamp) : undefined
   const status = weatherError
     ? 'error'
     : weatherLoading
@@ -174,12 +175,22 @@ export function WeatherWidget() {
     <div className="flex items-center gap-1">
       <Button
         variant="ghost"
-        size="icon"
-        className="h-7 w-7"
+        size="sm"
+        className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
         onClick={handleToggleExpand}
         title={isExpanded ? 'Collapse' : 'Expand to show forecast'}
       >
-        {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        {isExpanded ? (
+          <>
+            <ChevronUp className="h-3 w-3 mr-1" />
+            Less
+          </>
+        ) : (
+          <>
+            <ChevronDown className="h-3 w-3 mr-1" />
+            Forecast
+          </>
+        )}
       </Button>
       <RefreshAction
         onRefresh={() => refreshWeather()}

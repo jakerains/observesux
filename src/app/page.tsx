@@ -33,7 +33,10 @@ import { NewsWidget } from '@/components/dashboard/NewsWidget'
 import { StatusBar } from '@/components/dashboard/StatusBar'
 import { MobileNavigation } from '@/components/dashboard/MobileNavigation'
 import { DraggableWidget } from '@/components/dashboard/DraggableWidget'
+import { VoiceAgentWidget } from '@/components/dashboard/VoiceAgentWidget'
+import { ChangelogModal } from '@/components/dashboard/ChangelogModal'
 import { DashboardLayoutProvider, useDashboardLayout } from '@/lib/contexts/DashboardLayoutContext'
+import { TransitProvider } from '@/lib/contexts/TransitContext'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent } from '@/components/ui/card'
 import packageJson from '../../package.json'
@@ -210,9 +213,11 @@ function DashboardContent() {
               View on GitHub
             </a>
           </p>
-          <p className="text-muted-foreground/60 md:hidden">
-            v{packageJson.version}
-          </p>
+          <ChangelogModal>
+            <button className="text-muted-foreground/60 md:hidden hover:text-foreground transition-colors cursor-pointer">
+              v{packageJson.version}
+            </button>
+          </ChangelogModal>
         </footer>
       </main>
 
@@ -221,14 +226,19 @@ function DashboardContent() {
 
       {/* Mobile Navigation - iOS-style bottom tabs */}
       <MobileNavigation />
+
+      {/* Voice Agent - Floating button */}
+      <VoiceAgentWidget />
     </div>
   )
 }
 
 export default function Dashboard() {
   return (
-    <DashboardLayoutProvider>
-      <DashboardContent />
-    </DashboardLayoutProvider>
+    <TransitProvider>
+      <DashboardLayoutProvider>
+        <DashboardContent />
+      </DashboardLayoutProvider>
+    </TransitProvider>
   )
 }

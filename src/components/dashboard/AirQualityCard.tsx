@@ -51,7 +51,8 @@ export function AirQualityCard() {
   const { data: historyData } = useAirQualityHistory(24)
 
   const airQuality = aqData?.data
-  const lastUpdated = airQuality?.timestamp ? new Date(airQuality.timestamp) : undefined
+  // Use API response timestamp (when we fetched), not AirNow observation time
+  const lastUpdated = aqData?.timestamp ? new Date(aqData.timestamp) : undefined
   const status = error
     ? 'error'
     : isLoading

@@ -329,6 +329,10 @@ export async function fetchNOTAMs(): Promise<NOTAM[]> {
     )
 
     if (!response.ok) {
+      // NOTAM endpoint may not be available - fail silently for 404
+      if (response.status === 404) {
+        return []
+      }
       throw new Error(`Aviation Weather API error: ${response.status}`)
     }
 
