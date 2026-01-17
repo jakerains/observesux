@@ -15,6 +15,7 @@ export interface WidgetConfig {
 export const DEFAULT_WIDGETS: WidgetConfig[] = [
   { id: 'map', name: 'Interactive Map', description: 'Full map with all data layers', enabled: true, size: 'full' },
   { id: 'weather', name: 'Weather', description: 'Current weather conditions and alerts', enabled: true, size: 'small' },
+  { id: 'aviation-weather', name: 'Aviation Weather', description: 'METAR and TAF for KSUX airport', enabled: true, size: 'small' },
   { id: 'river', name: 'River Levels', description: 'Missouri & Big Sioux river gauges', enabled: true, size: 'small' },
   { id: 'air-quality', name: 'Air Quality', description: 'AQI and pollutant levels', enabled: true, size: 'small' },
   { id: 'cameras', name: 'Traffic Cameras', description: 'Iowa DOT and KTIV cameras', enabled: true, size: 'large' },
