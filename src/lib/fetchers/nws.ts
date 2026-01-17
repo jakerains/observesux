@@ -1,4 +1,4 @@
-import type { WeatherObservation, WeatherAlert } from '@/types'
+import type { WeatherObservation, WeatherAlert, WeatherForecast, HourlyWeatherForecast, ForecastPeriod, HourlyForecast } from '@/types'
 
 // Sioux City coordinates
 const SIOUX_CITY_LAT = 42.4997
@@ -6,6 +6,11 @@ const SIOUX_CITY_LON = -96.4003
 
 // NWS station for Sioux City (Gateway Airport)
 const STATION_ID = 'KSUX'
+
+// NWS grid point for Sioux City (from https://api.weather.gov/points/42.4997,-96.4003)
+const NWS_GRID_OFFICE = 'FSD'
+const NWS_GRID_X = 108
+const NWS_GRID_Y = 16
 
 interface NWSObservationProperties {
   timestamp: string
@@ -185,5 +190,147 @@ export async function fetchNWSAlerts(): Promise<WeatherAlert[]> {
   } catch (error) {
     console.error('Failed to fetch NWS alerts:', error)
     return []
+  }
+}
+
+// NWS Forecast API response interfaces
+interface NWSForecastPeriod {
+  number: number
+  name: string
+  startTime: string
+  endTime: string
+  isDaytime: boolean
+  temperature: number
+  temperatureUnit: string
+  temperatureTrend: string | null
+  probabilityOfPrecipitation: { value: number | null }
+  windSpeed: string
+  windDirection: string
+  icon: string
+  shortForecast: string
+  detailedForecast: string
+}
+
+interface NWSForecastResponse {
+  properties: {
+    updated: string
+    generatedAt: string
+    periods: NWSForecastPeriod[]
+  }
+}
+
+interface NWSHourlyPeriod {
+  number: number
+  startTime: string
+  endTime: string
+  isDaytime: boolean
+  temperature: number
+  temperatureUnit: string
+  probabilityOfPrecipitation: { value: number | null }
+  relativeHumidity: { value: number | null }
+  windSpeed: string
+  windDirection: string
+  icon: string
+  shortForecast: string
+}
+
+export async function fetchNWSForecast(): Promise<WeatherForecast> {
+  try {
+    const response = await fetch(
+      `https://api.weather.gov/gridpoints/${NWS_GRID_OFFICE}/${NWS_GRID_X},${NWS_GRID_Y}/forecast`,
+      {
+        headers: {
+          'User-Agent': '(ObserveSUX Dashboard, contact@example.com)',
+          'Accept': 'application/geo+json'
+        },
+        next: { revalidate: 300 } // Cache for 5 minutes
+      }
+    )
+
+    if (!response.ok) {
+      throw new Error(`NWS Forecast API error: ${response.status}`)
+    }
+
+    const data: NWSForecastResponse = await response.json()
+    const { properties } = data
+
+    const periods: ForecastPeriod[] = properties.periods.map(period => ({
+      number: period.number,
+      name: period.name,
+      startTime: new Date(period.startTime),
+      endTime: new Date(period.endTime),
+      temperature: period.temperature,
+      temperatureUnit: period.temperatureUnit as 'F' | 'C',
+      temperatureTrend: period.temperatureTrend as 'rising' | 'falling' | null,
+      probabilityOfPrecipitation: period.probabilityOfPrecipitation?.value ?? null,
+      windSpeed: period.windSpeed,
+      windDirection: period.windDirection,
+      shortForecast: period.shortForecast,
+      detailedForecast: period.detailedForecast,
+      icon: period.icon,
+      isDaytime: period.isDaytime
+    }))
+
+    return {
+      periods,
+      generatedAt: new Date(properties.generatedAt),
+      updateTime: new Date(properties.updated)
+    }
+  } catch (error) {
+    console.error('Failed to fetch NWS forecast:', error)
+    return {
+      periods: [],
+      generatedAt: new Date(),
+      updateTime: new Date()
+    }
+  }
+}
+
+export async function fetchNWSHourlyForecast(): Promise<HourlyWeatherForecast> {
+  try {
+    const response = await fetch(
+      `https://api.weather.gov/gridpoints/${NWS_GRID_OFFICE}/${NWS_GRID_X},${NWS_GRID_Y}/forecast/hourly`,
+      {
+        headers: {
+          'User-Agent': '(ObserveSUX Dashboard, contact@example.com)',
+          'Accept': 'application/geo+json'
+        },
+        next: { revalidate: 300 } // Cache for 5 minutes
+      }
+    )
+
+    if (!response.ok) {
+      throw new Error(`NWS Hourly Forecast API error: ${response.status}`)
+    }
+
+    const data = await response.json()
+    const { properties } = data
+
+    const periods: HourlyForecast[] = properties.periods.slice(0, 24).map((period: NWSHourlyPeriod) => ({
+      startTime: new Date(period.startTime),
+      endTime: new Date(period.endTime),
+      temperature: period.temperature,
+      temperatureUnit: period.temperatureUnit as 'F' | 'C',
+      probabilityOfPrecipitation: period.probabilityOfPrecipitation?.value ?? null,
+      humidity: period.relativeHumidity?.value ?? null,
+      windSpeed: period.windSpeed,
+      windDirection: period.windDirection,
+      shortForecast: period.shortForecast,
+      icon: period.icon,
+      isDaytime: period.isDaytime
+    }))
+
+    return {
+      periods,
+      generatedAt: new Date(properties.generatedAt),
+      updateTime: new Date(properties.updated)
+    }
+  } catch (error) {
+    console.error('Failed to fetch NWS hourly forecast:', error)
+    return {
+      periods: [],
+      generatedAt: new Date(),
+      updateTime: new Date()
+    }
   }
 }

@@ -6,6 +6,8 @@ import type {
   TrafficEvent,
   WeatherObservation,
   WeatherAlert,
+  WeatherForecast,
+  HourlyWeatherForecast,
   AviationWeather,
   RiverGaugeReading,
   AirQualityReading,
@@ -79,6 +81,18 @@ export function useWeatherAlerts(refreshInterval = 60000) {
     {
       refreshInterval,
       dedupingInterval: 30000,
+      revalidateOnFocus: false,
+    }
+  )
+}
+
+export function useWeatherForecast(refreshInterval = 300000) {
+  return useSWR<ApiResponse<{ forecast: WeatherForecast; hourly: HourlyWeatherForecast }>>(
+    '/api/weather/forecast',
+    fetcher,
+    {
+      refreshInterval,
+      dedupingInterval: 60000,
       revalidateOnFocus: false,
     }
   )

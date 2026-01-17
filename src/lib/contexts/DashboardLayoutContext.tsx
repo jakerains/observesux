@@ -34,6 +34,7 @@ interface DashboardLayoutContextType {
   widgets: WidgetConfig[]
   widgetOrder: string[]
   setWidgetEnabled: (id: string, enabled: boolean) => void
+  setWidgetSize: (id: string, size: WidgetConfig['size']) => void
   setWidgetOrder: (order: string[]) => void
   resetToDefault: () => void
   isWidgetEnabled: (id: string) => boolean
@@ -57,7 +58,7 @@ export function DashboardLayoutProvider({ children }: { children: ReactNode }) {
           // Merge stored settings with defaults (in case new widgets were added)
           const mergedWidgets = DEFAULT_WIDGETS.map(defaultWidget => {
             const storedWidget = parsed.widgets.find((w: WidgetConfig) => w.id === defaultWidget.id)
-            return storedWidget ? { ...defaultWidget, enabled: storedWidget.enabled } : defaultWidget
+            return storedWidget ? { ...defaultWidget, enabled: storedWidget.enabled, size: storedWidget.size || defaultWidget.size } : defaultWidget
           })
           setWidgets(mergedWidgets)
         }
@@ -93,6 +94,10 @@ export function DashboardLayoutProvider({ children }: { children: ReactNode }) {
     setWidgets(prev => prev.map(w => w.id === id ? { ...w, enabled } : w))
   }, [])
 
+  const setWidgetSize = useCallback((id: string, size: WidgetConfig['size']) => {
+    setWidgets(prev => prev.map(w => w.id === id ? { ...w, size } : w))
+  }, [])
+
   const setWidgetOrder = useCallback((order: string[]) => {
     setWidgetOrderState(order)
   }, [])
@@ -116,6 +121,7 @@ export function DashboardLayoutProvider({ children }: { children: ReactNode }) {
       widgets,
       widgetOrder,
       setWidgetEnabled,
+      setWidgetSize,
       setWidgetOrder,
       resetToDefault,
       isWidgetEnabled,
