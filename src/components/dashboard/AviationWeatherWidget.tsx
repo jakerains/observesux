@@ -1,6 +1,7 @@
 'use client'
 
 import { DashboardCard } from './DashboardCard'
+import { RefreshAction } from './RefreshAction'
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -21,6 +22,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { format, formatDistanceToNow } from 'date-fns'
+import { getDataFreshness } from '@/lib/utils/dataFreshness'
 
 function FlightCategoryBadge({ category }: { category: FlightCategory }) {
   const bgColors: Record<FlightCategory, string> = {
@@ -247,17 +249,30 @@ function TafDisplay({ taf }: { taf: TAF }) {
 }
 
 export function AviationWeatherWidget() {
-  const { data, error, isLoading } = useAviationWeather()
+  const refreshInterval = 120000
+  const { data, error, isLoading, isValidating, mutate: refreshAviation } = useAviationWeather(refreshInterval)
 
   const aviationData = data?.data
   const metar = aviationData?.metar
   const taf = aviationData?.taf
 
-  const status = error ? 'error' : isLoading ? 'loading' : 'live'
+  const lastUpdated = aviationData?.lastUpdated ? new Date(aviationData.lastUpdated) : undefined
+  const status = error
+    ? 'error'
+    : isLoading
+      ? 'loading'
+      : getDataFreshness({ lastUpdated, refreshInterval })
+  const refreshAction = (
+    <RefreshAction
+      onRefresh={() => refreshAviation()}
+      isLoading={isLoading}
+      isValidating={isValidating}
+    />
+  )
 
   if (isLoading) {
     return (
-      <DashboardCard title="Aviation Weather" icon={<Plane className="h-4 w-4" />} status="loading">
+      <DashboardCard title="Aviation Weather" icon={<Plane className="h-4 w-4" />} status="loading" action={refreshAction}>
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <Skeleton className="h-6 w-16" />
@@ -277,7 +292,7 @@ export function AviationWeatherWidget() {
 
   if (error || (!metar && !taf)) {
     return (
-      <DashboardCard title="Aviation Weather" icon={<Plane className="h-4 w-4" />} status="error">
+      <DashboardCard title="Aviation Weather" icon={<Plane className="h-4 w-4" />} status="error" action={refreshAction}>
         <div className="flex items-center justify-center h-32 text-muted-foreground">
           <p>Unable to load aviation weather data</p>
         </div>
@@ -290,7 +305,8 @@ export function AviationWeatherWidget() {
       title="Aviation Weather"
       icon={<Plane className="h-4 w-4" />}
       status={status}
-      lastUpdated={aviationData?.lastUpdated ? new Date(aviationData.lastUpdated) : undefined}
+      lastUpdated={lastUpdated}
+      action={refreshAction}
     >
       <Tabs defaultValue="metar" className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-4">

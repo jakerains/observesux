@@ -1,6 +1,7 @@
 'use client'
 
 import { DashboardCard } from './DashboardCard'
+import { RefreshAction } from './RefreshAction'
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -9,6 +10,7 @@ import { AlertTriangle, Construction, Car, Cone, CheckCircle, MapPin } from 'luc
 import { formatDistanceToNow } from 'date-fns'
 import { cn } from '@/lib/utils'
 import type { TrafficEvent } from '@/types'
+import { getDataFreshness } from '@/lib/utils/dataFreshness'
 
 function getEventIcon(type: TrafficEvent['type']) {
   switch (type) {
@@ -83,10 +85,23 @@ function EventRow({ event }: EventRowProps) {
 }
 
 export function TrafficEventsWidget() {
-  const { data: eventsData, error, isLoading } = useTrafficEvents()
+  const refreshInterval = 300000
+  const { data: eventsData, error, isLoading, isValidating, mutate: refreshEvents } = useTrafficEvents(refreshInterval)
 
   const events = eventsData?.data || []
-  const status = error ? 'error' : isLoading ? 'loading' : 'live'
+  const lastUpdated = eventsData?.timestamp ? new Date(eventsData.timestamp) : undefined
+  const status = error
+    ? 'error'
+    : isLoading
+      ? 'loading'
+      : getDataFreshness({ lastUpdated, refreshInterval })
+  const refreshAction = (
+    <RefreshAction
+      onRefresh={() => refreshEvents()}
+      isLoading={isLoading}
+      isValidating={isValidating}
+    />
+  )
 
   // Count by type
   const incidents = events.filter(e => e.type === 'incident').length
@@ -95,7 +110,7 @@ export function TrafficEventsWidget() {
 
   if (isLoading) {
     return (
-      <DashboardCard title="Traffic Events" icon={<AlertTriangle className="h-4 w-4" />} status="loading">
+      <DashboardCard title="Traffic Events" icon={<AlertTriangle className="h-4 w-4" />} status="loading" action={refreshAction}>
         <div className="space-y-3">
           {[...Array(3)].map((_, i) => (
             <Skeleton key={i} className="h-20 w-full" />
@@ -110,7 +125,8 @@ export function TrafficEventsWidget() {
       title="Traffic Events"
       icon={<AlertTriangle className="h-4 w-4" />}
       status={status}
-      lastUpdated={eventsData?.timestamp ? new Date(eventsData.timestamp) : undefined}
+      lastUpdated={lastUpdated}
+      action={refreshAction}
     >
       {/* Summary */}
       {events.length > 0 ? (

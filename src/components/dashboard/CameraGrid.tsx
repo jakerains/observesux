@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { DashboardCard } from './DashboardCard'
+import { RefreshAction } from './RefreshAction'
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -11,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useCameras } from '@/lib/hooks/useDataFetching'
 import { Camera, Video, Maximize2, RefreshCw, MapPin } from 'lucide-react'
 import type { TrafficCamera } from '@/types'
+import { getDataFreshness } from '@/lib/utils/dataFreshness'
 
 interface CameraCardProps {
   camera: TrafficCamera
@@ -192,17 +194,30 @@ function CameraModal({ camera, onClose }: CameraModalProps) {
 }
 
 export function CameraGrid() {
-  const { data: camerasData, error, isLoading } = useCameras()
+  const refreshInterval = 120000
+  const { data: camerasData, error, isLoading, isValidating, mutate: refreshCameras } = useCameras(refreshInterval)
   const [selectedCamera, setSelectedCamera] = useState<TrafficCamera | null>(null)
   const [showAllCameras, setShowAllCameras] = useState(false)
 
   const cameras = camerasData?.data || []
   const displayedCameras = showAllCameras ? cameras : cameras.slice(0, 6)
-  const status = error ? 'error' : isLoading ? 'loading' : 'live'
+  const lastUpdated = camerasData?.timestamp ? new Date(camerasData.timestamp) : undefined
+  const status = error
+    ? 'error'
+    : isLoading
+      ? 'loading'
+      : getDataFreshness({ lastUpdated, refreshInterval })
+  const refreshAction = (
+    <RefreshAction
+      onRefresh={() => refreshCameras()}
+      isLoading={isLoading}
+      isValidating={isValidating}
+    />
+  )
 
   if (isLoading) {
     return (
-      <DashboardCard title="Traffic Cameras" icon={<Camera className="h-4 w-4" />} status="loading">
+      <DashboardCard title="Traffic Cameras" icon={<Camera className="h-4 w-4" />} status="loading" action={refreshAction}>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           {[...Array(6)].map((_, i) => (
             <Skeleton key={i} className="aspect-video rounded-lg" />
@@ -218,7 +233,8 @@ export function CameraGrid() {
         title="Traffic Cameras"
         icon={<Camera className="h-4 w-4" />}
         status={status}
-        lastUpdated={camerasData?.timestamp ? new Date(camerasData.timestamp) : undefined}
+        lastUpdated={lastUpdated}
+        action={refreshAction}
       >
         {cameras.length > 0 ? (
           <div className={`grid grid-cols-2 md:grid-cols-3 gap-3 ${showAllCameras ? 'max-h-[600px] overflow-y-auto' : ''}`}>

@@ -1,6 +1,7 @@
 'use client'
 
 import { DashboardCard } from './DashboardCard'
+import { RefreshAction } from './RefreshAction'
 import { MiniTrendChart } from './MiniTrendChart'
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
@@ -10,6 +11,7 @@ import { useRiverHistory } from '@/lib/hooks/useHistory'
 import { Waves, TrendingUp, TrendingDown, Minus, AlertTriangle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { RiverGaugeReading, FloodStage } from '@/types'
+import { getDataFreshness } from '@/lib/utils/dataFreshness'
 
 interface DataPoint {
   time: string
@@ -141,11 +143,24 @@ function GaugeDisplay({ reading, trendData }: { reading: RiverGaugeReading, tren
 }
 
 export function RiverGauge() {
-  const { data: riversData, error, isLoading } = useRivers()
+  const refreshInterval = 300000
+  const { data: riversData, error, isLoading, isValidating, mutate: refreshRivers } = useRivers(refreshInterval)
   const { data: historyData } = useRiverHistory(24)
 
   const rivers = riversData?.data || []
-  const status = error ? 'error' : isLoading ? 'loading' : 'live'
+  const lastUpdated = rivers[0]?.timestamp ? new Date(rivers[0].timestamp) : undefined
+  const status = error
+    ? 'error'
+    : isLoading
+      ? 'loading'
+      : getDataFreshness({ lastUpdated, refreshInterval })
+  const refreshAction = (
+    <RefreshAction
+      onRefresh={() => refreshRivers()}
+      isLoading={isLoading}
+      isValidating={isValidating}
+    />
+  )
 
   // Check for any flood conditions
   const hasFloodCondition = rivers.some(r => r.floodStage !== 'normal')
@@ -165,7 +180,7 @@ export function RiverGauge() {
 
   if (isLoading) {
     return (
-      <DashboardCard title="River Levels" icon={<Waves className="h-4 w-4" />} status="loading">
+      <DashboardCard title="River Levels" icon={<Waves className="h-4 w-4" />} status="loading" action={refreshAction}>
         <div className="space-y-3">
           <Skeleton className="h-24 w-full" />
           <Skeleton className="h-24 w-full" />
@@ -179,7 +194,8 @@ export function RiverGauge() {
       title="River Levels"
       icon={<Waves className="h-4 w-4" />}
       status={status}
-      lastUpdated={rivers[0]?.timestamp ? new Date(rivers[0].timestamp) : undefined}
+      lastUpdated={lastUpdated}
+      action={refreshAction}
     >
       {/* Flood Warning Banner */}
       {hasFloodCondition && (
