@@ -247,6 +247,90 @@ export interface OutageSummary {
 }
 
 // ============================================
+// Aviation Weather (METAR/TAF)
+// ============================================
+
+export type FlightCategory = 'VFR' | 'MVFR' | 'IFR' | 'LIFR'
+
+export interface METAR {
+  icaoId: string
+  stationName: string
+  observationTime: Date
+  rawOb: string // Raw METAR string
+  temperature: number | null // Celsius
+  dewpoint: number | null // Celsius
+  windDirection: number | null // degrees
+  windSpeed: number | null // knots
+  windGust: number | null // knots
+  visibility: number | null // statute miles
+  altimeter: number | null // inHg
+  ceiling: number | null // feet AGL (lowest broken/overcast layer)
+  cloudLayers: CloudLayer[]
+  weatherPhenomena: string[] // e.g., ['RA', 'BR', 'FG']
+  flightCategory: FlightCategory
+  verticalVisibility: number | null // feet (when sky obscured)
+  remarks: string
+}
+
+export interface CloudLayer {
+  coverage: 'SKC' | 'CLR' | 'FEW' | 'SCT' | 'BKN' | 'OVC' | 'VV' // Sky clear, clear, few, scattered, broken, overcast, vertical visibility
+  base: number | null // feet AGL
+  type?: string // e.g., 'CB', 'TCU' for cumulonimbus or towering cumulus
+}
+
+export interface TAF {
+  icaoId: string
+  stationName: string
+  issueTime: Date
+  validTimeFrom: Date
+  validTimeTo: Date
+  rawTaf: string // Raw TAF string
+  forecasts: TAFForecastPeriod[]
+  remarks?: string
+}
+
+export interface TAFForecastPeriod {
+  type: 'FM' | 'TEMPO' | 'BECMG' | 'PROB' | 'BASE' // From, temporary, becoming, probability, base forecast
+  probability?: number // e.g., 30, 40 for PROB30, PROB40
+  timeFrom: Date
+  timeTo: Date
+  windDirection: number | null
+  windSpeed: number | null // knots
+  windGust: number | null
+  visibility: number | null // statute miles
+  cloudLayers: CloudLayer[]
+  weatherPhenomena: string[]
+  flightCategory: FlightCategory
+}
+
+export interface AviationWeather {
+  metar: METAR | null
+  taf: TAF | null
+  lastUpdated: Date
+}
+
+// Flight category color helpers
+export function getFlightCategoryColor(category: FlightCategory): string {
+  const colors: Record<FlightCategory, string> = {
+    'VFR': '#00ff00',   // Green - Visual Flight Rules (ceiling > 3000ft, vis > 5mi)
+    'MVFR': '#0000ff',  // Blue - Marginal VFR (ceiling 1000-3000ft or vis 3-5mi)
+    'IFR': '#ff0000',   // Red - Instrument Flight Rules (ceiling 500-1000ft or vis 1-3mi)
+    'LIFR': '#ff00ff'   // Magenta - Low IFR (ceiling < 500ft or vis < 1mi)
+  }
+  return colors[category]
+}
+
+export function getFlightCategoryDescription(category: FlightCategory): string {
+  const descriptions: Record<FlightCategory, string> = {
+    'VFR': 'Visual Flight Rules - Good conditions',
+    'MVFR': 'Marginal VFR - Reduced visibility/ceiling',
+    'IFR': 'Instrument Flight Rules - Low ceiling/visibility',
+    'LIFR': 'Low IFR - Very low ceiling/visibility'
+  }
+  return descriptions[category]
+}
+
+// ============================================
 // Flights
 // ============================================
 
