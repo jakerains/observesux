@@ -82,6 +82,49 @@ export interface WeatherAlert {
   sender: string
 }
 
+export interface ForecastPeriod {
+  number: number
+  name: string // e.g., "Tonight", "Saturday", "Saturday Night"
+  startTime: Date
+  endTime: Date
+  temperature: number
+  temperatureUnit: 'F' | 'C'
+  temperatureTrend: 'rising' | 'falling' | null
+  probabilityOfPrecipitation: number | null
+  windSpeed: string // e.g., "10 to 15 mph"
+  windDirection: string // e.g., "NW"
+  shortForecast: string // e.g., "Partly Cloudy"
+  detailedForecast: string
+  icon: string
+  isDaytime: boolean
+}
+
+export interface HourlyForecast {
+  startTime: Date
+  endTime: Date
+  temperature: number
+  temperatureUnit: 'F' | 'C'
+  probabilityOfPrecipitation: number | null
+  humidity: number | null
+  windSpeed: string
+  windDirection: string
+  shortForecast: string
+  icon: string
+  isDaytime: boolean
+}
+
+export interface WeatherForecast {
+  periods: ForecastPeriod[]
+  generatedAt: Date
+  updateTime: Date
+}
+
+export interface HourlyWeatherForecast {
+  periods: HourlyForecast[]
+  generatedAt: Date
+  updateTime: Date
+}
+
 export interface StormReport {
   type: 'tornado' | 'hail' | 'wind' | 'flood' | 'other'
   magnitude?: string
