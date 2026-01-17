@@ -1,7 +1,7 @@
 import type { Aircraft, AircraftData, SuxAssociation } from '@/types'
 import { SUX_AIRPORT } from '@/types'
 
-// OpenSky Network API - free, no API key required
+// OpenSky Network API - free, no API key required (optional auth improves rate limits)
 // Bounding box covers ~40 mile radius around Sioux City
 const OPENSKY_API = 'https://opensky-network.org/api/states/all'
 const BOUNDING_BOX = {
@@ -137,7 +137,40 @@ const mpsToKnots = (mps: number | null): number | null => (mps !== null ? mps * 
 // Convert m/s to ft/min
 const mpsToFpm = (mps: number | null): number | null => (mps !== null ? mps * 196.85 : null)
 
+const OPENSKY_CACHE_TTL_MS = 60_000
+const OPENSKY_BACKOFF_MS = 120_000
+
+let cachedData: AircraftData | null = null
+let lastFetchAt = 0
+let cooldownUntil = 0
+
+function getEmptyAircraftData(): AircraftData {
+  return {
+    aircraft: [],
+    timestamp: new Date(),
+    source: 'OpenSky Network',
+    suxArrivals: 0,
+    suxDepartures: 0,
+    nearSux: 0,
+  }
+}
+
+function getAuthHeader(): string | null {
+  const username = process.env.OPENSKY_USERNAME
+  const password = process.env.OPENSKY_PASSWORD
+  if (!username || !password) return null
+  return `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`
+}
+
 export async function fetchAircraft(): Promise<AircraftData> {
+  const now = Date.now()
+  if (cachedData && now - lastFetchAt < OPENSKY_CACHE_TTL_MS) {
+    return cachedData
+  }
+  if (cooldownUntil && now < cooldownUntil && cachedData) {
+    return cachedData
+  }
+
   try {
     const url = new URL(OPENSKY_API)
     url.searchParams.set('lamin', BOUNDING_BOX.lamin.toString())
@@ -145,28 +178,33 @@ export async function fetchAircraft(): Promise<AircraftData> {
     url.searchParams.set('lomin', BOUNDING_BOX.lomin.toString())
     url.searchParams.set('lomax', BOUNDING_BOX.lomax.toString())
 
+    const authHeader = getAuthHeader()
     const response = await fetch(url.toString(), {
       headers: {
         Accept: 'application/json',
+        ...(authHeader ? { Authorization: authHeader } : {}),
       },
-      next: { revalidate: 10 }, // Cache for 10 seconds
+      next: { revalidate: 60 }, // Cache for 60 seconds
     })
 
     if (!response.ok) {
+      if (response.status === 429) {
+        cooldownUntil = now + OPENSKY_BACKOFF_MS
+        if (cachedData) {
+          return cachedData
+        }
+        return getEmptyAircraftData()
+      }
       throw new Error(`OpenSky API error: ${response.status}`)
     }
 
     const data: OpenSkyResponse = await response.json()
 
     if (!data.states || data.states.length === 0) {
-      return {
-        aircraft: [],
-        timestamp: new Date(),
-        source: 'OpenSky Network',
-        suxArrivals: 0,
-        suxDepartures: 0,
-        nearSux: 0,
-      }
+      const empty = getEmptyAircraftData()
+      cachedData = empty
+      lastFetchAt = now
+      return empty
     }
 
     let suxArrivals = 0
@@ -206,7 +244,7 @@ export async function fetchAircraft(): Promise<AircraftData> {
         }
       })
 
-    return {
+    const result = {
       aircraft,
       timestamp: new Date(),
       source: 'OpenSky Network',
@@ -214,15 +252,11 @@ export async function fetchAircraft(): Promise<AircraftData> {
       suxDepartures,
       nearSux,
     }
+    cachedData = result
+    lastFetchAt = now
+    return result
   } catch (error) {
     console.error('Failed to fetch aircraft:', error)
-    return {
-      aircraft: [],
-      timestamp: new Date(),
-      source: 'OpenSky Network',
-      suxArrivals: 0,
-      suxDepartures: 0,
-      nearSux: 0,
-    }
+    return cachedData ?? getEmptyAircraftData()
   }
 }

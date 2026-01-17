@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { fetchAircraft } from '@/lib/fetchers/opensky'
 
-export const revalidate = 10 // Revalidate every 10 seconds
+export const revalidate = 60 // Revalidate every 60 seconds
 
 export async function GET() {
   const data = await fetchAircraft()

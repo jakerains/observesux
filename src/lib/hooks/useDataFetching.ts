@@ -232,13 +232,13 @@ interface AircraftApiResponse {
   total: number
 }
 
-export function useAircraft(refreshInterval = 15000) {
+export function useAircraft(refreshInterval = 60000) {
   return useSWR<AircraftApiResponse>(
     '/api/aircraft',
     fetcher,
     {
       refreshInterval,
-      dedupingInterval: 10000,
+      dedupingInterval: 30000,
       revalidateOnFocus: false,
     }
   )
