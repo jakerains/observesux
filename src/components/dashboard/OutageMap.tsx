@@ -1,12 +1,14 @@
 'use client'
 
 import { DashboardCard } from './DashboardCard'
+import { RefreshAction } from './RefreshAction'
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useOutages } from '@/lib/hooks/useDataFetching'
 import { Zap, ExternalLink, AlertTriangle, CheckCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { getDataFreshness } from '@/lib/utils/dataFreshness'
 
 const UTILITY_LINKS = {
   midamerican: {
@@ -22,10 +24,23 @@ const UTILITY_LINKS = {
 }
 
 export function OutageMap() {
-  const { data: outagesData, error, isLoading } = useOutages()
+  const refreshInterval = 300000
+  const { data: outagesData, error, isLoading, isValidating, mutate: refreshOutages } = useOutages(refreshInterval)
 
   const outages = outagesData?.data || []
-  const status = error ? 'error' : isLoading ? 'loading' : 'live'
+  const lastUpdated = outages[0]?.lastUpdated ? new Date(outages[0].lastUpdated) : undefined
+  const status = error
+    ? 'error'
+    : isLoading
+      ? 'loading'
+      : getDataFreshness({ lastUpdated, refreshInterval })
+  const refreshAction = (
+    <RefreshAction
+      onRefresh={() => refreshOutages()}
+      isLoading={isLoading}
+      isValidating={isValidating}
+    />
+  )
 
   // Calculate totals
   const totalOutages = outages.reduce((sum, o) => sum + o.totalOutages, 0)
@@ -33,7 +48,7 @@ export function OutageMap() {
 
   if (isLoading) {
     return (
-      <DashboardCard title="Power Outages" icon={<Zap className="h-4 w-4" />} status="loading">
+      <DashboardCard title="Power Outages" icon={<Zap className="h-4 w-4" />} status="loading" action={refreshAction}>
         <div className="space-y-3">
           <Skeleton className="h-16 w-full" />
           <Skeleton className="h-16 w-full" />
@@ -47,7 +62,8 @@ export function OutageMap() {
       title="Power Outages"
       icon={<Zap className="h-4 w-4" />}
       status={status}
-      lastUpdated={outages[0]?.lastUpdated ? new Date(outages[0].lastUpdated) : undefined}
+      lastUpdated={lastUpdated}
+      action={refreshAction}
     >
       {/* Summary Banner */}
       <div className={cn(

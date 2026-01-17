@@ -1,6 +1,7 @@
 'use client'
 
 import { DashboardCard } from './DashboardCard'
+import { RefreshAction } from './RefreshAction'
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -8,6 +9,7 @@ import { useTransit } from '@/lib/hooks/useDataFetching'
 import { Bus, Clock, MapPin, Route, Circle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { BusPosition, TransitRoute } from '@/types'
+import { getDataFreshness } from '@/lib/utils/dataFreshness'
 
 interface BusRowProps {
   bus: BusPosition
@@ -90,16 +92,29 @@ function RouteItem({ route, isActive }: RouteItemProps) {
 }
 
 export function TransitWidget() {
-  const { data: transitData, error, isLoading } = useTransit()
+  const refreshInterval = 30000
+  const { data: transitData, error, isLoading, isValidating, mutate: refreshTransit } = useTransit(refreshInterval)
 
   const buses = transitData?.buses || []
   const routes = transitData?.routes || []
   const activeRoutes = transitData?.activeRoutes || []
-  const status = error ? 'error' : isLoading ? 'loading' : 'live'
+  const lastUpdated = transitData?.timestamp ? new Date(transitData.timestamp) : undefined
+  const status = error
+    ? 'error'
+    : isLoading
+      ? 'loading'
+      : getDataFreshness({ lastUpdated, refreshInterval })
+  const refreshAction = (
+    <RefreshAction
+      onRefresh={() => refreshTransit()}
+      isLoading={isLoading}
+      isValidating={isValidating}
+    />
+  )
 
   if (isLoading) {
     return (
-      <DashboardCard title="Sioux City Transit" icon={<Bus className="h-4 w-4" />} status="loading">
+      <DashboardCard title="Sioux City Transit" icon={<Bus className="h-4 w-4" />} status="loading" action={refreshAction}>
         <div className="space-y-2">
           {[...Array(4)].map((_, i) => (
             <Skeleton key={i} className="h-12 w-full" />
@@ -114,7 +129,8 @@ export function TransitWidget() {
       title="Sioux City Transit"
       icon={<Bus className="h-4 w-4" />}
       status={status}
-      lastUpdated={transitData?.timestamp ? new Date(transitData.timestamp) : undefined}
+      lastUpdated={lastUpdated}
+      action={refreshAction}
     >
       {/* Active Buses Summary */}
       <div className="flex items-center justify-between mb-3 p-3 bg-muted/50 rounded-lg">
