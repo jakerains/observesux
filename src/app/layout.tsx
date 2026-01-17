@@ -15,28 +15,28 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://observesux.vercel.app'),
-  title: "Sioux City Observatory | Real-Time Dashboard",
+  metadataBase: new URL('https://siouxland.online'),
+  title: "Siouxland.online | Real-Time Dashboard",
   description: "Real-time observability dashboard for Sioux City, Iowa - Traffic cameras, weather, river levels, air quality, and more.",
-  keywords: ["Sioux City", "Iowa", "traffic", "weather", "dashboard", "observability", "real-time", "traffic cameras", "weather forecast", "river levels", "air quality"],
-  authors: [{ name: "ObserveSUX" }],
-  creator: "ObserveSUX",
-  publisher: "ObserveSUX",
+  keywords: ["Sioux City", "Iowa", "Siouxland", "traffic", "weather", "dashboard", "observability", "real-time", "traffic cameras", "weather forecast", "river levels", "air quality"],
+  authors: [{ name: "Siouxland.online" }],
+  creator: "Siouxland.online",
+  publisher: "Siouxland.online",
   robots: {
     index: true,
     follow: true,
   },
   openGraph: {
-    title: "Sioux City Observatory",
+    title: "Siouxland.online",
     description: "Real-time observability dashboard for Sioux City, Iowa - Traffic cameras, weather, river levels, air quality, and more.",
-    url: "https://observesux.vercel.app",
-    siteName: "Sioux City Observatory",
+    url: "https://siouxland.online",
+    siteName: "Siouxland.online",
     locale: "en_US",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Sioux City Observatory",
+    title: "Siouxland.online",
     description: "Real-time observability dashboard for Sioux City, Iowa - Traffic cameras, weather, river levels, air quality, and more.",
   },
   icons: {
