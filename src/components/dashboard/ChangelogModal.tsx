@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
-    version: '0.1.7',
+    version: '0.1.6',
     date: '2026-01-17',
     added: [
       'OpenSky Network aircraft data source and /api/aircraft endpoint',
