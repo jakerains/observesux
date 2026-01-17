@@ -9,7 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { useAviationWeather } from '@/lib/hooks/useDataFetching'
 import { decodeWeatherPhenomena } from '@/lib/fetchers/aviation'
 import { getFlightCategoryColor, getFlightCategoryDescription } from '@/types'
-import type { METAR, TAF, TAFForecastPeriod, CloudLayer, FlightCategory } from '@/types'
+import type { METAR, TAF, TAFForecastPeriod, CloudLayer, FlightCategory, NOTAM } from '@/types'
 import {
   Plane,
   Wind,
@@ -18,7 +18,9 @@ import {
   CloudFog,
   ArrowUp,
   Clock,
-  AlertTriangle
+  AlertTriangle,
+  FileWarning,
+  Calendar
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { format, formatDistanceToNow } from 'date-fns'
@@ -248,6 +250,92 @@ function TafDisplay({ taf }: { taf: TAF }) {
   )
 }
 
+function NotamTypeLabel({ type }: { type: NOTAM['type'] }) {
+  const labels: Record<NOTAM['type'], { label: string; variant: 'default' | 'destructive' | 'outline' | 'secondary' }> = {
+    'D': { label: 'NOTAM D', variant: 'secondary' },
+    'FDC': { label: 'FDC', variant: 'default' },
+    'TFR': { label: 'TFR', variant: 'destructive' },
+    'GPS': { label: 'GPS', variant: 'outline' },
+    'GENERAL': { label: 'General', variant: 'secondary' }
+  }
+
+  const { label, variant } = labels[type] || labels['GENERAL']
+
+  return (
+    <Badge variant={variant} className="text-[10px]">
+      {label}
+    </Badge>
+  )
+}
+
+function NotamCard({ notam }: { notam: NOTAM }) {
+  return (
+    <div className="p-3 rounded border bg-card">
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <div className="flex items-center gap-2">
+          <NotamTypeLabel type={notam.type} />
+          <span className="text-xs font-mono text-muted-foreground">
+            {notam.notamNumber}
+          </span>
+        </div>
+      </div>
+
+      {/* Effective dates */}
+      <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
+        <Calendar className="h-3 w-3" />
+        <span>
+          {format(new Date(notam.effectiveStart), 'dd MMM HH:mm')}Z
+          {notam.effectiveEnd && (
+            <> - {format(new Date(notam.effectiveEnd), 'dd MMM HH:mm')}Z</>
+          )}
+          {!notam.effectiveEnd && <> - PERM</>}
+        </span>
+      </div>
+
+      {/* NOTAM text */}
+      <div className="text-xs font-mono bg-muted p-2 rounded break-all whitespace-pre-wrap">
+        {notam.text}
+      </div>
+    </div>
+  )
+}
+
+function NotamDisplay({ notams }: { notams: NOTAM[] }) {
+  if (notams.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+        <FileWarning className="h-8 w-8 mb-2 opacity-50" />
+        <p className="text-sm">No active NOTAMs</p>
+        <p className="text-xs">for KSUX</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* NOTAM Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium">Active NOTAMs</span>
+          <Badge variant="secondary" className="text-xs">
+            {notams.length}
+          </Badge>
+        </div>
+        <span className="text-xs text-muted-foreground">KSUX</span>
+      </div>
+
+      {/* NOTAM List */}
+      <ScrollArea className="h-[260px] pr-4">
+        <div className="space-y-2">
+          {notams.map((notam) => (
+            <NotamCard key={notam.id} notam={notam} />
+          ))}
+        </div>
+      </ScrollArea>
+    </div>
+  )
+}
+
 export function AviationWeatherWidget() {
   const refreshInterval = 120000
   const { data, error, isLoading, isValidating, mutate: refreshAviation } = useAviationWeather(refreshInterval)
@@ -255,6 +343,7 @@ export function AviationWeatherWidget() {
   const aviationData = data?.data
   const metar = aviationData?.metar
   const taf = aviationData?.taf
+  const notams = aviationData?.notams || []
 
   const lastUpdated = aviationData?.lastUpdated ? new Date(aviationData.lastUpdated) : undefined
   const status = error
@@ -309,7 +398,7 @@ export function AviationWeatherWidget() {
       action={refreshAction}
     >
       <Tabs defaultValue="metar" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-4">
+        <TabsList className="grid w-full grid-cols-3 mb-4">
           <TabsTrigger value="metar" className="text-xs">
             METAR
             {metar && (
@@ -327,6 +416,14 @@ export function AviationWeatherWidget() {
             )}
           </TabsTrigger>
           <TabsTrigger value="taf" className="text-xs">TAF</TabsTrigger>
+          <TabsTrigger value="notams" className="text-xs">
+            NOTAMs
+            {notams.length > 0 && (
+              <Badge variant="secondary" className="ml-1 text-[10px] py-0 px-1.5">
+                {notams.length}
+              </Badge>
+            )}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="metar" className="mt-0">
@@ -347,6 +444,10 @@ export function AviationWeatherWidget() {
               No TAF data available
             </div>
           )}
+        </TabsContent>
+
+        <TabsContent value="notams" className="mt-0">
+          <NotamDisplay notams={notams} />
         </TabsContent>
       </Tabs>
     </DashboardCard>

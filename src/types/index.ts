@@ -346,9 +346,27 @@ export interface TAFForecastPeriod {
   flightCategory: FlightCategory
 }
 
+// NOTAM (Notice to Air Missions)
+export interface NOTAM {
+  id: string
+  icaoId: string
+  notamNumber: string
+  type: 'D' | 'FDC' | 'TFR' | 'GPS' | 'GENERAL' // Domestic, FDC, TFR, GPS, General
+  classification: string
+  effectiveStart: Date
+  effectiveEnd: Date | null
+  text: string
+  location?: string
+  affectedFIR?: string
+  category?: string
+  schedule?: string
+  isActive: boolean
+}
+
 export interface AviationWeather {
   metar: METAR | null
   taf: TAF | null
+  notams: NOTAM[]
   lastUpdated: Date
 }
 
