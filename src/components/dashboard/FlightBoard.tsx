@@ -1,6 +1,7 @@
 'use client'
 
 import { DashboardCard } from './DashboardCard'
+import { RefreshAction } from './RefreshAction'
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -10,6 +11,7 @@ import { Plane, PlaneLanding, PlaneTakeoff, Clock, MapPin } from 'lucide-react'
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import type { Flight } from '@/types'
+import { getDataFreshness } from '@/lib/utils/dataFreshness'
 
 function getStatusColor(status: Flight['status']) {
   switch (status) {
@@ -95,16 +97,29 @@ function FlightRow({ flight, type }: FlightRowProps) {
 }
 
 export function FlightBoard() {
-  const { data: flightsData, error, isLoading } = useFlights()
+  const refreshInterval = 300000
+  const { data: flightsData, error, isLoading, isValidating, mutate: refreshFlights } = useFlights(refreshInterval)
 
   const flights = flightsData?.data
   const arrivals = flights?.arrivals || []
   const departures = flights?.departures || []
-  const status = error ? 'error' : isLoading ? 'loading' : 'live'
+  const lastUpdated = flightsData?.timestamp ? new Date(flightsData.timestamp) : undefined
+  const status = error
+    ? 'error'
+    : isLoading
+      ? 'loading'
+      : getDataFreshness({ lastUpdated, refreshInterval })
+  const refreshAction = (
+    <RefreshAction
+      onRefresh={() => refreshFlights()}
+      isLoading={isLoading}
+      isValidating={isValidating}
+    />
+  )
 
   if (isLoading) {
     return (
-      <DashboardCard title="SUX Airport" icon={<Plane className="h-4 w-4" />} status="loading">
+      <DashboardCard title="SUX Airport" icon={<Plane className="h-4 w-4" />} status="loading" action={refreshAction}>
         <div className="space-y-2">
           {[...Array(4)].map((_, i) => (
             <Skeleton key={i} className="h-12 w-full" />
@@ -119,7 +134,8 @@ export function FlightBoard() {
       title="Sioux Gateway Airport (SUX)"
       icon={<Plane className="h-4 w-4" />}
       status={status}
-      lastUpdated={flightsData?.timestamp ? new Date(flightsData.timestamp) : undefined}
+      lastUpdated={lastUpdated}
+      action={refreshAction}
     >
       <Tabs defaultValue="arrivals" className="w-full">
         <TabsList className="grid w-full grid-cols-2">

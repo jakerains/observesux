@@ -1,6 +1,7 @@
 'use client'
 
 import { DashboardCard } from './DashboardCard'
+import { RefreshAction } from './RefreshAction'
 import { MiniTrendChart, TrendIndicator } from './MiniTrendChart'
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
@@ -11,6 +12,7 @@ import { Wind, AlertTriangle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getAQIColor } from '@/types'
 import type { AQICategory } from '@/types'
+import { getDataFreshness } from '@/lib/utils/dataFreshness'
 
 function getAQIDescription(category: AQICategory): string {
   switch (category) {
@@ -44,11 +46,24 @@ function getAQIEmoji(category: AQICategory): string {
 }
 
 export function AirQualityCard() {
-  const { data: aqData, error, isLoading } = useAirQuality()
+  const refreshInterval = 600000
+  const { data: aqData, error, isLoading, isValidating, mutate: refreshAirQuality } = useAirQuality(refreshInterval)
   const { data: historyData } = useAirQualityHistory(24)
 
   const airQuality = aqData?.data
-  const status = error ? 'error' : isLoading ? 'loading' : 'live'
+  const lastUpdated = airQuality?.timestamp ? new Date(airQuality.timestamp) : undefined
+  const status = error
+    ? 'error'
+    : isLoading
+      ? 'loading'
+      : getDataFreshness({ lastUpdated, refreshInterval })
+  const refreshAction = (
+    <RefreshAction
+      onRefresh={() => refreshAirQuality()}
+      isLoading={isLoading}
+      isValidating={isValidating}
+    />
+  )
 
   // Transform history data for the trend chart
   const aqiTrend = historyData?.airQuality?.map(point => ({
@@ -58,7 +73,7 @@ export function AirQualityCard() {
 
   if (isLoading) {
     return (
-      <DashboardCard title="Air Quality" icon={<Wind className="h-4 w-4" />} status="loading">
+      <DashboardCard title="Air Quality" icon={<Wind className="h-4 w-4" />} status="loading" action={refreshAction}>
         <div className="space-y-3">
           <Skeleton className="h-16 w-full" />
           <Skeleton className="h-4 w-full" />
@@ -77,7 +92,8 @@ export function AirQualityCard() {
       title="Air Quality Index"
       icon={<Wind className="h-4 w-4" />}
       status={status}
-      lastUpdated={airQuality?.timestamp ? new Date(airQuality.timestamp) : undefined}
+      lastUpdated={lastUpdated}
+      action={refreshAction}
     >
       {/* Warning Banner */}
       {isUnhealthy && (

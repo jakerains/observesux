@@ -1,6 +1,7 @@
 'use client'
 
 import { DashboardCard } from './DashboardCard'
+import { RefreshAction } from './RefreshAction'
 import { MiniTrendChart, TrendIndicator } from './MiniTrendChart'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
@@ -20,6 +21,7 @@ import {
   Eye
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { getDataFreshness } from '@/lib/utils/dataFreshness'
 
 function getWeatherIcon(conditions: string) {
   const lower = conditions.toLowerCase()
@@ -42,8 +44,9 @@ function getSeverityColor(severity: string) {
 }
 
 export function WeatherWidget() {
-  const { data: weatherData, error: weatherError, isLoading: weatherLoading } = useWeather()
-  const { data: alertsData, error: alertsError } = useWeatherAlerts()
+  const refreshInterval = 60000
+  const { data: weatherData, error: weatherError, isLoading: weatherLoading, isValidating: weatherValidating, mutate: refreshWeather } = useWeather(refreshInterval)
+  const { data: alertsData } = useWeatherAlerts()
   const { data: historyData } = useWeatherHistory(24)
 
   // Transform history data for the trend chart
@@ -55,12 +58,24 @@ export function WeatherWidget() {
   const weather = weatherData?.data
   const alerts = alertsData?.data || []
 
-  const status = weatherError ? 'error' : weatherLoading ? 'loading' : 'live'
+  const lastUpdated = weather?.timestamp ? new Date(weather.timestamp) : undefined
+  const status = weatherError
+    ? 'error'
+    : weatherLoading
+      ? 'loading'
+      : getDataFreshness({ lastUpdated, refreshInterval })
   const WeatherIcon = weather ? getWeatherIcon(weather.conditions) : Cloud
+  const refreshAction = (
+    <RefreshAction
+      onRefresh={() => refreshWeather()}
+      isLoading={weatherLoading}
+      isValidating={weatherValidating}
+    />
+  )
 
   if (weatherLoading) {
     return (
-      <DashboardCard title="Weather" icon={<Cloud className="h-4 w-4" />} status="loading">
+      <DashboardCard title="Weather" icon={<Cloud className="h-4 w-4" />} status="loading" action={refreshAction}>
         <div className="space-y-3">
           <Skeleton className="h-12 w-24" />
           <Skeleton className="h-4 w-32" />
@@ -78,7 +93,8 @@ export function WeatherWidget() {
       title="Weather"
       icon={<Cloud className="h-4 w-4" />}
       status={status}
-      lastUpdated={weather?.timestamp ? new Date(weather.timestamp) : undefined}
+      lastUpdated={lastUpdated}
+      action={refreshAction}
     >
       {/* Alerts Banner */}
       {alerts.length > 0 && (

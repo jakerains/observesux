@@ -1,6 +1,7 @@
 'use client'
 
 import { DashboardCard } from './DashboardCard'
+import { RefreshAction } from './RefreshAction'
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -9,6 +10,7 @@ import { Activity, MapPin, ExternalLink, CheckCircle } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { cn } from '@/lib/utils'
 import type { Earthquake } from '@/types'
+import { getDataFreshness } from '@/lib/utils/dataFreshness'
 
 function getMagnitudeColor(magnitude: number): string {
   if (magnitude >= 6) return 'bg-red-600 text-white'
@@ -68,10 +70,23 @@ function EarthquakeRow({ earthquake }: EarthquakeRowProps) {
 }
 
 export function EarthquakeWidget() {
-  const { data: earthquakeData, error, isLoading } = useEarthquakes()
+  const refreshInterval = 600000
+  const { data: earthquakeData, error, isLoading, isValidating, mutate: refreshEarthquakes } = useEarthquakes(refreshInterval)
 
   const earthquakes = earthquakeData?.data || []
-  const status = error ? 'error' : isLoading ? 'loading' : 'live'
+  const lastUpdated = earthquakeData?.timestamp ? new Date(earthquakeData.timestamp) : undefined
+  const status = error
+    ? 'error'
+    : isLoading
+      ? 'loading'
+      : getDataFreshness({ lastUpdated, refreshInterval })
+  const refreshAction = (
+    <RefreshAction
+      onRefresh={() => refreshEarthquakes()}
+      isLoading={isLoading}
+      isValidating={isValidating}
+    />
+  )
 
   // Get significant earthquakes (M3+) in the last 7 days
   const recentSignificant = earthquakes.filter(eq => {
@@ -81,7 +96,7 @@ export function EarthquakeWidget() {
 
   if (isLoading) {
     return (
-      <DashboardCard title="Seismic Activity" icon={<Activity className="h-4 w-4" />} status="loading">
+      <DashboardCard title="Seismic Activity" icon={<Activity className="h-4 w-4" />} status="loading" action={refreshAction}>
         <div className="space-y-2">
           {[...Array(3)].map((_, i) => (
             <Skeleton key={i} className="h-14 w-full" />
@@ -96,7 +111,8 @@ export function EarthquakeWidget() {
       title="Seismic Activity"
       icon={<Activity className="h-4 w-4" />}
       status={status}
-      lastUpdated={earthquakeData?.timestamp ? new Date(earthquakeData.timestamp) : undefined}
+      lastUpdated={lastUpdated}
+      action={refreshAction}
     >
       {/* Summary */}
       <div className={cn(
