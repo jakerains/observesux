@@ -26,7 +26,7 @@ export function DashboardHeader({ onRefresh, isRefreshing }: DashboardHeaderProp
       <div className="w-full max-w-7xl mx-auto flex h-14 items-center justify-between px-3 sm:px-4 md:px-6">
         <div className="flex items-center gap-2 sm:gap-3">
           <h1 className="text-lg sm:text-xl font-bold tracking-tight">
-            Sioux City Observatory
+            Siouxland.online
           </h1>
           <Badge variant="default" className="hidden sm:flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
