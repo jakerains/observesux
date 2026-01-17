@@ -8,7 +8,7 @@ import type {
   WeatherAlert,
   RiverGaugeReading,
   AirQualityReading,
-  BusPosition,
+  TransitData,
   OutageSummary,
   Flight,
   Earthquake,
@@ -117,7 +117,7 @@ export function useAirQuality(refreshInterval = 600000) {
 // Transit
 // ============================================
 export function useTransit(refreshInterval = 30000) {
-  return useSWR<ApiResponse<BusPosition[]>>(
+  return useSWR<TransitData>(
     '/api/transit',
     fetcher,
     {

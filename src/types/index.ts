@@ -194,6 +194,7 @@ export interface BusPosition {
   vehicleId: string
   routeId: string
   routeName: string
+  routeColor?: string
   latitude: number
   longitude: number
   heading: number
@@ -201,6 +202,16 @@ export interface BusPosition {
   timestamp: Date
   nextStop?: string
   nextStopEta?: Date
+}
+
+export interface TransitData {
+  buses: BusPosition[]
+  routes: TransitRoute[]
+  activeBusCount: number
+  activeRoutes: string[]
+  timestamp: Date
+  source: string
+  error?: string
 }
 
 export interface TransitRoute {

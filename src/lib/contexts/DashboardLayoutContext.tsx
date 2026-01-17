@@ -17,6 +17,7 @@ export const DEFAULT_WIDGETS: WidgetConfig[] = [
   { id: 'weather', name: 'Weather', description: 'Current weather conditions and alerts', enabled: true, size: 'small' },
   { id: 'river', name: 'River Levels', description: 'Missouri & Big Sioux river gauges', enabled: true, size: 'small' },
   { id: 'air-quality', name: 'Air Quality', description: 'AQI and pollutant levels', enabled: true, size: 'small' },
+  { id: 'transit', name: 'Transit', description: 'Real-time Sioux City bus tracking', enabled: true, size: 'small' },
   { id: 'cameras', name: 'Traffic Cameras', description: 'Iowa DOT and KTIV cameras', enabled: true, size: 'large' },
   { id: 'traffic-events', name: 'Traffic Events', description: 'Iowa 511 incidents and road conditions', enabled: true, size: 'small' },
   { id: 'scanner', name: 'Emergency Scanner', description: 'Police, Fire, EMS audio feeds', enabled: true, size: 'small' },
