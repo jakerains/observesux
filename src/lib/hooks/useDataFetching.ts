@@ -6,6 +6,7 @@ import type {
   TrafficEvent,
   WeatherObservation,
   WeatherAlert,
+  AviationWeather,
   RiverGaugeReading,
   AirQualityReading,
   BusPosition,
@@ -78,6 +79,21 @@ export function useWeatherAlerts(refreshInterval = 60000) {
     {
       refreshInterval,
       dedupingInterval: 30000,
+      revalidateOnFocus: false,
+    }
+  )
+}
+
+// ============================================
+// Aviation Weather (METAR/TAF)
+// ============================================
+export function useAviationWeather(refreshInterval = 120000) {
+  return useSWR<ApiResponse<AviationWeather>>(
+    '/api/aviation',
+    fetcher,
+    {
+      refreshInterval,
+      dedupingInterval: 60000,
       revalidateOnFocus: false,
     }
   )

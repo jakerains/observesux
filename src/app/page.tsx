@@ -24,6 +24,7 @@ import { AirQualityCard } from '@/components/dashboard/AirQualityCard'
 import { CameraGrid } from '@/components/dashboard/CameraGrid'
 import { ScannerPlayer } from '@/components/dashboard/ScannerPlayer'
 import { FlightBoard } from '@/components/dashboard/FlightBoard'
+import { AviationWeatherWidget } from '@/components/dashboard/AviationWeatherWidget'
 import { OutageMap } from '@/components/dashboard/OutageMap'
 import { EarthquakeWidget } from '@/components/dashboard/EarthquakeWidget'
 import { TrafficEventsWidget } from '@/components/dashboard/TrafficEventsWidget'
@@ -66,6 +67,7 @@ function WidgetSkeleton() {
 // Widget component mapping
 const WIDGET_COMPONENTS: Record<string, React.ComponentType> = {
   'weather': WeatherWidget,
+  'aviation-weather': AviationWeatherWidget,
   'river': RiverGauge,
   'air-quality': AirQualityCard,
   'cameras': CameraGrid,
@@ -193,7 +195,7 @@ function DashboardContent() {
         {/* Data Sources Attribution */}
         <footer className="mt-6 sm:mt-8 pt-4 border-t text-center text-xs text-muted-foreground px-2">
           <p className="mb-2 leading-relaxed">
-            Data sourced from: Iowa DOT, National Weather Service, USGS, AirNow, Broadcastify, Iowa 511, RainViewer, KTIV, Siouxland Proud
+            Data sourced from: Iowa DOT, National Weather Service, AviationWeather.gov, USGS, AirNow, Broadcastify, Iowa 511, RainViewer, KTIV, Siouxland Proud
           </p>
           <p className="mb-2">
             Built with Next.js, shadcn/ui, and public APIs.
