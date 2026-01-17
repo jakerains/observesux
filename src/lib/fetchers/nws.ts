@@ -45,10 +45,25 @@ function celsiusToFahrenheit(celsius: number | null): number | null {
   return Math.round((celsius * 9/5 + 32) * 10) / 10
 }
 
-// Convert m/s to mph
-function msToMph(ms: number | null): number | null {
-  if (ms === null) return null
-  return Math.round(ms * 2.237 * 10) / 10
+// Convert wind speed to mph based on unit code from NWS API
+function windToMph(value: number | null, unitCode: string | undefined): number | null {
+  if (value === null) return null
+
+  // NWS API can return wind in different units
+  if (unitCode === 'wmoUnit:km_h-1') {
+    // km/h to mph
+    return Math.round(value * 0.621371 * 10) / 10
+  } else if (unitCode === 'wmoUnit:m_s-1') {
+    // m/s to mph
+    return Math.round(value * 2.237 * 10) / 10
+  } else if (unitCode === 'wmoUnit:kt' || unitCode === 'wmoUnit:knot') {
+    // knots to mph
+    return Math.round(value * 1.15078 * 10) / 10
+  }
+
+  // Default: assume m/s if unit code is unknown
+  console.warn(`Unknown wind unit code: ${unitCode}, assuming m/s`)
+  return Math.round(value * 2.237 * 10) / 10
 }
 
 // Convert Pa to inHg
@@ -98,9 +113,9 @@ export async function fetchNWSObservations(): Promise<WeatherObservation> {
       temperature: celsiusToFahrenheit(props.temperature?.value),
       temperatureUnit: 'F',
       humidity: props.relativeHumidity?.value ? Math.round(props.relativeHumidity.value) : null,
-      windSpeed: msToMph(props.windSpeed?.value),
+      windSpeed: windToMph(props.windSpeed?.value, props.windSpeed?.unitCode),
       windDirection: degreesToCardinal(props.windDirection?.value),
-      windGust: msToMph(props.windGust?.value),
+      windGust: windToMph(props.windGust?.value, props.windGust?.unitCode),
       pressure: paToInHg(props.barometricPressure?.value),
       visibility: metersToMiles(props.visibility?.value),
       conditions: props.textDescription || 'Unknown',
