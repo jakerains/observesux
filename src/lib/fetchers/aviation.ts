@@ -1,4 +1,4 @@
-import type { METAR, TAF, CloudLayer, FlightCategory, TAFForecastPeriod, AviationWeather } from '@/types'
+import type { METAR, TAF, CloudLayer, FlightCategory, TAFForecastPeriod, AviationWeather, NOTAM } from '@/types'
 
 // Sioux City Gateway Airport ICAO identifier
 const STATION_ID = 'KSUX'
@@ -291,15 +291,94 @@ export async function fetchTAF(): Promise<TAF | null> {
   }
 }
 
+// Parse NOTAM response from AviationWeather.gov API
+interface AWCNotamResponse {
+  id: string
+  icaoId: string
+  notamNumber: string
+  type: string // D, FDC, TFR, GPS, etc.
+  classification: string
+  effectiveStart: string
+  effectiveEnd: string | null
+  text: string
+  location?: string
+  affectedFIR?: string
+  category?: string
+  schedule?: string
+}
+
+function parseNotamType(type: string): NOTAM['type'] {
+  const normalizedType = type?.toUpperCase()
+  if (normalizedType === 'D') return 'D'
+  if (normalizedType === 'FDC') return 'FDC'
+  if (normalizedType === 'TFR') return 'TFR'
+  if (normalizedType === 'GPS') return 'GPS'
+  return 'GENERAL'
+}
+
+export async function fetchNOTAMs(): Promise<NOTAM[]> {
+  try {
+    const response = await fetch(
+      `${API_BASE}/notam?icao=${STATION_ID}&format=json`,
+      {
+        headers: {
+          'Accept': 'application/json'
+        },
+        next: { revalidate: 300 } // Cache for 5 minutes
+      }
+    )
+
+    if (!response.ok) {
+      throw new Error(`Aviation Weather API error: ${response.status}`)
+    }
+
+    const data: AWCNotamResponse[] = await response.json()
+
+    if (!data || data.length === 0) {
+      console.warn('No NOTAM data returned for', STATION_ID)
+      return []
+    }
+
+    const now = new Date()
+
+    return data.map(notam => {
+      const effectiveStart = new Date(notam.effectiveStart)
+      const effectiveEnd = notam.effectiveEnd ? new Date(notam.effectiveEnd) : null
+      const isActive = effectiveStart <= now && (effectiveEnd === null || effectiveEnd >= now)
+
+      return {
+        id: notam.id,
+        icaoId: notam.icaoId,
+        notamNumber: notam.notamNumber || notam.id,
+        type: parseNotamType(notam.type),
+        classification: notam.classification || '',
+        effectiveStart,
+        effectiveEnd,
+        text: notam.text,
+        location: notam.location,
+        affectedFIR: notam.affectedFIR,
+        category: notam.category,
+        schedule: notam.schedule,
+        isActive
+      }
+    }).filter(notam => notam.isActive) // Only return active NOTAMs
+  } catch (error) {
+    console.error('Failed to fetch NOTAMs:', error)
+    return []
+  }
+}
+
 export async function fetchAviationWeather(): Promise<AviationWeather> {
-  const [metar, taf] = await Promise.all([
+  const [metar, taf, notams] = await Promise.all([
     fetchMETAR(),
-    fetchTAF()
+    fetchTAF(),
+    fetchNOTAMs()
   ])
 
   return {
     metar,
     taf,
+    notams,
     lastUpdated: new Date()
   }
 }
