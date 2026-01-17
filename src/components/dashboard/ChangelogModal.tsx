@@ -16,6 +16,21 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.1.7',
+    date: '2026-01-17',
+    added: [
+      'OpenSky Network aircraft data source and /api/aircraft endpoint',
+      'Aircraft tracking layer on the interactive map with SUX arrival/departure/nearby labels',
+      'Aircraft service health indicator in the status bar',
+    ],
+    changed: [
+      'Animated radar uses RainViewer host + nowcast frames for smoother playback',
+    ],
+    fixed: [
+      'Animated radar overlay failing to render or animate in some cases',
+    ],
+  },
+  {
     version: '0.1.5',
     date: '2025-01-17',
     added: [

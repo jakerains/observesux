@@ -5,6 +5,19 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.7] - 2026-01-17
+
+### Added
+- OpenSky Network aircraft data source and /api/aircraft endpoint
+- Aircraft tracking layer on the interactive map with SUX arrival/departure/nearby labels
+- Aircraft service health indicator in the status bar
+
+### Changed
+- Animated radar uses RainViewer host + nowcast frames for smoother playback
+
+### Fixed
+- Animated radar overlay failing to render or animate in some cases
+
 ## [0.1.5] - 2025-01-17
 
 ### Added
