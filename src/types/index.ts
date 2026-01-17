@@ -445,6 +445,45 @@ export interface ScannerFeed {
 }
 
 // ============================================
+// Aircraft (OpenSky Network)
+// ============================================
+
+export type SuxAssociation = 'arriving' | 'departing' | 'nearby' | null
+
+export interface Aircraft {
+  icao24: string // Unique ICAO 24-bit address (hex)
+  callsign: string | null // Callsign (8 chars max)
+  latitude: number
+  longitude: number
+  altitude: number | null // Barometric altitude in feet
+  velocity: number | null // Ground speed in knots
+  heading: number | null // True track in degrees (0-360)
+  verticalRate: number | null // Vertical rate in ft/min
+  onGround: boolean
+  squawk: string | null // Transponder code
+  positionSource: number // 0=ADS-B, 1=ASTERIX, 2=MLAT, 3=FLARM
+  suxAssociation: SuxAssociation // Relationship to SUX airport
+}
+
+export interface AircraftData {
+  aircraft: Aircraft[]
+  timestamp: Date
+  source: string
+  suxArrivals: number
+  suxDepartures: number
+  nearSux: number
+}
+
+// SUX Airport location
+export const SUX_AIRPORT = {
+  icao: 'KSUX',
+  name: 'Sioux Gateway Airport',
+  latitude: 42.4036,
+  longitude: -96.3844,
+  elevation: 1098, // feet MSL
+}
+
+// ============================================
 // Snowplows
 // ============================================
 

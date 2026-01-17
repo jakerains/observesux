@@ -1,13 +1,15 @@
 'use client'
 
-import React, { useEffect, useState, useCallback, useRef } from 'react'
+import React, { useEffect, useState, useRef, useMemo } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import { DashboardCard } from './DashboardCard'
 import { Badge } from "@/components/ui/badge"
-import { useCameras, useRivers, useTrafficEvents, useSnowplows, useTransit } from '@/lib/hooks/useDataFetching'
+import { useCameras, useRivers, useTrafficEvents, useSnowplows, useTransit, useAircraft } from '@/lib/hooks/useDataFetching'
 import { useBusInterpolation } from '@/lib/hooks/useBusInterpolation'
+import { useAircraftInterpolation } from '@/lib/hooks/useAircraftInterpolation'
 import { useTransitSelection } from '@/lib/contexts/TransitContext'
-import { Map, Layers, Camera, Waves, AlertTriangle, CloudRain, Snowflake, Bus } from 'lucide-react'
+import { Map, Layers, Camera, Waves, AlertTriangle, CloudRain, Snowflake, Bus, Plane } from 'lucide-react'
+import type { SuxAssociation } from '@/types'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -95,6 +97,44 @@ const createBusIcon = (color: string, isHighlighted: boolean = false) => new L.I
   popupAnchor: [0, isHighlighted ? -18 : -14],
 })
 
+// Aircraft icon colors based on SUX association
+const AIRCRAFT_COLORS = {
+  arriving: '#22c55e', // Green
+  departing: '#3b82f6', // Blue
+  nearby: '#f59e0b', // Amber
+  other: '#6b7280', // Gray
+}
+
+// Function to create aircraft icon with rotation and color based on SUX association
+const createAircraftIcon = (heading: number | null, suxAssociation: SuxAssociation, onGround: boolean) => {
+  const color = suxAssociation ? AIRCRAFT_COLORS[suxAssociation] : AIRCRAFT_COLORS.other
+  // Lucide plane points to upper-right (~45° from north), so subtract 45° to make heading 0° = north
+  const rotation = (heading ?? 0) - 45
+  const fillOpacity = onGround ? 0.5 : 1
+
+  // Use L.Icon with SVG data URL - rotation applied via transform in SVG
+  const svgIcon = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+      <g transform="rotate(${rotation}, 16, 16)" opacity="${fillOpacity}">
+        <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"
+              transform="translate(4, 4)"
+              fill="${color}"
+              stroke="white"
+              stroke-width="1"
+              stroke-linecap="round"
+              stroke-linejoin="round"/>
+      </g>
+    </svg>
+  `
+
+  return new L.Icon({
+    iconUrl: 'data:image/svg+xml,' + encodeURIComponent(svgIcon),
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+    popupAnchor: [0, -16],
+  })
+}
+
 // Sioux City center coordinates
 const SIOUX_CITY_CENTER: [number, number] = [42.4997, -96.4003]
 const DEFAULT_ZOOM = 12
@@ -109,6 +149,7 @@ const NWS_RADAR_WMS = 'https://mesonet.agron.iastate.edu/cgi-bin/wms/nexrad/n0q.
 const RAINVIEWER_API = 'https://api.rainviewer.com/public/weather-maps.json'
 
 interface RainViewerData {
+  host?: string
   radar: {
     past: Array<{ path: string; time: number }>
     nowcast: Array<{ path: string; time: number }>
@@ -125,6 +166,7 @@ interface LayerToggleProps {
     radar: boolean
     snowplows: boolean
     transit: boolean
+    aircraft: boolean
   }
   onToggle: (layer: keyof LayerToggleProps['layers']) => void
   radarSource: RadarSource
@@ -133,10 +175,12 @@ interface LayerToggleProps {
   radarFrame?: number
   totalFrames?: number
   radarLoading?: boolean
+  radarError?: string | null
   activeBuses?: number
+  activeAircraft?: number
 }
 
-function LayerToggle({ layers, onToggle, radarSource, onRadarSourceChange, radarTime, radarFrame = 0, totalFrames = 1, radarLoading, activeBuses = 0 }: LayerToggleProps) {
+function LayerToggle({ layers, onToggle, radarSource, onRadarSourceChange, radarTime, radarFrame = 0, totalFrames = 1, radarLoading, radarError, activeBuses = 0, activeAircraft = 0 }: LayerToggleProps) {
   return (
     <div className="absolute top-2 right-2 z-[1000] bg-background/95 backdrop-blur rounded-lg shadow-lg p-2 min-w-[140px]">
       <div className="text-xs font-medium mb-2 flex items-center gap-1">
@@ -196,6 +240,11 @@ function LayerToggle({ layers, onToggle, radarSource, onRadarSourceChange, radar
                 </div>
               </div>
             )}
+            {radarSource === 'rainviewer' && radarError && (
+              <div className="text-[9px] text-red-500/80 text-center">
+                {radarError}
+              </div>
+            )}
             {radarSource === 'nws' && (
               <div className="text-[9px] text-muted-foreground text-center">
                 Live NEXRAD
@@ -249,6 +298,18 @@ function LayerToggle({ layers, onToggle, radarSource, onRadarSourceChange, radar
           Transit
           {layers.transit && activeBuses > 0 && (
             <span className="text-[10px] opacity-70 ml-auto">{activeBuses}</span>
+          )}
+        </button>
+        <button
+          onClick={() => onToggle('aircraft')}
+          className={`flex items-center gap-2 w-full px-2 py-1 rounded text-xs transition-colors ${
+            layers.aircraft ? 'bg-sky-500/20 text-sky-500' : 'hover:bg-muted'
+          }`}
+        >
+          <Plane className="h-3 w-3" />
+          Aircraft
+          {layers.aircraft && activeAircraft > 0 && (
+            <span className="text-[10px] opacity-70 ml-auto">{activeAircraft}</span>
           )}
         </button>
       </div>
@@ -316,7 +377,7 @@ function NWSRadarLayer() {
 }
 
 // RainViewer animated radar layer (fallback/alternative)
-function RainViewerRadarLayer({ radarPath, colorScheme = 6 }: { radarPath: string | null; colorScheme?: number }) {
+function RainViewerRadarLayer({ radarPath, tileHost = 'https://tilecache.rainviewer.com', colorScheme = 6 }: { radarPath: string | null; tileHost?: string; colorScheme?: number }) {
   const map = useMap()
   const layerRef = useRef<L.TileLayer | null>(null)
 
@@ -331,21 +392,22 @@ function RainViewerRadarLayer({ radarPath, colorScheme = 6 }: { radarPath: strin
 
     // Color schemes: 0=Black, 1=White, 2=Universal Blue, 3=TITAN, 4=Weather Channel, 5=Meteored, 6=NEXRAD, 7=Rainbow, 8=Dark Sky
     // Options: 1_1 = smooth rendering + snow detection enabled
-    const tileUrl = `https://tilecache.rainviewer.com${radarPath}/256/{z}/{x}/{y}/${colorScheme}/1_1.png`
+    const normalizedHost = tileHost.endsWith('/') ? tileHost.slice(0, -1) : tileHost
+    const tileUrl = `${normalizedHost}${radarPath}/256/{z}/{x}/{y}/${colorScheme}/1_1.png`
 
-    if (layerRef.current) {
-      map.removeLayer(layerRef.current)
+    if (!layerRef.current) {
+      const radarLayer = L.tileLayer(tileUrl, {
+        opacity: 0.75,
+        zIndex: 100,
+        tileSize: 256,
+        attribution: '<a href="https://rainviewer.com">RainViewer</a>',
+      })
+
+      radarLayer.addTo(map)
+      layerRef.current = radarLayer
+    } else {
+      layerRef.current.setUrl(tileUrl)
     }
-
-    const radarLayer = L.tileLayer(tileUrl, {
-      opacity: 0.75,
-      zIndex: 100,
-      tileSize: 256,
-      attribution: '<a href="https://rainviewer.com">RainViewer</a>',
-    })
-
-    radarLayer.addTo(map)
-    layerRef.current = radarLayer
 
     return () => {
       if (layerRef.current) {
@@ -353,7 +415,7 @@ function RainViewerRadarLayer({ radarPath, colorScheme = 6 }: { radarPath: strin
         layerRef.current = null
       }
     }
-  }, [map, radarPath, colorScheme])
+  }, [map, radarPath, tileHost, colorScheme])
 
   return null
 }
@@ -366,11 +428,45 @@ export function InteractiveMap() {
     radar: true,
     snowplows: true,
     transit: true,
+    aircraft: true,
   })
+
+  // Solo mode: when set, only show this layer
+  const [soloLayer, setSoloLayer] = useState<keyof typeof layers | null>(null)
+
+  // Handle legend click - solo/unsolo a layer
+  const handleLegendClick = (layer: keyof typeof layers) => {
+    if (soloLayer === layer) {
+      // Clicking the solo'd layer again - restore all layers
+      setSoloLayer(null)
+      setLayers({
+        cameras: true,
+        rivers: true,
+        events: true,
+        radar: true,
+        snowplows: true,
+        transit: true,
+        aircraft: true,
+      })
+    } else {
+      // Solo this layer - hide all others
+      setSoloLayer(layer)
+      setLayers({
+        cameras: layer === 'cameras',
+        rivers: layer === 'rivers',
+        events: layer === 'events',
+        radar: layer === 'radar',
+        snowplows: layer === 'snowplows',
+        transit: layer === 'transit',
+        aircraft: layer === 'aircraft',
+      })
+    }
+  }
 
   const [radarData, setRadarData] = useState<RainViewerData | null>(null)
   const [radarFrame, setRadarFrame] = useState(0)
   const [radarLoading, setRadarLoading] = useState(true)
+  const [radarError, setRadarError] = useState<string | null>(null)
   const [radarSource, setRadarSource] = useState<RadarSource>('nws') // Default to NWS
 
   const { data: camerasData } = useCameras()
@@ -378,33 +474,52 @@ export function InteractiveMap() {
   const { data: eventsData } = useTrafficEvents()
   const { data: snowplowsData } = useSnowplows()
   const { data: transitData } = useTransit()
+  const { data: aircraftData } = useAircraft()
 
   const cameras = camerasData?.data || []
   const rivers = riversData?.data || []
   const events = eventsData?.data || []
   const snowplows = snowplowsData?.data || []
   const rawBuses = transitData?.buses || []
+  const rawAircraft = aircraftData?.data || []
 
   // Interpolate bus positions for smooth movement
   const buses = useBusInterpolation(rawBuses, 30000)
 
+  // Interpolate aircraft positions for smooth movement
+  const aircraft = useAircraftInterpolation(rawAircraft, 15000)
+
   // Transit selection for highlighting
   const { selectedBusId, selectedRouteId, clearSelection } = useTransitSelection()
+
+  const radarFrames = useMemo(() => {
+    if (!radarData?.radar) return []
+    const past = radarData.radar.past ?? []
+    const nowcast = radarData.radar.nowcast ?? []
+    return [...past, ...nowcast]
+  }, [radarData])
 
   // Fetch radar data from RainViewer
   useEffect(() => {
     async function fetchRadar() {
       setRadarLoading(true)
+      setRadarError(null)
       try {
         const res = await fetch(RAINVIEWER_API)
+        if (!res.ok) {
+          throw new Error(`RainViewer API error: ${res.status}`)
+        }
         const data: RainViewerData = await res.json()
         setRadarData(data)
-        // Set to most recent frame
-        if (data.radar.past.length > 0) {
-          setRadarFrame(data.radar.past.length - 1)
+        const frames = [...(data.radar?.past ?? []), ...(data.radar?.nowcast ?? [])]
+        if (frames.length > 0) {
+          setRadarFrame(frames.length - 1)
+        } else {
+          setRadarError('Animated radar unavailable')
         }
       } catch (error) {
         console.error('Failed to fetch radar data:', error)
+        setRadarError('Animated radar unavailable')
       } finally {
         setRadarLoading(false)
       }
@@ -418,25 +533,23 @@ export function InteractiveMap() {
 
   // Animate radar frames - slower for better visibility
   useEffect(() => {
-    if (!layers.radar || !radarData) return
+    if (!layers.radar || radarSource !== 'rainviewer') return
+    if (radarFrames.length <= 1) return
 
     const interval = setInterval(() => {
-      setRadarFrame(prev => {
-        const maxFrames = radarData.radar.past.length
-        return (prev + 1) % maxFrames
-      })
+      setRadarFrame(prev => (prev + 1) % radarFrames.length)
     }, 1000) // Animate every 1 second for better visibility
 
     return () => clearInterval(interval)
-  }, [layers.radar, radarData])
+  }, [layers.radar, radarSource, radarFrames.length])
 
   const toggleLayer = (layer: keyof typeof layers) => {
     setLayers(prev => ({ ...prev, [layer]: !prev[layer] }))
   }
 
-  const currentRadarPath = radarData?.radar.past[radarFrame]?.path || null
-  const radarTime = radarData?.radar.past[radarFrame]?.time
-    ? new Date(radarData.radar.past[radarFrame].time * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  const currentRadarPath = radarFrames[radarFrame]?.path || null
+  const radarTime = radarFrames[radarFrame]?.time
+    ? new Date(radarFrames[radarFrame].time * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     : undefined
 
   return (
@@ -462,7 +575,9 @@ export function InteractiveMap() {
           {/* Radar Overlay */}
           {/* Radar Overlays - NWS or RainViewer based on selection */}
           {layers.radar && radarSource === 'nws' && <NWSRadarLayer />}
-          {layers.radar && radarSource === 'rainviewer' && <RainViewerRadarLayer radarPath={currentRadarPath} />}
+          {layers.radar && radarSource === 'rainviewer' && (
+            <RainViewerRadarLayer radarPath={currentRadarPath} tileHost={radarData?.host} />
+          )}
 
           {/* Camera Markers */}
           {layers.cameras && cameras.map((camera) => (
@@ -470,6 +585,11 @@ export function InteractiveMap() {
               key={camera.id}
               position={[camera.latitude, camera.longitude]}
               icon={cameraIcon}
+              eventHandlers={{
+                click: (e) => {
+                  e.target.openPopup()
+                }
+              }}
             >
               <Popup>
                 <div className="min-w-[200px]">
@@ -497,6 +617,11 @@ export function InteractiveMap() {
               key={river.siteId}
               position={[river.latitude, river.longitude]}
               icon={riverIcon}
+              eventHandlers={{
+                click: (e) => {
+                  e.target.openPopup()
+                }
+              }}
             >
               <Popup>
                 <div className="min-w-[180px]">
@@ -517,6 +642,11 @@ export function InteractiveMap() {
               key={event.id}
               position={[event.latitude, event.longitude]}
               icon={eventIcon}
+              eventHandlers={{
+                click: (e) => {
+                  e.target.openPopup()
+                }
+              }}
             >
               <Popup>
                 <div className="min-w-[200px]">
@@ -541,6 +671,11 @@ export function InteractiveMap() {
               key={plow.id}
               position={[plow.latitude, plow.longitude]}
               icon={snowplowIcon}
+              eventHandlers={{
+                click: (e) => {
+                  e.target.openPopup()
+                }
+              }}
             >
               <Popup>
                 <div className="min-w-[180px]">
@@ -566,6 +701,11 @@ export function InteractiveMap() {
                 position={[bus.interpolatedLat, bus.interpolatedLng]}
                 icon={createBusIcon(bus.routeColor || '#10b981', isHighlighted)}
                 zIndexOffset={isHighlighted ? 1000 : 0}
+                eventHandlers={{
+                  click: (e) => {
+                    e.target.openPopup()
+                  }
+                }}
               >
                 <Popup>
                   <div className="min-w-[180px]">
@@ -589,6 +729,54 @@ export function InteractiveMap() {
               </Marker>
             )
           })}
+
+          {/* Aircraft Markers - with smooth interpolation */}
+          {layers.aircraft && aircraft.map((ac) => (
+            <Marker
+              key={ac.icao24}
+              position={[ac.interpolatedLat, ac.interpolatedLng]}
+              icon={createAircraftIcon(ac.heading, ac.suxAssociation, ac.onGround)}
+              eventHandlers={{
+                click: (e) => {
+                  e.target.openPopup()
+                }
+              }}
+            >
+              <Popup>
+                <div className="min-w-[200px]">
+                  <h4 className="font-medium text-sm mb-1">
+                    {ac.callsign || ac.icao24}
+                  </h4>
+                  {ac.suxAssociation && (
+                    <Badge
+                      variant="outline"
+                      className={`text-xs mb-2 ${
+                        ac.suxAssociation === 'arriving' ? 'border-green-500 text-green-500' :
+                        ac.suxAssociation === 'departing' ? 'border-blue-500 text-blue-500' :
+                        'border-amber-500 text-amber-500'
+                      }`}
+                    >
+                      {ac.suxAssociation === 'arriving' ? 'Arriving SUX' :
+                       ac.suxAssociation === 'departing' ? 'Departing SUX' :
+                       'Near SUX'}
+                    </Badge>
+                  )}
+                  <div className="text-xs space-y-1">
+                    <p>Altitude: <strong>{ac.altitude !== null ? `${Math.round(ac.altitude).toLocaleString()} ft` : 'N/A'}</strong></p>
+                    <p>Speed: <strong>{ac.velocity !== null ? `${Math.round(ac.velocity)} kts` : 'N/A'}</strong></p>
+                    <p>Heading: <strong>{ac.heading !== null ? `${Math.round(ac.heading)}°` : 'N/A'}</strong></p>
+                    {ac.verticalRate !== null && ac.verticalRate !== 0 && (
+                      <p>Vertical: <strong className={ac.verticalRate > 0 ? 'text-green-500' : 'text-red-500'}>
+                        {ac.verticalRate > 0 ? '+' : ''}{Math.round(ac.verticalRate)} ft/min
+                      </strong></p>
+                    )}
+                    {ac.squawk && <p>Squawk: <Badge variant="outline" className="text-xs">{ac.squawk}</Badge></p>}
+                    {ac.onGround && <p className="text-muted-foreground italic">On ground</p>}
+                  </div>
+                </div>
+              </Popup>
+            </Marker>
+          ))}
         </MapContainer>
 
         {/* Layer Controls */}
@@ -599,39 +787,140 @@ export function InteractiveMap() {
           onRadarSourceChange={setRadarSource}
           radarTime={radarTime}
           radarFrame={radarFrame}
-          totalFrames={radarData?.radar.past.length || 0}
+          totalFrames={radarFrames.length}
           radarLoading={radarLoading}
+          radarError={radarError}
           activeBuses={buses.length}
+          activeAircraft={aircraft.length}
         />
       </div>
 
-      {/* Map Legend */}
-      <div className="mt-3 pt-2 border-t flex flex-wrap gap-4 text-xs text-muted-foreground">
-        <div className="flex items-center gap-2">
+      {/* Map Legend - Click to solo a layer */}
+      <div className="mt-3 pt-2 border-t flex flex-wrap gap-2 text-xs">
+        {soloLayer && (
+          <span className="text-muted-foreground mr-2 self-center">Showing only:</span>
+        )}
+        <button
+          onClick={() => handleLegendClick('radar')}
+          className={`flex items-center gap-2 px-2 py-1 rounded-full transition-all cursor-pointer ${
+            soloLayer === 'radar'
+              ? 'bg-green-500/20 text-green-500 ring-1 ring-green-500'
+              : soloLayer ? 'opacity-40 text-muted-foreground hover:opacity-70' : 'text-muted-foreground hover:bg-muted'
+          }`}
+        >
           <div className="w-3 h-3 rounded-full bg-green-500" />
           <span>Radar {layers.radar && radarTime && `(${radarTime})`}</span>
-        </div>
-        <div className="flex items-center gap-2">
+        </button>
+        <button
+          onClick={() => handleLegendClick('cameras')}
+          className={`flex items-center gap-2 px-2 py-1 rounded-full transition-all cursor-pointer ${
+            soloLayer === 'cameras'
+              ? 'bg-blue-500/20 text-blue-500 ring-1 ring-blue-500'
+              : soloLayer ? 'opacity-40 text-muted-foreground hover:opacity-70' : 'text-muted-foreground hover:bg-muted'
+          }`}
+        >
           <div className="w-3 h-3 rounded-full bg-blue-500" />
           <span>Cameras ({cameras.length})</span>
-        </div>
-        <div className="flex items-center gap-2">
+        </button>
+        <button
+          onClick={() => handleLegendClick('rivers')}
+          className={`flex items-center gap-2 px-2 py-1 rounded-full transition-all cursor-pointer ${
+            soloLayer === 'rivers'
+              ? 'bg-cyan-500/20 text-cyan-500 ring-1 ring-cyan-500'
+              : soloLayer ? 'opacity-40 text-muted-foreground hover:opacity-70' : 'text-muted-foreground hover:bg-muted'
+          }`}
+        >
           <div className="w-3 h-3 rounded-full bg-cyan-500" />
           <span>Rivers ({rivers.length})</span>
-        </div>
-        <div className="flex items-center gap-2">
+        </button>
+        <button
+          onClick={() => handleLegendClick('events')}
+          className={`flex items-center gap-2 px-2 py-1 rounded-full transition-all cursor-pointer ${
+            soloLayer === 'events'
+              ? 'bg-red-500/20 text-red-500 ring-1 ring-red-500'
+              : soloLayer ? 'opacity-40 text-muted-foreground hover:opacity-70' : 'text-muted-foreground hover:bg-muted'
+          }`}
+        >
           <div className="w-3 h-3 rounded-full bg-red-500" />
           <span>Events ({events.length})</span>
-        </div>
-        <div className="flex items-center gap-2">
+        </button>
+        <button
+          onClick={() => handleLegendClick('snowplows')}
+          className={`flex items-center gap-2 px-2 py-1 rounded-full transition-all cursor-pointer ${
+            soloLayer === 'snowplows'
+              ? 'bg-orange-500/20 text-orange-500 ring-1 ring-orange-500'
+              : soloLayer ? 'opacity-40 text-muted-foreground hover:opacity-70' : 'text-muted-foreground hover:bg-muted'
+          }`}
+        >
           <div className="w-3 h-3 rounded-full bg-orange-500" />
           <span>Snowplows ({snowplows.length})</span>
-        </div>
-        <div className="flex items-center gap-2">
+        </button>
+        <button
+          onClick={() => handleLegendClick('transit')}
+          className={`flex items-center gap-2 px-2 py-1 rounded-full transition-all cursor-pointer ${
+            soloLayer === 'transit'
+              ? 'bg-emerald-500/20 text-emerald-500 ring-1 ring-emerald-500'
+              : soloLayer ? 'opacity-40 text-muted-foreground hover:opacity-70' : 'text-muted-foreground hover:bg-muted'
+          }`}
+        >
           <div className="w-3 h-3 rounded-full bg-emerald-500" />
           <span>Buses ({buses.length})</span>
-        </div>
+        </button>
+        <button
+          onClick={() => handleLegendClick('aircraft')}
+          className={`flex items-center gap-2 px-2 py-1 rounded-full transition-all cursor-pointer ${
+            soloLayer === 'aircraft'
+              ? 'bg-sky-500/20 text-sky-500 ring-1 ring-sky-500'
+              : soloLayer ? 'opacity-40 text-muted-foreground hover:opacity-70' : 'text-muted-foreground hover:bg-muted'
+          }`}
+        >
+          <div className="w-3 h-3 rounded-full bg-sky-500" />
+          <span>Aircraft ({aircraft.length})</span>
+        </button>
+        {soloLayer && (
+          <button
+            onClick={() => {
+              setSoloLayer(null)
+              setLayers({
+                cameras: true,
+                rivers: true,
+                events: true,
+                radar: true,
+                snowplows: true,
+                transit: true,
+                aircraft: true,
+              })
+            }}
+            className="ml-2 px-2 py-1 text-xs bg-muted hover:bg-muted/80 rounded-full"
+          >
+            Show All
+          </button>
+        )}
       </div>
+      {/* Aircraft SUX Legend */}
+      {layers.aircraft && aircraft.length > 0 && (
+        <div className="mt-2 pt-2 border-t flex flex-wrap gap-3 text-xs text-muted-foreground">
+          <span className="font-medium">SUX Traffic:</span>
+          {aircraftData?.suxArrivals ? (
+            <div className="flex items-center gap-1">
+              <div className="w-2 h-2 rounded-full bg-green-500" />
+              <span>{aircraftData.suxArrivals} arriving</span>
+            </div>
+          ) : null}
+          {aircraftData?.suxDepartures ? (
+            <div className="flex items-center gap-1">
+              <div className="w-2 h-2 rounded-full bg-blue-500" />
+              <span>{aircraftData.suxDepartures} departing</span>
+            </div>
+          ) : null}
+          {aircraftData?.nearSux ? (
+            <div className="flex items-center gap-1">
+              <div className="w-2 h-2 rounded-full bg-amber-500" />
+              <span>{aircraftData.nearSux} nearby</span>
+            </div>
+          ) : null}
+        </div>
+      )}
     </DashboardCard>
     </div>
   )

@@ -125,7 +125,7 @@ All data is sourced from **free, public APIs**:
 ### Prerequisites
 
 - Node.js 18+
-- npm or pnpm
+- pnpm
 - Neon database account (free tier available)
 
 ### Installation
@@ -136,14 +136,14 @@ git clone https://github.com/jakerains/observesux.git
 cd observesux
 
 # Install dependencies
-npm install
+pnpm install
 
 # Set up environment variables
 cp .env.example .env.local
 # Edit .env.local with your values
 
 # Run the development server
-npm run dev
+pnpm dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) to view the dashboard.

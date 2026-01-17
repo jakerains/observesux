@@ -169,6 +169,17 @@
   font-family: inherit;
 }
 
+/* Ensure tile/overlay layers don't block marker clicks */
+.leaflet-tile-pane,
+.leaflet-overlay-pane {
+  pointer-events: none !important;
+}
+
+.leaflet-tile-pane img,
+.leaflet-overlay-pane img {
+  pointer-events: none !important;
+}
+
 .leaflet-popup-content-wrapper {
   @apply bg-popover text-popover-foreground border shadow-lg;
   border-radius: var(--radius);
@@ -180,4 +191,29 @@
 
 .leaflet-popup-tip {
   @apply bg-popover;
+}
+
+/* Ensure all Leaflet markers can receive pointer events */
+.leaflet-marker-icon {
+  cursor: pointer !important;
+  pointer-events: auto !important;
+}
+
+.leaflet-marker-icon img {
+  pointer-events: auto !important;
+}
+
+/* Aircraft marker icon styles */
+.leaflet-aircraft-icon {
+  background: transparent !important;
+  border: none !important;
+  cursor: pointer;
+}
+
+.leaflet-aircraft-icon:hover {
+  z-index: 1000 !important;
+}
+
+.leaflet-aircraft-icon:hover svg {
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)) brightness(1.1);
 }

@@ -16,6 +16,7 @@ import type {
   Flight,
   Earthquake,
   Snowplow,
+  Aircraft,
   ApiResponse,
 } from '@/types'
 
@@ -213,6 +214,31 @@ export function useSnowplows(refreshInterval = 60000) {
     {
       refreshInterval,
       dedupingInterval: 30000,
+      revalidateOnFocus: false,
+    }
+  )
+}
+
+// ============================================
+// Aircraft (OpenSky Network)
+// ============================================
+interface AircraftApiResponse {
+  data: Aircraft[]
+  timestamp: string
+  source: string
+  suxArrivals: number
+  suxDepartures: number
+  nearSux: number
+  total: number
+}
+
+export function useAircraft(refreshInterval = 15000) {
+  return useSWR<AircraftApiResponse>(
+    '/api/aircraft',
+    fetcher,
+    {
+      refreshInterval,
+      dedupingInterval: 10000,
       revalidateOnFocus: false,
     }
   )

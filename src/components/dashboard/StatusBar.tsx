@@ -11,6 +11,7 @@ import {
   Bus,
   Zap,
   Plane,
+  PlaneTakeoff,
   Activity,
   CheckCircle,
   XCircle,
@@ -36,6 +37,7 @@ const STATUS_ITEMS = [
   { key: 'snowplows', icon: Snowflake, label: 'Snowplows' },
   { key: 'news', icon: Newspaper, label: 'News' },
   { key: 'aviation', icon: Navigation, label: 'Aviation' },
+  { key: 'aircraft', icon: PlaneTakeoff, label: 'Aircraft' },
 ] as const
 
 export function StatusBar() {

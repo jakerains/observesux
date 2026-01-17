@@ -101,7 +101,7 @@ const CHANGELOG = [
 ### 4. Verify Build
 
 ```bash
-npm run build
+pnpm build
 ```
 
 ---
