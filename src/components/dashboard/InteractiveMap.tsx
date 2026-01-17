@@ -4,8 +4,8 @@ import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import { DashboardCard } from './DashboardCard'
 import { Badge } from "@/components/ui/badge"
-import { useCameras, useRivers, useTrafficEvents, useSnowplows } from '@/lib/hooks/useDataFetching'
-import { Map, Layers, Camera, Waves, AlertTriangle, CloudRain, Snowflake } from 'lucide-react'
+import { useCameras, useRivers, useTrafficEvents, useSnowplows, useTransit } from '@/lib/hooks/useDataFetching'
+import { Map, Layers, Camera, Waves, AlertTriangle, CloudRain, Snowflake, Bus } from 'lucide-react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -73,6 +73,24 @@ const snowplowIcon = new L.Icon({
   popupAnchor: [0, -16],
 })
 
+// Function to create bus icon with route color
+const createBusIcon = (color: string) => new L.Icon({
+  iconUrl: 'data:image/svg+xml,' + encodeURIComponent(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10" fill="${color}" fill-opacity="0.3"/>
+      <path d="M8 6v10" stroke="${color}"/>
+      <path d="M16 6v10" stroke="${color}"/>
+      <rect x="4" y="3" width="16" height="16" rx="2" fill="${color}"/>
+      <circle cx="7.5" cy="17.5" r="1.5" fill="white" stroke="${color}"/>
+      <circle cx="16.5" cy="17.5" r="1.5" fill="white" stroke="${color}"/>
+      <path d="M4 11h16" stroke="white" stroke-width="1"/>
+    </svg>
+  `),
+  iconSize: [28, 28],
+  iconAnchor: [14, 14],
+  popupAnchor: [0, -14],
+})
+
 // Sioux City center coordinates
 const SIOUX_CITY_CENTER: [number, number] = [42.4997, -96.4003]
 const DEFAULT_ZOOM = 12
@@ -102,6 +120,7 @@ interface LayerToggleProps {
     events: boolean
     radar: boolean
     snowplows: boolean
+    transit: boolean
   }
   onToggle: (layer: keyof LayerToggleProps['layers']) => void
   radarSource: RadarSource
@@ -110,9 +129,10 @@ interface LayerToggleProps {
   radarFrame?: number
   totalFrames?: number
   radarLoading?: boolean
+  activeBuses?: number
 }
 
-function LayerToggle({ layers, onToggle, radarSource, onRadarSourceChange, radarTime, radarFrame = 0, totalFrames = 1, radarLoading }: LayerToggleProps) {
+function LayerToggle({ layers, onToggle, radarSource, onRadarSourceChange, radarTime, radarFrame = 0, totalFrames = 1, radarLoading, activeBuses = 0 }: LayerToggleProps) {
   return (
     <div className="absolute top-2 right-2 z-[1000] bg-background/95 backdrop-blur rounded-lg shadow-lg p-2 min-w-[140px]">
       <div className="text-xs font-medium mb-2 flex items-center gap-1">
@@ -214,6 +234,18 @@ function LayerToggle({ layers, onToggle, radarSource, onRadarSourceChange, radar
         >
           <Snowflake className="h-3 w-3" />
           Snowplows
+        </button>
+        <button
+          onClick={() => onToggle('transit')}
+          className={`flex items-center gap-2 w-full px-2 py-1 rounded text-xs transition-colors ${
+            layers.transit ? 'bg-emerald-500/20 text-emerald-500' : 'hover:bg-muted'
+          }`}
+        >
+          <Bus className="h-3 w-3" />
+          Transit
+          {layers.transit && activeBuses > 0 && (
+            <span className="text-[10px] opacity-70 ml-auto">{activeBuses}</span>
+          )}
         </button>
       </div>
     </div>
@@ -329,6 +361,7 @@ export function InteractiveMap() {
     events: true,
     radar: true,
     snowplows: true,
+    transit: true,
   })
 
   const [radarData, setRadarData] = useState<RainViewerData | null>(null)
@@ -340,11 +373,13 @@ export function InteractiveMap() {
   const { data: riversData } = useRivers()
   const { data: eventsData } = useTrafficEvents()
   const { data: snowplowsData } = useSnowplows()
+  const { data: transitData } = useTransit()
 
   const cameras = camerasData?.data || []
   const rivers = riversData?.data || []
   const events = eventsData?.data || []
   const snowplows = snowplowsData?.data || []
+  const buses = transitData?.buses || []
 
   // Fetch radar data from RainViewer
   useEffect(() => {
@@ -508,6 +543,27 @@ export function InteractiveMap() {
               </Popup>
             </Marker>
           ))}
+
+          {/* Bus/Transit Markers */}
+          {layers.transit && buses.map((bus) => (
+            <Marker
+              key={bus.vehicleId}
+              position={[bus.latitude, bus.longitude]}
+              icon={createBusIcon(bus.routeColor || '#10b981')}
+            >
+              <Popup>
+                <div className="min-w-[180px]">
+                  <h4 className="font-medium text-sm mb-1">{bus.routeName}</h4>
+                  <div className="text-xs space-y-1">
+                    <p>Vehicle: <Badge variant="outline" className="text-xs">{bus.vehicleId}</Badge></p>
+                    <p>Speed: {bus.speed.toFixed(0)} mph</p>
+                    <p>Heading: {bus.heading}°</p>
+                    {bus.nextStop && <p>Next Stop: {bus.nextStop}</p>}
+                  </div>
+                </div>
+              </Popup>
+            </Marker>
+          ))}
         </MapContainer>
 
         {/* Layer Controls */}
@@ -520,6 +576,7 @@ export function InteractiveMap() {
           radarFrame={radarFrame}
           totalFrames={radarData?.radar.past.length || 0}
           radarLoading={radarLoading}
+          activeBuses={buses.length}
         />
       </div>
 
@@ -544,6 +601,10 @@ export function InteractiveMap() {
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full bg-orange-500" />
           <span>Snowplows ({snowplows.length})</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full bg-emerald-500" />
+          <span>Buses ({buses.length})</span>
         </div>
       </div>
     </DashboardCard>
