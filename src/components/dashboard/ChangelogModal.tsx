@@ -16,6 +16,16 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.1.9',
+    date: '2026-01-18',
+    added: [],
+    changed: [],
+    fixed: [
+      'Dashboard grid layout gaps when widgets have different heights',
+      'Widgets now pack densely to fill available space',
+    ],
+  },
+  {
     version: '0.1.8',
     date: '2026-01-18',
     added: [
