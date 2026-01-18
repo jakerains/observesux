@@ -16,6 +16,17 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.1.8',
+    date: '2026-01-18',
+    added: [
+      'Live camera filter button in Traffic Cameras widget',
+      'Filter shows count of cameras with live video feeds',
+      'Empty state with quick link to show all cameras',
+    ],
+    changed: [],
+    fixed: [],
+  },
+  {
     version: '0.1.7',
     date: '2026-01-18',
     added: [

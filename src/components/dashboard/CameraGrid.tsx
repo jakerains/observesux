@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useCameras } from '@/lib/hooks/useDataFetching'
-import { Camera, Video, Maximize2, RefreshCw, MapPin } from 'lucide-react'
+import { Camera, Video, Maximize2, RefreshCw, MapPin, Filter } from 'lucide-react'
 import type { TrafficCamera } from '@/types'
 import { getDataFreshness } from '@/lib/utils/dataFreshness'
 
@@ -198,26 +198,43 @@ export function CameraGrid() {
   const { data: camerasData, error, isLoading, isValidating, mutate: refreshCameras } = useCameras(refreshInterval)
   const [selectedCamera, setSelectedCamera] = useState<TrafficCamera | null>(null)
   const [showAllCameras, setShowAllCameras] = useState(false)
+  const [showLiveOnly, setShowLiveOnly] = useState(false)
 
   const cameras = camerasData?.data || []
-  const displayedCameras = showAllCameras ? cameras : cameras.slice(0, 6)
+  const liveCameras = cameras.filter(cam => cam.streamUrl)
+  const filteredCameras = showLiveOnly ? liveCameras : cameras
+  const displayedCameras = showAllCameras ? filteredCameras : filteredCameras.slice(0, 6)
   const lastUpdated = camerasData?.timestamp ? new Date(camerasData.timestamp) : undefined
   const status = error
     ? 'error'
     : isLoading
       ? 'loading'
       : getDataFreshness({ lastUpdated, refreshInterval })
-  const refreshAction = (
-    <RefreshAction
-      onRefresh={() => refreshCameras()}
-      isLoading={isLoading}
-      isValidating={isValidating}
-    />
+  const headerActions = (
+    <div className="flex items-center gap-1">
+      {liveCameras.length > 0 && (
+        <Button
+          variant={showLiveOnly ? "default" : "ghost"}
+          size="sm"
+          className="h-7 px-2 text-xs"
+          onClick={() => setShowLiveOnly(!showLiveOnly)}
+          title={showLiveOnly ? "Show all cameras" : "Show live cameras only"}
+        >
+          <Video className="h-3 w-3 mr-1" />
+          Live ({liveCameras.length})
+        </Button>
+      )}
+      <RefreshAction
+        onRefresh={() => refreshCameras()}
+        isLoading={isLoading}
+        isValidating={isValidating}
+      />
+    </div>
   )
 
   if (isLoading) {
     return (
-      <DashboardCard title="Traffic Cameras" icon={<Camera className="h-4 w-4" />} status="loading" action={refreshAction}>
+      <DashboardCard title="Traffic Cameras" icon={<Camera className="h-4 w-4" />} status="loading" action={headerActions}>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           {[...Array(6)].map((_, i) => (
             <Skeleton key={i} className="aspect-video rounded-lg" />
@@ -234,9 +251,9 @@ export function CameraGrid() {
         icon={<Camera className="h-4 w-4" />}
         status={status}
         lastUpdated={lastUpdated}
-        action={refreshAction}
+        action={headerActions}
       >
-        {cameras.length > 0 ? (
+        {filteredCameras.length > 0 ? (
           <div className={`grid grid-cols-2 md:grid-cols-3 gap-3 ${showAllCameras ? 'max-h-[600px] overflow-y-auto' : ''}`}>
             {displayedCameras.map((camera) => (
               <CameraCard
@@ -249,18 +266,28 @@ export function CameraGrid() {
         ) : (
           <div className="text-center text-muted-foreground py-8">
             <Camera className="h-8 w-8 mx-auto mb-2" />
-            <p>No cameras available</p>
+            <p>{showLiveOnly ? 'No live cameras available' : 'No cameras available'}</p>
+            {showLiveOnly && cameras.length > 0 && (
+              <Button
+                variant="link"
+                size="sm"
+                onClick={() => setShowLiveOnly(false)}
+                className="mt-2"
+              >
+                Show all {cameras.length} cameras
+              </Button>
+            )}
           </div>
         )}
 
-        {cameras.length > 6 && (
+        {filteredCameras.length > 6 && (
           <div className="mt-3 text-center">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setShowAllCameras(!showAllCameras)}
             >
-              {showAllCameras ? 'Show fewer cameras' : `View all ${cameras.length} cameras`}
+              {showAllCameras ? 'Show fewer cameras' : `View all ${filteredCameras.length} cameras`}
             </Button>
           </div>
         )}
