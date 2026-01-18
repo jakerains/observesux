@@ -79,17 +79,16 @@ const snowplowIcon = new L.Icon({
 
 const gasStationIcon = new L.Icon({
   iconUrl: 'data:image/svg+xml,' + encodeURIComponent(`
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="12" cy="12" r="10" fill="#22c55e" fill-opacity="0.3"/>
-      <path d="M3 22V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v17" fill="#22c55e" fill-opacity="0.5"/>
-      <path d="M18 10h1a2 2 0 0 1 2 2v3a2 2 0 0 0 2 2 1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1h-1l-2-2"/>
-      <path d="M6 12h7"/>
-      <path d="M6 7h7"/>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#22c55e" stroke="#fff" stroke-width="1">
+      <path d="M3 22V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v17"/>
+      <path d="M18 10h1a2 2 0 0 1 2 2v3a2 2 0 0 0 2 2v0a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1h-1l-2-2" fill="none" stroke="#22c55e" stroke-width="2"/>
+      <rect x="5" y="6" width="9" height="4" rx="0.5" fill="#fff"/>
+      <rect x="5" y="12" width="9" height="3" rx="0.5" fill="#fff" opacity="0.7"/>
     </svg>
   `),
-  iconSize: [28, 28],
-  iconAnchor: [14, 14],
-  popupAnchor: [0, -14],
+  iconSize: [24, 24],
+  iconAnchor: [12, 22],
+  popupAnchor: [0, -22],
 })
 
 // Function to create bus icon with route color
