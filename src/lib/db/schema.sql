@@ -97,8 +97,36 @@ CREATE INDEX IF NOT EXISTS idx_alerts_expires ON weather_alerts(expires_at);
 CREATE INDEX IF NOT EXISTS idx_traffic_time ON traffic_incidents(start_time DESC);
 CREATE INDEX IF NOT EXISTS idx_system_logs_service ON system_logs(service_name, created_at DESC);
 
+-- Gas stations (updated daily via Firecrawl from GasBuddy)
+CREATE TABLE IF NOT EXISTS gas_stations (
+  id SERIAL PRIMARY KEY,
+  brand_name VARCHAR(100) NOT NULL,
+  street_address VARCHAR(255) NOT NULL,
+  city VARCHAR(100),
+  state VARCHAR(2),
+  latitude DECIMAL(9,6),
+  longitude DECIMAL(9,6),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(brand_name, street_address)
+);
+
+-- Gas prices (multiple fuel types per station)
+CREATE TABLE IF NOT EXISTS gas_prices (
+  id SERIAL PRIMARY KEY,
+  station_id INTEGER REFERENCES gas_stations(id) ON DELETE CASCADE,
+  fuel_type VARCHAR(20) NOT NULL,
+  price DECIMAL(5,3) NOT NULL,
+  scraped_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Indexes for gas prices queries
+CREATE INDEX IF NOT EXISTS idx_gas_prices_scraped ON gas_prices(scraped_at DESC);
+CREATE INDEX IF NOT EXISTS idx_gas_prices_station ON gas_prices(station_id);
+CREATE INDEX IF NOT EXISTS idx_gas_stations_coords ON gas_stations(latitude, longitude);
+
 -- Clean up old data (run periodically via cron or pg_cron)
 -- DELETE FROM weather_observations WHERE created_at < NOW() - INTERVAL '30 days';
 -- DELETE FROM river_readings WHERE created_at < NOW() - INTERVAL '30 days';
 -- DELETE FROM air_quality_readings WHERE created_at < NOW() - INTERVAL '30 days';
 -- DELETE FROM system_logs WHERE created_at < NOW() - INTERVAL '7 days';
+-- DELETE FROM gas_prices WHERE scraped_at < NOW() - INTERVAL '7 days';

@@ -499,6 +499,42 @@ export interface Snowplow {
 }
 
 // ============================================
+// Gas Prices
+// ============================================
+
+export type FuelType = 'Regular' | 'Midgrade' | 'Premium' | 'Diesel'
+
+export interface GasPrice {
+  fuelType: FuelType
+  price: number
+}
+
+export interface GasStation {
+  id: number
+  brandName: string
+  streetAddress: string
+  city: string | null
+  state: string | null
+  latitude: number | null
+  longitude: number | null
+  prices: GasPrice[]
+}
+
+export interface GasPriceStats {
+  lowestRegular: number | null
+  averageRegular: number | null
+  highestRegular: number | null
+  stationCount: number
+  cheapestStation: string | null
+}
+
+export interface GasPriceData {
+  stations: GasStation[]
+  stats: GasPriceStats
+  scrapedAt: string | null
+}
+
+// ============================================
 // Dashboard State
 // ============================================
 

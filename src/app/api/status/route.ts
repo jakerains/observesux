@@ -39,7 +39,8 @@ export async function GET(request: NextRequest) {
     snowplows,
     news,
     aviation,
-    aircraft
+    aircraft,
+    gasPrices
   ] = await Promise.all([
     checkEndpoint('/api/cameras'),
     checkEndpoint('/api/weather'),
@@ -53,7 +54,8 @@ export async function GET(request: NextRequest) {
     checkEndpoint('/api/snowplows'),
     checkEndpoint('/api/news'),
     checkEndpoint('/api/aviation'),
-    checkEndpoint('/api/aircraft')
+    checkEndpoint('/api/aircraft'),
+    checkEndpoint('/api/gas-prices')
   ])
 
   return NextResponse.json({
@@ -70,6 +72,7 @@ export async function GET(request: NextRequest) {
     news,
     aviation,
     aircraft,
+    gasPrices,
     timestamp: new Date().toISOString()
   })
 }

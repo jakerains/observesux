@@ -30,6 +30,7 @@ import { OutageMap } from '@/components/dashboard/OutageMap'
 import { EarthquakeWidget } from '@/components/dashboard/EarthquakeWidget'
 import { TrafficEventsWidget } from '@/components/dashboard/TrafficEventsWidget'
 import { NewsWidget } from '@/components/dashboard/NewsWidget'
+import { GasPricesWidget } from '@/components/dashboard/GasPricesWidget'
 import { StatusBar } from '@/components/dashboard/StatusBar'
 import { MobileNavigation } from '@/components/dashboard/MobileNavigation'
 import { DraggableWidget } from '@/components/dashboard/DraggableWidget'
@@ -83,6 +84,7 @@ const WIDGET_COMPONENTS: Record<string, React.ComponentType> = {
   'news': NewsWidget,
   'earthquakes': EarthquakeWidget,
   'map': InteractiveMap,
+  'gas-prices': GasPricesWidget,
 }
 
 // Widget size to CSS class mapping

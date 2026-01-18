@@ -18,6 +18,7 @@ import type {
   Snowplow,
   Aircraft,
   ApiResponse,
+  GasPriceData,
 } from '@/types'
 
 // Generic fetcher with error handling
@@ -245,6 +246,22 @@ export function useAircraft(refreshInterval = 60000) {
 }
 
 // ============================================
+// Gas Prices
+// ============================================
+export function useGasPrices(refreshInterval = 3600000) {
+  // Default: refresh every hour (data is updated daily)
+  return useSWR<ApiResponse<GasPriceData>>(
+    '/api/gas-prices',
+    fetcher,
+    {
+      refreshInterval,
+      dedupingInterval: 300000, // 5 minutes
+      revalidateOnFocus: false,
+    }
+  )
+}
+
+// ============================================
 // Dashboard Status
 // ============================================
 export function useDashboardStatus() {
@@ -257,6 +274,7 @@ export function useDashboardStatus() {
     outages: boolean
     flights: boolean
     earthquakes: boolean
+    gasPrices: boolean
   }>(
     '/api/status',
     fetcher,

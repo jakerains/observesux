@@ -34,7 +34,17 @@ When the user asks to "update the changelog" or "bump the version", follow these
 grep '"version"' package.json
 ```
 
-### 2. Review Changes Since Last Version
+### 2. Check if Changelog Entry Exists
+
+**IMPORTANT:** Before bumping the version, check if the current version in `package.json` already has an entry in `CHANGELOG.md`. If the version exists in `package.json` but is missing from the changelog, add the entry for that version - do NOT bump to a new version.
+
+```bash
+grep "## \[$(grep -o '"version": "[^"]*"' package.json | cut -d'"' -f4)\]" CHANGELOG.md
+```
+
+If no entry exists, add one for the current version. Only bump the version number if the current version already has a changelog entry.
+
+### 3. Review Changes Since Last Version
 
 Look at git history to identify changes:
 
@@ -42,7 +52,7 @@ Look at git history to identify changes:
 git log --oneline -20
 ```
 
-### 3. Update Files
+### 4. Update Files
 
 Update these three files:
 
@@ -98,7 +108,7 @@ const CHANGELOG = [
 ]
 ```
 
-### 4. Verify Build
+### 5. Verify Build
 
 ```bash
 pnpm build

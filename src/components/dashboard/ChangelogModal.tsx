@@ -16,6 +16,20 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.1.7',
+    date: '2026-01-18',
+    added: [
+      'Gas Prices widget with daily Firecrawl scraping from GasBuddy',
+      'Gas station markers on Interactive Map with price popups',
+      'Vercel Cron job for daily 6 AM CST price updates',
+      'Fuel type tabs (Regular, Midgrade, Premium, Diesel) in widget',
+    ],
+    changed: [
+      'Status API now includes gas prices health check',
+    ],
+    fixed: [],
+  },
+  {
     version: '0.1.6',
     date: '2026-01-17',
     added: [

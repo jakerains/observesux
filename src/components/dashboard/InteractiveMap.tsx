@@ -4,11 +4,11 @@ import React, { useEffect, useState, useRef, useMemo } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import { DashboardCard } from './DashboardCard'
 import { Badge } from "@/components/ui/badge"
-import { useCameras, useRivers, useTrafficEvents, useSnowplows, useTransit, useAircraft } from '@/lib/hooks/useDataFetching'
+import { useCameras, useRivers, useTrafficEvents, useSnowplows, useTransit, useAircraft, useGasPrices } from '@/lib/hooks/useDataFetching'
 import { useBusInterpolation } from '@/lib/hooks/useBusInterpolation'
 import { useAircraftInterpolation } from '@/lib/hooks/useAircraftInterpolation'
 import { useTransitSelection } from '@/lib/contexts/TransitContext'
-import { Map, Layers, Camera, Waves, AlertTriangle, CloudRain, Snowflake, Bus, Plane } from 'lucide-react'
+import { Map, Layers, Camera, Waves, AlertTriangle, CloudRain, Snowflake, Bus, Plane, Fuel } from 'lucide-react'
 import type { SuxAssociation } from '@/types'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -75,6 +75,21 @@ const snowplowIcon = new L.Icon({
   iconSize: [32, 32],
   iconAnchor: [16, 16],
   popupAnchor: [0, -16],
+})
+
+const gasStationIcon = new L.Icon({
+  iconUrl: 'data:image/svg+xml,' + encodeURIComponent(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10" fill="#22c55e" fill-opacity="0.3"/>
+      <path d="M3 22V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v17" fill="#22c55e" fill-opacity="0.5"/>
+      <path d="M18 10h1a2 2 0 0 1 2 2v3a2 2 0 0 0 2 2 1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1h-1l-2-2"/>
+      <path d="M6 12h7"/>
+      <path d="M6 7h7"/>
+    </svg>
+  `),
+  iconSize: [28, 28],
+  iconAnchor: [14, 14],
+  popupAnchor: [0, -14],
 })
 
 // Function to create bus icon with route color
@@ -167,6 +182,7 @@ interface LayerToggleProps {
     snowplows: boolean
     transit: boolean
     aircraft: boolean
+    gasStations: boolean
   }
   onToggle: (layer: keyof LayerToggleProps['layers']) => void
   radarSource: RadarSource
@@ -178,9 +194,10 @@ interface LayerToggleProps {
   radarError?: string | null
   activeBuses?: number
   activeAircraft?: number
+  gasStationCount?: number
 }
 
-function LayerToggle({ layers, onToggle, radarSource, onRadarSourceChange, radarTime, radarFrame = 0, totalFrames = 1, radarLoading, radarError, activeBuses = 0, activeAircraft = 0 }: LayerToggleProps) {
+function LayerToggle({ layers, onToggle, radarSource, onRadarSourceChange, radarTime, radarFrame = 0, totalFrames = 1, radarLoading, radarError, activeBuses = 0, activeAircraft = 0, gasStationCount = 0 }: LayerToggleProps) {
   return (
     <div className="absolute top-2 right-2 z-[1000] bg-background/95 backdrop-blur rounded-lg shadow-lg p-2 min-w-[140px]">
       <div className="text-xs font-medium mb-2 flex items-center gap-1">
@@ -312,6 +329,18 @@ function LayerToggle({ layers, onToggle, radarSource, onRadarSourceChange, radar
             <span className="text-[10px] opacity-70 ml-auto">{activeAircraft}</span>
           )}
         </button>
+        <button
+          onClick={() => onToggle('gasStations')}
+          className={`flex items-center gap-2 w-full px-2 py-1 rounded text-xs transition-colors ${
+            layers.gasStations ? 'bg-green-500/20 text-green-500' : 'hover:bg-muted'
+          }`}
+        >
+          <Fuel className="h-3 w-3" />
+          Gas Stations
+          {layers.gasStations && gasStationCount > 0 && (
+            <span className="text-[10px] opacity-70 ml-auto">{gasStationCount}</span>
+          )}
+        </button>
       </div>
     </div>
   )
@@ -429,6 +458,7 @@ export function InteractiveMap() {
     snowplows: true,
     transit: true,
     aircraft: true,
+    gasStations: true,
   })
 
   // Solo mode: when set, only show this layer
@@ -447,6 +477,7 @@ export function InteractiveMap() {
         snowplows: true,
         transit: true,
         aircraft: true,
+        gasStations: true,
       })
     } else {
       // Solo this layer - hide all others
@@ -459,6 +490,7 @@ export function InteractiveMap() {
         snowplows: layer === 'snowplows',
         transit: layer === 'transit',
         aircraft: layer === 'aircraft',
+        gasStations: layer === 'gasStations',
       })
     }
   }
@@ -475,6 +507,7 @@ export function InteractiveMap() {
   const { data: snowplowsData } = useSnowplows()
   const { data: transitData } = useTransit()
   const { data: aircraftData } = useAircraft()
+  const { data: gasPricesData } = useGasPrices()
 
   const cameras = camerasData?.data || []
   const rivers = riversData?.data || []
@@ -482,6 +515,7 @@ export function InteractiveMap() {
   const snowplows = snowplowsData?.data || []
   const rawBuses = transitData?.buses || []
   const rawAircraft = aircraftData?.data || []
+  const gasStations = gasPricesData?.data?.stations?.filter(s => s.latitude && s.longitude) || []
 
   // Interpolate bus positions for smooth movement
   const buses = useBusInterpolation(rawBuses, 30000)
@@ -777,6 +811,47 @@ export function InteractiveMap() {
               </Popup>
             </Marker>
           ))}
+
+          {/* Gas Station Markers */}
+          {layers.gasStations && gasStations.map((station) => {
+            const regularPrice = station.prices.find(p => p.fuelType === 'Regular')?.price
+            return (
+              <Marker
+                key={station.id}
+                position={[station.latitude!, station.longitude!]}
+                icon={gasStationIcon}
+                eventHandlers={{
+                  click: (e) => {
+                    e.target.openPopup()
+                  }
+                }}
+              >
+                <Popup>
+                  <div className="min-w-[180px]">
+                    <h4 className="font-medium text-sm mb-1">{station.brandName}</h4>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      {station.streetAddress}
+                    </p>
+                    <div className="text-xs space-y-1">
+                      {station.prices.map((price) => (
+                        <div key={price.fuelType} className="flex justify-between">
+                          <span className="text-muted-foreground">{price.fuelType}</span>
+                          <span className="font-medium">${price.price.toFixed(2)}</span>
+                        </div>
+                      ))}
+                    </div>
+                    {regularPrice && (
+                      <div className="mt-2 pt-2 border-t">
+                        <Badge variant="outline" className="text-xs border-green-500 text-green-500">
+                          ${regularPrice.toFixed(2)} Regular
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+                </Popup>
+              </Marker>
+            )
+          })}
         </MapContainer>
 
         {/* Layer Controls */}
@@ -792,6 +867,7 @@ export function InteractiveMap() {
           radarError={radarError}
           activeBuses={buses.length}
           activeAircraft={aircraft.length}
+          gasStationCount={gasStations.length}
         />
       </div>
 
@@ -877,6 +953,17 @@ export function InteractiveMap() {
           <div className="w-3 h-3 rounded-full bg-sky-500" />
           <span>Aircraft ({aircraft.length})</span>
         </button>
+        <button
+          onClick={() => handleLegendClick('gasStations')}
+          className={`flex items-center gap-2 px-2 py-1 rounded-full transition-all cursor-pointer ${
+            soloLayer === 'gasStations'
+              ? 'bg-green-500/20 text-green-500 ring-1 ring-green-500'
+              : soloLayer ? 'opacity-40 text-muted-foreground hover:opacity-70' : 'text-muted-foreground hover:bg-muted'
+          }`}
+        >
+          <div className="w-3 h-3 rounded-full bg-green-500" />
+          <span>Gas ({gasStations.length})</span>
+        </button>
         {soloLayer && (
           <button
             onClick={() => {
@@ -889,6 +976,7 @@ export function InteractiveMap() {
                 snowplows: true,
                 transit: true,
                 aircraft: true,
+                gasStations: true,
               })
             }}
             className="ml-2 px-2 py-1 text-xs bg-muted hover:bg-muted/80 rounded-full"

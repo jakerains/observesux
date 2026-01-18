@@ -1,0 +1,491 @@
+{
+  "gas_stations": [
+    {
+      "brand_name": "Clark & Phillips 66",
+      "brand_name_citation": "https://www.gasbuddy.com/station/134633",
+      "street_address": "1312 River Dr, North Sioux City, SD",
+      "street_address_citation": "https://www.gasbuddy.com/station/134633",
+      "latitude": 42.523725,
+      "latitude_citation": "https://www.gasbuddy.com/station/134633",
+      "longitude": -96.500891,
+      "longitude_citation": "https://www.gasbuddy.com/station/134633",
+      "fuel_prices": []
+    },
+    {
+      "brand_name": "Casey's",
+      "brand_name_citation": "https://www.gasbuddy.com/station/90975",
+      "street_address": "100 S Derby Ln, North Sioux City, SD",
+      "street_address_citation": "https://www.gasbuddy.com/station/90975",
+      "latitude": 42.5243831,
+      "latitude_citation": "https://www.gasbuddy.com/station/90975",
+      "longitude": -96.496719,
+      "longitude_citation": "https://www.gasbuddy.com/station/90975",
+      "fuel_prices": [
+        {
+          "fuel_type": "Diesel",
+          "fuel_type_citation": "https://www.gasbuddy.com/station/90975",
+          "price": 3.19,
+          "price_citation": "https://www.gasbuddy.com/station/90975"
+        },
+        {
+          "fuel_type": "UNL88",
+          "fuel_type_citation": "https://www.gasbuddy.com/station/90975",
+          "price": 2.34,
+          "price_citation": "https://www.gasbuddy.com/station/90975"
+        },
+        {
+          "fuel_type": "E85",
+          "fuel_type_citation": "https://www.gasbuddy.com/station/90975",
+          "price": 1.79,
+          "price_citation": "https://www.gasbuddy.com/station/90975"
+        },
+        {
+          "fuel_type": "Premium",
+          "fuel_type_citation": "https://www.gasbuddy.com/station/90975",
+          "price": 3.34,
+          "price_citation": "https://www.gasbuddy.com/station/90975"
+        },
+        {
+          "fuel_type": "Regular",
+          "fuel_type_citation": "https://www.gasbuddy.com/station/90975",
+          "price": 2.39,
+          "price_citation": "https://www.gasbuddy.com/station/90975"
+        }
+      ]
+    },
+    {
+      "brand_name": "Casey's",
+      "brand_name_citation": "https://www.gasbuddy.com/station/90974",
+      "street_address": "1424 Dakota Ave, South Sioux City, NE",
+      "street_address_citation": "https://www.gasbuddy.com/station/90974",
+      "latitude": 42.476109,
+      "latitude_citation": "https://www.gasbuddy.com/station/90974",
+      "longitude": -96.41294,
+      "longitude_citation": "https://www.gasbuddy.com/station/90974",
+      "fuel_prices": [
+        {
+          "fuel_type": "Premium",
+          "fuel_type_citation": "https://www.gasbuddy.com/station/90974",
+          "price": 3.31,
+          "price_citation": "https://www.gasbuddy.com/station/90974"
+        },
+        {
+          "fuel_type": "Regular",
+          "fuel_type_citation": "https://www.gasbuddy.com/station/90974",
+          "price": 2.36,
+          "price_citation": "https://www.gasbuddy.com/station/90974"
+        }
+      ]
+    },
+    {
+      "brand_name": "Casey's",
+      "brand_name_citation": "https://www.gasbuddy.com/station/130228",
+      "street_address": "3051 Floyd Blvd, Sioux City, IA",
+      "street_address_citation": "https://www.gasbuddy.com/station/130228",
+      "latitude": 42.527076,
+      "latitude_citation": "https://www.gasbuddy.com/station/130228",
+      "longitude": -96.376007,
+      "longitude_citation": "https://www.gasbuddy.com/station/130228",
+      "fuel_prices": [
+        {
+          "fuel_type": "Regular",
+          "fuel_type_citation": "https://www.gasbuddy.com/station/130228",
+          "price": 2.95,
+          "price_citation": "https://www.gasbuddy.com/station/130228"
+        }
+      ]
+    },
+    {
+      "brand_name": "Maverik",
+      "brand_name_citation": "https://www.gasbuddy.com/station/49423",
+      "street_address": "1821 Hamilton Blvd, Sioux City, IA",
+      "street_address_citation": "https://www.gasbuddy.com/station/49423",
+      "latitude": 42.5102319,
+      "latitude_citation": "https://www.gasbuddy.com/station/49423",
+      "longitude": -96.41762,
+      "longitude_citation": "https://www.gasbuddy.com/station/49423",
+      "fuel_prices": [
+        {
+          "fuel_type": "Regular",
+          "fuel_type_citation": "https://www.gasbuddy.com/station/49423",
+          "price": 2.36,
+          "price_citation": "https://www.gasbuddy.com/station/49423"
+        },
+        {
+          "fuel_type": "Diesel",
+          "fuel_type_citation": "https://www.gasbuddy.com/station/49423",
+          "price": 2.95,
+          "price_citation": "https://www.gasbuddy.com/station/49423"
+        },
+        {
+          "fuel_type": "E85",
+          "fuel_type_citation": "https://www.gasbuddy.com/station/49423",
+          "price": 1.66,
+          "price_citation": "https://www.gasbuddy.com/station/49423"
+        }
+      ]
+    },
+    {
+      "brand_name": "Conoco",
+      "brand_name_citation": "https://www.gasbuddy.com/station/135298",
+      "street_address": "1301 River Dr, North Sioux City, SD",
+      "street_address_citation": "https://www.gasbuddy.com/station/135298",
+      "latitude": 42.5253819,
+      "latitude_citation": "https://www.gasbuddy.com/station/135298",
+      "longitude": -96.4979663,
+      "longitude_citation": "https://www.gasbuddy.com/station/135298",
+      "fuel_prices": []
+    },
+    {
+      "brand_name": "Casey's",
+      "brand_name_citation": "https://www.gasbuddy.com/station/206187",
+      "street_address": "Unknown",
+      "street_address_citation": "https://www.gasbuddy.com/station/206187",
+      "latitude": 0,
+      "latitude_citation": "https://www.gasbuddy.com/station/206187",
+      "longitude": 0,
+      "longitude_citation": "https://www.gasbuddy.com/station/206187",
+      "fuel_prices": [
+        {
+          "fuel_type": "Diesel",
+          "fuel_type_citation": "https://www.gasbuddy.com/station/206187",
+          "price": 2.95,
+          "price_citation": "https://www.gasbuddy.com/station/206187"
+        },
+        {
+          "fuel_type": "Midgrade",
+          "fuel_type_citation": "https://www.gasbuddy.com/station/206187",
+          "price": 3.06,
+          "price_citation": "https://www.gasbuddy.com/station/206187"
+        },
+        {
+          "fuel_type": "Premium",
+          "fuel_type_citation": "https://www.gasbuddy.com/station/206187",
+          "price": 3.31,
+          "price_citation": "https://www.gasbuddy.com/station/206187"
+        },
+        {
+          "fuel_type": "Regular",
+          "fuel_type_citation": "https://www.gasbuddy.com/station/206187",
+          "price": 2.21,
+          "price_citation": "https://www.gasbuddy.com/station/206187"
+        }
+      ]
+    },
+    {
+      "brand_name": "Crystal Oil",
+      "brand_name_citation": "https://www.gasbuddy.com/station/87421",
+      "street_address": "4601 Dakota Ave, South Sioux City, NE",
+      "street_address_citation": "https://www.gasbuddy.com/station/87421",
+      "latitude": 42.444783,
+      "latitude_citation": "https://www.gasbuddy.com/station/87421",
+      "longitude": -96.414003,
+      "longitude_citation": "https://www.gasbuddy.com/station/87421",
+      "fuel_prices": []
+    },
+    {
+      "brand_name": "Unknown",
+      "brand_name_citation": "https://www.gasbuddy.com/station/75531",
+      "street_address": "Unknown",
+      "street_address_citation": "https://www.gasbuddy.com/station/75531",
+      "latitude": 0,
+      "latitude_citation": "https://www.gasbuddy.com/station/75531",
+      "longitude": 0,
+      "longitude_citation": "https://www.gasbuddy.com/station/75531",
+      "fuel_prices": []
+    },
+    {
+      "brand_name": "Unknown",
+      "brand_name_citation": "https://www.gasbuddy.com/station/89072",
+      "street_address": "Unknown",
+      "street_address_citation": "https://www.gasbuddy.com/station/89072",
+      "latitude": 0,
+      "latitude_citation": "https://www.gasbuddy.com/station/89072",
+      "longitude": 0,
+      "longitude_citation": "https://www.gasbuddy.com/station/89072",
+      "fuel_prices": []
+    },
+    {
+      "brand_name": "Maverik",
+      "brand_name_citation": "https://www.gasbuddy.com/station/87008",
+      "street_address": "32562 477th Ave, Elk Point, SD",
+      "street_address_citation": "https://www.gasbuddy.com/station/87008",
+      "latitude": 42.669228,
+      "latitude_citation": "https://www.gasbuddy.com/station/87008",
+      "longitude": -96.664098,
+      "longitude_citation": "https://www.gasbuddy.com/station/87008",
+      "fuel_prices": [
+        {
+          "fuel_type": "Regular",
+          "fuel_type_citation": "https://www.gasbuddy.com/station/87008",
+          "price": 2.24,
+          "price_citation": "https://www.gasbuddy.com/station/87008"
+        },
+        {
+          "fuel_type": "Diesel",
+          "fuel_type_citation": "https://www.gasbuddy.com/station/87008",
+          "price": 2.85,
+          "price_citation": "https://www.gasbuddy.com/station/87008"
+        },
+        {
+          "fuel_type": "E85",
+          "fuel_type_citation": "https://www.gasbuddy.com/station/87008",
+          "price": 1.44,
+          "price_citation": "https://www.gasbuddy.com/station/87008"
+        }
+      ]
+    },
+    {
+      "brand_name": "Unknown",
+      "brand_name_citation": "https://www.gasbuddy.com/station/190381",
+      "street_address": "4883–5117 Dakota Ave, Dakota City, NE",
+      "street_address_citation": "https://www.gasbuddy.com/station/190381",
+      "latitude": 42.4152,
+      "latitude_citation": "https://www.gasbuddy.com/station/190381",
+      "longitude": -96.4172,
+      "longitude_citation": "https://www.gasbuddy.com/station/190381",
+      "fuel_prices": []
+    },
+    {
+      "brand_name": "Select Mart",
+      "brand_name_citation": "https://www.gasbuddy.com/station/54481",
+      "street_address": "800 Dakota Ave, South Sioux City, NE",
+      "street_address_citation": "https://www.gasbuddy.com/station/54481",
+      "latitude": 42.481768,
+      "latitude_citation": "https://www.gasbuddy.com/station/54481",
+      "longitude": -96.412908,
+      "longitude_citation": "https://www.gasbuddy.com/station/54481",
+      "fuel_prices": [
+        {
+          "fuel_type": "Regular",
+          "fuel_type_citation": "https://www.gasbuddy.com/station/54481",
+          "price": 2.58,
+          "price_citation": "https://www.gasbuddy.com/station/54481"
+        },
+        {
+          "fuel_type": "Midgrade",
+          "fuel_type_citation": "https://www.gasbuddy.com/station/54481",
+          "price": 2.98,
+          "price_citation": "https://www.gasbuddy.com/station/54481"
+        },
+        {
+          "fuel_type": "Diesel",
+          "fuel_type_citation": "https://www.gasbuddy.com/station/54481",
+          "price": 3.19,
+          "price_citation": "https://www.gasbuddy.com/station/54481"
+        }
+      ]
+    },
+    {
+      "brand_name": "Murphy USA",
+      "brand_name_citation": "https://www.gasbuddy.com/station/49424",
+      "street_address": "3420 Singing Hills Blvd., Sioux City, IA",
+      "street_address_citation": "https://www.gasbuddy.com/station/49424",
+      "latitude": 42.4353963,
+      "latitude_citation": "https://www.gasbuddy.com/station/49424",
+      "longitude": -96.3624089,
+      "longitude_citation": "https://www.gasbuddy.com/station/49424",
+      "fuel_prices": [
+        {
+          "fuel_type": "Regular",
+          "fuel_type_citation": "https://www.gasbuddy.com/station/49424",
+          "price": 2.36,
+          "price_citation": "https://www.gasbuddy.com/station/49424"
+        },
+        {
+          "fuel_type": "Midgrade",
+          "fuel_type_citation": "https://www.gasbuddy.com/station/49424",
+          "price": 2.91,
+          "price_citation": "https://www.gasbuddy.com/station/49424"
+        },
+        {
+          "fuel_type": "Premium",
+          "fuel_type_citation": "https://www.gasbuddy.com/station/49424",
+          "price": 3.21,
+          "price_citation": "https://www.gasbuddy.com/station/49424"
+        },
+        {
+          "fuel_type": "Diesel",
+          "fuel_type_citation": "https://www.gasbuddy.com/station/49424",
+          "price": 2.94,
+          "price_citation": "https://www.gasbuddy.com/station/49424"
+        },
+        {
+          "fuel_type": "E85",
+          "fuel_type_citation": "https://www.gasbuddy.com/station/49424",
+          "price": 2.21,
+          "price_citation": "https://www.gasbuddy.com/station/49424"
+        },
+        {
+          "fuel_type": "UNL88",
+          "fuel_type_citation": "https://www.gasbuddy.com/station/49424",
+          "price": 2.31,
+          "price_citation": "https://www.gasbuddy.com/station/49424"
+        }
+      ]
+    },
+    {
+      "brand_name": "Unknown",
+      "brand_name_citation": "https://www.gasbuddy.com/station/104640",
+      "street_address": "Unknown",
+      "street_address_citation": "https://www.gasbuddy.com/station/104640",
+      "latitude": 0,
+      "latitude_citation": "https://www.gasbuddy.com/station/104640",
+      "longitude": 0,
+      "longitude_citation": "https://www.gasbuddy.com/station/104640",
+      "fuel_prices": []
+    },
+    {
+      "brand_name": "Unknown",
+      "brand_name_citation": "https://www.gasbuddy.com/station/87416",
+      "street_address": "Unknown",
+      "street_address_citation": "https://www.gasbuddy.com/station/87416",
+      "latitude": 0,
+      "latitude_citation": "https://www.gasbuddy.com/station/87416",
+      "longitude": 0,
+      "longitude_citation": "https://www.gasbuddy.com/station/87416",
+      "fuel_prices": []
+    },
+    {
+      "brand_name": "Love's Travel Stop",
+      "brand_name_citation": "https://www.gasbuddy.com/station/138746",
+      "street_address": "2525 Singing Hills Blvd, Sioux City, IA",
+      "street_address_citation": "https://www.gasbuddy.com/station/138746",
+      "latitude": 42.434626,
+      "latitude_citation": "https://www.gasbuddy.com/station/138746",
+      "longitude": -96.380028,
+      "longitude_citation": "https://www.gasbuddy.com/station/138746",
+      "fuel_prices": [
+        {
+          "fuel_type": "Regular",
+          "fuel_type_citation": "https://www.gasbuddy.com/station/138746",
+          "price": 2.36,
+          "price_citation": "https://www.gasbuddy.com/station/138746"
+        },
+        {
+          "fuel_type": "Midgrade",
+          "fuel_type_citation": "https://www.gasbuddy.com/station/138746",
+          "price": 2.81,
+          "price_citation": "https://www.gasbuddy.com/station/138746"
+        },
+        {
+          "fuel_type": "Premium",
+          "fuel_type_citation": "https://www.gasbuddy.com/station/138746",
+          "price": 3.16,
+          "price_citation": "https://www.gasbuddy.com/station/138746"
+        },
+        {
+          "fuel_type": "Diesel",
+          "fuel_type_citation": "https://www.gasbuddy.com/station/138746",
+          "price": 3.7,
+          "price_citation": "https://www.gasbuddy.com/station/138746"
+        }
+      ]
+    },
+    {
+      "brand_name": "Maverik",
+      "brand_name_citation": "https://www.gasbuddy.com/station/163714",
+      "street_address": "Unknown",
+      "street_address_citation": "https://www.gasbuddy.com/station/163714",
+      "latitude": 0,
+      "latitude_citation": "https://www.gasbuddy.com/station/163714",
+      "longitude": 0,
+      "longitude_citation": "https://www.gasbuddy.com/station/163714",
+      "fuel_prices": [
+        {
+          "fuel_type": "Regular (UNL88)",
+          "fuel_type_citation": "https://www.gasbuddy.com/station/163714",
+          "price": 2.36,
+          "price_citation": "https://www.gasbuddy.com/station/163714"
+        },
+        {
+          "fuel_type": "Diesel",
+          "fuel_type_citation": "https://www.gasbuddy.com/station/163714",
+          "price": 2.94,
+          "price_citation": "https://www.gasbuddy.com/station/163714"
+        },
+        {
+          "fuel_type": "E85",
+          "fuel_type_citation": "https://www.gasbuddy.com/station/163714",
+          "price": 1.81,
+          "price_citation": "https://www.gasbuddy.com/station/163714"
+        }
+      ]
+    },
+    {
+      "brand_name": "Pony Express",
+      "brand_name_citation": "https://www.gasbuddy.com/station/54482",
+      "street_address": "1501 Stable Dr, South Sioux City, NE",
+      "street_address_citation": "https://www.gasbuddy.com/station/54482",
+      "latitude": 42.4631336,
+      "latitude_citation": "https://www.gasbuddy.com/station/54482",
+      "longitude": -96.4340174,
+      "longitude_citation": "https://www.gasbuddy.com/station/54482",
+      "fuel_prices": []
+    },
+    {
+      "brand_name": "Shell",
+      "brand_name_citation": "https://www.gasbuddy.com/station/49414",
+      "street_address": "300 1st St Ste E, Sergeant Bluff, IA",
+      "street_address_citation": "https://www.gasbuddy.com/station/49414",
+      "latitude": 42.402,
+      "latitude_citation": "https://www.gasbuddy.com/station/49414",
+      "longitude": -96.359,
+      "longitude_citation": "https://www.gasbuddy.com/station/49414",
+      "fuel_prices": []
+    },
+    {
+      "brand_name": "Casey's",
+      "brand_name_citation": "https://www.gasbuddy.com/station/90971",
+      "street_address": "111 Gaul Dr, Sergeant Bluff, IA",
+      "street_address_citation": "https://www.gasbuddy.com/station/90971",
+      "latitude": 42.403,
+      "latitude_citation": "https://www.gasbuddy.com/station/90971",
+      "longitude": -96.358,
+      "longitude_citation": "https://www.gasbuddy.com/station/90971",
+      "fuel_prices": [
+        {
+          "fuel_type": "Regular",
+          "fuel_type_citation": "https://www.gasbuddy.com/station/90971",
+          "price": 2.49,
+          "price_citation": "https://www.gasbuddy.com/station/90971"
+        }
+      ]
+    },
+    {
+      "brand_name": "Cenex",
+      "brand_name_citation": "https://www.gasbuddy.com/station/89071",
+      "street_address": "200 Tower Rd, Dakota Dunes, SD",
+      "street_address_citation": "https://www.gasbuddy.com/station/89071",
+      "latitude": 42.493,
+      "latitude_citation": "https://www.gasbuddy.com/station/89071",
+      "longitude": -96.486,
+      "longitude_citation": "https://www.gasbuddy.com/station/89071",
+      "fuel_prices": []
+    },
+    {
+      "brand_name": "Cenex",
+      "brand_name_citation": "https://www.gasbuddy.com/station/102357",
+      "street_address": "100 IA-75 S, Sergeant Bluff, IA",
+      "street_address_citation": "https://www.gasbuddy.com/station/102357",
+      "latitude": 42.4,
+      "latitude_citation": "https://www.gasbuddy.com/station/102357",
+      "longitude": -96.35,
+      "longitude_citation": "https://www.gasbuddy.com/station/102357",
+      "fuel_prices": [
+        {
+          "fuel_type": "Regular",
+          "fuel_type_citation": "https://www.gasbuddy.com/station/102357",
+          "price": 2.49,
+          "price_citation": "https://www.gasbuddy.com/station/102357"
+        },
+        {
+          "fuel_type": "Premium",
+          "fuel_type_citation": "https://www.gasbuddy.com/station/102357",
+          "price": 3.49,
+          "price_citation": "https://www.gasbuddy.com/station/102357"
+        }
+      ]
+    }
+  ]
+}
