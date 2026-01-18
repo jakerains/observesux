@@ -18,7 +18,8 @@ import {
   AlertTriangle,
   Snowflake,
   Newspaper,
-  Navigation
+  Navigation,
+  Fuel
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ChangelogModal } from './ChangelogModal'
@@ -38,6 +39,7 @@ const STATUS_ITEMS = [
   { key: 'news', icon: Newspaper, label: 'News' },
   { key: 'aviation', icon: Navigation, label: 'Aviation' },
   { key: 'aircraft', icon: PlaneTakeoff, label: 'Aircraft' },
+  { key: 'gasPrices', icon: Fuel, label: 'Gas Prices' },
 ] as const
 
 export function StatusBar() {
