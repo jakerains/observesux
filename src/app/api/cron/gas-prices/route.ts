@@ -10,23 +10,37 @@ export const maxDuration = 300 // 5 minutes for scraping + geocoding
  * Cron endpoint to scrape gas prices from GasBuddy via Firecrawl
  * Runs daily at 6 AM CST (12:00 UTC) via Vercel Cron
  *
- * POST /api/cron/gas-prices
- * Requires Authorization: Bearer <CRON_SECRET>
+ * GET /api/cron/gas-prices (Vercel cron sends GET)
+ * Vercel automatically authenticates cron requests
  */
-export async function POST(request: NextRequest) {
-  // Verify cron secret for security
+function verifyCronRequest(request: NextRequest): boolean {
+  // Method 1: Vercel cron sends this header automatically
+  const isVercelCron = request.headers.get('x-vercel-cron') === '1'
+
+  // Method 2: Check CRON_SECRET if configured (for manual testing)
   const authHeader = request.headers.get('authorization')
   const cronSecret = process.env.CRON_SECRET
+  const hasValidSecret = cronSecret && authHeader === `Bearer ${cronSecret}`
 
-  if (!cronSecret) {
-    console.error('CRON_SECRET is not configured')
-    return NextResponse.json(
-      { error: 'Server configuration error' },
-      { status: 500 }
-    )
-  }
+  // Method 3: Allow in development
+  const isDev = process.env.NODE_ENV === 'development'
 
-  if (authHeader !== `Bearer ${cronSecret}`) {
+  console.log('[Gas Prices Cron] Auth check:', {
+    isVercelCron,
+    hasValidSecret: !!hasValidSecret,
+    isDev,
+    headers: {
+      'x-vercel-cron': request.headers.get('x-vercel-cron'),
+      'authorization': authHeader ? 'present' : 'missing'
+    }
+  })
+
+  return isVercelCron || hasValidSecret || isDev
+}
+
+export async function POST(request: NextRequest) {
+  if (!verifyCronRequest(request)) {
+    console.warn('[Gas Prices Cron] Unauthorized request rejected')
     return NextResponse.json(
       { error: 'Unauthorized' },
       { status: 401 }
