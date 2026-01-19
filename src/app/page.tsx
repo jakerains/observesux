@@ -35,6 +35,7 @@ import { StatusBar } from '@/components/dashboard/StatusBar'
 import { MobileNavigation } from '@/components/dashboard/MobileNavigation'
 import { DraggableWidget } from '@/components/dashboard/DraggableWidget'
 import { VoiceAgentWidget } from '@/components/dashboard/VoiceAgentWidget'
+import { ChatWidget } from '@/components/dashboard/ChatWidget'
 import { ChangelogModal } from '@/components/dashboard/ChangelogModal'
 import { DashboardLayoutProvider, useDashboardLayout } from '@/lib/contexts/DashboardLayoutContext'
 import { TransitProvider } from '@/lib/contexts/TransitContext'
@@ -228,6 +229,9 @@ function DashboardContent() {
 
       {/* Mobile Navigation - iOS-style bottom tabs */}
       <MobileNavigation />
+
+      {/* Chat Assistant - Floating button (left of Voice Agent) */}
+      <ChatWidget />
 
       {/* Voice Agent - Floating button */}
       <VoiceAgentWidget />

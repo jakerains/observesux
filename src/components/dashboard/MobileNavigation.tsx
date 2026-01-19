@@ -5,33 +5,46 @@ import {
   Map,
   Cloud,
   Camera,
-  Radio,
+  MessageSquare,
   Newspaper
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useChatSheet } from '@/lib/contexts/ChatContext'
 
 interface NavItem {
   id: string
   icon: React.ElementType
   label: string
-  widgetId: string
+  widgetId?: string // Optional - chat doesn't scroll to a widget
+  action?: 'chat' // Special action type
 }
 
 const NAV_ITEMS: NavItem[] = [
   { id: 'map', icon: Map, label: 'Map', widgetId: 'map' },
   { id: 'weather', icon: Cloud, label: 'Weather', widgetId: 'weather' },
+  { id: 'chat', icon: MessageSquare, label: 'Chat', action: 'chat' },
   { id: 'cameras', icon: Camera, label: 'Cameras', widgetId: 'cameras' },
-  { id: 'scanner', icon: Radio, label: 'Scanner', widgetId: 'scanner' },
   { id: 'news', icon: Newspaper, label: 'News', widgetId: 'news' },
 ]
 
+// Feature flag - only show chat if enabled
+const CHAT_ENABLED = process.env.NEXT_PUBLIC_CHAT_ENABLED === 'true'
+
 export function MobileNavigation() {
   const [activeSection, setActiveSection] = useState('map')
+  const { openChat } = useChatSheet()
 
-  // Detect which section is currently visible
+  // Filter nav items based on feature flags
+  const visibleNavItems = NAV_ITEMS.filter(item => {
+    if (item.action === 'chat' && !CHAT_ENABLED) return false
+    return true
+  })
+
+  // Detect which section is currently visible (only for scroll-based items)
   useEffect(() => {
     const handleScroll = () => {
-      const sections = NAV_ITEMS.map(item => {
+      const scrollableItems = visibleNavItems.filter(item => item.widgetId)
+      const sections = scrollableItems.map(item => {
         const element = document.querySelector(`[data-widget-id="${item.widgetId}"]`)
         if (element) {
           const rect = element.getBoundingClientRect()
@@ -57,7 +70,17 @@ export function MobileNavigation() {
     window.addEventListener('scroll', handleScroll, { passive: true })
     handleScroll() // Initial check
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
+  }, [visibleNavItems])
+
+  const handleNavClick = (item: NavItem) => {
+    if (item.action === 'chat') {
+      openChat()
+      return
+    }
+    if (item.widgetId) {
+      scrollToSection(item.widgetId)
+    }
+  }
 
   const scrollToSection = (widgetId: string) => {
     const element = document.querySelector(`[data-widget-id="${widgetId}"]`)
@@ -88,13 +111,15 @@ export function MobileNavigation() {
       <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-32 h-1 bg-foreground/20 rounded-full" />
 
       <div className="flex items-center justify-around px-2 pt-2 pb-4">
-        {NAV_ITEMS.map(({ id, icon: Icon, label, widgetId }) => {
-          const isActive = activeSection === id
+        {visibleNavItems.map((item) => {
+          const { id, icon: Icon, label, action } = item
+          // Chat button is never "active" in the scroll sense
+          const isActive = action !== 'chat' && activeSection === id
 
           return (
             <button
               key={id}
-              onClick={() => scrollToSection(widgetId)}
+              onClick={() => handleNavClick(item)}
               className={cn(
                 "flex flex-col items-center justify-center gap-0.5 p-2 min-w-[60px] rounded-xl transition-all",
                 "active:scale-95 active:bg-accent/50",

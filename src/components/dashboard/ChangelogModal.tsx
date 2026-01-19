@@ -16,6 +16,24 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.1.10',
+    date: '2026-01-18',
+    added: [
+      'Generative UI for chat with 8 rich tool cards',
+      'Weather alerts, forecast, city summary, and gas prices cards',
+      'Chat button in mobile navigation (center position)',
+      'Mobile-native bottom sheet for chat',
+    ],
+    changed: [
+      'Mobile nav order: Map, Weather, Chat, Cameras, News',
+      'Desktop chat uses side sheet, mobile uses bottom sheet',
+    ],
+    fixed: [
+      'Chat messages area now properly scrolls',
+      'react-markdown inline code detection',
+    ],
+  },
+  {
     version: '0.1.9',
     date: '2026-01-18',
     added: [],

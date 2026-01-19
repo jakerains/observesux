@@ -5,6 +5,25 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.10] - 2026-01-18
+
+### Added
+- Generative UI for chat widget with 8 rich tool cards:
+  - WeatherCard, RiverLevelsCard, TrafficEventsCard, AirQualityCard (core)
+  - WeatherAlertsCard, WeatherForecastCard, CitySummaryCard, GasPricesCard (new)
+- Chat button in mobile navigation (center position, replacing Scanner)
+- Mobile-native bottom sheet for chat that slides up from bottom
+- ChatContext for shared state management between floating button and mobile nav
+- Drag handle indicator on mobile chat sheet
+
+### Changed
+- Mobile navigation order: Map, Weather, Chat, Cameras, News
+- Desktop chat uses side sheet, mobile uses bottom sheet
+
+### Fixed
+- Chat messages area now properly scrolls with fixed input at bottom
+- react-markdown inline code detection for v9+ compatibility
+
 ## [0.1.9] - 2026-01-18
 
 ### Fixed
