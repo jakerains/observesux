@@ -16,6 +16,30 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.2.0',
+    date: '2026-01-18',
+    added: [
+      'RAG Knowledge Base with pgvector semantic search',
+      'Admin page at /rag for managing knowledge entries',
+      'File upload (.md, .json, .txt) with progress indicator',
+      'SUX agent persona - Siouxland Assistant',
+      'Guardrails to keep chat focused on Siouxland topics',
+      '"I Want To" action links for city services',
+      'Local restaurant data with price levels ($-$$$$)',
+      'TextShimmer component for elegant loading states',
+    ],
+    changed: [
+      'Chat always enabled (no feature flag)',
+      'Tool calls show shimmer animation while searching',
+      'Embeddings via OpenAI API directly (better rate limits)',
+    ],
+    fixed: [
+      'Markdown headings render correctly during streaming',
+      'Reduced text flicker with CSS optimizations',
+      'Smooth message bubble transitions',
+    ],
+  },
+  {
     version: '0.1.11',
     date: '2026-01-18',
     added: [

@@ -2,6 +2,17 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { cn } from '@/lib/utils'
 
+/**
+ * Normalize markdown content to fix common LLM output issues
+ */
+function normalizeMarkdown(content: string): string {
+  return content
+    // Fix headings stuck to previous text (e.g., "text.## Heading" → "text.\n\n## Heading")
+    .replace(/([^\n])(\n?)(#{1,6}\s)/g, '$1\n\n$3')
+    // Fix bold/headers stuck together (e.g., "text.**Bold**" → "text. **Bold**")
+    .replace(/([.!?])(\*\*[A-Z])/g, '$1 $2')
+}
+
 const toneStyles = {
   assistant: {
     text: 'text-foreground',
@@ -40,9 +51,17 @@ export function ChatMarkdown({ content, className, variant = 'assistant' }: Chat
     <div
       className={cn(
         'text-sm leading-relaxed break-words',
+        // Stabilize rendering during streaming to prevent flicker
+        '[contain:content] [content-visibility:auto]',
         tone.text,
         className
       )}
+      style={{
+        // GPU acceleration hint for smoother updates
+        willChange: 'contents',
+        // Prevent font rendering shifts
+        textRendering: 'optimizeSpeed',
+      }}
     >
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
@@ -141,7 +160,7 @@ export function ChatMarkdown({ content, className, variant = 'assistant' }: Chat
           ),
         }}
       >
-        {content}
+        {normalizeMarkdown(content)}
       </ReactMarkdown>
     </div>
   )

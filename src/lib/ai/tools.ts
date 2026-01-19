@@ -22,13 +22,14 @@ function getBaseUrl(): string {
 }
 
 // Helper to fetch from internal API routes
-async function fetchApi<T>(endpoint: string): Promise<T | null> {
+async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T | null> {
   try {
     const baseUrl = getBaseUrl();
     const url = `${baseUrl}${endpoint}`;
     console.log(`[AI Tools] Fetching: ${url}`);
     const response = await fetch(url, {
       cache: 'no-store',
+      ...options,
     });
     if (!response.ok) {
       console.error(`API error for ${endpoint}:`, response.status);
@@ -219,6 +220,33 @@ export const chatTools = {
         return { error: 'Unable to fetch system status at this time' };
       }
       return data;
+    },
+  }),
+
+  searchKnowledgeBase: tool({
+    description: 'Search the local knowledge base for Sioux City information not available in real-time data sources. Use this for questions about local history, culture, landmarks, restaurants, events, local tips, and general city information that wouldn\'t be in weather/traffic/news feeds.',
+    inputSchema: z.object({
+      query: z.string().describe('The search query to find relevant knowledge base entries'),
+    }),
+    execute: async ({ query }) => {
+      const data = await fetchApi<{ results: Array<{ title: string; content: string; similarity: number }> }>(
+        '/api/rag/search',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query, limit: 5, minSimilarity: 0.35 }),
+        }
+      );
+      if (!data || !data.results || data.results.length === 0) {
+        return { message: 'No relevant information found in the knowledge base for this query.' };
+      }
+      return {
+        results: data.results.map(r => ({
+          title: r.title,
+          content: r.content,
+          relevance: `${Math.round(r.similarity * 100)}%`,
+        })),
+      };
     },
   }),
 };

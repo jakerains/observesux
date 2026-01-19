@@ -27,18 +27,11 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'news', icon: Newspaper, label: 'News', widgetId: 'news' },
 ]
 
-// Feature flag - only show chat if enabled
-const CHAT_ENABLED = process.env.NEXT_PUBLIC_CHAT_ENABLED === 'true'
-
 export function MobileNavigation() {
   const [activeSection, setActiveSection] = useState('map')
   const { openChat } = useChatSheet()
 
-  // Filter nav items based on feature flags
-  const visibleNavItems = NAV_ITEMS.filter(item => {
-    if (item.action === 'chat' && !CHAT_ENABLED) return false
-    return true
-  })
+  const visibleNavItems = NAV_ITEMS
 
   // Detect which section is currently visible (only for scroll-based items)
   useEffect(() => {

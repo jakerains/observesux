@@ -14,12 +14,10 @@ import {
   SheetDescription,
 } from '@/components/ui/sheet'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { TextShimmer } from '@/components/ui/text-shimmer'
 import { ChatMarkdown } from '@/components/dashboard/ChatMarkdown'
 import { getToolCardComponent } from '@/components/chat/tool-cards'
 import { useChatSheet } from '@/lib/contexts/ChatContext'
-
-// Feature flag - set NEXT_PUBLIC_CHAT_ENABLED=true to enable
-const CHAT_ENABLED = process.env.NEXT_PUBLIC_CHAT_ENABLED === 'true'
 
 // Suggested questions for onboarding
 const SUGGESTED_QUESTIONS = [
@@ -30,11 +28,6 @@ const SUGGESTED_QUESTIONS = [
 ]
 
 export function ChatWidget() {
-  // Don't render anything if feature is disabled
-  if (!CHAT_ENABLED) {
-    return null
-  }
-
   return <ChatWidgetInner />
 }
 
@@ -161,7 +154,8 @@ function ChatWidgetInner() {
             <div className="flex items-center justify-between pr-8">
               <div className="flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-primary" />
-                <SheetTitle>Sioux City Observer</SheetTitle>
+                <SheetTitle>SUX</SheetTitle>
+                <span className="text-xs text-muted-foreground font-normal">Siouxland Assistant</span>
               </div>
               {messages.length > 0 && (
                 <Button
@@ -176,7 +170,7 @@ function ChatWidgetInner() {
               )}
             </div>
             <SheetDescription>
-              Ask me about weather, traffic, rivers, and more
+              Weather, traffic, city services, restaurants & more
             </SheetDescription>
           </SheetHeader>
 
@@ -219,13 +213,13 @@ function ChatWidgetInner() {
                 >
                   <div
                     className={cn(
-                      'max-w-[85%] rounded-2xl px-4 py-2',
+                      'max-w-[85%] rounded-2xl px-4 py-2 transition-all duration-150',
                       message.role === 'user'
                         ? 'bg-primary text-primary-foreground'
                         : 'bg-muted'
                     )}
                   >
-                    <div className="space-y-2">
+                    <div className="space-y-2 [&>*]:transition-opacity [&>*]:duration-100">
                       {/* Show tool progress and results */}
                       {message.parts?.map((part, index) => {
                         if (!part.type.startsWith('tool-')) return null
@@ -243,15 +237,14 @@ function ChatWidgetInner() {
                           return (
                             <div
                               key={index}
-                              className={cn(
-                                'text-xs italic flex items-center gap-1',
-                                message.role === 'user'
-                                  ? 'text-primary-foreground/70'
-                                  : 'text-muted-foreground'
-                              )}
+                              className="text-xs py-1"
                             >
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                              Checking {formatToolName(toolName)}...
+                              <TextShimmer
+                                duration={1.5}
+                                className="text-xs"
+                              >
+                                {`Searching ${formatToolName(toolName)}...`}
+                              </TextShimmer>
                             </div>
                           )
                         }
@@ -384,6 +377,7 @@ function formatToolName(toolName: string): string {
     getOutages: 'power outages',
     getEarthquakes: 'earthquakes',
     getSystemStatus: 'system status',
+    searchKnowledgeBase: 'local info',
   }
   return names[toolName] || toolName
 }
