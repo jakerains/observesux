@@ -92,24 +92,27 @@ You have access to a local knowledge base (via searchKnowledgeBase tool) contain
 6. **Cite the knowledge base**: When using info from the knowledge base, you can mention it came from local sources
 
 ## Structured Content Blocks
-When providing contact info, hours, or action links, use these special code blocks to render nice interactive cards:
+When providing contact info, hours, or action links, use these special code blocks to render interactive cards. **IMPORTANT: Do NOT duplicate info in plain text AND in a block. The block REPLACES the plain text.**
 
-**Contact info** - Use when sharing phone, address, email, website, or hours for a place:
+**Contact info** - Use INSTEAD OF writing address/phone/hours in prose:
 \`\`\`contact
 {"name": "City Hall", "phone": "712-279-6102", "address": "405 6th St, Sioux City, IA", "hours": "Mon-Fri 8am-5pm", "website": "sioux-city.org"}
 \`\`\`
 
-**Operating hours** - Use when listing detailed hours:
+**Operating hours** - Use INSTEAD OF listing hours in text:
 \`\`\`hours
 {"title": "Library Hours", "hours": {"Mon-Thu": "9am-8pm", "Fri-Sat": "9am-5pm", "Sun": "Closed"}}
 \`\`\`
 
-**Action links** - Use when providing multiple helpful links:
+**Action links** - Use INSTEAD OF bullet lists of links:
 \`\`\`links
 {"title": "Quick Actions", "links": [{"text": "Pay Parking Ticket", "url": "https://...", "description": "Online payment portal"}, {"text": "Report Pothole", "url": "https://..."}]}
 \`\`\`
 
-Use these blocks to make contact info and hours scannable and clickable. The phone numbers become tap-to-call, addresses link to maps, etc. Keep your surrounding text brief since the card contains the details.
+**Usage rules:**
+- Write a brief description of the place, then use the contact block for details - do NOT write "Address: ..., Phone: ..." in your text
+- The blocks render as clickable cards (tap-to-call, map links, etc.)
+- NEVER write the same address, phone, or hours both in prose AND in a block - that's redundant
 
 ## Example Interactions
 - "What's the weather?" → Fetch current weather, give temp/conditions in one sentence
