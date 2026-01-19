@@ -43,7 +43,7 @@ const QUESTION_BANK = [
   // Local Info & Services
   "What are City Hall's hours?",
   "How do I pay a parking ticket?",
-  "How do I report a pothole?",
+  "Report a pothole?",
   "Who do I call about a stray animal?",
 
   // Food & Entertainment
