@@ -1,26 +1,154 @@
 import { streamText, stepCountIs, convertToModelMessages, gateway } from 'ai';
 import { chatTools } from '@/lib/ai/tools';
-import { SYSTEM_PROMPT } from '@/lib/ai/system-prompt';
+import { getSystemPrompt } from '@/lib/ai/system-prompt';
+import {
+  createChatSession,
+  ensureSessionExists,
+  logChatMessage,
+} from '@/lib/db/chat-logs';
 
 export const runtime = 'nodejs';
 export const maxDuration = 30;
 
 export async function POST(req: Request) {
+  const startTime = Date.now();
+
   try {
-    const { messages } = await req.json();
+    const { messages, sessionId: existingSessionId, lastLoggedMessageIndex } = await req.json();
+
+    // Get or create session ID
+    // Client may provide a UUID - validate it's a proper UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    let sessionId = existingSessionId && uuidRegex.test(existingSessionId) ? existingSessionId : null;
+    let isNewSession = false;
+
+    if (!sessionId) {
+      isNewSession = true;
+      sessionId = await createChatSession({
+        userAgent: req.headers.get('user-agent') || undefined,
+        ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0] ||
+                   req.headers.get('x-real-ip') ||
+                   undefined,
+      });
+    } else if (isNewSession === false) {
+      // Client provided a session ID - ensure it exists in DB, create if not
+      // This handles the case where client has a session ID but it's a new browser session
+      await ensureSessionExists(sessionId, {
+        userAgent: req.headers.get('user-agent') || undefined,
+        ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0] ||
+                   req.headers.get('x-real-ip') ||
+                   undefined,
+      });
+    }
+
+    // Log only NEW user messages (ones we haven't logged yet)
+    // lastLoggedMessageIndex tells us where we left off
+    const startIndex = typeof lastLoggedMessageIndex === 'number' ? lastLoggedMessageIndex + 1 : 0;
+    const userMessages = messages.filter((m: { role: string }) => m.role === 'user');
+
+    // Only log the most recent user message if it's new
+    if (sessionId && userMessages.length > 0) {
+      const lastUserMessage = userMessages[userMessages.length - 1];
+      const lastUserMessageIndex = messages.indexOf(lastUserMessage);
+
+      // Only log if this message hasn't been logged yet
+      if (lastUserMessageIndex >= startIndex || isNewSession) {
+        // Extract text content from various AI SDK message formats
+        let content = '';
+
+        // Debug: log the message structure to understand the format
+        console.log('[Chat Log] User message structure:', JSON.stringify(lastUserMessage, null, 2));
+
+        if (typeof lastUserMessage.content === 'string') {
+          // Simple string content
+          content = lastUserMessage.content;
+        } else if (lastUserMessage.parts && Array.isArray(lastUserMessage.parts)) {
+          // AI SDK UIMessage format uses 'parts' array
+          content = lastUserMessage.parts
+            .filter((part: { type: string }) => part.type === 'text')
+            .map((part: { type: string; text?: string }) => part.text || '')
+            .join('\n');
+        } else if (lastUserMessage.content && Array.isArray(lastUserMessage.content)) {
+          // Content array format
+          content = lastUserMessage.content
+            .filter((part: { type: string }) => part.type === 'text')
+            .map((part: { type: string; text?: string }) => part.text || '')
+            .join('\n');
+        }
+
+        // Fallback: try to find text in any nested structure
+        if (!content && lastUserMessage.parts) {
+          // Try getting text directly from parts without type filtering
+          const parts = lastUserMessage.parts as Array<{ text?: string; type?: string }>;
+          content = parts
+            .map((p) => p.text || '')
+            .filter(Boolean)
+            .join('\n');
+        }
+
+        console.log('[Chat Log] Extracted content:', content ? content.substring(0, 100) : '(empty)');
+
+        if (content) {
+          await logChatMessage({
+            sessionId,
+            role: 'user',
+            content,
+          });
+          console.log('[Chat Log] User message logged successfully');
+        } else {
+          console.warn('[Chat Log] Could not extract content from user message');
+        }
+      }
+    }
+
+    // Track tool calls during the stream
+    const toolCallsUsed: string[] = [];
 
     const result = streamText({
-      model: gateway('moonshotai/kimi-k2-0905'),
-      system: SYSTEM_PROMPT,
+      model: gateway('xai/grok-4-fast-non-reasoning'),
+      system: getSystemPrompt(),
       messages: await convertToModelMessages(messages),
       tools: chatTools,
       stopWhen: stepCountIs(5),
+      onStepFinish: ({ toolCalls }) => {
+        // Track each tool that was called
+        if (toolCalls) {
+          for (const call of toolCalls) {
+            if (!toolCallsUsed.includes(call.toolName)) {
+              toolCallsUsed.push(call.toolName);
+            }
+          }
+        }
+      },
+      onFinish: async ({ text }) => {
+        // Log the assistant's response after streaming completes
+        if (sessionId && text) {
+          const responseTime = Date.now() - startTime;
+          await logChatMessage({
+            sessionId,
+            role: 'assistant',
+            content: text,
+            toolCalls: toolCallsUsed.length > 0 ? toolCallsUsed : undefined,
+            responseTimeMs: responseTime,
+          });
+        }
+      },
       onError: (error) => {
         console.error('Chat stream error:', error);
       },
     });
 
-    return result.toUIMessageStreamResponse();
+    // Include sessionId in the response headers for the client to track
+    const response = result.toUIMessageStreamResponse();
+
+    // Add session ID header so client can include it in future requests
+    if (sessionId) {
+      response.headers.set('X-Chat-Session-Id', sessionId);
+    }
+    // Track where we are in the message array for deduplication
+    response.headers.set('X-Chat-Message-Index', String(messages.length - 1));
+
+    return response;
   } catch (error) {
     console.error('Chat API error:', error);
     return new Response('Failed to process chat request', { status: 500 });

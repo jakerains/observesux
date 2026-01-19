@@ -124,9 +124,45 @@ CREATE INDEX IF NOT EXISTS idx_gas_prices_scraped ON gas_prices(scraped_at DESC)
 CREATE INDEX IF NOT EXISTS idx_gas_prices_station ON gas_prices(station_id);
 CREATE INDEX IF NOT EXISTS idx_gas_stations_coords ON gas_stations(latitude, longitude);
 
+-- =====================================================
+-- Chat Conversation Tracking
+-- =====================================================
+
+-- Chat sessions (one per browser session/conversation)
+CREATE TABLE IF NOT EXISTS chat_sessions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  started_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  ended_at TIMESTAMP WITH TIME ZONE,
+  message_count INTEGER DEFAULT 0,
+  tool_calls_count INTEGER DEFAULT 0,
+  user_agent TEXT,
+  ip_hash VARCHAR(64), -- SHA-256 hash of IP for privacy
+  metadata JSONB DEFAULT '{}'
+);
+
+-- Individual chat messages
+CREATE TABLE IF NOT EXISTS chat_messages (
+  id SERIAL PRIMARY KEY,
+  session_id UUID REFERENCES chat_sessions(id) ON DELETE CASCADE,
+  role VARCHAR(20) NOT NULL, -- 'user' or 'assistant'
+  content TEXT NOT NULL,
+  tool_calls JSONB, -- Array of tool names called in this message
+  tokens_used INTEGER,
+  response_time_ms INTEGER,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Indexes for chat queries
+CREATE INDEX IF NOT EXISTS idx_chat_sessions_started ON chat_sessions(started_at DESC);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_session ON chat_messages(session_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_created ON chat_messages(created_at DESC);
+
+-- =====================================================
+
 -- Clean up old data (run periodically via cron or pg_cron)
 -- DELETE FROM weather_observations WHERE created_at < NOW() - INTERVAL '30 days';
 -- DELETE FROM river_readings WHERE created_at < NOW() - INTERVAL '30 days';
 -- DELETE FROM air_quality_readings WHERE created_at < NOW() - INTERVAL '30 days';
 -- DELETE FROM system_logs WHERE created_at < NOW() - INTERVAL '7 days';
 -- DELETE FROM gas_prices WHERE scraped_at < NOW() - INTERVAL '7 days';
+-- DELETE FROM chat_sessions WHERE started_at < NOW() - INTERVAL '90 days';

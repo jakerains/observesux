@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { RagEntryForm } from './RagEntryForm'
 import { RagEntryList } from './RagEntryList'
 import { RagFileUpload } from './RagFileUpload'
@@ -10,25 +10,37 @@ import { ArrowLeft, Database, Plus, List, Upload, Trash2, Loader2 } from 'lucide
 import Link from 'next/link'
 import type { RagEntry } from '@/types/rag'
 
-export function RagAdmin() {
+const PAGE_SIZE_OPTIONS = [50, 100, 150, 200, 500] as const
+
+interface RagAdminProps {
+  hideHeader?: boolean
+}
+
+export function RagAdmin({ hideHeader = false }: RagAdminProps) {
   const [entries, setEntries] = useState<RagEntry[]>([])
   const [deletedEntries, setDeletedEntries] = useState<RagEntry[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState('entries')
   const [isEmptyingTrash, setIsEmptyingTrash] = useState(false)
+  const [pageSize, setPageSize] = useState<number>(50)
+  const [hasMore, setHasMore] = useState(false)
+  const initialLoadDone = useRef(false)
 
-  const fetchEntries = useCallback(async () => {
+  const fetchEntries = useCallback(async (limit: number) => {
     setIsLoading(true)
     try {
-      // Fetch active entries
-      const activeResponse = await fetch('/api/rag')
+      // Fetch active entries with selected limit
+      const activeResponse = await fetch(`/api/rag?limit=${limit}`)
       if (!activeResponse.ok) throw new Error('Failed to fetch')
       const activeData = await activeResponse.json()
-      setEntries(activeData.entries || [])
+      const newEntries = activeData.entries || []
 
-      // Fetch all entries to find deleted ones
-      const allResponse = await fetch('/api/rag?includeInactive=true')
+      setEntries(newEntries)
+      setHasMore(newEntries.length === limit)
+
+      // Fetch deleted entries
+      const allResponse = await fetch('/api/rag?includeInactive=true&limit=500')
       if (allResponse.ok) {
         const allData = await allResponse.json()
         const deleted = (allData.entries || []).filter((e: RagEntry) => !e.isActive)
@@ -44,12 +56,22 @@ export function RagAdmin() {
     }
   }, [])
 
+  // Initial load
   useEffect(() => {
-    fetchEntries()
-  }, [fetchEntries])
+    if (!initialLoadDone.current) {
+      initialLoadDone.current = true
+      fetchEntries(pageSize)
+    }
+  }, [fetchEntries, pageSize])
+
+  // Handle page size change
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize)
+    fetchEntries(newSize)
+  }
 
   const handleEntryCreated = () => {
-    fetchEntries()
+    fetchEntries(pageSize)
     setActiveTab('entries')
   }
 
@@ -94,23 +116,25 @@ export function RagAdmin() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <Link href="/">
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            </Link>
-            <Database className="h-6 w-6 text-primary" />
-            <h1 className="text-2xl font-bold">Knowledge Base</h1>
+      {/* Header - only show when not embedded */}
+      {!hideHeader && (
+        <div className="flex items-start justify-between">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <Link href="/">
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+              </Link>
+              <Database className="h-6 w-6 text-primary" />
+              <h1 className="text-2xl font-bold">Knowledge Base</h1>
+            </div>
+            <p className="text-muted-foreground ml-11">
+              Manage RAG entries that enhance the chat assistant's knowledge
+            </p>
           </div>
-          <p className="text-muted-foreground ml-11">
-            Manage RAG entries that enhance the chat assistant's knowledge
-          </p>
         </div>
-      </div>
+      )}
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -140,6 +164,29 @@ export function RagAdmin() {
             error={error}
             onDelete={handleEntryDeleted}
           />
+          {/* Pagination Controls */}
+          {!isLoading && entries.length > 0 && (
+            <div className="mt-4 flex items-center justify-center gap-4">
+              <p className="text-sm text-muted-foreground">
+                Showing {entries.length} entries
+                {hasMore && '+'}
+              </p>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Show:</span>
+                <select
+                  value={pageSize}
+                  onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+                  className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                >
+                  {PAGE_SIZE_OPTIONS.map((size) => (
+                    <option key={size} value={size}>
+                      {size}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="add" className="mt-6">

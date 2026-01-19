@@ -5,15 +5,16 @@ import {
   Map,
   Cloud,
   Camera,
-  MessageSquare,
   Newspaper
 } from 'lucide-react'
+import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import { useChatSheet } from '@/lib/contexts/ChatContext'
 
 interface NavItem {
   id: string
-  icon: React.ElementType
+  icon?: React.ElementType
+  customImage?: string // Path to custom image
   label: string
   widgetId?: string // Optional - chat doesn't scroll to a widget
   action?: 'chat' // Special action type
@@ -22,7 +23,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { id: 'map', icon: Map, label: 'Map', widgetId: 'map' },
   { id: 'weather', icon: Cloud, label: 'Weather', widgetId: 'weather' },
-  { id: 'chat', icon: MessageSquare, label: 'Chat', action: 'chat' },
+  { id: 'chat', customImage: '/sux.png', label: 'SUX', action: 'chat' },
   { id: 'cameras', icon: Camera, label: 'Cameras', widgetId: 'cameras' },
   { id: 'news', icon: Newspaper, label: 'News', widgetId: 'news' },
 ]
@@ -105,7 +106,7 @@ export function MobileNavigation() {
 
       <div className="flex items-center justify-around px-2 pt-2 pb-4">
         {visibleNavItems.map((item) => {
-          const { id, icon: Icon, label, action } = item
+          const { id, icon: Icon, customImage, label, action } = item
           // Chat button is never "active" in the scroll sense
           const isActive = action !== 'chat' && activeSection === id
 
@@ -125,13 +126,23 @@ export function MobileNavigation() {
                 "p-1.5 rounded-xl transition-colors",
                 isActive && "bg-primary/10"
               )}>
-                <Icon
-                  className={cn(
-                    "h-5 w-5 transition-all",
-                    isActive && "scale-110"
-                  )}
-                  strokeWidth={isActive ? 2.5 : 2}
-                />
+                {customImage ? (
+                  <Image
+                    src={customImage}
+                    alt={label}
+                    width={36}
+                    height={36}
+                    className="transition-all"
+                  />
+                ) : Icon ? (
+                  <Icon
+                    className={cn(
+                      "h-5 w-5 transition-all",
+                      isActive && "scale-110"
+                    )}
+                    strokeWidth={isActive ? 2.5 : 2}
+                  />
+                ) : null}
               </div>
               <span className={cn(
                 "text-[10px] font-medium transition-colors",

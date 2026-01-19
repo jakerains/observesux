@@ -3,7 +3,8 @@
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
 import { useRef, useEffect, useMemo, FormEvent, useState } from 'react'
-import { MessageSquare, Send, Loader2, RotateCcw, Sparkles } from 'lucide-react'
+import { Send, Loader2, RotateCcw } from 'lucide-react'
+import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
@@ -18,6 +19,10 @@ import { TextShimmer } from '@/components/ui/text-shimmer'
 import { ChatMarkdown } from '@/components/dashboard/ChatMarkdown'
 import { getToolCardComponent } from '@/components/chat/tool-cards'
 import { useChatSheet } from '@/lib/contexts/ChatContext'
+
+// Session storage key for chat session ID
+const SESSION_STORAGE_KEY = 'sux-chat-session-id'
+const MESSAGE_INDEX_KEY = 'sux-chat-message-index'
 
 // Suggested questions for onboarding
 const SUGGESTED_QUESTIONS = [
@@ -45,6 +50,11 @@ function useIsMobile(breakpoint = 768) {
   return isMobile
 }
 
+// Generate a UUID v4 (browser-compatible)
+function generateUUID(): string {
+  return crypto.randomUUID()
+}
+
 function ChatWidgetInner() {
   const { isOpen, openChat, closeChat } = useChatSheet()
   const [input, setInput] = useState('')
@@ -52,9 +62,31 @@ function ChatWidgetInner() {
   const inputRef = useRef<HTMLInputElement>(null)
   const isMobile = useIsMobile()
 
-  // Create transport with useMemo to avoid recreation on each render
+  // Session tracking state - using refs for stable references in transport
+  const sessionIdRef = useRef<string | null>(null)
+  const lastLoggedIndexRef = useRef<number>(-1)
+
+  // Load or create session ID on mount
+  useEffect(() => {
+    let stored = sessionStorage.getItem(SESSION_STORAGE_KEY)
+    if (!stored) {
+      // Generate a new session ID client-side
+      stored = generateUUID()
+      sessionStorage.setItem(SESSION_STORAGE_KEY, stored)
+    }
+    sessionIdRef.current = stored
+
+    const storedIndex = sessionStorage.getItem(MESSAGE_INDEX_KEY)
+    if (storedIndex) lastLoggedIndexRef.current = parseInt(storedIndex, 10)
+  }, [])
+
+  // Create transport with dynamic body that includes session tracking
   const transport = useMemo(() => new DefaultChatTransport({
     api: '/api/chat',
+    body: () => ({
+      sessionId: sessionIdRef.current,
+      lastLoggedMessageIndex: lastLoggedIndexRef.current,
+    }),
   }), [])
 
   const {
@@ -73,10 +105,49 @@ function ChatWidgetInner() {
 
   const isLoading = status === 'streaming' || status === 'submitted'
 
-  // Auto-scroll to bottom when new messages arrive
+  // Update the last logged message index when messages change (for deduplication)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+    if (messages.length > 0 && status === 'ready') {
+      lastLoggedIndexRef.current = messages.length - 1
+      sessionStorage.setItem(MESSAGE_INDEX_KEY, String(messages.length - 1))
+    }
+  }, [messages.length, status])
+
+  // Auto-scroll to bottom when new messages arrive
+  // Throttled during streaming to avoid forced reflow on every chunk
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const lastScrollTimeRef = useRef(0)
+
+  useEffect(() => {
+    const now = Date.now()
+    const timeSinceLastScroll = now - lastScrollTimeRef.current
+
+    // During streaming, throttle scrolls to every 150ms to reduce reflows
+    // When not streaming, scroll immediately with smooth animation
+    if (status === 'streaming') {
+      if (timeSinceLastScroll > 150) {
+        lastScrollTimeRef.current = now
+        messagesEndRef.current?.scrollIntoView({ behavior: 'auto' })
+      } else if (!scrollTimeoutRef.current) {
+        // Schedule a scroll for the remaining throttle time
+        scrollTimeoutRef.current = setTimeout(() => {
+          lastScrollTimeRef.current = Date.now()
+          messagesEndRef.current?.scrollIntoView({ behavior: 'auto' })
+          scrollTimeoutRef.current = null
+        }, 150 - timeSinceLastScroll)
+      }
+    } else {
+      // Not streaming - scroll smoothly
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
+
+    return () => {
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current)
+        scrollTimeoutRef.current = null
+      }
+    }
+  }, [messages, status])
 
   // Focus input when sheet opens
   useEffect(() => {
@@ -101,31 +172,43 @@ function ChatWidgetInner() {
     await sendMessage({ text: question })
   }
 
-  // Clear chat history
+  // Clear chat history and start a new session
   const handleClearChat = () => {
     setMessages([])
+    // Clear session to start fresh
+    sessionIdRef.current = null
+    lastLoggedIndexRef.current = -1
+    sessionStorage.removeItem(SESSION_STORAGE_KEY)
+    sessionStorage.removeItem(MESSAGE_INDEX_KEY)
   }
 
   return (
     <>
       {/* Floating chat button - hidden on mobile, shown on desktop */}
-      <div className="hidden md:block fixed bottom-6 right-20 z-50">
-        <Button
+      <div className="hidden md:block fixed bottom-6 right-20 z-50 group">
+        <button
           onClick={openChat}
-          size="icon"
           className={cn(
-            'w-14 h-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200',
-            'bg-primary hover:bg-primary/90 text-primary-foreground'
+            'w-16 h-16 rounded-full shadow-lg hover:shadow-xl transition-all duration-200',
+            'bg-white hover:scale-105',
+            'flex items-center justify-center overflow-hidden border-2 border-white/20'
           )}
           aria-label="Open chat assistant"
         >
-          <MessageSquare className="h-6 w-6" />
-        </Button>
+          <Image
+            src="/sux.png"
+            alt="SUX - Siouxland Assistant"
+            width={56}
+            height={56}
+            className="object-cover"
+            style={{ width: 'auto', height: 'auto' }}
+          />
+        </button>
 
         {/* Tooltip */}
-        <div className="absolute bottom-full right-0 mb-2 opacity-0 hover:opacity-100 pointer-events-none transition-opacity">
+        <div className="absolute bottom-full right-0 mb-2 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">
           <div className="bg-popover text-popover-foreground text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap">
-            Ask about Sioux City
+            Ask SUX about Sioux City
           </div>
         </div>
       </div>
@@ -153,7 +236,14 @@ function ChatWidgetInner() {
           )}>
             <div className="flex items-center justify-between pr-8">
               <div className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-primary" />
+                <Image
+                  src="/sux.png"
+                  alt="SUX"
+                  width={36}
+                  height={36}
+                  className="shrink-0"
+                  style={{ width: 'auto', height: 'auto' }}
+                />
                 <SheetTitle>SUX</SheetTitle>
                 <span className="text-xs text-muted-foreground font-normal">Siouxland Assistant</span>
               </div>
@@ -180,9 +270,16 @@ function ChatWidgetInner() {
               {/* Welcome message when empty */}
               {messages.length === 0 && (
                 <div className="text-center py-8">
-                  <div className="text-4xl mb-4">👋</div>
+                  <Image
+                    src="/sux.png"
+                    alt="SUX - Siouxland Assistant"
+                    width={120}
+                    height={120}
+                    className="mx-auto mb-4"
+                    style={{ width: 'auto', height: 'auto' }}
+                  />
                   <p className="text-muted-foreground mb-6">
-                    Hi! I can help you with real-time info about Sioux City.
+                    Hey there! I&apos;m SUX, your Siouxland Assistant. Ask me anything about Sioux City!
                   </p>
                   <div className="space-y-2">
                     <p className="text-xs text-muted-foreground mb-2">Try asking:</p>
@@ -207,13 +304,13 @@ function ChatWidgetInner() {
                 <div
                   key={message.id}
                   className={cn(
-                    'flex',
+                    'flex gap-2',
                     message.role === 'user' ? 'justify-end' : 'justify-start'
                   )}
                 >
                   <div
                     className={cn(
-                      'max-w-[85%] rounded-2xl px-4 py-2 transition-all duration-150',
+                      'max-w-[80%] rounded-2xl px-4 py-2 transition-all duration-150',
                       message.role === 'user'
                         ? 'bg-primary text-primary-foreground'
                         : 'bg-muted'
