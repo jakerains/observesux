@@ -104,8 +104,8 @@ function ChatWidgetInner() {
   const inputRef = useRef<HTMLInputElement>(null)
   const isMobile = useIsMobile()
 
-  // Random suggested questions - stable for the session, randomized on mount
-  const [suggestedQuestions] = useState(() => [
+  // Random suggested questions - randomized on mount and when chat is cleared
+  const [suggestedQuestions, setSuggestedQuestions] = useState(() => [
     FIXED_QUESTION,
     ...getRandomQuestions(3),
   ])
@@ -255,6 +255,8 @@ function ChatWidgetInner() {
     lastLoggedIndexRef.current = -1
     sessionStorage.removeItem(SESSION_STORAGE_KEY)
     sessionStorage.removeItem(MESSAGE_INDEX_KEY)
+    // Randomize suggested questions
+    setSuggestedQuestions([FIXED_QUESTION, ...getRandomQuestions(3)])
   }
 
   return (
