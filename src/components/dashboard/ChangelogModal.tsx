@@ -16,6 +16,25 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.2.4',
+    date: '2026-01-19',
+    added: [
+      'Vercel Workflow for gas price scraping with auto-retries',
+      'Manual gas scrape trigger in admin Tools panel',
+      'Device info tracking in chat (mobile/tablet/desktop)',
+      'Aircraft tracking via Airplanes.live (includes military)',
+    ],
+    changed: [
+      'Switched aircraft API from OpenSky to Airplanes.live',
+    ],
+    fixed: [
+      'Chat logging captures suggested question pill messages',
+      'Duplicate contact info no longer shows twice',
+      'AI no longer introduces itself on direct questions',
+      'Vercel cron auth for gas prices',
+    ],
+  },
+  {
     version: '0.2.3',
     date: '2026-01-19',
     added: [
