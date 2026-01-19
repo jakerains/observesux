@@ -5,6 +5,20 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.3] - 2026-01-19
+
+### Added
+- **Rotating suggested questions** in chat onboarding
+  - Bank of 18 questions across 5 categories (weather, traffic, services, food, general)
+  - "What's happening in Sioux City?" always shown first
+  - 3 random questions rotate on each visit
+  - Questions stay stable during a session
+
+### Fixed
+- Mobile chat sheet no longer covers bottom navigation
+- Added swipe-down-to-close gesture on mobile drag handle
+- Production API connectivity with better URL detection and logging
+
 ## [0.2.2] - 2026-01-19
 
 ### Added

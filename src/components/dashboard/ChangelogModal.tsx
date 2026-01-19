@@ -16,6 +16,20 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.2.3',
+    date: '2026-01-19',
+    added: [
+      'Rotating suggested questions (18 questions, 5 categories)',
+      '"What\'s happening?" always first, 3 random others rotate',
+    ],
+    changed: [],
+    fixed: [
+      'Mobile chat sheet no longer covers bottom nav',
+      'Swipe-down-to-close on mobile drag handle',
+      'Production API connectivity with better URL detection',
+    ],
+  },
+  {
     version: '0.2.2',
     date: '2026-01-19',
     added: [

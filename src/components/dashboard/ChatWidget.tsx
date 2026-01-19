@@ -24,13 +24,55 @@ import { useChatSheet } from '@/lib/contexts/ChatContext'
 const SESSION_STORAGE_KEY = 'sux-chat-session-id'
 const MESSAGE_INDEX_KEY = 'sux-chat-message-index'
 
-// Suggested questions for onboarding
-const SUGGESTED_QUESTIONS = [
-  "What's happening in Sioux City?",
+// Fixed first question - always shown
+const FIXED_QUESTION = "What's happening in Sioux City?"
+
+// Bank of rotating questions covering different topics
+const QUESTION_BANK = [
+  // Weather & Environment
   "How's the weather?",
+  "Any weather alerts?",
+  "What's the air quality like?",
+  "Are the rivers flooding?",
+
+  // Traffic & Transit
   "Any traffic problems?",
-  "Are the rivers okay?",
+  "How's I-29 looking?",
+  "Are the buses running?",
+
+  // Local Info & Services
+  "What are City Hall's hours?",
+  "How do I pay a parking ticket?",
+  "How do I report a pothole?",
+  "Who do I call about a stray animal?",
+
+  // Food & Entertainment
+  "Where should I eat tonight?",
+  "Best tacos in town?",
+  "Good coffee shops?",
+  "Any local events coming up?",
+
+  // General
+  "Tell me about Sioux City",
+  "What's the airport code?",
+  "Any power outages?",
+  "What's on the local news?",
 ]
+
+// Shuffle array using Fisher-Yates algorithm
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array]
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+  }
+  return shuffled
+}
+
+// Get random questions for display (called once per mount)
+function getRandomQuestions(count: number): string[] {
+  return shuffleArray(QUESTION_BANK).slice(0, count)
+}
 
 export function ChatWidget() {
   return <ChatWidgetInner />
@@ -61,6 +103,12 @@ function ChatWidgetInner() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const isMobile = useIsMobile()
+
+  // Random suggested questions - stable for the session, randomized on mount
+  const [suggestedQuestions] = useState(() => [
+    FIXED_QUESTION,
+    ...getRandomQuestions(3),
+  ])
 
   // Swipe-to-close gesture handling for mobile
   const touchStartY = useRef<number | null>(null)
@@ -316,7 +364,7 @@ function ChatWidgetInner() {
                   <div className="space-y-2">
                     <p className="text-xs text-muted-foreground mb-2">Try asking:</p>
                     <div className="flex flex-wrap gap-2 justify-center">
-                      {SUGGESTED_QUESTIONS.map((question) => (
+                      {suggestedQuestions.map((question) => (
                         <button
                           key={question}
                           onClick={() => handleSuggestedQuestion(question)}
