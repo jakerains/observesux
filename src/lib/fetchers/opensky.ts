@@ -139,10 +139,13 @@ const mpsToFpm = (mps: number | null): number | null => (mps !== null ? mps * 19
 
 const OPENSKY_CACHE_TTL_MS = 60_000
 const OPENSKY_BACKOFF_MS = 120_000
+const OPENSKY_TIMEOUT_MS = 8_000 // 8 second timeout for fetch
+const OPENSKY_ERROR_BACKOFF_MS = 300_000 // 5 minute backoff on connection errors
 
 let cachedData: AircraftData | null = null
 let lastFetchAt = 0
 let cooldownUntil = 0
+let consecutiveErrors = 0
 
 function getEmptyAircraftData(): AircraftData {
   return {
@@ -167,9 +170,14 @@ export async function fetchAircraft(): Promise<AircraftData> {
   if (cachedData && now - lastFetchAt < OPENSKY_CACHE_TTL_MS) {
     return cachedData
   }
-  if (cooldownUntil && now < cooldownUntil && cachedData) {
-    return cachedData
+  if (cooldownUntil && now < cooldownUntil) {
+    // During cooldown, return cached data or empty
+    return cachedData ?? getEmptyAircraftData()
   }
+
+  // Create abort controller for timeout
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), OPENSKY_TIMEOUT_MS)
 
   try {
     const url = new URL(OPENSKY_API)
@@ -184,20 +192,24 @@ export async function fetchAircraft(): Promise<AircraftData> {
         Accept: 'application/json',
         ...(authHeader ? { Authorization: authHeader } : {}),
       },
+      signal: controller.signal,
       next: { revalidate: 60 }, // Cache for 60 seconds
     })
 
+    clearTimeout(timeoutId)
+
     if (!response.ok) {
       if (response.status === 429) {
+        console.warn('[OpenSky] Rate limited, backing off for 2 minutes')
         cooldownUntil = now + OPENSKY_BACKOFF_MS
-        if (cachedData) {
-          return cachedData
-        }
-        return getEmptyAircraftData()
+        consecutiveErrors++
+        return cachedData ?? getEmptyAircraftData()
       }
       throw new Error(`OpenSky API error: ${response.status}`)
     }
 
+    // Success - reset error counter
+    consecutiveErrors = 0
     const data: OpenSkyResponse = await response.json()
 
     if (!data.states || data.states.length === 0) {
@@ -256,7 +268,31 @@ export async function fetchAircraft(): Promise<AircraftData> {
     lastFetchAt = now
     return result
   } catch (error) {
-    console.error('Failed to fetch aircraft:', error)
+    clearTimeout(timeoutId)
+    consecutiveErrors++
+
+    // Determine backoff based on error type and consecutive errors
+    const isTimeout = error instanceof Error && (
+      error.name === 'AbortError' ||
+      error.message.includes('timeout') ||
+      error.message.includes('Timeout')
+    )
+    const isConnectionError = error instanceof Error && (
+      error.message.includes('fetch failed') ||
+      error.message.includes('ECONNREFUSED') ||
+      error.message.includes('ENOTFOUND')
+    )
+
+    if (isTimeout || isConnectionError) {
+      // Exponential backoff: 5 min, 10 min, 20 min, max 30 min
+      const backoffMultiplier = Math.min(consecutiveErrors, 4)
+      const backoffMs = OPENSKY_ERROR_BACKOFF_MS * backoffMultiplier
+      cooldownUntil = now + backoffMs
+      console.warn(`[OpenSky] Connection error (attempt ${consecutiveErrors}), backing off for ${backoffMs / 60000} minutes`)
+    } else {
+      console.error('[OpenSky] Unexpected error:', error)
+    }
+
     return cachedData ?? getEmptyAircraftData()
   }
 }
