@@ -185,11 +185,11 @@ function ChatWidgetInner() {
   return (
     <>
       {/* Floating chat button - hidden on mobile, shown on desktop */}
-      <div className="hidden md:block fixed bottom-6 right-20 z-50 group">
+      <div className="hidden md:block fixed bottom-20 right-20 z-50 group">
         <button
           onClick={openChat}
           className={cn(
-            'w-16 h-16 rounded-full shadow-lg hover:shadow-xl transition-all duration-200',
+            'w-16 h-16 rounded-full shadow-2xl hover:shadow-[0_20px_50px_rgba(0,0,0,0.4)] transition-all duration-200',
             'bg-white hover:scale-105',
             'flex items-center justify-center overflow-hidden border-2 border-white/20'
           )}

@@ -5,6 +5,37 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2] - 2026-01-19
+
+### Added
+- **Structured content blocks** in chat responses for rich inline formatting
+  - `contact` block: renders phone (tap-to-call), address (maps link), email, website, hours
+  - `hours` block: displays day-by-day operating hours in a clean table
+  - `links` block: action buttons with descriptions
+- AI system prompt updated with block syntax examples
+- Added @json-render/core and @json-render/react packages (for future use)
+
+### Changed
+- Knowledge base search no longer shows a tool card - results stay behind the scenes
+- ChatMarkdown now parses special code blocks and renders structured components
+
+## [0.2.1] - 2026-01-19
+
+### Added
+- **Chat Logging System** with session tracking and PostgreSQL storage
+- **Admin Dashboard** at `/admin` with password-protected access
+  - View all chat sessions with message counts and timestamps
+  - Drill into individual sessions to see full conversation history
+  - Tool usage tracking per message
+  - RAG management moved to unified admin page
+- **SUX mascot image** in chat widget and mobile navigation
+- **Scraped city content** for RAG: Sioux City government staff directories and police department news
+
+### Changed
+- Mobile navigation chat button now shows SUX mascot image instead of icon
+- Chat route includes session ID in response headers for client tracking
+- RAG admin consolidated into `/admin` page (removed standalone `/rag` route)
+
 ## [0.2.0] - 2026-01-18
 
 ### Added

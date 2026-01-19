@@ -16,6 +16,38 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.2.2',
+    date: '2026-01-19',
+    added: [
+      'Structured content blocks in chat (contact, hours, links)',
+      'Contact cards with tap-to-call phone and map links',
+      'Hours blocks for operating schedules',
+      'Action link blocks for quick actions',
+    ],
+    changed: [
+      'Knowledge base search hidden from UI (works behind scenes)',
+      'ChatMarkdown renders structured blocks inline',
+    ],
+    fixed: [],
+  },
+  {
+    version: '0.2.1',
+    date: '2026-01-19',
+    added: [
+      'Chat logging system with session tracking',
+      'Admin dashboard at /admin with password auth',
+      'View chat sessions and full conversation history',
+      'Tool usage tracking per message',
+      'SUX mascot image in chat and mobile nav',
+      'Scraped Sioux City government and police content for RAG',
+    ],
+    changed: [
+      'Mobile nav shows SUX mascot instead of chat icon',
+      'RAG admin consolidated into /admin page',
+    ],
+    fixed: [],
+  },
+  {
     version: '0.2.0',
     date: '2026-01-18',
     added: [

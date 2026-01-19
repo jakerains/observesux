@@ -1,6 +1,7 @@
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { cn } from '@/lib/utils'
+import { parseStructuredBlock, STRUCTURED_BLOCK_TYPES } from '@/components/chat/StructuredBlocks'
 
 /**
  * Normalize markdown content to fix common LLM output issues
@@ -110,19 +111,47 @@ export function ChatMarkdown({ content, className, variant = 'assistant' }: Chat
           hr: () => (
             <hr className={cn('my-3 border-t', tone.hr)} />
           ),
-          pre: ({ children }) => (
-            <pre
-              className={cn(
-                'overflow-x-auto rounded-lg p-3 my-2 text-xs leading-relaxed',
-                tone.blockCode
-              )}
-            >
-              {children}
-            </pre>
-          ),
+          pre: ({ children }) => {
+            // Check if this is a structured block by inspecting the child code element
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const childElement = children as any
+            const codeChild = childElement?.props?.children
+            const codeClassName = childElement?.props?.className || ''
+            const langMatch = codeClassName.match(/language-(\w+)/)
+            const language = langMatch?.[1]
+
+            // If it's a structured block type, render the structured component
+            if (language && STRUCTURED_BLOCK_TYPES.includes(language as typeof STRUCTURED_BLOCK_TYPES[number])) {
+              const content = typeof codeChild === 'string' ? codeChild : ''
+              const structuredElement = parseStructuredBlock(language, content)
+              if (structuredElement) {
+                return <>{structuredElement}</>
+              }
+            }
+
+            // Regular code block
+            return (
+              <pre
+                className={cn(
+                  'overflow-x-auto rounded-lg p-3 my-2 text-xs leading-relaxed',
+                  tone.blockCode
+                )}
+              >
+                {children}
+              </pre>
+            )
+          },
           code: ({ className, children, ...props }) => {
             // Check if this is a code block (has language class) or inline code
             const isInline = !className
+
+            // For structured blocks rendered in pre, just return the content
+            const langMatch = className?.match(/language-(\w+)/)
+            const language = langMatch?.[1]
+            if (language && STRUCTURED_BLOCK_TYPES.includes(language as typeof STRUCTURED_BLOCK_TYPES[number])) {
+              return <code className={className} {...props}>{children}</code>
+            }
+
             return (
               <code
                 className={cn(
