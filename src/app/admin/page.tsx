@@ -23,6 +23,10 @@ import {
   Smartphone,
   Tablet,
   Monitor,
+  Fuel,
+  CheckCircle2,
+  XCircle,
+  Play,
 } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
@@ -509,6 +513,162 @@ function ChatLogsPanel() {
   )
 }
 
+// Tools Panel Component
+function ToolsPanel() {
+  const [gasScrapeStatus, setGasScrapeStatus] = useState<'idle' | 'running' | 'success' | 'error'>('idle')
+  const [gasScrapeResult, setGasScrapeResult] = useState<{
+    stationsScraped?: number
+    pricesInserted?: number
+    message?: string
+    timestamp?: string
+  } | null>(null)
+
+  const runGasScrape = async () => {
+    setGasScrapeStatus('running')
+    setGasScrapeResult(null)
+
+    try {
+      // Get the admin password from session (it was used to authenticate)
+      const password = prompt('Enter admin password to confirm:')
+      if (!password) {
+        setGasScrapeStatus('idle')
+        return
+      }
+
+      const res = await fetch('/api/admin/gas-scrape', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      })
+
+      const data = await res.json()
+
+      if (res.ok && data.success) {
+        setGasScrapeStatus('success')
+        setGasScrapeResult(data)
+      } else {
+        setGasScrapeStatus('error')
+        setGasScrapeResult({ message: data.message || data.error || 'Unknown error' })
+      }
+    } catch (error) {
+      setGasScrapeStatus('error')
+      setGasScrapeResult({ message: error instanceof Error ? error.message : 'Request failed' })
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Gas Prices Scraper */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-orange-500/10">
+              <Fuel className="h-5 w-5 text-orange-500" />
+            </div>
+            <div>
+              <CardTitle className="text-lg">Gas Prices Scraper</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Scrape current gas prices from GasBuddy via Firecrawl
+              </p>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center gap-4">
+            <Button
+              onClick={runGasScrape}
+              disabled={gasScrapeStatus === 'running'}
+              className="gap-2"
+            >
+              {gasScrapeStatus === 'running' ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Scraping...
+                </>
+              ) : (
+                <>
+                  <Play className="h-4 w-4" />
+                  Run Scrape Now
+                </>
+              )}
+            </Button>
+
+            {gasScrapeStatus === 'success' && (
+              <div className="flex items-center gap-2 text-green-600">
+                <CheckCircle2 className="h-4 w-4" />
+                <span className="text-sm">Success</span>
+              </div>
+            )}
+
+            {gasScrapeStatus === 'error' && (
+              <div className="flex items-center gap-2 text-red-600">
+                <XCircle className="h-4 w-4" />
+                <span className="text-sm">Failed</span>
+              </div>
+            )}
+          </div>
+
+          {gasScrapeResult && (
+            <div className={cn(
+              'p-3 rounded-lg text-sm',
+              gasScrapeStatus === 'success' ? 'bg-green-500/10' : 'bg-red-500/10'
+            )}>
+              {gasScrapeStatus === 'success' ? (
+                <div className="space-y-1">
+                  <p><strong>{gasScrapeResult.stationsScraped}</strong> stations scraped</p>
+                  <p><strong>{gasScrapeResult.pricesInserted}</strong> prices inserted</p>
+                  <p className="text-xs text-muted-foreground">
+                    {gasScrapeResult.timestamp && format(new Date(gasScrapeResult.timestamp), 'PPpp')}
+                  </p>
+                </div>
+              ) : (
+                <p className="text-red-600">{gasScrapeResult.message}</p>
+              )}
+            </div>
+          )}
+
+          <div className="text-xs text-muted-foreground space-y-1">
+            <p>• Automatic scrape runs daily at 6:00 AM CST</p>
+            <p>• Uses Firecrawl to parse GasBuddy data</p>
+            <p>• New stations are automatically geocoded</p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Cron Schedule Info */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-blue-500/10">
+              <Clock className="h-5 w-5 text-blue-500" />
+            </div>
+            <div>
+              <CardTitle className="text-lg">Scheduled Tasks</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Vercel Cron jobs configured for this project
+              </p>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="border rounded-lg divide-y">
+            <div className="p-3 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Fuel className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-medium">Gas Price Scrape</p>
+                  <p className="text-xs text-muted-foreground">/api/cron/gas-prices</p>
+                </div>
+              </div>
+              <Badge variant="secondary">Daily 6:00 AM CST</Badge>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
 // Main Admin Page
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
@@ -563,6 +723,10 @@ export default function AdminPage() {
               <Database className="h-4 w-4" />
               Knowledge Base
             </TabsTrigger>
+            <TabsTrigger value="tools" className="flex items-center gap-2">
+              <Wrench className="h-4 w-4" />
+              Tools
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="chat-logs">
@@ -571,6 +735,10 @@ export default function AdminPage() {
 
           <TabsContent value="knowledge-base">
             <RagAdmin hideHeader />
+          </TabsContent>
+
+          <TabsContent value="tools">
+            <ToolsPanel />
           </TabsContent>
         </Tabs>
       </div>
