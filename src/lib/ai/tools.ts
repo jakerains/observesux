@@ -3,11 +3,22 @@ import { z } from 'zod';
 
 // Get the base URL for API calls (works on server side)
 function getBaseUrl(): string {
+  // 1. Explicit base URL (highest priority)
   const explicitBaseUrl = process.env.NEXT_PUBLIC_BASE_URL?.trim();
   if (explicitBaseUrl) {
+    console.log('[AI Tools] Using NEXT_PUBLIC_BASE_URL:', explicitBaseUrl);
     return explicitBaseUrl;
   }
 
+  // 2. Vercel production URL (for production deployments)
+  const vercelProdUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim();
+  if (vercelProdUrl) {
+    const url = `https://${vercelProdUrl}`;
+    console.log('[AI Tools] Using VERCEL_PROJECT_PRODUCTION_URL:', url);
+    return url;
+  }
+
+  // 3. Vercel URL (for preview deployments)
   const vercelUrl = process.env.VERCEL_URL?.trim();
   if (vercelUrl) {
     const isLocalhost =
@@ -15,29 +26,38 @@ function getBaseUrl(): string {
       vercelUrl.startsWith('127.0.0.1') ||
       vercelUrl.startsWith('0.0.0.0') ||
       vercelUrl.startsWith('[::1]');
-    return `${isLocalhost ? 'http' : 'https'}://${vercelUrl}`;
+    const url = `${isLocalhost ? 'http' : 'https'}://${vercelUrl}`;
+    console.log('[AI Tools] Using VERCEL_URL:', url);
+    return url;
   }
 
+  // 4. Fallback to localhost
+  console.log('[AI Tools] No Vercel URLs found, using localhost');
   return 'http://localhost:3000';
 }
 
 // Helper to fetch from internal API routes
 async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T | null> {
+  const baseUrl = getBaseUrl();
+  const url = `${baseUrl}${endpoint}`;
+
   try {
-    const baseUrl = getBaseUrl();
-    const url = `${baseUrl}${endpoint}`;
     console.log(`[AI Tools] Fetching: ${url}`);
     const response = await fetch(url, {
       cache: 'no-store',
       ...options,
     });
+
     if (!response.ok) {
-      console.error(`API error for ${endpoint}:`, response.status);
+      const errorText = await response.text().catch(() => 'No response body');
+      console.error(`[AI Tools] API error for ${endpoint}: ${response.status} ${response.statusText}`, errorText.slice(0, 200));
       return null;
     }
+
     return response.json();
   } catch (error) {
-    console.error(`Failed to fetch ${endpoint}:`, error);
+    console.error(`[AI Tools] Failed to fetch ${endpoint}:`, error instanceof Error ? error.message : error);
+    console.error(`[AI Tools] Attempted URL: ${url}`);
     return null;
   }
 }

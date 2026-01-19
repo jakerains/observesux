@@ -2,7 +2,7 @@
 
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
-import { useRef, useEffect, useMemo, FormEvent, useState } from 'react'
+import { useRef, useEffect, useMemo, FormEvent, useState, useCallback } from 'react'
 import { Send, Loader2, RotateCcw } from 'lucide-react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
@@ -61,6 +61,33 @@ function ChatWidgetInner() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const isMobile = useIsMobile()
+
+  // Swipe-to-close gesture handling for mobile
+  const touchStartY = useRef<number | null>(null)
+  const touchCurrentY = useRef<number | null>(null)
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartY.current = e.touches[0].clientY
+    touchCurrentY.current = e.touches[0].clientY
+  }, [])
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (touchStartY.current === null) return
+    touchCurrentY.current = e.touches[0].clientY
+  }, [])
+
+  const handleTouchEnd = useCallback(() => {
+    if (touchStartY.current === null || touchCurrentY.current === null) return
+
+    const deltaY = touchCurrentY.current - touchStartY.current
+    // If swiped down more than 80px, close the sheet
+    if (deltaY > 80) {
+      closeChat()
+    }
+
+    touchStartY.current = null
+    touchCurrentY.current = null
+  }, [closeChat])
 
   // Session tracking state - using refs for stable references in transport
   const sessionIdRef = useRef<string | null>(null)
@@ -220,13 +247,18 @@ function ChatWidgetInner() {
           className={cn(
             'flex flex-col p-0 overflow-hidden',
             isMobile
-              ? 'h-[85vh] rounded-t-2xl'
+              ? 'h-[calc(85vh-80px)] rounded-t-2xl !bottom-[80px]'
               : 'w-full sm:max-w-md h-full'
           )}
         >
-          {/* Drag handle for mobile */}
+          {/* Drag handle for mobile - swipe down to close */}
           {isMobile && (
-            <div className="flex justify-center pt-2 pb-1 shrink-0">
+            <div
+              className="flex justify-center pt-2 pb-1 shrink-0 cursor-grab active:cursor-grabbing touch-none"
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+            >
               <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
             </div>
           )}
