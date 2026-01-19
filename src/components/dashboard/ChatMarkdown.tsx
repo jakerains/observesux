@@ -54,6 +54,8 @@ export function ChatMarkdown({ content, className, variant = 'assistant' }: Chat
         'text-sm leading-relaxed break-words',
         // Stabilize rendering during streaming to prevent flicker
         '[contain:content] [content-visibility:auto]',
+        // Ensure text wraps properly even for long URLs
+        '[overflow-wrap:anywhere]',
         tone.text,
         className
       )}
@@ -93,7 +95,7 @@ export function ChatMarkdown({ content, className, variant = 'assistant' }: Chat
               href={href}
               target="_blank"
               rel="noreferrer"
-              className={cn('font-medium', tone.link)}
+              className={cn('font-medium break-all', tone.link)}
             >
               {children}
             </a>

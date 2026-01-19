@@ -21,7 +21,7 @@ interface ContactData {
  */
 export function ContactBlock({ data }: { data: ContactData }) {
   return (
-    <div className="my-3 p-3 rounded-lg bg-muted/50 border border-border/50 not-prose">
+    <div className="my-3 p-3 rounded-lg bg-muted/50 border border-border/50 not-prose overflow-hidden">
       {data.name && (
         <div className="font-semibold text-sm mb-2">{data.name}</div>
       )}
@@ -31,7 +31,7 @@ export function ContactBlock({ data }: { data: ContactData }) {
             href={`tel:${data.phone.replace(/[^0-9+]/g, '')}`}
             className="flex items-center gap-2 text-foreground hover:text-primary transition-colors"
           >
-            <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+            <Phone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
             <span>{data.phone}</span>
           </a>
         )}
@@ -49,10 +49,10 @@ export function ContactBlock({ data }: { data: ContactData }) {
         {data.email && (
           <a
             href={`mailto:${data.email}`}
-            className="flex items-center gap-2 text-foreground hover:text-primary transition-colors"
+            className="flex items-center gap-2 text-foreground hover:text-primary transition-colors min-w-0"
           >
-            <Mail className="h-3.5 w-3.5 text-muted-foreground" />
-            <span>{data.email}</span>
+            <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <span className="truncate">{data.email}</span>
           </a>
         )}
         {data.website && (
@@ -60,11 +60,11 @@ export function ContactBlock({ data }: { data: ContactData }) {
             href={data.website.startsWith('http') ? data.website : `https://${data.website}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 text-foreground hover:text-primary transition-colors"
+            className="flex items-center gap-2 text-foreground hover:text-primary transition-colors min-w-0"
           >
-            <Globe className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="truncate">{data.website.replace(/^https?:\/\//, '')}</span>
-            <ExternalLink className="h-3 w-3 text-muted-foreground" />
+            <Globe className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <span className="truncate min-w-0 flex-1">{data.website.replace(/^https?:\/\//, '')}</span>
+            <ExternalLink className="h-3 w-3 text-muted-foreground shrink-0" />
           </a>
         )}
         {data.hours && (

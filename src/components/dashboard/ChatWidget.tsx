@@ -428,13 +428,13 @@ function ChatWidgetInner() {
                 >
                   <div
                     className={cn(
-                      'max-w-[80%] rounded-2xl px-4 py-2 transition-all duration-150',
+                      'max-w-[80%] rounded-2xl px-4 py-2 transition-all duration-150 overflow-hidden',
                       message.role === 'user'
                         ? 'bg-primary text-primary-foreground'
                         : 'bg-muted'
                     )}
                   >
-                    <div className="space-y-2 [&>*]:transition-opacity [&>*]:duration-100">
+                    <div className="space-y-2 [&>*]:transition-opacity [&>*]:duration-100 overflow-hidden break-words">
                       {/* Show tool progress and results */}
                       {message.parts?.map((part, index) => {
                         if (!part.type.startsWith('tool-')) return null
