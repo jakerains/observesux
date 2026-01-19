@@ -14,6 +14,10 @@ import { CitySummaryCard } from './CitySummaryCard'
 
 // Utility cards
 import { GasPricesCard } from './GasPricesCard'
+import { TransitCard } from './TransitCard'
+import { NewsCard } from './NewsCard'
+import { OutagesCard } from './OutagesCard'
+import { AviationWeatherCard } from './AviationWeatherCard'
 
 // Export types
 export type { ToolCardProps, ToolCardComponent, StatusLevel } from './types'
@@ -28,6 +32,10 @@ export { WeatherAlertsCard } from './WeatherAlertsCard'
 export { WeatherForecastCard } from './WeatherForecastCard'
 export { CitySummaryCard } from './CitySummaryCard'
 export { GasPricesCard } from './GasPricesCard'
+export { TransitCard } from './TransitCard'
+export { NewsCard } from './NewsCard'
+export { OutagesCard } from './OutagesCard'
+export { AviationWeatherCard } from './AviationWeatherCard'
 export { ToolCardWrapper } from './ToolCardWrapper'
 
 /**
@@ -48,15 +56,15 @@ export const TOOL_CARD_REGISTRY: Record<string, ComponentType<ToolCardProps<unkn
 
   // Utility
   getGasPrices: GasPricesCard as ComponentType<ToolCardProps<unknown>>,
+  getTransit: TransitCard as ComponentType<ToolCardProps<unknown>>,
+  getNews: NewsCard as ComponentType<ToolCardProps<unknown>>,
+  getOutages: OutagesCard as ComponentType<ToolCardProps<unknown>>,
+  getAviationWeather: AviationWeatherCard as ComponentType<ToolCardProps<unknown>>,
 
   // Future cards (TODO)
-  // getNews: NewsCard,
-  // getTransit: TransitCard,
   // getFlights: FlightsCard,
-  // getOutages: OutagesCard,
   // getEarthquakes: EarthquakesCard,
   // getSystemStatus: SystemStatusCard,
-  // getAviationWeather: AviationWeatherCard,
 }
 
 /**

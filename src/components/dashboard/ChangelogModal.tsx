@@ -16,6 +16,19 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.1.11',
+    date: '2026-01-18',
+    added: [
+      'TransitCard for bus tracking with route badges',
+      'NewsCard with headlines and source badges',
+      'OutagesCard for power outage status',
+      'AviationWeatherCard with METAR and flight category',
+      '12 total generative UI tool cards in chat',
+    ],
+    changed: [],
+    fixed: [],
+  },
+  {
     version: '0.1.10',
     date: '2026-01-18',
     added: [
