@@ -14,13 +14,22 @@ export async function POST(req: Request) {
   const startTime = Date.now();
 
   try {
-    const { messages, sessionId: existingSessionId, lastLoggedMessageIndex } = await req.json();
+    const { messages, sessionId: existingSessionId, lastLoggedMessageIndex, deviceInfo } = await req.json();
 
     // Get or create session ID
     // Client may provide a UUID - validate it's a proper UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     let sessionId = existingSessionId && uuidRegex.test(existingSessionId) ? existingSessionId : null;
     let isNewSession = false;
+
+    // Build metadata object with device info if provided
+    const metadata: Record<string, unknown> = {};
+    if (deviceInfo) {
+      metadata.deviceType = deviceInfo.deviceType;
+      metadata.viewportWidth = deviceInfo.viewportWidth;
+      metadata.viewportHeight = deviceInfo.viewportHeight;
+      metadata.isTouchDevice = deviceInfo.isTouchDevice;
+    }
 
     if (!sessionId) {
       isNewSession = true;
@@ -29,6 +38,7 @@ export async function POST(req: Request) {
         ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0] ||
                    req.headers.get('x-real-ip') ||
                    undefined,
+        metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
       });
     } else if (isNewSession === false) {
       // Client provided a session ID - ensure it exists in DB, create if not
@@ -38,6 +48,7 @@ export async function POST(req: Request) {
         ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0] ||
                    req.headers.get('x-real-ip') ||
                    undefined,
+        metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
       });
     }
 

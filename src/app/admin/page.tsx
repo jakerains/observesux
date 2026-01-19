@@ -20,6 +20,9 @@ import {
   Database,
   Settings,
   ArrowLeft,
+  Smartphone,
+  Tablet,
+  Monitor,
 } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
@@ -232,6 +235,24 @@ function ChatLogsPanel() {
     return names[toolName] || toolName
   }
 
+  // Get device type info from session metadata
+  const getDeviceInfo = (session: ChatSession) => {
+    const meta = session.metadata as { deviceType?: string; viewportWidth?: number; viewportHeight?: number }
+    return {
+      type: meta?.deviceType || null,
+      width: meta?.viewportWidth,
+      height: meta?.viewportHeight,
+    }
+  }
+
+  // Get device icon component
+  const DeviceIcon = ({ type }: { type: string | null }) => {
+    if (type === 'mobile') return <Smartphone className="h-3 w-3" />
+    if (type === 'tablet') return <Tablet className="h-3 w-3" />
+    if (type === 'desktop') return <Monitor className="h-3 w-3" />
+    return null
+  }
+
   return (
     <div className="flex h-[calc(100vh-12rem)] border rounded-lg overflow-hidden bg-background">
       {/* Sidebar - Session List */}
@@ -319,26 +340,36 @@ function ChatLogsPanel() {
             </div>
           ) : (
             <div className="divide-y">
-              {filteredSessions.map((session) => (
-                <button
-                  key={session.id}
-                  onClick={() => fetchSession(session.id)}
-                  className={cn(
-                    'w-full p-3 text-left hover:bg-muted/50 transition-colors',
-                    selectedSession?.id === session.id && 'bg-muted'
-                  )}
-                >
-                  <div className="flex items-start justify-between gap-2 mb-1">
-                    <span className="text-sm font-medium">
-                      {format(new Date(session.startedAt), 'MMM d, h:mm a')}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {formatDistanceToNow(new Date(session.startedAt), { addSuffix: true })}
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">{getSessionPreview(session)}</p>
-                </button>
-              ))}
+              {filteredSessions.map((session) => {
+                const device = getDeviceInfo(session)
+                return (
+                  <button
+                    key={session.id}
+                    onClick={() => fetchSession(session.id)}
+                    className={cn(
+                      'w-full p-3 text-left hover:bg-muted/50 transition-colors',
+                      selectedSession?.id === session.id && 'bg-muted'
+                    )}
+                  >
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <div className="flex items-center gap-2">
+                        {device.type && (
+                          <span className="text-muted-foreground" title={`${device.type} (${device.width}×${device.height})`}>
+                            <DeviceIcon type={device.type} />
+                          </span>
+                        )}
+                        <span className="text-sm font-medium">
+                          {format(new Date(session.startedAt), 'MMM d, h:mm a')}
+                        </span>
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {formatDistanceToNow(new Date(session.startedAt), { addSuffix: true })}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{getSessionPreview(session)}</p>
+                  </button>
+                )
+              })}
             </div>
           )}
         </ScrollArea>
@@ -368,6 +399,21 @@ function ChatLogsPanel() {
                     <Wrench className="h-3 w-3" />
                     {selectedSession.toolCallsCount}
                   </span>
+                  {(() => {
+                    const device = getDeviceInfo(selectedSession)
+                    if (!device.type) return null
+                    return (
+                      <span className="flex items-center gap-1" title={`${device.width}×${device.height}`}>
+                        <DeviceIcon type={device.type} />
+                        {device.type}
+                        {device.width && device.height && (
+                          <span className="text-muted-foreground/70">
+                            ({device.width}×{device.height})
+                          </span>
+                        )}
+                      </span>
+                    )
+                  })()}
                 </div>
               </div>
             </div>

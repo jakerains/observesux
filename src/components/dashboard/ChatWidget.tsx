@@ -24,6 +24,28 @@ import { useChatSheet } from '@/lib/contexts/ChatContext'
 const SESSION_STORAGE_KEY = 'sux-chat-session-id'
 const MESSAGE_INDEX_KEY = 'sux-chat-message-index'
 
+// Capture device info for analytics
+function getDeviceInfo() {
+  const width = window.innerWidth
+  const height = window.innerHeight
+  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
+
+  // Determine device type based on viewport width
+  let deviceType: 'mobile' | 'tablet' | 'desktop' = 'desktop'
+  if (width < 768) {
+    deviceType = 'mobile'
+  } else if (width < 1024) {
+    deviceType = 'tablet'
+  }
+
+  return {
+    deviceType,
+    viewportWidth: width,
+    viewportHeight: height,
+    isTouchDevice,
+  }
+}
+
 // Fixed first question - always shown
 const FIXED_QUESTION = "What's happening in Sioux City?"
 
@@ -140,8 +162,10 @@ function ChatWidgetInner() {
   // Session tracking state - using refs for stable references in transport
   const sessionIdRef = useRef<string | null>(null)
   const lastLoggedIndexRef = useRef<number>(-1)
+  const deviceInfoRef = useRef<ReturnType<typeof getDeviceInfo> | null>(null)
+  const deviceInfoSentRef = useRef(false)
 
-  // Load or create session ID on mount
+  // Load or create session ID on mount + capture device info
   useEffect(() => {
     let stored = sessionStorage.getItem(SESSION_STORAGE_KEY)
     if (!stored) {
@@ -153,15 +177,26 @@ function ChatWidgetInner() {
 
     const storedIndex = sessionStorage.getItem(MESSAGE_INDEX_KEY)
     if (storedIndex) lastLoggedIndexRef.current = parseInt(storedIndex, 10)
+
+    // Capture device info for analytics
+    deviceInfoRef.current = getDeviceInfo()
   }, [])
 
   // Create transport with dynamic body that includes session tracking
   const transport = useMemo(() => new DefaultChatTransport({
     api: '/api/chat',
-    body: () => ({
-      sessionId: sessionIdRef.current,
-      lastLoggedMessageIndex: lastLoggedIndexRef.current,
-    }),
+    body: () => {
+      // Only send device info once per session (on first message)
+      const includeDeviceInfo = !deviceInfoSentRef.current && deviceInfoRef.current
+      if (includeDeviceInfo) {
+        deviceInfoSentRef.current = true
+      }
+      return {
+        sessionId: sessionIdRef.current,
+        lastLoggedMessageIndex: lastLoggedIndexRef.current,
+        ...(includeDeviceInfo && { deviceInfo: deviceInfoRef.current }),
+      }
+    },
   }), [])
 
   const {
@@ -253,6 +288,7 @@ function ChatWidgetInner() {
     // Clear session to start fresh
     sessionIdRef.current = null
     lastLoggedIndexRef.current = -1
+    deviceInfoSentRef.current = false // Reset so new session gets device info
     sessionStorage.removeItem(SESSION_STORAGE_KEY)
     sessionStorage.removeItem(MESSAGE_INDEX_KEY)
     // Randomize suggested questions
