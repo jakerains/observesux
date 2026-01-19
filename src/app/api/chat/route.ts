@@ -10,6 +10,53 @@ import {
 export const runtime = 'nodejs';
 export const maxDuration = 30;
 
+// Extract text content from various AI SDK message formats
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function extractMessageContent(message: any): string {
+  // 1. Direct string content
+  if (typeof message.content === 'string') {
+    return message.content;
+  }
+
+  // 2. AI SDK UIMessage format with 'parts' array
+  if (message.parts && Array.isArray(message.parts)) {
+    const textParts = message.parts
+      .filter((p: { type?: string }) => p.type === 'text')
+      .map((p: { text?: string }) => p.text || '')
+      .filter(Boolean);
+    if (textParts.length > 0) return textParts.join('\n');
+
+    // Fallback: try without type filtering
+    const anyText = message.parts
+      .map((p: { text?: string }) => p.text || '')
+      .filter(Boolean);
+    if (anyText.length > 0) return anyText.join('\n');
+  }
+
+  // 3. Content array format (older SDK versions)
+  if (message.content && Array.isArray(message.content)) {
+    const textParts = message.content
+      .filter((p: { type?: string }) => p.type === 'text')
+      .map((p: { text?: string }) => p.text || '')
+      .filter(Boolean);
+    if (textParts.length > 0) return textParts.join('\n');
+  }
+
+  // 4. Direct text property
+  if (typeof message.text === 'string') {
+    return message.text;
+  }
+
+  // 5. Last resort: stringify and look for text
+  const str = JSON.stringify(message);
+  const textMatch = str.match(/"text"\s*:\s*"([^"]+)"/);
+  if (textMatch) {
+    return textMatch[1];
+  }
+
+  return '';
+}
+
 export async function POST(req: Request) {
   const startTime = Date.now();
 
@@ -65,39 +112,7 @@ export async function POST(req: Request) {
       // Only log if this message hasn't been logged yet
       if (lastUserMessageIndex >= startIndex || isNewSession) {
         // Extract text content from various AI SDK message formats
-        let content = '';
-
-        // Debug: log the message structure to understand the format
-        console.log('[Chat Log] User message structure:', JSON.stringify(lastUserMessage, null, 2));
-
-        if (typeof lastUserMessage.content === 'string') {
-          // Simple string content
-          content = lastUserMessage.content;
-        } else if (lastUserMessage.parts && Array.isArray(lastUserMessage.parts)) {
-          // AI SDK UIMessage format uses 'parts' array
-          content = lastUserMessage.parts
-            .filter((part: { type: string }) => part.type === 'text')
-            .map((part: { type: string; text?: string }) => part.text || '')
-            .join('\n');
-        } else if (lastUserMessage.content && Array.isArray(lastUserMessage.content)) {
-          // Content array format
-          content = lastUserMessage.content
-            .filter((part: { type: string }) => part.type === 'text')
-            .map((part: { type: string; text?: string }) => part.text || '')
-            .join('\n');
-        }
-
-        // Fallback: try to find text in any nested structure
-        if (!content && lastUserMessage.parts) {
-          // Try getting text directly from parts without type filtering
-          const parts = lastUserMessage.parts as Array<{ text?: string; type?: string }>;
-          content = parts
-            .map((p) => p.text || '')
-            .filter(Boolean)
-            .join('\n');
-        }
-
-        console.log('[Chat Log] Extracted content:', content ? content.substring(0, 100) : '(empty)');
+        const content = extractMessageContent(lastUserMessage);
 
         if (content) {
           await logChatMessage({
@@ -105,9 +120,9 @@ export async function POST(req: Request) {
             role: 'user',
             content,
           });
-          console.log('[Chat Log] User message logged successfully');
+          console.log('[Chat Log] User message logged:', content.substring(0, 50));
         } else {
-          console.warn('[Chat Log] Could not extract content from user message');
+          console.warn('[Chat Log] Could not extract content from user message:', JSON.stringify(lastUserMessage));
         }
       }
     }
