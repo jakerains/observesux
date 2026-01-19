@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { fetchAircraft } from '@/lib/fetchers/opensky'
+import { fetchAircraft } from '@/lib/fetchers/aircraft'
 
 export const revalidate = 60 // Revalidate every 60 seconds
 

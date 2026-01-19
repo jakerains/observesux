@@ -453,6 +453,8 @@ export type SuxAssociation = 'arriving' | 'departing' | 'nearby' | null
 export interface Aircraft {
   icao24: string // Unique ICAO 24-bit address (hex)
   callsign: string | null // Callsign (8 chars max)
+  registration?: string | null // Aircraft registration (tail number)
+  aircraftType?: string | null // ICAO aircraft type code (e.g., A321, B738)
   latitude: number
   longitude: number
   altitude: number | null // Barometric altitude in feet
@@ -461,7 +463,7 @@ export interface Aircraft {
   verticalRate: number | null // Vertical rate in ft/min
   onGround: boolean
   squawk: string | null // Transponder code
-  positionSource: number // 0=ADS-B, 1=ASTERIX, 2=MLAT, 3=FLARM
+  positionSource?: number // 0=ADS-B, 1=ASTERIX, 2=MLAT, 3=FLARM (optional)
   suxAssociation: SuxAssociation // Relationship to SUX airport
 }
 
