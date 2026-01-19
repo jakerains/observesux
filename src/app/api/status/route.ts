@@ -26,6 +26,7 @@ export async function GET(request: NextRequest) {
   }
 
   // Check all endpoints in parallel
+  // NOTE: gasPrices temporarily disabled - pending reliable daily price source
   const [
     cameras,
     weather,
@@ -40,7 +41,6 @@ export async function GET(request: NextRequest) {
     news,
     aviation,
     aircraft,
-    gasPrices
   ] = await Promise.all([
     checkEndpoint('/api/cameras'),
     checkEndpoint('/api/weather'),
@@ -55,7 +55,6 @@ export async function GET(request: NextRequest) {
     checkEndpoint('/api/news'),
     checkEndpoint('/api/aviation'),
     checkEndpoint('/api/aircraft'),
-    checkEndpoint('/api/gas-prices')
   ])
 
   return NextResponse.json({
@@ -72,7 +71,7 @@ export async function GET(request: NextRequest) {
     news,
     aviation,
     aircraft,
-    gasPrices,
+    // gasPrices temporarily disabled
     timestamp: new Date().toISOString()
   })
 }

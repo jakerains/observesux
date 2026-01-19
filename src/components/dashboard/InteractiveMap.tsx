@@ -457,7 +457,7 @@ export function InteractiveMap() {
     snowplows: true,
     transit: true,
     aircraft: true,
-    gasStations: true,
+    gasStations: false, // TEMPORARILY DISABLED - pending reliable daily price source
   })
 
   // Solo mode: when set, only show this layer
@@ -476,7 +476,7 @@ export function InteractiveMap() {
         snowplows: true,
         transit: true,
         aircraft: true,
-        gasStations: true,
+        gasStations: false, // TEMPORARILY DISABLED
       })
     } else {
       // Solo this layer - hide all others
@@ -975,7 +975,7 @@ export function InteractiveMap() {
                 snowplows: true,
                 transit: true,
                 aircraft: true,
-                gasStations: true,
+                gasStations: false, // TEMPORARILY DISABLED
               })
             }}
             className="ml-2 px-2 py-1 text-xs bg-muted hover:bg-muted/80 rounded-full"

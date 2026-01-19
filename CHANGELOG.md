@@ -5,6 +5,20 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.5] - 2026-01-19
+
+### Changed
+- **Temporarily disabled Gas Prices widget** pending reliable daily price data source
+- Disabled gas stations map layer by default
+- Removed gas prices from status bar monitoring
+- Disabled Vercel cron job for gas price scraping
+
+### Added
+- **Comprehensive platform documentation** for RAG knowledge base (`/docs/PLATFORM_GUIDE.md`)
+  - Documents all 14 widgets with data sources and refresh intervals
+  - Complete interactive map guide with all marker types and colors
+  - FAQ section for common user questions
+
 ## [0.2.4] - 2026-01-19
 
 ### Added

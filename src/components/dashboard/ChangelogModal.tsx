@@ -16,6 +16,18 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.2.5',
+    date: '2026-01-19',
+    added: [
+      'Comprehensive platform documentation for RAG KB',
+    ],
+    changed: [
+      'Temporarily disabled Gas Prices (pending reliable data source)',
+      'Gas stations map layer disabled by default',
+    ],
+    fixed: [],
+  },
+  {
     version: '0.2.4',
     date: '2026-01-19',
     added: [
