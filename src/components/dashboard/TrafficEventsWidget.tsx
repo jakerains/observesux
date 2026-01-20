@@ -181,10 +181,6 @@ export function TrafficEventsWidget() {
           )}
         </ScrollArea>
 
-        {/* Data Source */}
-        <div className="mt-3 pt-2 border-t text-xs text-muted-foreground shrink-0">
-          Data from Iowa & Nebraska 511 • Updates every 5 minutes
-        </div>
       </div>
     </DashboardCard>
   )
