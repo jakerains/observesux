@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Simplified gas prices scraping** - removed Vercel Workflow in favor of direct cron execution
   - Removed 258 workflow dependencies for cleaner, simpler architecture
-  - Cron now runs 3x daily (midnight, 8 AM, 4 PM CST)
+  - Cron runs daily at 8 AM CST (Hobby plan limit)
 - **New Firecrawl agent implementation** with targeted GasBuddy URLs
   - Uses Zod schema for type-safe extraction
   - Scrapes Regular, Mid-grade, and Premium fuel prices

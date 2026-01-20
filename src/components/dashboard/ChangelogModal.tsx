@@ -21,7 +21,7 @@ const CHANGELOG = [
     added: [],
     changed: [
       'Simplified gas prices scraping (removed Workflow, direct cron)',
-      'Cron now runs 3x daily (midnight, 8 AM, 4 PM CST)',
+      'Cron runs daily at 8 AM CST (Hobby plan limit)',
       'New Firecrawl agent with Zod schema + targeted URLs',
     ],
     fixed: [
