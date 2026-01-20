@@ -172,8 +172,16 @@ async function fetchIowa511Events(): Promise<TrafficEvent[]> {
     // Index 35: 511 URL
 
     if (data.data && Array.isArray(data.data)) {
+      // Track seen CARS IDs to deduplicate (same event appears for both directions)
+      const seenCarsIds = new Set<string>()
+
       for (const row of data.data) {
         try {
+          // Deduplicate by CARS ID (row[12])
+          const carsId = row[12]
+          if (carsId && seenCarsIds.has(carsId)) continue
+          if (carsId) seenCarsIds.add(carsId)
+
           // Parse coordinates from POINT geometry string
           const pointStr = row[8]
           if (!pointStr || typeof pointStr !== 'string') continue
