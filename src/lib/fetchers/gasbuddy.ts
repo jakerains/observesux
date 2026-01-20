@@ -1,49 +1,41 @@
 // GasBuddy Gas Price Scraper using Firecrawl Agent
-// Uses spark-1-mini model for efficient web scraping with AI
+// Uses spark-1-mini model with targeted GasBuddy URLs
 
-import FirecrawlApp from '@mendable/firecrawl-js'
+import Firecrawl from '@mendable/firecrawl-js'
+import { z } from 'zod'
 
-// JSON Schema for Firecrawl agent extraction
-const gasPriceSchema = {
-  type: 'object',
-  properties: {
-    gas_stations: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          brand_name: { type: 'string' },
-          street_address: { type: 'string' },
-          fuel_prices: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                fuel_type: { type: 'string' },
-                price: { type: 'number' }
-              },
-              required: ['fuel_type', 'price']
-            }
-          }
-        },
-        required: ['brand_name', 'street_address', 'fuel_prices']
-      }
-    }
-  },
-  required: ['gas_stations']
-}
+// Zod schema for Firecrawl agent extraction
+const gasPriceSchema = z.object({
+  gasbuddy_stations: z.array(z.object({
+    station_name: z.string().describe("Name of the gas station"),
+    station_name_citation: z.string().describe("Source URL for station_name").optional(),
+    address: z.string().describe("Address of the gas station"),
+    address_citation: z.string().describe("Source URL for address").optional(),
+    regular_fuel: z.object({
+      price: z.number().describe("Price of regular fuel").optional(),
+      price_citation: z.string().describe("Source URL for price").optional(),
+      last_updated: z.string().describe("Timestamp of the last update for regular fuel price").optional(),
+      last_updated_citation: z.string().describe("Source URL for last_updated").optional()
+    }).describe("Regular fuel price and last updated timestamp").optional(),
+    mid_grade_fuel: z.object({
+      price: z.number().describe("Price of mid-grade fuel").optional(),
+      price_citation: z.string().describe("Source URL for price").optional(),
+      last_updated: z.string().describe("Timestamp of the last update for mid-grade fuel price").optional(),
+      last_updated_citation: z.string().describe("Source URL for last_updated").optional()
+    }).describe("Mid-grade fuel price and last updated timestamp").optional(),
+    premium_fuel: z.object({
+      price: z.number().describe("Price of premium fuel").optional(),
+      price_citation: z.string().describe("Source URL for price").optional(),
+      last_updated: z.string().describe("Timestamp of the last update for premium fuel price").optional(),
+      last_updated_citation: z.string().describe("Source URL for last_updated").optional()
+    }).describe("Premium fuel price and last updated timestamp").optional()
+  })).describe("List of gas stations and fuel prices from GasBuddy")
+})
 
-export interface FirecrawlGasData {
-  gas_stations: Array<{
-    brand_name: string
-    street_address: string
-    fuel_prices: Array<{
-      fuel_type: string
-      price: number
-    }>
-  }>
-}
+// Type inferred from Zod schema
+export type FirecrawlGasData = z.infer<typeof gasPriceSchema>
 
+// Transformed station format for database
 export interface ScrapedGasStation {
   brandName: string
   streetAddress: string
@@ -53,61 +45,67 @@ export interface ScrapedGasStation {
   }>
 }
 
+// GasBuddy URLs for Sioux City area
+const GASBUDDY_URLS = [
+  'https://www.gasbuddy.com/home?search=sioux+city%2C+iowa&fuel=1&method=all&maxAge=0', // Regular
+  'https://www.gasbuddy.com/home?search=sioux+city%2C+iowa&fuel=2&method=all&maxAge=0', // Mid-grade
+  'https://www.gasbuddy.com/home?search=sioux+city%2C+iowa&fuel=3&method=all&maxAge=0', // Premium
+]
+
 /**
  * Scrape gas prices from GasBuddy using Firecrawl's AI agent
- * Uses spark-1-mini model for cost-efficient scraping (~$0.01-0.05 per run)
+ * Uses spark-1-mini model for cost-efficient scraping
  */
 export async function scrapeGasPrices(): Promise<ScrapedGasStation[]> {
   if (!process.env.FIRECRAWL_API_KEY) {
     throw new Error('FIRECRAWL_API_KEY environment variable is not configured')
   }
 
-  const firecrawl = new FirecrawlApp({
+  const firecrawl = new Firecrawl({
     apiKey: process.env.FIRECRAWL_API_KEY
   })
 
-  const prompt = `Extract current gas prices for all gas stations in Sioux City, Iowa and the surrounding Siouxland area including South Sioux City NE, North Sioux City SD, and Sergeant Bluff IA.
+  const prompt = `Extract gas station name, address, and fuel prices for regular, mid-grade, and premium tiers from the provided GasBuddy URLs for Sioux City, Iowa. For each price entry, include the 'last updated' timestamp. Ensure the data is mapped correctly from each specific fuel-type URL.`
 
-For each station, capture:
-- brand_name: The gas station brand (e.g., "Casey's", "Maverik", "Kum & Go")
-- street_address: Full street address including city and state
-- fuel_prices: Array of fuel types and prices (Regular, Midgrade, Premium, Diesel)
+  console.log('[GasBuddy Scraper] Starting Firecrawl agent...')
 
-Search GasBuddy or similar gas price aggregator for Sioux City, IA area gas prices.`
-
-  const agentResult = await firecrawl.agent({
+  const result = await firecrawl.agent({
     prompt,
-    schema: gasPriceSchema as Record<string, unknown>,
+    schema: gasPriceSchema as unknown as Record<string, unknown>,
+    urls: GASBUDDY_URLS,
     model: 'spark-1-mini',
   })
 
-  // Extract the data from the agent response
-  const result = agentResult as unknown as FirecrawlGasData
+  console.log('[GasBuddy Scraper] Firecrawl agent completed')
 
-  if (!result || !result.gas_stations) {
-    console.error('Firecrawl agent returned no data:', agentResult)
+  // Extract the data from the agent response
+  const data = result as unknown as FirecrawlGasData
+
+  if (!data || !data.gasbuddy_stations || data.gasbuddy_stations.length === 0) {
+    console.error('[GasBuddy Scraper] No stations returned:', result)
     return []
   }
 
-  // Transform to our internal format
-  return result.gas_stations.map((station: { brand_name: string; street_address: string; fuel_prices: Array<{ fuel_type: string; price: number }> }) => ({
-    brandName: station.brand_name,
-    streetAddress: station.street_address,
-    fuelPrices: station.fuel_prices.map((fuel: { fuel_type: string; price: number }) => ({
-      fuelType: normalizeFuelType(fuel.fuel_type),
-      price: fuel.price
-    }))
-  }))
-}
+  console.log(`[GasBuddy Scraper] Found ${data.gasbuddy_stations.length} stations`)
 
-/**
- * Normalize fuel type strings to standard format
- */
-function normalizeFuelType(fuelType: string): string {
-  const lower = fuelType.toLowerCase()
-  if (lower.includes('regular') || lower === 'unleaded' || lower === '87') return 'Regular'
-  if (lower.includes('midgrade') || lower.includes('plus') || lower === '89') return 'Midgrade'
-  if (lower.includes('premium') || lower.includes('super') || lower === '91' || lower === '93') return 'Premium'
-  if (lower.includes('diesel')) return 'Diesel'
-  return fuelType // Return as-is if unknown
+  // Transform to our internal format
+  return data.gasbuddy_stations.map(station => {
+    const fuelPrices: Array<{ fuelType: string; price: number }> = []
+
+    if (station.regular_fuel?.price) {
+      fuelPrices.push({ fuelType: 'Regular', price: station.regular_fuel.price })
+    }
+    if (station.mid_grade_fuel?.price) {
+      fuelPrices.push({ fuelType: 'Midgrade', price: station.mid_grade_fuel.price })
+    }
+    if (station.premium_fuel?.price) {
+      fuelPrices.push({ fuelType: 'Premium', price: station.premium_fuel.price })
+    }
+
+    return {
+      brandName: station.station_name,
+      streetAddress: station.address,
+      fuelPrices
+    }
+  }).filter(station => station.fuelPrices.length > 0) // Only include stations with prices
 }

@@ -16,6 +16,19 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.2.7',
+    date: '2026-01-20',
+    added: [],
+    changed: [
+      'Simplified gas prices scraping (removed Workflow, direct cron)',
+      'Cron now runs 3x daily (midnight, 8 AM, 4 PM CST)',
+      'New Firecrawl agent with Zod schema + targeted URLs',
+    ],
+    fixed: [
+      'Gas prices cron now uses direct execution (more reliable)',
+    ],
+  },
+  {
     version: '0.2.6',
     date: '2026-01-19',
     added: [],

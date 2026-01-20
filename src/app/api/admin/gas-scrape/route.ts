@@ -1,80 +1,53 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { start, getRun } from 'workflow/api'
-import { gasPricesWorkflow } from '@/workflows/gas-prices'
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 300
+export const maxDuration = 60
 
 /**
- * Helper to get workflow run status and result
- * Note: Run properties like status and returnValue are async getters
- */
-async function getRunStatus(runId: string) {
-  const run = getRun(runId)
-  const status = await run.status
-
-  // Only fetch result if completed
-  let result = null
-  if (status === 'completed') {
-    try {
-      result = await run.returnValue
-    } catch {
-      // Result may not be available yet
-    }
-  }
-
-  return {
-    runId: run.runId,
-    status,
-    result
-  }
-}
-
-/**
- * Admin endpoint to manually trigger gas price scraping workflow
+ * Admin endpoint to manually trigger gas price scraping
  * POST /api/admin/gas-scrape
  * Requires admin password authentication
+ *
+ * This simply proxies to the cron endpoint with proper auth
  */
 export async function POST(request: NextRequest) {
-  // Verify admin password
-  const { password, runId } = await request.json().catch(() => ({ password: '', runId: null }))
+  const { password } = await request.json().catch(() => ({ password: '' }))
 
-  // If runId provided, check status of existing run
-  if (runId) {
-    try {
-      const status = await getRunStatus(runId)
-      return NextResponse.json(status)
-    } catch {
-      return NextResponse.json({ error: 'Run not found' }, { status: 404 })
-    }
-  }
-
-  // Verify password for new workflow starts
   const adminPassword = process.env.ADMIN_PASSWORD
   if (!adminPassword || password !== adminPassword) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   try {
-    console.log('[Gas Prices Admin] Starting workflow...')
+    console.log('[Gas Prices Admin] Triggering manual scrape...')
 
-    // Start the durable workflow
-    const run = await start(gasPricesWorkflow, [])
+    // Call the cron endpoint directly (it will run in this same request)
+    const baseUrl = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : 'http://localhost:3000'
+
+    const cronSecret = process.env.CRON_SECRET
+
+    const response = await fetch(`${baseUrl}/api/cron/gas-prices`, {
+      method: 'GET',
+      headers: cronSecret
+        ? { 'Authorization': `Bearer ${cronSecret}` }
+        : {}
+    })
+
+    const result = await response.json()
 
     return NextResponse.json({
-      success: true,
-      runId: run.runId,
-      status: 'started',
-      message: 'Gas prices workflow started. Use runId to check status.',
+      ...result,
+      triggeredBy: 'admin',
       timestamp: new Date().toISOString()
     })
   } catch (error) {
-    console.error('[Gas Prices Admin] Failed to start workflow:', error)
+    console.error('[Gas Prices Admin] Failed:', error)
     return NextResponse.json(
       {
         success: false,
-        error: 'Failed to start workflow',
-        message: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : 'Unknown error',
         timestamp: new Date().toISOString()
       },
       { status: 500 }
@@ -83,19 +56,11 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * GET endpoint to check workflow status
+ * GET endpoint - just returns instructions
  */
-export async function GET(request: NextRequest) {
-  const runId = request.nextUrl.searchParams.get('runId')
-
-  if (!runId) {
-    return NextResponse.json({ error: 'runId required' }, { status: 400 })
-  }
-
-  try {
-    const status = await getRunStatus(runId)
-    return NextResponse.json(status)
-  } catch {
-    return NextResponse.json({ error: 'Run not found' }, { status: 404 })
-  }
+export async function GET() {
+  return NextResponse.json({
+    message: 'Use POST with { password: "your-admin-password" } to trigger gas price scrape',
+    endpoint: '/api/admin/gas-scrape'
+  })
 }
