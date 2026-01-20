@@ -11,6 +11,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { cn } from '@/lib/utils'
 import type { TrafficEvent } from '@/types'
 import { getDataFreshness } from '@/lib/utils/dataFreshness'
+import { useMapFocus } from '@/lib/contexts/MapFocusContext'
 
 function getEventIcon(type: TrafficEvent['type']) {
   switch (type) {
@@ -41,14 +42,19 @@ function getSeverityBgColor(severity: TrafficEvent['severity']) {
 
 interface EventRowProps {
   event: TrafficEvent
+  onClick?: () => void
 }
 
-function EventRow({ event }: EventRowProps) {
+function EventRow({ event, onClick }: EventRowProps) {
   return (
-    <div className={cn(
-      "p-3 rounded-lg border",
-      getSeverityBgColor(event.severity)
-    )}>
+    <button
+      onClick={onClick}
+      className={cn(
+        "p-3 rounded-lg border w-full text-left transition-all",
+        "hover:ring-2 hover:ring-primary/50 cursor-pointer",
+        getSeverityBgColor(event.severity)
+      )}
+    >
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-start gap-2">
           <div className="mt-0.5">
@@ -80,13 +86,14 @@ function EventRow({ event }: EventRowProps) {
           {event.type}
         </Badge>
       </div>
-    </div>
+    </button>
   )
 }
 
 export function TrafficEventsWidget() {
   const refreshInterval = 300000
   const { data: eventsData, error, isLoading, isValidating, mutate: refreshEvents } = useTrafficEvents(refreshInterval)
+  const { focusOnLocation } = useMapFocus()
 
   const events = eventsData?.data || []
   const lastUpdated = eventsData?.timestamp ? new Date(eventsData.timestamp) : undefined
@@ -170,7 +177,16 @@ export function TrafficEventsWidget() {
           {events.length > 0 ? (
             <div className="space-y-2 pr-3">
               {events.slice(0, 10).map((event) => (
-                <EventRow key={event.id} event={event} />
+                <EventRow
+                  key={event.id}
+                  event={event}
+                  onClick={() => focusOnLocation({
+                    lat: event.latitude,
+                    lon: event.longitude,
+                    label: event.headline,
+                    zoom: 14
+                  })}
+                />
               ))}
             </div>
           ) : (

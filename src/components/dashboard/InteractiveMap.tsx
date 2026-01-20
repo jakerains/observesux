@@ -8,6 +8,7 @@ import { useCameras, useRivers, useTrafficEvents, useSnowplows, useTransit, useA
 import { useBusInterpolation } from '@/lib/hooks/useBusInterpolation'
 import { useAircraftInterpolation } from '@/lib/hooks/useAircraftInterpolation'
 import { useTransitSelection } from '@/lib/contexts/TransitContext'
+import { useMapFocus } from '@/lib/contexts/MapFocusContext'
 import { Map, Layers, Camera, Waves, AlertTriangle, CloudRain, Snowflake, Bus, Plane, Fuel } from 'lucide-react'
 import type { SuxAssociation } from '@/types'
 import L from 'leaflet'
@@ -306,6 +307,25 @@ function MapController() {
   return null
 }
 
+// Handles flying to a location when a widget requests focus
+function MapFocusHandler() {
+  const map = useMap()
+  const { focusTarget, clearFocus } = useMapFocus()
+
+  useEffect(() => {
+    if (focusTarget) {
+      // Fly to the focused location
+      map.flyTo([focusTarget.lat, focusTarget.lon], focusTarget.zoom || 14, {
+        duration: 0.8
+      })
+      // Clear the focus after flying
+      clearFocus()
+    }
+  }, [focusTarget, map, clearFocus])
+
+  return null
+}
+
 // NWS NEXRAD Radar Layer via Iowa Environmental Mesonet WMS
 function NWSRadarLayer() {
   const map = useMap()
@@ -548,6 +568,7 @@ export function InteractiveMap() {
           scrollWheelZoom={true}
         >
           <MapController />
+          <MapFocusHandler />
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

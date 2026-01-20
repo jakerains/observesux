@@ -39,6 +39,7 @@ import { ChatWidget } from '@/components/dashboard/ChatWidget'
 import { ChangelogModal } from '@/components/dashboard/ChangelogModal'
 import { DashboardLayoutProvider, useDashboardLayout } from '@/lib/contexts/DashboardLayoutContext'
 import { TransitProvider } from '@/lib/contexts/TransitContext'
+import { MapFocusProvider } from '@/lib/contexts/MapFocusContext'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent } from '@/components/ui/card'
 import packageJson from '../../package.json'
@@ -241,10 +242,12 @@ function DashboardContent() {
 
 export default function Dashboard() {
   return (
-    <TransitProvider>
-      <DashboardLayoutProvider>
-        <DashboardContent />
-      </DashboardLayoutProvider>
-    </TransitProvider>
+    <MapFocusProvider>
+      <TransitProvider>
+        <DashboardLayoutProvider>
+          <DashboardContent />
+        </DashboardLayoutProvider>
+      </TransitProvider>
+    </MapFocusProvider>
   )
 }
