@@ -16,6 +16,15 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.2.6',
+    date: '2026-01-19',
+    added: [],
+    changed: [],
+    fixed: [
+      'Long URLs in chat now truncate to prevent overflow',
+    ],
+  },
+  {
     version: '0.2.5',
     date: '2026-01-19',
     added: [

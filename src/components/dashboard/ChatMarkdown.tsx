@@ -4,6 +4,40 @@ import { cn } from '@/lib/utils'
 import { parseStructuredBlock, STRUCTURED_BLOCK_TYPES } from '@/components/chat/StructuredBlocks'
 
 /**
+ * Truncate URL text for display while keeping the full href clickable
+ */
+function truncateUrlText(text: string, maxLength: number = 40): string {
+  // Check if text looks like a URL
+  const isUrl = /^(https?:\/\/|www\.)/.test(text) || /\.(com|org|net|gov|edu|io|co)\b/.test(text)
+
+  if (!isUrl || text.length <= maxLength) {
+    return text
+  }
+
+  // For URLs, truncate intelligently by showing domain and start of path
+  try {
+    // Handle URLs that might not have protocol
+    const urlText = text.startsWith('http') ? text : `https://${text}`
+    const url = new URL(urlText)
+    const domain = url.hostname.replace(/^www\./, '')
+    const path = url.pathname + url.search + url.hash
+
+    // Show domain + truncated path
+    const availableForPath = maxLength - domain.length - 5 // 5 for "..." and some buffer
+    if (availableForPath > 10 && path.length > 1) {
+      const truncatedPath = path.length > availableForPath
+        ? path.slice(0, availableForPath) + '...'
+        : path
+      return domain + truncatedPath
+    }
+    return domain + (path.length > 1 ? '/...' : '')
+  } catch {
+    // Fallback: simple truncation
+    return text.slice(0, maxLength - 3) + '...'
+  }
+}
+
+/**
  * Normalize markdown content to fix common LLM output issues
  */
 function normalizeMarkdown(content: string): string {
@@ -90,16 +124,24 @@ export function ChatMarkdown({ content, className, variant = 'assistant' }: Chat
           li: ({ children }) => (
             <li className="leading-relaxed">{children}</li>
           ),
-          a: ({ children, href }) => (
-            <a
-              href={href}
-              target="_blank"
-              rel="noreferrer"
-              className={cn('font-medium break-all', tone.link)}
-            >
-              {children}
-            </a>
-          ),
+          a: ({ children, href }) => {
+            // Truncate URL text while keeping the full href clickable
+            const displayText = typeof children === 'string'
+              ? truncateUrlText(children)
+              : children
+
+            return (
+              <a
+                href={href}
+                target="_blank"
+                rel="noreferrer"
+                className={cn('font-medium', tone.link)}
+                title={typeof children === 'string' && children !== displayText ? children : undefined}
+              >
+                {displayText}
+              </a>
+            )
+          },
           blockquote: ({ children }) => (
             <blockquote
               className={cn(
