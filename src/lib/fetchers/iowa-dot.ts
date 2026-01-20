@@ -3,12 +3,25 @@ import type { TrafficCamera, TrafficEvent } from '@/types'
 // Iowa DOT ArcGIS API for traffic cameras
 const CAMERAS_API = 'https://services.arcgis.com/8lRhdTsQyJpO52F1/arcgis/rest/services/Traffic_Cameras_View/FeatureServer/0/query'
 
-// Sioux City bounding box (approximately)
+// CARS511 ArcGIS APIs for traffic events (multi-state)
+const IOWA_511_API = 'https://data.iowa.gov/api/views/yata-4k7n/rows.json?accessType=DOWNLOAD'
+const NEBRASKA_511_API = 'https://services.arcgis.com/8lRhdTsQyJpO52F1/arcgis/rest/services/CARS511_NE_Events_View/FeatureServer/0/query'
+
+// Sioux City / Siouxland bounding box (expanded for interstates)
+// Covers I-29, I-129, and surrounding communities in IA, NE, SD
 const SIOUX_CITY_BOUNDS = {
-  minLat: 42.35,
-  maxLat: 42.60,
-  minLon: -96.55,
-  maxLon: -96.30
+  minLat: 42.30,  // South to Sergeant Bluff area
+  maxLat: 42.65,  // North past airport
+  minLon: -96.60, // West to include I-29 corridor
+  maxLon: -96.20  // East to include Le Mars area
+}
+
+// Convert Web Mercator (EPSG:3857) to WGS84 (lat/lon)
+function webMercatorToLatLon(x: number, y: number): { lat: number; lon: number } {
+  const lon = (x / 20037508.34) * 180
+  let lat = (y / 20037508.34) * 180
+  lat = (180 / Math.PI) * (2 * Math.atan(Math.exp(lat * Math.PI / 180)) - Math.PI / 2)
+  return { lat, lon }
 }
 
 interface ArcGISCameraFeature {
@@ -119,11 +132,24 @@ export function getKTIVCameras(): TrafficCamera[] {
   ]
 }
 
-// 511 Iowa Traffic Events (JSON feed)
+// Fetch all 511 events (Iowa + Nebraska)
 export async function fetch511Events(): Promise<TrafficEvent[]> {
+  // Fetch from both states in parallel
+  const [iowaEvents, nebraskaEvents] = await Promise.all([
+    fetchIowa511Events(),
+    fetchNebraska511Events()
+  ])
+
+  const allEvents = [...iowaEvents, ...nebraskaEvents]
+  console.log(`[511 Combined] Total: ${allEvents.length} events (IA: ${iowaEvents.length}, NE: ${nebraskaEvents.length})`)
+  return allEvents
+}
+
+// Fetch Iowa 511 events (JSON feed from data.iowa.gov)
+async function fetchIowa511Events(): Promise<TrafficEvent[]> {
   try {
     const response = await fetch(
-      'https://data.iowa.gov/api/views/yata-4k7n/rows.json?accessType=DOWNLOAD',
+      IOWA_511_API,
       { next: { revalidate: 300 } } // Cache for 5 minutes
     )
 
@@ -134,31 +160,53 @@ export async function fetch511Events(): Promise<TrafficEvent[]> {
     const data = await response.json()
     const events: TrafficEvent[] = []
 
-    // The data format has meta and data arrays
-    // We need to parse based on the column metadata
+    // Iowa 511 data format (as of 2026):
+    // Index 8: POINT geometry string like "POINT (-96.375895 42.489945)"
+    // Index 17: Priority (1-5, lower = more severe)
+    // Index 18: Route (e.g., "IA 12", "I-29")
+    // Index 26: Event type (e.g., "restriction", "roadwork", "incident")
+    // Index 27: Short headline
+    // Index 28: Headline
+    // Index 30: Description
+    // Index 31: Full description
+    // Index 35: 511 URL
+
     if (data.data && Array.isArray(data.data)) {
       for (const row of data.data) {
         try {
-          // Iowa 511 data structure varies - try to extract relevant fields
-          // Typically: id, type, location, description, start_time, etc.
-          const lat = parseFloat(row[12] || row[14] || '0')
-          const lon = parseFloat(row[13] || row[15] || '0')
+          // Parse coordinates from POINT geometry string
+          const pointStr = row[8]
+          if (!pointStr || typeof pointStr !== 'string') continue
 
-          // Check if event is in Sioux City area
+          const pointMatch = pointStr.match(/POINT \(([^ ]+) ([^ ]+)\)/)
+          if (!pointMatch) continue
+
+          const lon = parseFloat(pointMatch[1])
+          const lat = parseFloat(pointMatch[2])
+
+          // Check if event is in Sioux City area (expanded bounds for interstates)
           if (lat && lon &&
               lat >= SIOUX_CITY_BOUNDS.minLat && lat <= SIOUX_CITY_BOUNDS.maxLat &&
               lon >= SIOUX_CITY_BOUNDS.minLon && lon <= SIOUX_CITY_BOUNDS.maxLon) {
+
+            const priority = parseInt(row[17]) || 3
+            const eventType = row[26] || ''
+            const headline = row[28] || row[27] || 'Traffic Event'
+            const description = row[31] || row[30] || ''
+            const roadway = row[18] || 'Unknown'
+            const url = row[35] || ''
+
             events.push({
-              id: row[0]?.toString() || `event-${Date.now()}-${Math.random()}`,
-              type: mapEventType(row[2] || row[3]),
-              severity: mapSeverity(row[4] || row[5]),
-              headline: row[6] || row[7] || 'Traffic Event',
-              description: row[8] || row[9] || '',
-              roadway: row[10] || row[11] || 'Unknown',
+              id: `ia-${row[0] || `${Date.now()}-${Math.random()}`}`,
+              type: mapEventType(eventType),
+              severity: mapPriority(priority),
+              headline,
+              description: description + (url ? ` More info: ${url}` : ''),
+              roadway,
               latitude: lat,
               longitude: lon,
-              startTime: new Date(row[16] || row[17] || Date.now()),
-              endTime: row[18] ? new Date(row[18]) : undefined,
+              startTime: new Date(),
+              endTime: undefined,
               lastUpdated: new Date()
             })
           }
@@ -169,9 +217,85 @@ export async function fetch511Events(): Promise<TrafficEvent[]> {
       }
     }
 
+    console.log(`[Iowa 511] Found ${events.length} events in Sioux City area`)
     return events
   } catch (error) {
     console.error('Failed to fetch 511 events:', error)
+    return []
+  }
+}
+
+function mapPriority(priority: number): TrafficEvent['severity'] {
+  if (priority <= 2) return 'critical'
+  if (priority <= 3) return 'major'
+  if (priority <= 4) return 'moderate'
+  return 'minor'
+}
+
+// Fetch Nebraska 511 events from ArcGIS FeatureServer
+async function fetchNebraska511Events(): Promise<TrafficEvent[]> {
+  try {
+    const params = new URLSearchParams({
+      where: '1=1',
+      outFields: '*',
+      f: 'json',
+      returnGeometry: 'true'
+    })
+
+    const response = await fetch(`${NEBRASKA_511_API}?${params}`, {
+      next: { revalidate: 300 }
+    })
+
+    if (!response.ok) {
+      throw new Error(`Nebraska 511 API error: ${response.status}`)
+    }
+
+    const data = await response.json()
+    const events: TrafficEvent[] = []
+
+    if (data.features && Array.isArray(data.features)) {
+      for (const feature of data.features) {
+        try {
+          const geom = feature.geometry
+          const attrs = feature.attributes
+
+          if (!geom || !geom.x || !geom.y) continue
+
+          // Convert from Web Mercator to WGS84
+          const { lat, lon } = webMercatorToLatLon(geom.x, geom.y)
+
+          // Check if event is in Sioux City area
+          if (lat >= SIOUX_CITY_BOUNDS.minLat && lat <= SIOUX_CITY_BOUNDS.maxLat &&
+              lon >= SIOUX_CITY_BOUNDS.minLon && lon <= SIOUX_CITY_BOUNDS.maxLon) {
+
+            const headline = attrs.Headline || attrs.Description_0 || attrs.Message_0 || 'Traffic Event'
+            const description = attrs.Description_1 || attrs.Message_1 || attrs.Description_0 || ''
+            const roadway = attrs.Route || 'Unknown'
+
+            events.push({
+              id: `ne-${attrs.OBJECTID || Date.now()}`,
+              type: mapEventType(attrs.EventType || attrs.Restriction || ''),
+              severity: mapSeverity(attrs.Priority || ''),
+              headline: `[NE] ${headline}`,
+              description,
+              roadway,
+              latitude: lat,
+              longitude: lon,
+              startTime: new Date(attrs.StartTime || attrs.IssueTime || Date.now()),
+              endTime: attrs.EndTime ? new Date(attrs.EndTime) : undefined,
+              lastUpdated: new Date()
+            })
+          }
+        } catch {
+          continue
+        }
+      }
+    }
+
+    console.log(`[Nebraska 511] Found ${events.length} events in Sioux City area`)
+    return events
+  } catch (error) {
+    console.error('Failed to fetch Nebraska 511 events:', error)
     return []
   }
 }
