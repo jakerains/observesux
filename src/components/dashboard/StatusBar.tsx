@@ -19,12 +19,12 @@ import {
   Snowflake,
   Newspaper,
   Navigation,
+  Fuel,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ChangelogModal } from './ChangelogModal'
 import packageJson from '../../../package.json'
 
-// NOTE: gasPrices temporarily disabled - pending reliable daily price source
 const STATUS_ITEMS = [
   { key: 'cameras', icon: Camera, label: 'Cameras' },
   { key: 'weather', icon: Cloud, label: 'Weather' },
@@ -39,6 +39,7 @@ const STATUS_ITEMS = [
   { key: 'news', icon: Newspaper, label: 'News' },
   { key: 'aviation', icon: Navigation, label: 'Aviation' },
   { key: 'aircraft', icon: PlaneTakeoff, label: 'Aircraft' },
+  { key: 'gasPrices', icon: Fuel, label: 'Gas' },
 ] as const
 
 export function StatusBar() {

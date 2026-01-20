@@ -16,6 +16,17 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.2.8',
+    date: '2026-01-20',
+    added: [
+      'Re-enabled Gas Prices widget with new Firecrawl agent',
+      'Gas prices health check restored to status bar',
+      'Gas stations map layer available (off by default)',
+    ],
+    changed: [],
+    fixed: [],
+  },
+  {
     version: '0.2.7',
     date: '2026-01-20',
     added: [],
