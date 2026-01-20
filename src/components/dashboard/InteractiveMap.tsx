@@ -216,58 +216,6 @@ function LayerToggle({ layers, onToggle, radarSource, onRadarSourceChange, radar
             <span className="text-[10px] opacity-70 ml-auto">{radarTime}</span>
           )}
         </button>
-        {/* Radar source selector */}
-        {layers.radar && (
-          <div className="px-2 py-1 space-y-1">
-            <div className="flex gap-1">
-              <button
-                onClick={() => onRadarSourceChange('nws')}
-                className={`flex-1 px-2 py-0.5 rounded text-[10px] transition-colors ${
-                  radarSource === 'nws'
-                    ? 'bg-green-500 text-white'
-                    : 'bg-muted hover:bg-muted/80'
-                }`}
-              >
-                NWS
-              </button>
-              <button
-                onClick={() => onRadarSourceChange('rainviewer')}
-                className={`flex-1 px-2 py-0.5 rounded text-[10px] transition-colors ${
-                  radarSource === 'rainviewer'
-                    ? 'bg-green-500 text-white'
-                    : 'bg-muted hover:bg-muted/80'
-                }`}
-              >
-                Animated
-              </button>
-            </div>
-            {/* Timeline for animated radar */}
-            {radarSource === 'rainviewer' && totalFrames > 1 && (
-              <div>
-                <div className="h-1 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-green-500 transition-all duration-200"
-                    style={{ width: `${((radarFrame + 1) / totalFrames) * 100}%` }}
-                  />
-                </div>
-                <div className="flex justify-between text-[9px] text-muted-foreground mt-0.5">
-                  <span>-2h</span>
-                  <span>Now</span>
-                </div>
-              </div>
-            )}
-            {radarSource === 'rainviewer' && radarError && (
-              <div className="text-[9px] text-red-500/80 text-center">
-                {radarError}
-              </div>
-            )}
-            {radarSource === 'nws' && (
-              <div className="text-[9px] text-muted-foreground text-center">
-                Live NEXRAD
-              </div>
-            )}
-          </div>
-        )}
         <button
           onClick={() => onToggle('cameras')}
           className={`flex items-center gap-2 w-full px-2 py-1 rounded text-xs transition-colors ${
@@ -457,7 +405,7 @@ export function InteractiveMap() {
     snowplows: true,
     transit: true,
     aircraft: true,
-    gasStations: false, // Off by default to reduce map clutter
+    gasStations: true,
   })
 
   // Solo mode: when set, only show this layer
@@ -476,7 +424,7 @@ export function InteractiveMap() {
         snowplows: true,
         transit: true,
         aircraft: true,
-        gasStations: false,
+        gasStations: true,
       })
     } else {
       // Solo this layer - hide all others
@@ -975,7 +923,7 @@ export function InteractiveMap() {
                 snowplows: true,
                 transit: true,
                 aircraft: true,
-                gasStations: false,
+                gasStations: true,
               })
             }}
             className="ml-2 px-2 py-1 text-xs bg-muted hover:bg-muted/80 rounded-full"

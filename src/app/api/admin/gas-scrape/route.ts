@@ -78,10 +78,13 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('[Gas Prices Admin] Failed:', error)
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    const errorStack = error instanceof Error ? error.stack : undefined
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: errorMessage,
+        stack: process.env.NODE_ENV === 'development' ? errorStack : undefined,
         timestamp: new Date().toISOString()
       },
       { status: 500 }

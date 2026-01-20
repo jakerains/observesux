@@ -16,6 +16,21 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.2.9',
+    date: '2026-01-20',
+    added: [
+      'Gas stations now shown on map by default',
+    ],
+    changed: [
+      'Gas Prices widget moved to top position',
+      'Simplified radar to NWS only (removed animated option)',
+    ],
+    fixed: [
+      'Gas prices scraper correctly parses Firecrawl response',
+      'Handle string prices from GasBuddy',
+    ],
+  },
+  {
     version: '0.2.8',
     date: '2026-01-20',
     added: [

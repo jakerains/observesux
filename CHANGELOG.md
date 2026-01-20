@@ -5,6 +5,19 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.9] - 2026-01-20
+
+### Added
+- Gas stations now shown on map by default
+
+### Changed
+- Gas Prices widget moved to top position (first after map)
+- Simplified radar to NWS only (removed animated option)
+
+### Fixed
+- Gas prices scraper now correctly parses Firecrawl response format
+- Handle string prices from GasBuddy (e.g., "2.22" vs 2.22)
+
 ## [0.2.8] - 2026-01-20
 
 ### Added
