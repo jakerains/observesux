@@ -128,61 +128,63 @@ export function TrafficEventsWidget() {
       lastUpdated={lastUpdated}
       action={refreshAction}
     >
-      {/* Summary */}
-      {events.length > 0 ? (
-        <div className="flex items-center gap-2 mb-3 pb-3 border-b">
-          {incidents > 0 && (
-            <Badge variant="destructive" className="text-xs">
-              <AlertTriangle className="h-3 w-3 mr-1" />
-              {incidents} Incident{incidents !== 1 ? 's' : ''}
-            </Badge>
-          )}
-          {construction > 0 && (
-            <Badge variant="secondary" className="text-xs">
-              <Construction className="h-3 w-3 mr-1" />
-              {construction} Construction
-            </Badge>
-          )}
-          {closures > 0 && (
-            <Badge variant="outline" className="text-xs">
-              <Cone className="h-3 w-3 mr-1" />
-              {closures} Closure{closures !== 1 ? 's' : ''}
-            </Badge>
-          )}
-        </div>
-      ) : (
-        <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20 flex items-center gap-2 mb-3">
-          <CheckCircle className="h-5 w-5 text-green-500" />
-          <div>
-            <div className="font-medium text-sm text-green-600 dark:text-green-400">
-              Clear Roads
-            </div>
-            <div className="text-xs text-muted-foreground">
-              No active incidents in the area
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Events List */}
-      <ScrollArea className="h-[200px]">
+      <div className="flex flex-col h-full min-h-0">
+        {/* Summary */}
         {events.length > 0 ? (
-          <div className="space-y-2 pr-3">
-            {events.slice(0, 10).map((event) => (
-              <EventRow key={event.id} event={event} />
-            ))}
+          <div className="flex items-center gap-2 mb-3 pb-3 border-b shrink-0">
+            {incidents > 0 && (
+              <Badge variant="destructive" className="text-xs">
+                <AlertTriangle className="h-3 w-3 mr-1" />
+                {incidents} Incident{incidents !== 1 ? 's' : ''}
+              </Badge>
+            )}
+            {construction > 0 && (
+              <Badge variant="secondary" className="text-xs">
+                <Construction className="h-3 w-3 mr-1" />
+                {construction} Construction
+              </Badge>
+            )}
+            {closures > 0 && (
+              <Badge variant="outline" className="text-xs">
+                <Cone className="h-3 w-3 mr-1" />
+                {closures} Closure{closures !== 1 ? 's' : ''}
+              </Badge>
+            )}
           </div>
         ) : (
-          <div className="text-center text-muted-foreground py-8">
-            <Car className="h-8 w-8 mx-auto mb-2" />
-            <p>Traffic is flowing normally</p>
+          <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20 flex items-center gap-2 mb-3 shrink-0">
+            <CheckCircle className="h-5 w-5 text-green-500" />
+            <div>
+              <div className="font-medium text-sm text-green-600 dark:text-green-400">
+                Clear Roads
+              </div>
+              <div className="text-xs text-muted-foreground">
+                No active incidents in the area
+              </div>
+            </div>
           </div>
         )}
-      </ScrollArea>
 
-      {/* Data Source */}
-      <div className="mt-3 pt-2 border-t text-xs text-muted-foreground">
-        Data from Iowa 511 • Updates every 5 minutes
+        {/* Events List - fills available space */}
+        <ScrollArea className="flex-1 min-h-[100px]">
+          {events.length > 0 ? (
+            <div className="space-y-2 pr-3">
+              {events.slice(0, 10).map((event) => (
+                <EventRow key={event.id} event={event} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center text-muted-foreground py-8">
+              <Car className="h-8 w-8 mx-auto mb-2" />
+              <p>Traffic is flowing normally</p>
+            </div>
+          )}
+        </ScrollArea>
+
+        {/* Data Source */}
+        <div className="mt-3 pt-2 border-t text-xs text-muted-foreground shrink-0">
+          Data from Iowa & Nebraska 511 • Updates every 5 minutes
+        </div>
       </div>
     </DashboardCard>
   )
