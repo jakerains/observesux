@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "@/components/theme-provider"
 import { ChatProvider } from "@/lib/contexts/ChatContext"
+import { NeonAuthUIProvider } from "@neondatabase/auth/react/ui"
+import { authClient } from "@/lib/auth/client"
 import "./globals.css"
 
 const geistSans = Geist({
@@ -59,16 +61,18 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-background`}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <ChatProvider>
-            {children}
-          </ChatProvider>
-        </ThemeProvider>
+        <NeonAuthUIProvider authClient={authClient}>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <ChatProvider>
+              {children}
+            </ChatProvider>
+          </ThemeProvider>
+        </NeonAuthUIProvider>
         <Analytics />
       </body>
     </html>

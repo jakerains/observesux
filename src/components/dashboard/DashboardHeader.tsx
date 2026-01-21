@@ -3,13 +3,15 @@
 import { useState, useEffect } from 'react'
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { RefreshCw, Moon, Sun, Settings, Lightbulb, X } from "lucide-react"
+import { RefreshCw, Moon, Sun, Settings, Lightbulb, X, Sparkles } from "lucide-react"
 import { useTheme } from "next-themes"
 import { SettingsModal } from './SettingsModal'
 import { SuggestionModal } from './SuggestionModal'
+import { UserMenu } from '@/components/auth/UserMenu'
+import { useSession } from '@/lib/auth/client'
 import { cn } from '@/lib/utils'
 
-const SUGGESTION_TOOLTIP_KEY = 'suggestion-tooltip-seen'
+const ACCOUNT_TOOLTIP_KEY = 'account-tooltip-seen-v1'
 
 interface DashboardHeaderProps {
   onRefresh?: () => void
@@ -18,33 +20,39 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ onRefresh, isRefreshing }: DashboardHeaderProps) {
   const { resolvedTheme, setTheme } = useTheme()
+  const { data: session, isPending: sessionPending } = useSession()
   const [mounted, setMounted] = useState(false)
   const [showTooltip, setShowTooltip] = useState(false)
 
   // Avoid hydration mismatch - only render theme toggle after mount
   useEffect(() => {
     setMounted(true)
+  }, [])
 
-    // Check if user has seen the tooltip
-    const hasSeen = localStorage.getItem(SUGGESTION_TOOLTIP_KEY)
+  // Show account tooltip for non-authenticated users who haven't seen it
+  useEffect(() => {
+    if (sessionPending) return // Wait for session to load
+    if (session?.user) return // Don't show to logged-in users
+
+    const hasSeen = localStorage.getItem(ACCOUNT_TOOLTIP_KEY)
     if (!hasSeen) {
       // Show tooltip after a brief delay
       const showTimer = setTimeout(() => setShowTooltip(true), 1500)
-      // Auto-hide after 8 seconds
+      // Auto-hide after 10 seconds
       const hideTimer = setTimeout(() => {
         setShowTooltip(false)
-        localStorage.setItem(SUGGESTION_TOOLTIP_KEY, 'true')
-      }, 9500)
+        localStorage.setItem(ACCOUNT_TOOLTIP_KEY, 'true')
+      }, 11500)
       return () => {
         clearTimeout(showTimer)
         clearTimeout(hideTimer)
       }
     }
-  }, [])
+  }, [session, sessionPending])
 
   const dismissTooltip = () => {
     setShowTooltip(false)
-    localStorage.setItem(SUGGESTION_TOOLTIP_KEY, 'true')
+    localStorage.setItem(ACCOUNT_TOOLTIP_KEY, 'true')
   }
 
   return (
@@ -90,46 +98,18 @@ export function DashboardHeader({ onRefresh, isRefreshing }: DashboardHeaderProp
             <span className="sr-only">Toggle theme</span>
           </Button>
 
-          <div className="relative">
-            <SuggestionModal
-              trigger={
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={cn("h-8 w-8", showTooltip && "ring-2 ring-primary ring-offset-2 ring-offset-background")}
-                  onClick={dismissTooltip}
-                >
-                  <Lightbulb className="h-4 w-4" />
-                  <span className="sr-only">Submit suggestion</span>
-                </Button>
-              }
-            />
-
-            {/* New user tooltip */}
-            {showTooltip && (
-              <div
-                className="absolute top-full right-0 mt-2 z-50 animate-in fade-in slide-in-from-top-2 duration-300"
-                onClick={dismissTooltip}
+          <SuggestionModal
+            trigger={
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
               >
-                <div className="relative bg-primary text-primary-foreground text-sm px-3 py-2 rounded-lg shadow-lg whitespace-nowrap">
-                  {/* Arrow pointing up */}
-                  <div className="absolute -top-1.5 right-4 w-3 h-3 bg-primary rotate-45" />
-                  <div className="flex items-center gap-2">
-                    <span>Got an idea? Suggest a feature!</span>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        dismissTooltip()
-                      }}
-                      className="hover:bg-primary-foreground/20 rounded p-0.5"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+                <Lightbulb className="h-4 w-4" />
+                <span className="sr-only">Submit suggestion</span>
+              </Button>
+            }
+          />
 
           <SettingsModal
             trigger={
@@ -139,6 +119,55 @@ export function DashboardHeader({ onRefresh, isRefreshing }: DashboardHeaderProp
               </Button>
             }
           />
+
+          <div className="relative">
+            <UserMenu />
+
+            {/* Account feature tooltip for new users */}
+            {showTooltip && (
+              <div
+                className="absolute top-full right-0 mt-2 z-50 animate-in fade-in slide-in-from-top-2 duration-300"
+              >
+                <div className="relative bg-primary text-primary-foreground text-sm px-4 py-3 rounded-lg shadow-lg max-w-[280px]">
+                  {/* Arrow pointing up */}
+                  <div className="absolute -top-1.5 right-4 w-3 h-3 bg-primary rotate-45" />
+
+                  {/* Header */}
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="h-4 w-4" />
+                      <span className="font-semibold">NEW: Free Accounts!</span>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        dismissTooltip()
+                      }}
+                      className="hover:bg-primary-foreground/20 rounded p-0.5"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+
+                  {/* Benefits list */}
+                  <ul className="text-xs text-primary-foreground/90 space-y-1 ml-0.5">
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary-foreground/70">•</span>
+                      <span>Save favorite cameras & routes</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary-foreground/70">•</span>
+                      <span>Get alerts for weather & flooding</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary-foreground/70">•</span>
+                      <span>Sync settings across devices</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </header>

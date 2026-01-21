@@ -7,7 +7,7 @@ export const maxDuration = 60 // Allow up to 60 seconds for scraping
 
 /**
  * Cron endpoint to scrape gas prices and update database
- * Runs 3x daily via Vercel Cron (6:00, 14:00, 22:00 UTC)
+ * Runs daily at 12:00 UTC (6 AM Central) via Vercel Cron
  *
  * GET /api/cron/gas-prices
  */

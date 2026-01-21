@@ -4,6 +4,7 @@ import {
   updateSuggestionStatus,
   deleteSuggestion,
 } from '@/lib/db/suggestions'
+import { getCurrentUser } from '@/lib/auth/server'
 import type { SuggestionStatus } from '@/types'
 
 const VALID_STATUSES: SuggestionStatus[] = ['pending', 'reviewed', 'planned', 'implemented', 'dismissed']
@@ -13,18 +14,24 @@ interface RouteParams {
 }
 
 /**
+ * Check if current user is an admin
+ */
+async function isAdmin(): Promise<boolean> {
+  const user = await getCurrentUser()
+  if (!user) return false
+  return (user as { role?: string }).role === 'admin'
+}
+
+/**
  * GET /api/suggestions/[id]
  * Get a single suggestion (admin only)
  */
 export async function GET(req: NextRequest, { params }: RouteParams) {
   try {
     // Check admin auth
-    const password = req.headers.get('x-admin-password')
-    const correctPassword = process.env.CHAT_LOGS_PASSWORD
-
-    if (!correctPassword || password !== correctPassword) {
+    if (!await isAdmin()) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { error: 'Unauthorized - admin access required' },
         { status: 401 }
       )
     }
@@ -56,12 +63,9 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
 export async function PATCH(req: NextRequest, { params }: RouteParams) {
   try {
     // Check admin auth
-    const password = req.headers.get('x-admin-password')
-    const correctPassword = process.env.CHAT_LOGS_PASSWORD
-
-    if (!correctPassword || password !== correctPassword) {
+    if (!await isAdmin()) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { error: 'Unauthorized - admin access required' },
         { status: 401 }
       )
     }
@@ -104,12 +108,9 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 export async function DELETE(req: NextRequest, { params }: RouteParams) {
   try {
     // Check admin auth
-    const password = req.headers.get('x-admin-password')
-    const correctPassword = process.env.CHAT_LOGS_PASSWORD
-
-    if (!correctPassword || password !== correctPassword) {
+    if (!await isAdmin()) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { error: 'Unauthorized - admin access required' },
         { status: 401 }
       )
     }

@@ -1,23 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sql, isDatabaseConfigured } from '@/lib/db'
 import { scrapeGasPrices, type ScrapedGasStation } from '@/lib/fetchers/gasbuddy'
+import { getCurrentUser } from '@/lib/auth/server'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
 /**
+ * Check if current user is an admin
+ */
+async function isAdmin(): Promise<boolean> {
+  const user = await getCurrentUser()
+  if (!user) return false
+  return (user as { role?: string }).role === 'admin'
+}
+
+/**
  * Admin endpoint to manually trigger gas price scraping
  * POST /api/admin/gas-scrape
- * Requires admin password authentication
+ * Requires admin role
  *
  * Calls the scraper directly (same logic as cron endpoint)
  */
 export async function POST(request: NextRequest) {
-  const { password } = await request.json().catch(() => ({ password: '' }))
-
-  const adminPassword = process.env.ADMIN_PASSWORD
-  if (!adminPassword || password !== adminPassword) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  // Check admin auth
+  if (!await isAdmin()) {
+    return NextResponse.json({ error: 'Unauthorized - admin access required' }, { status: 401 })
   }
 
   if (!isDatabaseConfigured()) {

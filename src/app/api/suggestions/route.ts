@@ -4,9 +4,19 @@ import {
   getSuggestions,
   getSuggestionStats,
 } from '@/lib/db/suggestions'
+import { getCurrentUser } from '@/lib/auth/server'
 import type { SuggestionCategory, SuggestionStatus } from '@/types'
 
 const VALID_CATEGORIES: SuggestionCategory[] = ['feature', 'bug', 'improvement', 'content', 'other']
+
+/**
+ * Check if current user is an admin
+ */
+async function isAdmin(): Promise<boolean> {
+  const user = await getCurrentUser()
+  if (!user) return false
+  return (user as { role?: string }).role === 'admin'
+}
 
 /**
  * POST /api/suggestions
@@ -78,7 +88,7 @@ export async function POST(req: NextRequest) {
 
 /**
  * GET /api/suggestions
- * Get suggestions (admin endpoint - requires auth header)
+ * Get suggestions (admin endpoint - requires admin role)
  *
  * Query params:
  * - stats: boolean (if true, returns stats instead of list)
@@ -86,19 +96,13 @@ export async function POST(req: NextRequest) {
  * - category: SuggestionCategory (filter by category)
  * - limit: number (default 50)
  * - offset: number (default 0)
- *
- * Headers:
- * - x-admin-password: admin password for auth
  */
 export async function GET(req: NextRequest) {
   try {
     // Check admin auth
-    const password = req.headers.get('x-admin-password')
-    const correctPassword = process.env.CHAT_LOGS_PASSWORD
-
-    if (!correctPassword || password !== correctPassword) {
+    if (!await isAdmin()) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { error: 'Unauthorized - admin access required' },
         { status: 401 }
       )
     }

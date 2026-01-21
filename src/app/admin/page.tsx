@@ -30,6 +30,7 @@ import {
   Lightbulb,
   ChevronDown,
   ChevronUp,
+  ShieldX,
 } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
@@ -56,9 +57,7 @@ import {
   type SuggestionStats,
   type SuggestionStatus,
 } from '@/types'
-
-// Session storage key for auth
-const AUTH_KEY = 'admin-authenticated'
+import { useSession } from '@/lib/auth/client'
 
 // Types for chat logs
 interface ChatSession {
@@ -69,6 +68,8 @@ interface ChatSession {
   toolCallsCount: number
   userAgent: string | null
   metadata: Record<string, unknown>
+  userId: string | null
+  userEmail: string | null
 }
 
 interface ChatMessage {
@@ -94,72 +95,35 @@ interface Analytics {
   topTools: { tool: string; count: number }[]
 }
 
-// Password protection component
-function PasswordGate({ onAuthenticated }: { onAuthenticated: () => void }) {
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
-
-    try {
-      const res = await fetch('/api/chat-logs/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
-      })
-
-      if (res.ok) {
-        sessionStorage.setItem(AUTH_KEY, 'true')
-        localStorage.setItem('admin-password', password)
-        onAuthenticated()
-      } else {
-        setError('Invalid password')
-      }
-    } catch {
-      setError('Authentication failed')
-    } finally {
-      setLoading(false)
-    }
-  }
-
+// Access denied component for non-admin users
+function AccessDenied({ reason }: { reason: 'not-logged-in' | 'not-admin' }) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
-          <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-            <Lock className="h-6 w-6 text-primary" />
+          <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
+            <ShieldX className="h-6 w-6 text-destructive" />
           </div>
-          <CardTitle>Admin Access</CardTitle>
-          <p className="text-sm text-muted-foreground">Enter password to access admin panel</p>
+          <CardTitle>Access Denied</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            {reason === 'not-logged-in'
+              ? 'You must be signed in to access the admin panel.'
+              : 'Your account does not have admin privileges.'}
+          </p>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className={error ? 'border-destructive' : ''}
-                autoFocus
-              />
-              {error && <p className="text-sm text-destructive mt-1">{error}</p>}
-            </div>
-            <Button type="submit" className="w-full" disabled={loading || !password}>
-              {loading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Verifying...
-                </>
-              ) : (
-                'Access Admin'
-              )}
+        <CardContent className="space-y-3">
+          {reason === 'not-logged-in' ? (
+            <Button asChild className="w-full">
+              <a href="/auth/sign-in">Sign In</a>
             </Button>
-          </form>
+          ) : (
+            <p className="text-xs text-center text-muted-foreground">
+              Contact an administrator if you believe this is an error.
+            </p>
+          )}
+          <Button variant="outline" asChild className="w-full">
+            <Link href="/">Return to Dashboard</Link>
+          </Button>
         </CardContent>
       </Card>
     </div>
@@ -382,6 +346,12 @@ function ChatLogsPanel() {
                         <span className="text-sm font-medium">
                           {format(new Date(session.startedAt), 'MMM d, h:mm a')}
                         </span>
+                        {session.userEmail && (
+                          <Badge variant="secondary" className="text-xs px-1.5 py-0">
+                            <User className="h-2.5 w-2.5 mr-1" />
+                            {session.userEmail.split('@')[0]}
+                          </Badge>
+                        )}
                       </div>
                       <span className="text-xs text-muted-foreground">
                         {formatDistanceToNow(new Date(session.startedAt), { addSuffix: true })}
@@ -408,9 +378,17 @@ function ChatLogsPanel() {
                 </Button>
               )}
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm">
-                  {format(new Date(selectedSession.startedAt), 'MMMM d, yyyy at h:mm a')}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="font-medium text-sm">
+                    {format(new Date(selectedSession.startedAt), 'MMMM d, yyyy at h:mm a')}
+                  </p>
+                  {selectedSession.userEmail && (
+                    <Badge variant="outline" className="text-xs">
+                      <User className="h-3 w-3 mr-1" />
+                      {selectedSession.userEmail}
+                    </Badge>
+                  )}
+                </div>
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <MessageSquare className="h-3 w-3" />
@@ -577,16 +555,9 @@ function ToolsPanel() {
     setGasScrapeResult(null)
 
     try {
-      const password = prompt('Enter admin password to confirm:')
-      if (!password) {
-        setGasScrapeStatus('idle')
-        return
-      }
-
       const res = await fetch('/api/admin/gas-scrape', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
       })
 
       const data = await res.json()
@@ -730,20 +701,11 @@ function SuggestionsPanel() {
   const fetchSuggestions = useCallback(async () => {
     setLoading(true)
     try {
-      const password = sessionStorage.getItem(AUTH_KEY) === 'true'
-        ? process.env.NEXT_PUBLIC_ADMIN_PASSWORD || ''
-        : ''
-
-      // Get the actual password from the session or stored value
-      const adminPassword = localStorage.getItem('admin-password') || ''
-
       const url = statusFilter === 'all'
         ? '/api/suggestions?limit=100'
         : `/api/suggestions?status=${statusFilter}&limit=100`
 
-      const res = await fetch(url, {
-        headers: { 'x-admin-password': adminPassword },
-      })
+      const res = await fetch(url)
 
       if (res.ok) {
         const data = await res.json()
@@ -758,10 +720,7 @@ function SuggestionsPanel() {
 
   const fetchStats = useCallback(async () => {
     try {
-      const adminPassword = localStorage.getItem('admin-password') || ''
-      const res = await fetch('/api/suggestions?stats=true', {
-        headers: { 'x-admin-password': adminPassword },
-      })
+      const res = await fetch('/api/suggestions?stats=true')
       if (res.ok) {
         const data = await res.json()
         setStats(data)
@@ -777,13 +736,11 @@ function SuggestionsPanel() {
   }, [fetchSuggestions, fetchStats])
 
   const handleStatusChange = async (id: string, newStatus: SuggestionStatus) => {
-    const adminPassword = localStorage.getItem('admin-password') || ''
     try {
       const res = await fetch(`/api/suggestions/${id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-password': adminPassword,
         },
         body: JSON.stringify({ status: newStatus }),
       })
@@ -984,15 +941,11 @@ function SuggestionsPanel() {
 
 // Main Admin Page
 export default function AdminPage() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
+  const { data: session, isPending } = useSession()
   const [activeTab, setActiveTab] = useState('chat-logs')
 
-  useEffect(() => {
-    const isAuthed = sessionStorage.getItem(AUTH_KEY) === 'true'
-    setIsAuthenticated(isAuthed)
-  }, [])
-
-  if (isAuthenticated === null) {
+  // Loading state
+  if (isPending) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -1000,8 +953,15 @@ export default function AdminPage() {
     )
   }
 
-  if (!isAuthenticated) {
-    return <PasswordGate onAuthenticated={() => setIsAuthenticated(true)} />
+  // Not logged in
+  if (!session?.user) {
+    return <AccessDenied reason="not-logged-in" />
+  }
+
+  // Check for admin role
+  const userRole = (session.user as { role?: string }).role
+  if (userRole !== 'admin') {
+    return <AccessDenied reason="not-admin" />
   }
 
   return (

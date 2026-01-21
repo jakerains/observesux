@@ -11,15 +11,24 @@ ObserveSUX is a real-time observability dashboard for Sioux City, Iowa. It aggre
 - **Framework**: Next.js 16 (App Router)
 - **UI**: React 19 + Tailwind CSS v4 + shadcn/ui
 - **Data Fetching**: SWR with polling intervals
-- **Database**: Neon Serverless PostgreSQL
+- **Database**: Neon Serverless PostgreSQL (siouxland-online-neon / shy-violet-53187602)
+- **Auth**: Neon Auth (Better Auth)
 - **Maps**: Leaflet + React-Leaflet
+- **Notifications**: Web Push API
 
 ## Key Directories
 
 - `/src/app/api/` - API routes that proxy external data sources
+- `/src/app/api/user/` - User-specific API routes (alerts, watchlist, preferences)
+- `/src/app/auth/` - Authentication pages (sign-in, sign-up)
+- `/src/app/account/` - Account settings pages
 - `/src/components/dashboard/` - Widget components
+- `/src/components/alerts/` - Alert subscription components
+- `/src/components/watchlist/` - Watchlist/favorites components
+- `/src/lib/auth/` - Neon Auth client and server utilities
 - `/src/lib/hooks/` - Custom hooks including `useDataFetching.ts`
 - `/src/lib/contexts/` - React contexts for state management
+- `/src/lib/db/` - Database operations
 - `/src/types/` - TypeScript type definitions
 
 ---
@@ -166,13 +175,47 @@ Note: Existing users keep their saved order in localStorage.
 
 ---
 
+## Database
+
+**Project**: siouxland-online-neon
+**Neon Project ID**: shy-violet-53187602
+**Endpoint**: ep-calm-wave-ahyf5m61
+
+### Tables
+
+**Application Data:**
+- `weather_observations` - Historical weather data
+- `river_readings` - River gauge readings
+- `air_quality_readings` - AQI history
+- `weather_alerts` - NWS alerts
+- `traffic_incidents` - Traffic events
+- `gas_stations` / `gas_prices` - Gas price data
+- `chat_sessions` / `chat_messages` - Chat logs
+- `suggestions` - User feedback
+- `system_logs` - API health logs
+
+**User Features:**
+- `push_subscriptions` - Web push notification subscriptions
+- `alert_subscriptions` - User alert preferences
+- `watchlist_items` - User favorites (cameras, routes, etc.)
+- `triggered_alerts` - Alert deduplication log
+- `user_preferences` - Synced user settings
+
+**Neon Auth (neon_auth schema):**
+- `user`, `session`, `account`, `verification` - Managed by Neon Auth
+
+---
+
 ## Environment Variables
 
 Required:
 - `DATABASE_URL` - Neon PostgreSQL connection string
+- `NEON_AUTH_BASE_URL` - Neon Auth endpoint
 
 Optional:
 - `AIRNOW_API_KEY` - For air quality data
 - `ELEVENLABS_API_KEY` - Voice agent
 - `ELEVENLABS_AGENT_ID` - Voice agent
 - `NEXT_PUBLIC_VOICE_AGENT_ENABLED` - Enable voice feature
+- `NEXT_PUBLIC_VAPID_PUBLIC_KEY` - Web push public key
+- `VAPID_PRIVATE_KEY` - Web push private key

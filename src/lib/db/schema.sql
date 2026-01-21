@@ -181,6 +181,34 @@ CREATE INDEX IF NOT EXISTS idx_suggestions_category ON suggestions(category);
 
 -- =====================================================
 
+-- =====================================================
+-- RAG (Retrieval-Augmented Generation) Knowledge Base
+-- =====================================================
+
+-- Enable pgvector extension for semantic search
+CREATE EXTENSION IF NOT EXISTS vector;
+
+-- RAG entries with embeddings for semantic search
+CREATE TABLE IF NOT EXISTS rag_entries (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title VARCHAR(500) NOT NULL,
+  content TEXT NOT NULL,
+  embedding vector(1536),  -- OpenAI text-embedding-3-small dimensions
+  category VARCHAR(100),
+  tags TEXT[],
+  source VARCHAR(255),
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Indexes for RAG queries
+CREATE INDEX IF NOT EXISTS idx_rag_entries_active ON rag_entries(is_active);
+CREATE INDEX IF NOT EXISTS idx_rag_entries_category ON rag_entries(category);
+CREATE INDEX IF NOT EXISTS idx_rag_entries_created ON rag_entries(created_at DESC);
+
+-- =====================================================
+
 -- Clean up old data (run periodically via cron or pg_cron)
 -- DELETE FROM weather_observations WHERE created_at < NOW() - INTERVAL '30 days';
 -- DELETE FROM river_readings WHERE created_at < NOW() - INTERVAL '30 days';

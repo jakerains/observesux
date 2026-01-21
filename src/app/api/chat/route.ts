@@ -6,6 +6,7 @@ import {
   ensureSessionExists,
   logChatMessage,
 } from '@/lib/db/chat-logs';
+import { getCurrentUser } from '@/lib/auth/server';
 
 export const runtime = 'nodejs';
 export const maxDuration = 30;
@@ -63,6 +64,10 @@ export async function POST(req: Request) {
   try {
     const { messages, sessionId: existingSessionId, lastLoggedMessageIndex, deviceInfo } = await req.json();
 
+    // Get current user if logged in (for chat logging)
+    const user = await getCurrentUser();
+    const userId = user?.id;
+
     // Get or create session ID
     // Client may provide a UUID - validate it's a proper UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -81,6 +86,7 @@ export async function POST(req: Request) {
     if (!sessionId) {
       isNewSession = true;
       sessionId = await createChatSession({
+        userId,
         userAgent: req.headers.get('user-agent') || undefined,
         ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0] ||
                    req.headers.get('x-real-ip') ||
@@ -90,7 +96,9 @@ export async function POST(req: Request) {
     } else if (isNewSession === false) {
       // Client provided a session ID - ensure it exists in DB, create if not
       // This handles the case where client has a session ID but it's a new browser session
+      // Also updates user_id if user logs in mid-session
       await ensureSessionExists(sessionId, {
+        userId,
         userAgent: req.headers.get('user-agent') || undefined,
         ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0] ||
                    req.headers.get('x-real-ip') ||

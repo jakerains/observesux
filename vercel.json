@@ -3,7 +3,11 @@
   "crons": [
     {
       "path": "/api/cron/gas-prices",
-      "schedule": "0 14 * * *"
+      "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/check-alerts",
+      "schedule": "*/5 * * * *"
     }
   ]
 }

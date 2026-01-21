@@ -4,6 +4,8 @@ import { createHash } from 'crypto'
 // Types for chat logging
 export interface ChatSession {
   id: string
+  userId: string | null
+  userEmail?: string | null // Joined from auth when available
   startedAt: Date
   endedAt: Date | null
   messageCount: number
@@ -36,25 +38,32 @@ function hashIp(ip: string): string {
  * Create a new chat session
  */
 export async function createChatSession(options?: {
+  userId?: string
   userAgent?: string
   ipAddress?: string
   metadata?: Record<string, unknown>
 }): Promise<string | null> {
-  if (!isDatabaseConfigured()) return null
+  if (!isDatabaseConfigured()) {
+    console.warn('[Chat Log] Database not configured, skipping session creation')
+    return null
+  }
 
   try {
+    console.log('[Chat Log] Creating session for user:', options?.userId || 'anonymous')
     const result = await sql`
-      INSERT INTO chat_sessions (user_agent, ip_hash, metadata)
+      INSERT INTO chat_sessions (user_id, user_agent, ip_hash, metadata)
       VALUES (
+        ${options?.userId || null},
         ${options?.userAgent || null},
         ${options?.ipAddress ? hashIp(options.ipAddress) : null},
         ${JSON.stringify(options?.metadata || {})}
       )
       RETURNING id
     `
+    console.log('[Chat Log] Session created:', result[0]?.id)
     return result[0]?.id || null
   } catch (error) {
-    console.error('Failed to create chat session:', error)
+    console.error('[Chat Log] Failed to create chat session:', error)
     return null
   }
 }
@@ -66,6 +75,7 @@ export async function createChatSession(options?: {
 export async function ensureSessionExists(
   sessionId: string,
   options?: {
+    userId?: string
     userAgent?: string
     ipAddress?: string
     metadata?: Record<string, unknown>
@@ -75,15 +85,18 @@ export async function ensureSessionExists(
 
   try {
     // Use INSERT ... ON CONFLICT to ensure session exists
+    // If session exists and user logs in, update the user_id
     await sql`
-      INSERT INTO chat_sessions (id, user_agent, ip_hash, metadata)
+      INSERT INTO chat_sessions (id, user_id, user_agent, ip_hash, metadata)
       VALUES (
         ${sessionId}::uuid,
+        ${options?.userId || null},
         ${options?.userAgent || null},
         ${options?.ipAddress ? hashIp(options.ipAddress) : null},
         ${JSON.stringify(options?.metadata || {})}
       )
-      ON CONFLICT (id) DO NOTHING
+      ON CONFLICT (id) DO UPDATE SET
+        user_id = COALESCE(chat_sessions.user_id, EXCLUDED.user_id)
     `
   } catch (error) {
     console.error('Failed to ensure session exists:', error)
@@ -164,15 +177,18 @@ export async function getRecentSessions(options?: {
   try {
     const sessions = await sql`
       SELECT
-        id,
-        started_at as "startedAt",
-        ended_at as "endedAt",
-        message_count as "messageCount",
-        tool_calls_count as "toolCallsCount",
-        user_agent as "userAgent",
-        metadata
-      FROM chat_sessions
-      ORDER BY started_at DESC
+        s.id,
+        s.user_id as "userId",
+        u.email as "userEmail",
+        s.started_at as "startedAt",
+        s.ended_at as "endedAt",
+        s.message_count as "messageCount",
+        s.tool_calls_count as "toolCallsCount",
+        s.user_agent as "userAgent",
+        s.metadata
+      FROM chat_sessions s
+      LEFT JOIN neon_auth.user u ON s.user_id::uuid = u.id
+      ORDER BY s.started_at DESC
       LIMIT ${limit} OFFSET ${offset}
     ` as ChatSession[]
 
@@ -204,15 +220,18 @@ export async function getSession(sessionId: string): Promise<SessionWithMessages
   try {
     const sessions = await sql`
       SELECT
-        id,
-        started_at as "startedAt",
-        ended_at as "endedAt",
-        message_count as "messageCount",
-        tool_calls_count as "toolCallsCount",
-        user_agent as "userAgent",
-        metadata
-      FROM chat_sessions
-      WHERE id = ${sessionId}::uuid
+        s.id,
+        s.user_id as "userId",
+        u.email as "userEmail",
+        s.started_at as "startedAt",
+        s.ended_at as "endedAt",
+        s.message_count as "messageCount",
+        s.tool_calls_count as "toolCallsCount",
+        s.user_agent as "userAgent",
+        s.metadata
+      FROM chat_sessions s
+      LEFT JOIN neon_auth.user u ON s.user_id::uuid = u.id
+      WHERE s.id = ${sessionId}::uuid
     ` as ChatSession[]
 
     if (sessions.length === 0) return null
