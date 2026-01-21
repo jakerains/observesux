@@ -16,13 +16,17 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
-    version: '0.2.10',
+    version: '0.3.0',
     date: '2026-01-21',
     added: [
+      'Community Events tool for AI agent (Explore Siouxland)',
+      'New /api/events endpoint with 30-minute cache',
       'Weather alert modal - click alerts to view full details',
     ],
     changed: [],
-    fixed: [],
+    fixed: [
+      'Remotion build error (invalid premountFor prop)',
+    ],
   },
   {
     version: '0.2.9',

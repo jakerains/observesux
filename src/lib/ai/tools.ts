@@ -243,8 +243,20 @@ export const chatTools = {
     },
   }),
 
+  getEvents: tool({
+    description: 'Get upcoming community events in Sioux City from Explore Siouxland. Use this when users ask about events, things to do, activities, festivals, concerts, or what\'s happening in the area.',
+    inputSchema: z.object({}),
+    execute: async () => {
+      const data = await fetchApi('/api/events');
+      if (!data) {
+        return { error: 'Unable to fetch community events at this time' };
+      }
+      return data;
+    },
+  }),
+
   searchKnowledgeBase: tool({
-    description: 'Search the local knowledge base for Sioux City information not available in real-time data sources. Use this for questions about local history, culture, landmarks, restaurants, events, local tips, and general city information that wouldn\'t be in weather/traffic/news feeds.',
+    description: 'Search the local knowledge base for Sioux City information not available in real-time data sources. Use this for questions about local history, culture, landmarks, restaurants, local tips, and general city information that wouldn\'t be in weather/traffic/news feeds.',
     inputSchema: z.object({
       query: z.string().describe('The search query to find relevant knowledge base entries'),
     }),

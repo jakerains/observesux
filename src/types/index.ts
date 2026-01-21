@@ -537,6 +537,25 @@ export interface GasPriceData {
 }
 
 // ============================================
+// Community Events (Explore Siouxland)
+// ============================================
+
+export interface CommunityEvent {
+  title: string
+  date: string
+  time?: string
+  location?: string
+  description?: string
+  url?: string
+}
+
+export interface CommunityEventsData {
+  events: CommunityEvent[]
+  rawMarkdown?: string // Fallback if parsing is incomplete
+  fetchedAt: Date
+}
+
+// ============================================
 // Dashboard State
 // ============================================
 

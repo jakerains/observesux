@@ -5,13 +5,20 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.2.10] - 2026-01-21
+## [0.3.0] - 2026-01-21
 
 ### Added
+- **Community Events tool for AI agent** - Agent can now answer questions about local events
+  - Fetches from Explore Siouxland events calendar via Jina Reader
+  - Parses event titles, dates, and URLs into structured data
+  - New `/api/events` endpoint with 30-minute cache
 - **Weather alert modal** - click any weather alert to view full details
   - Complete alert description and safety instructions
   - Timing info (effective/expires), urgency, and certainty levels
   - Affected area and issuing organization
+
+### Fixed
+- Remotion build error (removed invalid `premountFor` prop)
 
 ## [0.2.9] - 2026-01-20
 
