@@ -31,6 +31,7 @@ import {
   ChevronDown,
   ChevronUp,
   ShieldX,
+  Users,
 } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
@@ -50,6 +51,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { ChatMarkdown } from '@/components/dashboard/ChatMarkdown'
 import { RagAdmin } from '@/components/rag/RagAdmin'
+import { UsersPanel } from '@/components/admin/UsersPanel'
 import {
   SUGGESTION_CATEGORIES,
   SUGGESTION_STATUSES,
@@ -992,6 +994,10 @@ export default function AdminPage() {
               <MessageSquare className="h-4 w-4" />
               Chat Logs
             </TabsTrigger>
+            <TabsTrigger value="users" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Users
+            </TabsTrigger>
             <TabsTrigger value="knowledge-base" className="flex items-center gap-2">
               <Database className="h-4 w-4" />
               Knowledge Base
@@ -1008,6 +1014,10 @@ export default function AdminPage() {
 
           <TabsContent value="chat-logs">
             <ChatLogsPanel />
+          </TabsContent>
+
+          <TabsContent value="users">
+            <UsersPanel />
           </TabsContent>
 
           <TabsContent value="knowledge-base">

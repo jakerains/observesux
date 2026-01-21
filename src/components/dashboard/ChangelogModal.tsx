@@ -16,6 +16,15 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.4.2',
+    date: '2026-01-21',
+    added: [
+      'User Management - admins can now manage user accounts',
+    ],
+    changed: [],
+    fixed: [],
+  },
+  {
     version: '0.4.1',
     date: '2026-01-21',
     added: [
