@@ -1,8 +1,10 @@
 'use client'
 
+import { useState } from 'react'
 import { DashboardCard } from './DashboardCard'
 import { RefreshAction } from './RefreshAction'
 import { MiniTrendChart, TrendIndicator } from './MiniTrendChart'
+import { WeatherAlertModal } from './WeatherAlertModal'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -34,7 +36,7 @@ import {
 import { cn } from '@/lib/utils'
 import { getDataFreshness } from '@/lib/utils/dataFreshness'
 import { format, isToday, isTomorrow } from 'date-fns'
-import type { ForecastPeriod, HourlyForecast } from '@/types'
+import type { ForecastPeriod, HourlyForecast, WeatherAlert } from '@/types'
 
 function getWeatherIcon(conditions: string, isDaytime: boolean = true) {
   const lower = conditions.toLowerCase()
@@ -143,6 +145,7 @@ export function WeatherWidget() {
   const { data: historyData } = useWeatherHistory(24)
   const { data: forecastData, isLoading: forecastLoading } = useWeatherForecast()
   const { getWidgetConfig, setWidgetSize } = useDashboardLayout()
+  const [selectedAlert, setSelectedAlert] = useState<WeatherAlert | null>(null)
 
   const widgetConfig = getWidgetConfig('weather')
   const isExpanded = widgetConfig?.size === 'large'
@@ -244,7 +247,12 @@ export function WeatherWidget() {
       {alerts.length > 0 && (
         <div className="mb-4 space-y-2">
           {alerts.slice(0, isExpanded ? 3 : 2).map((alert) => (
-            <Alert key={alert.id} variant="destructive" className="py-2">
+            <Alert
+              key={alert.id}
+              variant="destructive"
+              className="py-2 cursor-pointer hover:bg-destructive/10 transition-colors"
+              onClick={() => setSelectedAlert(alert)}
+            >
               <AlertTriangle className="h-4 w-4" />
               <AlertTitle className="text-sm flex items-center gap-2">
                 {alert.event}
@@ -258,6 +266,15 @@ export function WeatherWidget() {
             </Alert>
           ))}
         </div>
+      )}
+
+      {/* Weather Alert Modal */}
+      {selectedAlert && (
+        <WeatherAlertModal
+          alert={selectedAlert}
+          open={!!selectedAlert}
+          onOpenChange={(open) => !open && setSelectedAlert(null)}
+        />
       )}
 
       {/* Main Weather Display */}
