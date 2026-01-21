@@ -3,10 +3,13 @@
 import { useState, useEffect } from 'react'
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { RefreshCw, Moon, Sun, Settings, Lightbulb } from "lucide-react"
+import { RefreshCw, Moon, Sun, Settings, Lightbulb, X } from "lucide-react"
 import { useTheme } from "next-themes"
 import { SettingsModal } from './SettingsModal'
 import { SuggestionModal } from './SuggestionModal'
+import { cn } from '@/lib/utils'
+
+const SUGGESTION_TOOLTIP_KEY = 'suggestion-tooltip-seen'
 
 interface DashboardHeaderProps {
   onRefresh?: () => void
@@ -16,11 +19,33 @@ interface DashboardHeaderProps {
 export function DashboardHeader({ onRefresh, isRefreshing }: DashboardHeaderProps) {
   const { resolvedTheme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
+  const [showTooltip, setShowTooltip] = useState(false)
 
   // Avoid hydration mismatch - only render theme toggle after mount
   useEffect(() => {
     setMounted(true)
+
+    // Check if user has seen the tooltip
+    const hasSeen = localStorage.getItem(SUGGESTION_TOOLTIP_KEY)
+    if (!hasSeen) {
+      // Show tooltip after a brief delay
+      const showTimer = setTimeout(() => setShowTooltip(true), 1500)
+      // Auto-hide after 8 seconds
+      const hideTimer = setTimeout(() => {
+        setShowTooltip(false)
+        localStorage.setItem(SUGGESTION_TOOLTIP_KEY, 'true')
+      }, 9500)
+      return () => {
+        clearTimeout(showTimer)
+        clearTimeout(hideTimer)
+      }
+    }
   }, [])
+
+  const dismissTooltip = () => {
+    setShowTooltip(false)
+    localStorage.setItem(SUGGESTION_TOOLTIP_KEY, 'true')
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -65,14 +90,46 @@ export function DashboardHeader({ onRefresh, isRefreshing }: DashboardHeaderProp
             <span className="sr-only">Toggle theme</span>
           </Button>
 
-          <SuggestionModal
-            trigger={
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <Lightbulb className="h-4 w-4" />
-                <span className="sr-only">Submit suggestion</span>
-              </Button>
-            }
-          />
+          <div className="relative">
+            <SuggestionModal
+              trigger={
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn("h-8 w-8", showTooltip && "ring-2 ring-primary ring-offset-2 ring-offset-background")}
+                  onClick={dismissTooltip}
+                >
+                  <Lightbulb className="h-4 w-4" />
+                  <span className="sr-only">Submit suggestion</span>
+                </Button>
+              }
+            />
+
+            {/* New user tooltip */}
+            {showTooltip && (
+              <div
+                className="absolute top-full right-0 mt-2 z-50 animate-in fade-in slide-in-from-top-2 duration-300"
+                onClick={dismissTooltip}
+              >
+                <div className="relative bg-primary text-primary-foreground text-sm px-3 py-2 rounded-lg shadow-lg whitespace-nowrap">
+                  {/* Arrow pointing up */}
+                  <div className="absolute -top-1.5 right-4 w-3 h-3 bg-primary rotate-45" />
+                  <div className="flex items-center gap-2">
+                    <span>Got an idea? Suggest a feature!</span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        dismissTooltip()
+                      }}
+                      className="hover:bg-primary-foreground/20 rounded p-0.5"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
 
           <SettingsModal
             trigger={
