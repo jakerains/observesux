@@ -1,8 +1,10 @@
-# ObserveSUX
+# Siouxland.online
 
 ### Real-Time Observability Dashboard for Sioux City, Iowa
 
-A comprehensive, real-time monitoring dashboard that aggregates live data from traffic cameras, emergency scanners, weather services, river gauges, air quality sensors, transit tracking, and more — all in one sleek, responsive interface.
+A comprehensive, real-time monitoring dashboard that aggregates live data from traffic cameras, weather services, river gauges, air quality sensors, transit tracking, gas prices, aircraft, and more — all in one sleek, responsive interface. Includes an AI assistant that can answer questions about Sioux City using live data.
+
+**Live Site:** [siouxland.online](https://siouxland.online)
 
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js)
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react)
@@ -12,32 +14,66 @@ A comprehensive, real-time monitoring dashboard that aggregates live data from t
 
 ---
 
+## Highlights
+
+- **14+ live data widgets** with auto-refresh and freshness indicators
+- **AI Assistant (SUX)** - Ask questions about Sioux City, get answers with live data
+- **Interactive map** with radar, cameras, buses, aircraft, gas stations, and more
+- **Drag-and-drop** customizable dashboard layout
+- **Dark/Light mode** with system preference detection
+- **Fully responsive** - optimized for desktop, tablet, and mobile
+
+---
+
 ## Features
 
+### SUX AI Assistant
+- **Conversational AI** powered by OpenAI with Siouxland-specific knowledge
+- **Live data tools** - queries weather, traffic, rivers, flights, gas prices, events in real-time
+- **Generative UI** - rich tool cards for weather, forecasts, alerts, river levels, and more
+- **RAG Knowledge Base** - semantic search over curated local information
+- **Guardrails** - stays focused on Siouxland topics, politely declines off-topic requests
+- Available via floating chat button (desktop) or bottom sheet (mobile)
+
 ### Interactive Map
-- **Leaflet-powered map** with multiple toggleable layers
-- NWS NEXRAD radar via Iowa Environmental Mesonet (live precipitation)
-- RainViewer animated radar option
-- Traffic camera locations, river gauges, traffic events
-- Real-time bus positions with smooth interpolation
+- **Leaflet-powered** with multiple toggleable layers
+- NWS NEXRAD radar via Iowa Environmental Mesonet
+- Traffic camera markers with click-to-view
+- Real-time bus positions with smooth 60fps interpolation
+- Aircraft tracking (arrivals, departures, nearby traffic)
+- Gas station markers with price popups
+- River gauge locations with flood indicators
 - Snowplow tracking during winter operations
+
+### Weather & Alerts
+- Real-time conditions from NWS (KSUX station)
+- **Weather alert modal** - click any alert for full details, instructions, and timing
+- **Expandable 7-day forecast** with hourly details
+- 24-hour temperature trend charts
+- Heat index / wind chill calculations
 
 ### Live Traffic Cameras
 - **Iowa DOT camera network** with HLS video streaming
 - KTIV community webcams (Signal Hill, Singing Hills, Riverfront)
+- **Live filter** to show only cameras with active feeds
 - Click-to-expand full-screen modal viewer
 
-### Emergency Scanner
-- **Custom audio player** streaming Broadcastify feeds
-- Le Mars Fire and Rescue
-- Sioux County Fire and EMS Dispatch
-- Life Net Air Ambulance (Sioux City)
+### Gas Prices
+- Daily prices scraped from GasBuddy via Firecrawl
+- **Fuel type tabs** - Regular, Midgrade, Premium, Diesel
+- Cheapest station highlighted
+- Station locations on map with price popups
 
-### Weather & Alerts
-- Real-time conditions from NWS (KSUX station)
-- Active weather alerts and warnings
-- **Expandable 7-day forecast** with hourly details
-- 24-hour temperature trend charts
+### Aircraft Tracking
+- **Airplanes.live** data (includes military aircraft)
+- SUX arrival/departure association labels
+- Live positions on map with altitude and speed
+- Callsign and aircraft type display
+
+### Community Events
+- **Explore Siouxland** calendar integration
+- AI assistant can answer "What events are happening?"
+- Parsed event titles, dates, times, and links
 
 ### Aviation Weather
 - **METAR** (current conditions) for KSUX airport
@@ -54,31 +90,42 @@ A comprehensive, real-time monitoring dashboard that aggregates live data from t
 ### Air Quality
 - EPA AirNow AQI readings
 - PM2.5, Ozone, and pollutant breakdowns
-- Health category indicators
+- Health category indicators with colors
 
 ### Transit Tracking
 - **Sioux City Transit** real-time bus positions
 - Passio GO GTFS integration
 - **Expandable view** showing all routes and buses
 - Click bus/route to highlight on map
-- Smooth position interpolation between updates
 
-### Flight Information
-- Sioux Gateway Airport (SUX/KSUX) arrivals & departures
-- Live flight status updates
+### Emergency Scanner
+- **Custom audio player** for Broadcastify feeds
+- Le Mars Fire and Rescue
+- Sioux County Fire and EMS Dispatch
+- Life Net Air Ambulance
 
-### Power Outages
-- MidAmerican Energy outage tracking
-- Woodbury County REC coverage
+### Additional Widgets
+- **Flight Information** - SUX airport arrivals & departures
+- **Power Outages** - MidAmerican Energy & Woodbury County REC
+- **Local News** - Aggregated from Google News, KTIV, Siouxland Proud
+- **Earthquakes** - USGS data within 500km radius
 
-### Local News
-- Aggregated from **Google News**, KTIV, Siouxland Proud, Sioux City Journal
-- Filtered to show only recent stories (last 72 hours)
-- Auto-deduplication across sources
+### Suggestion System
+- **Lightbulb button** in header to submit feedback
+- Categories: Feature Request, Bug Report, Improvement, Content, Other
+- Optional email for follow-up
+- Admin panel for managing suggestions
 
-### Seismic Activity
-- USGS earthquake data within 500km radius
-- Magnitude and location details
+---
+
+## Admin Panel
+
+Password-protected admin area at `/admin` with:
+
+- **Chat Logs** - View all AI chat sessions, messages, and tool usage
+- **Knowledge Base** - Manage RAG entries (add, edit, delete documents)
+- **Suggestions** - Review user feedback, update status (pending → reviewed → planned → implemented)
+- **Tools** - Manual triggers for gas price scraping and other maintenance tasks
 
 ---
 
@@ -89,11 +136,13 @@ A comprehensive, real-time monitoring dashboard that aggregates live data from t
 | **Framework** | Next.js 16 (App Router, Turbopack) |
 | **UI Library** | React 19 |
 | **Styling** | Tailwind CSS v4 + shadcn/ui |
-| **Database** | Neon Serverless PostgreSQL |
+| **Database** | Neon Serverless PostgreSQL + pgvector |
+| **AI** | OpenAI GPT-4o-mini, text-embedding-3-small |
 | **Data Fetching** | SWR (stale-while-revalidate) |
 | **Maps** | Leaflet + React-Leaflet |
 | **Charts** | Recharts |
 | **Video** | HLS.js for camera streams |
+| **Scraping** | Firecrawl for gas prices |
 | **Icons** | Lucide React |
 | **Drag & Drop** | dnd-kit |
 
@@ -109,14 +158,16 @@ All data is sourced from **free, public APIs**:
 | [National Weather Service](https://weather.gov) | Weather observations, alerts, forecasts |
 | [Iowa Environmental Mesonet](https://mesonet.agron.iastate.edu) | NWS NEXRAD radar tiles |
 | [AviationWeather.gov](https://aviationweather.gov) | METAR, TAF, NOTAMs |
+| [Airplanes.live](https://airplanes.live) | Aircraft positions (ADS-B) |
 | [USGS Water Services](https://waterservices.usgs.gov) | River gauge readings |
 | [NOAA Water Prediction](https://water.noaa.gov) | Flood forecasts |
 | [AirNow](https://airnow.gov) | Air quality index |
 | [Broadcastify](https://broadcastify.com) | Emergency scanner audio |
 | [USGS Earthquakes](https://earthquake.usgs.gov) | Seismic activity |
-| [RainViewer](https://rainviewer.com) | Animated weather radar |
 | [Passio GO](https://passiogo.com) | Transit tracking (GTFS) |
 | [Google News](https://news.google.com) | Aggregated local news |
+| [GasBuddy](https://gasbuddy.com) | Gas prices (via Firecrawl) |
+| [Explore Siouxland](https://exploresiouxland.com) | Community events |
 
 ---
 
@@ -127,6 +178,7 @@ All data is sourced from **free, public APIs**:
 - Node.js 18+
 - pnpm
 - Neon database account (free tier available)
+- OpenAI API key (for AI assistant)
 
 ### Installation
 
@@ -142,6 +194,9 @@ pnpm install
 cp .env.example .env.local
 # Edit .env.local with your values
 
+# Run database migrations
+# (Run the SQL in src/lib/db/schema.sql against your Neon database)
+
 # Run the development server
 pnpm dev
 ```
@@ -151,27 +206,21 @@ Open [http://localhost:3000](http://localhost:3000) to view the dashboard.
 ### Environment Variables
 
 ```env
-# Required - Neon PostgreSQL connection string
+# Required
 DATABASE_URL=postgresql://user:pass@host/db?sslmode=require
+OPENAI_API_KEY=sk-...
 
-# Optional - API keys for enhanced data
+# Admin Panel
+CHAT_LOGS_PASSWORD=your_admin_password
+
+# Optional - Enhanced Data
 AIRNOW_API_KEY=your_airnow_key
+FIRECRAWL_API_KEY=your_firecrawl_key
 
 # Optional - Voice Agent (ElevenLabs)
 ELEVENLABS_API_KEY=your_key
 ELEVENLABS_AGENT_ID=your_agent_id
-NEXT_PUBLIC_VOICE_AGENT_ENABLED=true
 ```
-
----
-
-## Responsive Design
-
-ObserveSUX is fully responsive with platform-specific optimizations:
-
-- **Desktop**: Full dashboard grid with status bar showing all 12 service indicators
-- **Tablet**: Adaptive 2-column layout
-- **Mobile**: iOS-style bottom navigation with smooth scroll-to-section, optimized touch targets
 
 ---
 
@@ -181,10 +230,10 @@ ObserveSUX is fully responsive with platform-specific optimizations:
 Customize your dashboard layout by dragging widgets to your preferred positions. Layout persists in localStorage.
 
 ### Widget Visibility Settings
-Toggle individual widgets on/off via the settings panel. Perfect for focusing on the data that matters most to you.
+Toggle individual widgets on/off via the settings panel. Perfect for focusing on the data that matters most.
 
 ### Expandable Widgets
-Weather and Transit widgets can be expanded to show additional details (forecast, all routes/buses).
+Weather and Transit widgets can expand to show additional details (forecast, all routes/buses).
 
 ### Dark/Light Mode
 Full theme support with system preference detection and manual toggle.
@@ -195,11 +244,12 @@ All widgets auto-refresh at appropriate intervals:
 - Weather: 60 seconds
 - Cameras: 2 minutes
 - Aviation: 2 minutes
+- Aircraft: 30 seconds
 - River gauges: 5 minutes
-- Traffic events: 5 minutes
+- Gas prices: Daily
 
-### Historical Trends
-Mini sparkline charts show 24-hour trends for weather, river levels, and air quality.
+### Freshness Indicators
+Each widget shows "Live" or "Stale" status based on data age.
 
 ---
 
@@ -208,32 +258,41 @@ Mini sparkline charts show 24-hour trends for weather, river levels, and air qua
 ```
 src/
 ├── app/
-│   ├── api/           # Next.js API routes
-│   │   ├── cameras/
+│   ├── api/              # Next.js API routes
+│   │   ├── chat/         # AI assistant endpoint
+│   │   ├── suggestions/  # Feedback system
 │   │   ├── weather/
 │   │   ├── rivers/
-│   │   ├── transit/
-│   │   ├── aviation/
-│   │   ├── news/
 │   │   └── ...
-│   ├── layout.tsx
-│   └── page.tsx       # Main dashboard
+│   ├── admin/            # Admin panel
+│   └── page.tsx          # Main dashboard
 ├── components/
-│   ├── dashboard/     # Widget components
+│   ├── dashboard/        # Widget components
 │   │   ├── WeatherWidget.tsx
-│   │   ├── RiverGauge.tsx
-│   │   ├── CameraGrid.tsx
-│   │   ├── TransitWidget.tsx
 │   │   ├── InteractiveMap.tsx
+│   │   ├── ChatWidget.tsx
+│   │   ├── SuggestionModal.tsx
 │   │   └── ...
-│   └── ui/            # shadcn/ui components
+│   ├── chat/             # AI chat components
+│   │   └── tool-cards/   # Generative UI cards
+│   └── ui/               # shadcn/ui components
 ├── lib/
-│   ├── db/            # Database queries
-│   ├── fetchers/      # External API fetchers
-│   ├── hooks/         # Custom React hooks
-│   └── contexts/      # React contexts
-└── types/             # TypeScript definitions
+│   ├── db/               # Database queries
+│   ├── fetchers/         # External API fetchers
+│   ├── hooks/            # Custom React hooks
+│   └── contexts/         # React contexts
+└── types/                # TypeScript definitions
 ```
+
+---
+
+## Responsive Design
+
+Siouxland.online is fully responsive:
+
+- **Desktop**: Full dashboard grid with status bar showing all 14 service indicators
+- **Tablet**: Adaptive 2-column layout
+- **Mobile**: iOS-style bottom navigation with chat bottom sheet
 
 ---
 
@@ -247,7 +306,7 @@ The easiest way to deploy is with [Vercel](https://vercel.com):
 
 ## Contributing
 
-Contributions are welcome! Feel free to:
+Contributions are welcome! You can also submit suggestions directly through the dashboard using the lightbulb button.
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -267,14 +326,15 @@ This project is open source and available under the [MIT License](LICENSE).
 
 - Data provided by Iowa DOT, NWS, USGS, AirNow, and other public agencies
 - Built with [shadcn/ui](https://ui.shadcn.com) components
-- Weather radar from [Iowa Environmental Mesonet](https://mesonet.agron.iastate.edu) and [RainViewer](https://rainviewer.com)
+- Weather radar from [Iowa Environmental Mesonet](https://mesonet.agron.iastate.edu)
 - Scanner audio from [Broadcastify](https://broadcastify.com)
+- Aircraft data from [Airplanes.live](https://airplanes.live)
 
 ---
 
 ## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md) for a detailed history of changes.
+See [CHANGELOG.md](CHANGELOG.md) for version history.
 
 ---
 
