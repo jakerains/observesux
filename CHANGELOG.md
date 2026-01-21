@@ -5,6 +5,20 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-01-21
+
+### Added
+- **Suggestion/Feedback System** - Users can submit suggestions directly from the dashboard
+  - Lightbulb button in header opens suggestion modal
+  - Category selection: New Feature, Bug Report, Improvement, Content Request, Other
+  - Optional email field for follow-up
+  - New `/api/suggestions` endpoint for submissions
+- **Admin Suggestions Tab** - Manage all user suggestions
+  - Stats overview showing counts by status (pending, reviewed, planned, implemented, dismissed)
+  - Click status cards to filter list
+  - Expandable suggestion details
+  - Inline status dropdown to update each suggestion
+
 ## [0.3.0] - 2026-01-21
 
 ### Added

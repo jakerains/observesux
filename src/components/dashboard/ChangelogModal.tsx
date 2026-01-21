@@ -16,6 +16,18 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.4.0',
+    date: '2026-01-21',
+    added: [
+      'Suggestion/Feedback System - submit ideas via lightbulb button',
+      'Category selection: Feature, Bug, Improvement, Content, Other',
+      'Admin Suggestions tab with stats and status management',
+      'Filter suggestions by status, expand for full details',
+    ],
+    changed: [],
+    fixed: [],
+  },
+  {
     version: '0.3.0',
     date: '2026-01-21',
     added: [

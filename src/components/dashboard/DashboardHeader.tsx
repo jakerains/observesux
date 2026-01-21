@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react'
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { RefreshCw, Moon, Sun, Settings } from "lucide-react"
+import { RefreshCw, Moon, Sun, Settings, Lightbulb } from "lucide-react"
 import { useTheme } from "next-themes"
 import { SettingsModal } from './SettingsModal'
+import { SuggestionModal } from './SuggestionModal'
 
 interface DashboardHeaderProps {
   onRefresh?: () => void
@@ -63,6 +64,15 @@ export function DashboardHeader({ onRefresh, isRefreshing }: DashboardHeaderProp
             )}
             <span className="sr-only">Toggle theme</span>
           </Button>
+
+          <SuggestionModal
+            trigger={
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <Lightbulb className="h-4 w-4" />
+                <span className="sr-only">Submit suggestion</span>
+              </Button>
+            }
+          />
 
           <SettingsModal
             trigger={

@@ -27,6 +27,9 @@ import {
   CheckCircle2,
   XCircle,
   Play,
+  Lightbulb,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
@@ -38,8 +41,21 @@ import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { ChatMarkdown } from '@/components/dashboard/ChatMarkdown'
 import { RagAdmin } from '@/components/rag/RagAdmin'
+import {
+  SUGGESTION_CATEGORIES,
+  SUGGESTION_STATUSES,
+  type Suggestion,
+  type SuggestionStats,
+  type SuggestionStatus,
+} from '@/types'
 
 // Session storage key for auth
 const AUTH_KEY = 'admin-authenticated'
@@ -98,6 +114,7 @@ function PasswordGate({ onAuthenticated }: { onAuthenticated: () => void }) {
 
       if (res.ok) {
         sessionStorage.setItem(AUTH_KEY, 'true')
+        localStorage.setItem('admin-password', password)
         onAuthenticated()
       } else {
         setError('Invalid password')
@@ -702,6 +719,269 @@ function ToolsPanel() {
   )
 }
 
+// Suggestions Panel Component
+function SuggestionsPanel() {
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([])
+  const [stats, setStats] = useState<SuggestionStats | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [statusFilter, setStatusFilter] = useState<SuggestionStatus | 'all'>('all')
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+
+  const fetchSuggestions = useCallback(async () => {
+    setLoading(true)
+    try {
+      const password = sessionStorage.getItem(AUTH_KEY) === 'true'
+        ? process.env.NEXT_PUBLIC_ADMIN_PASSWORD || ''
+        : ''
+
+      // Get the actual password from the session or stored value
+      const adminPassword = localStorage.getItem('admin-password') || ''
+
+      const url = statusFilter === 'all'
+        ? '/api/suggestions?limit=100'
+        : `/api/suggestions?status=${statusFilter}&limit=100`
+
+      const res = await fetch(url, {
+        headers: { 'x-admin-password': adminPassword },
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        setSuggestions(data.suggestions || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch suggestions:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [statusFilter])
+
+  const fetchStats = useCallback(async () => {
+    try {
+      const adminPassword = localStorage.getItem('admin-password') || ''
+      const res = await fetch('/api/suggestions?stats=true', {
+        headers: { 'x-admin-password': adminPassword },
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setStats(data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch stats:', error)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchSuggestions()
+    fetchStats()
+  }, [fetchSuggestions, fetchStats])
+
+  const handleStatusChange = async (id: string, newStatus: SuggestionStatus) => {
+    const adminPassword = localStorage.getItem('admin-password') || ''
+    try {
+      const res = await fetch(`/api/suggestions/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-password': adminPassword,
+        },
+        body: JSON.stringify({ status: newStatus }),
+      })
+
+      if (res.ok) {
+        // Update local state
+        setSuggestions(prev =>
+          prev.map(s => s.id === id ? { ...s, status: newStatus } : s)
+        )
+        // Refresh stats
+        fetchStats()
+      }
+    } catch (error) {
+      console.error('Failed to update status:', error)
+    }
+  }
+
+  const getCategoryInfo = (category: string) => {
+    return SUGGESTION_CATEGORIES.find(c => c.value === category) || { label: category, icon: '💬' }
+  }
+
+  const getStatusInfo = (status: string) => {
+    return SUGGESTION_STATUSES.find(s => s.value === status) || { label: status, color: 'bg-gray-500' }
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Stats Overview */}
+      {stats && (
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+          <Card className="col-span-2 md:col-span-1">
+            <CardContent className="pt-4">
+              <div className="text-2xl font-bold">{stats.total}</div>
+              <p className="text-xs text-muted-foreground">Total</p>
+            </CardContent>
+          </Card>
+          <Card className={cn(statusFilter === 'pending' && 'ring-2 ring-primary')}>
+            <CardContent className="pt-4 cursor-pointer" onClick={() => setStatusFilter(statusFilter === 'pending' ? 'all' : 'pending')}>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                <div className="text-2xl font-bold">{stats.pending}</div>
+              </div>
+              <p className="text-xs text-muted-foreground">Pending</p>
+            </CardContent>
+          </Card>
+          <Card className={cn(statusFilter === 'reviewed' && 'ring-2 ring-primary')}>
+            <CardContent className="pt-4 cursor-pointer" onClick={() => setStatusFilter(statusFilter === 'reviewed' ? 'all' : 'reviewed')}>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-blue-500" />
+                <div className="text-2xl font-bold">{stats.reviewed}</div>
+              </div>
+              <p className="text-xs text-muted-foreground">Reviewed</p>
+            </CardContent>
+          </Card>
+          <Card className={cn(statusFilter === 'planned' && 'ring-2 ring-primary')}>
+            <CardContent className="pt-4 cursor-pointer" onClick={() => setStatusFilter(statusFilter === 'planned' ? 'all' : 'planned')}>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-purple-500" />
+                <div className="text-2xl font-bold">{stats.planned}</div>
+              </div>
+              <p className="text-xs text-muted-foreground">Planned</p>
+            </CardContent>
+          </Card>
+          <Card className={cn(statusFilter === 'implemented' && 'ring-2 ring-primary')}>
+            <CardContent className="pt-4 cursor-pointer" onClick={() => setStatusFilter(statusFilter === 'implemented' ? 'all' : 'implemented')}>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-green-500" />
+                <div className="text-2xl font-bold">{stats.implemented}</div>
+              </div>
+              <p className="text-xs text-muted-foreground">Implemented</p>
+            </CardContent>
+          </Card>
+          <Card className={cn(statusFilter === 'dismissed' && 'ring-2 ring-primary')}>
+            <CardContent className="pt-4 cursor-pointer" onClick={() => setStatusFilter(statusFilter === 'dismissed' ? 'all' : 'dismissed')}>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-gray-500" />
+                <div className="text-2xl font-bold">{stats.dismissed}</div>
+              </div>
+              <p className="text-xs text-muted-foreground">Dismissed</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <h2 className="font-semibold">
+            {statusFilter === 'all' ? 'All Suggestions' : `${getStatusInfo(statusFilter).label} Suggestions`}
+          </h2>
+          <Badge variant="secondary">{suggestions.length}</Badge>
+        </div>
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={fetchSuggestions}>
+          <RefreshCw className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {/* Suggestions List */}
+      <div className="border rounded-lg overflow-hidden">
+        {loading ? (
+          <div className="p-4 space-y-3">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="space-y-2">
+                <Skeleton className="h-4 w-48" />
+                <Skeleton className="h-3 w-full" />
+              </div>
+            ))}
+          </div>
+        ) : suggestions.length === 0 ? (
+          <div className="p-8 text-center text-muted-foreground">
+            <Lightbulb className="h-10 w-10 mx-auto mb-3 opacity-50" />
+            <p className="text-sm">No suggestions found</p>
+          </div>
+        ) : (
+          <div className="divide-y">
+            {suggestions.map((suggestion) => {
+              const categoryInfo = getCategoryInfo(suggestion.category)
+              const statusInfo = getStatusInfo(suggestion.status)
+              const isExpanded = expandedId === suggestion.id
+
+              return (
+                <div key={suggestion.id} className="bg-background">
+                  {/* Summary Row */}
+                  <div
+                    className="p-4 flex items-center gap-4 cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => setExpandedId(isExpanded ? null : suggestion.id)}
+                  >
+                    <span className="text-xl" title={categoryInfo.label}>
+                      {categoryInfo.icon}
+                    </span>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-medium truncate">{suggestion.title}</span>
+                        <Badge variant="outline" className="shrink-0">
+                          {categoryInfo.label}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {formatDistanceToNow(new Date(suggestion.createdAt), { addSuffix: true })}
+                        {suggestion.email && ` • ${suggestion.email}`}
+                      </p>
+                    </div>
+
+                    {/* Status Dropdown */}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                        <Button variant="outline" size="sm" className="gap-2">
+                          <div className={cn('w-2 h-2 rounded-full', statusInfo.color)} />
+                          {statusInfo.label}
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {SUGGESTION_STATUSES.map((status) => (
+                          <DropdownMenuItem
+                            key={status.value}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleStatusChange(suggestion.id, status.value)
+                            }}
+                            className="gap-2"
+                          >
+                            <div className={cn('w-2 h-2 rounded-full', status.color)} />
+                            {status.label}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                      {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </Button>
+                  </div>
+
+                  {/* Expanded Details */}
+                  {isExpanded && (
+                    <div className="px-4 pb-4 pt-0 pl-14">
+                      <div className="bg-muted/50 rounded-lg p-4">
+                        <p className="text-sm whitespace-pre-wrap">{suggestion.description}</p>
+                        <div className="mt-3 pt-3 border-t flex items-center justify-between text-xs text-muted-foreground">
+                          <span>
+                            Created: {format(new Date(suggestion.createdAt), 'MMM d, yyyy at h:mm a')}
+                          </span>
+                          <span className="font-mono">{suggestion.id.slice(0, 8)}...</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // Main Admin Page
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
@@ -756,6 +1036,10 @@ export default function AdminPage() {
               <Database className="h-4 w-4" />
               Knowledge Base
             </TabsTrigger>
+            <TabsTrigger value="suggestions" className="flex items-center gap-2">
+              <Lightbulb className="h-4 w-4" />
+              Suggestions
+            </TabsTrigger>
             <TabsTrigger value="tools" className="flex items-center gap-2">
               <Wrench className="h-4 w-4" />
               Tools
@@ -768,6 +1052,10 @@ export default function AdminPage() {
 
           <TabsContent value="knowledge-base">
             <RagAdmin hideHeader />
+          </TabsContent>
+
+          <TabsContent value="suggestions">
+            <SuggestionsPanel />
           </TabsContent>
 
           <TabsContent value="tools">

@@ -159,6 +159,28 @@ CREATE INDEX IF NOT EXISTS idx_chat_messages_created ON chat_messages(created_at
 
 -- =====================================================
 
+-- =====================================================
+-- User Suggestions/Feedback
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS suggestions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  category VARCHAR(50) NOT NULL,
+  title VARCHAR(200) NOT NULL,
+  description TEXT NOT NULL,
+  email VARCHAR(255),
+  status VARCHAR(20) DEFAULT 'pending',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Indexes for suggestions queries
+CREATE INDEX IF NOT EXISTS idx_suggestions_status ON suggestions(status);
+CREATE INDEX IF NOT EXISTS idx_suggestions_created_at ON suggestions(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_suggestions_category ON suggestions(category);
+
+-- =====================================================
+
 -- Clean up old data (run periodically via cron or pg_cron)
 -- DELETE FROM weather_observations WHERE created_at < NOW() - INTERVAL '30 days';
 -- DELETE FROM river_readings WHERE created_at < NOW() - INTERVAL '30 days';

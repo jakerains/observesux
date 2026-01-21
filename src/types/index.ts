@@ -556,6 +556,49 @@ export interface CommunityEventsData {
 }
 
 // ============================================
+// Suggestions/Feedback
+// ============================================
+
+export type SuggestionCategory = 'feature' | 'bug' | 'improvement' | 'content' | 'other'
+export type SuggestionStatus = 'pending' | 'reviewed' | 'planned' | 'implemented' | 'dismissed'
+
+export interface Suggestion {
+  id: string
+  category: SuggestionCategory
+  title: string
+  description: string
+  email?: string | null
+  status: SuggestionStatus
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface SuggestionStats {
+  total: number
+  pending: number
+  reviewed: number
+  planned: number
+  implemented: number
+  dismissed: number
+}
+
+export const SUGGESTION_CATEGORIES: { value: SuggestionCategory; label: string; icon: string }[] = [
+  { value: 'feature', label: 'New Feature', icon: '🚀' },
+  { value: 'bug', label: 'Bug Report', icon: '🐛' },
+  { value: 'improvement', label: 'Improvement', icon: '✨' },
+  { value: 'content', label: 'Content Request', icon: '📝' },
+  { value: 'other', label: 'Other', icon: '💬' },
+]
+
+export const SUGGESTION_STATUSES: { value: SuggestionStatus; label: string; color: string }[] = [
+  { value: 'pending', label: 'Pending', color: 'bg-yellow-500' },
+  { value: 'reviewed', label: 'Reviewed', color: 'bg-blue-500' },
+  { value: 'planned', label: 'Planned', color: 'bg-purple-500' },
+  { value: 'implemented', label: 'Implemented', color: 'bg-green-500' },
+  { value: 'dismissed', label: 'Dismissed', color: 'bg-gray-500' },
+]
+
+// ============================================
 // Dashboard State
 // ============================================
 
