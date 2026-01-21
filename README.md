@@ -142,7 +142,7 @@ Password-protected admin area at `/admin` with:
 | **UI Library** | React 19 |
 | **Styling** | Tailwind CSS v4 + shadcn/ui |
 | **Database** | Neon Serverless PostgreSQL + pgvector |
-| **AI** | OpenAI GPT-4o-mini, text-embedding-3-small |
+| **AI** | xAI Grok 4 (chat), OpenAI text-embedding-3-small (RAG) |
 | **Data Fetching** | SWR (stale-while-revalidate) |
 | **Maps** | Leaflet + React-Leaflet |
 | **Charts** | Recharts |
@@ -298,14 +298,6 @@ Siouxland.online is fully responsive:
 - **Desktop**: Full dashboard grid with status bar showing all 14 service indicators
 - **Tablet**: Adaptive 2-column layout
 - **Mobile**: iOS-style bottom navigation with chat bottom sheet
-
----
-
-## Deploy on Vercel
-
-The easiest way to deploy is with [Vercel](https://vercel.com):
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/jakerains/observesux)
 
 ---
 
