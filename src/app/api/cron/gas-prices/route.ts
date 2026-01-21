@@ -3,7 +3,7 @@ import { sql, isDatabaseConfigured } from '@/lib/db'
 import { scrapeGasPrices, type ScrapedGasStation } from '@/lib/fetchers/gasbuddy'
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 60 // Allow up to 60 seconds for scraping
+export const maxDuration = 300 // Allow up to 5 minutes for scraping (Pro plan)
 
 /**
  * Cron endpoint to scrape gas prices and update database

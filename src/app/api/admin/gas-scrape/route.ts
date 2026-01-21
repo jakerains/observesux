@@ -4,7 +4,7 @@ import { scrapeGasPrices, type ScrapedGasStation } from '@/lib/fetchers/gasbuddy
 import { getCurrentUser } from '@/lib/auth/server'
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 60
+export const maxDuration = 300 // Allow up to 5 minutes for scraping (Pro plan)
 
 /**
  * Check if current user is an admin
