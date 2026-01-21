@@ -28,12 +28,17 @@ A comprehensive, real-time monitoring dashboard that aggregates live data from t
 ## Features
 
 ### SUX AI Assistant
+
+<img src="public/sux.png" alt="SUX Assistant" width="80" align="left" style="margin-right: 16px;" />
+
 - **Conversational AI** powered by OpenAI with Siouxland-specific knowledge
 - **Live data tools** - queries weather, traffic, rivers, flights, gas prices, events in real-time
 - **Generative UI** - rich tool cards for weather, forecasts, alerts, river levels, and more
 - **RAG Knowledge Base** - semantic search over curated local information
 - **Guardrails** - stays focused on Siouxland topics, politely declines off-topic requests
 - Available via floating chat button (desktop) or bottom sheet (mobile)
+
+<br clear="left"/>
 
 ### Interactive Map
 - **Leaflet-powered** with multiple toggleable layers
