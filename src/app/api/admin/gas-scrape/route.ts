@@ -194,10 +194,17 @@ function parseCityState(address: string): { city: string; state: string } {
   return { city: 'Sioux City', state: 'IA' }
 }
 
+// Helper: Delay function for rate limiting
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+
 // Helper: Geocode address using Nominatim (free, no API key)
+// Includes rate limiting to avoid 503 errors
 async function geocodeAddress(address: string): Promise<{ latitude: number; longitude: number } | null> {
   const encodedAddress = encodeURIComponent(address)
   const url = `https://nominatim.openstreetmap.org/search?q=${encodedAddress}&format=json&limit=1`
+
+  // Rate limit: Nominatim allows 1 request per second
+  await delay(1100)
 
   try {
     const response = await fetch(url, {

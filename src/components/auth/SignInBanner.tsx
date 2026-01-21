@@ -12,8 +12,19 @@ export function SignInBanner() {
   const { data: session, isPending } = useSession()
   const [isDismissed, setIsDismissed] = useState(true) // Start hidden to avoid flash
   const [isVisible, setIsVisible] = useState(false)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    // Only check after mounted and session is loaded
+    if (!mounted || isPending) return
+
+    // If user is logged in, don't show
+    if (session?.user) return
+
     // Check if user has dismissed the banner
     const dismissed = localStorage.getItem(BANNER_DISMISSED_KEY)
     if (!dismissed) {
@@ -22,7 +33,7 @@ export function SignInBanner() {
       const timer = setTimeout(() => setIsVisible(true), 2000)
       return () => clearTimeout(timer)
     }
-  }, [])
+  }, [mounted, isPending, session])
 
   const handleDismiss = () => {
     setIsVisible(false)
@@ -33,8 +44,8 @@ export function SignInBanner() {
     }, 300)
   }
 
-  // Don't show if: loading, logged in, or dismissed
-  if (isPending || session?.user || isDismissed) {
+  // Don't render anything until mounted to avoid hydration issues
+  if (!mounted || isPending || session?.user || isDismissed) {
     return null
   }
 
