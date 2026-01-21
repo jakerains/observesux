@@ -137,28 +137,33 @@ export function NewsWidget() {
       lastUpdated={newsData?.timestamp ? new Date(newsData.timestamp) : undefined}
       action={refreshAction}
     >
-      {news.length > 0 ? (
-        <ScrollArea className="h-[300px] -mx-2">
-          <div className="px-2">
-            {news.map((item) => (
-              <NewsItemRow key={item.id} item={item} />
-            ))}
+      <div className="flex flex-col h-full min-h-0">
+        {/* News List - fills available space */}
+        {news.length > 0 ? (
+          <ScrollArea className="flex-1 min-h-[100px] -mx-2">
+            <div className="px-2">
+              {news.map((item) => (
+                <NewsItemRow key={item.id} item={item} />
+              ))}
+            </div>
+          </ScrollArea>
+        ) : (
+          <div className="flex-1 flex items-center justify-center text-center text-muted-foreground py-8">
+            <div>
+              <Newspaper className="h-8 w-8 mx-auto mb-2" />
+              <p>No news available</p>
+              <p className="text-xs">Check back later</p>
+            </div>
           </div>
-        </ScrollArea>
-      ) : (
-        <div className="text-center text-muted-foreground py-8">
-          <Newspaper className="h-8 w-8 mx-auto mb-2" />
-          <p>No news available</p>
-          <p className="text-xs">Check back later</p>
-        </div>
-      )}
+        )}
 
-      {/* Source Attribution */}
-      <div className="mt-3 pt-2 border-t flex flex-wrap gap-2 text-[10px] text-muted-foreground">
-        <span>Sources:</span>
-        <Badge variant="outline" className="text-[10px] bg-blue-500/10">KTIV</Badge>
-        <Badge variant="outline" className="text-[10px] bg-purple-500/10">Siouxland Proud</Badge>
-        <Badge variant="outline" className="text-[10px] bg-green-600/10">SC Journal</Badge>
+        {/* Source Attribution */}
+        <div className="mt-3 pt-2 border-t flex flex-wrap gap-2 text-[10px] text-muted-foreground shrink-0">
+          <span>Sources:</span>
+          <Badge variant="outline" className="text-[10px] bg-blue-500/10">KTIV</Badge>
+          <Badge variant="outline" className="text-[10px] bg-purple-500/10">Siouxland Proud</Badge>
+          <Badge variant="outline" className="text-[10px] bg-green-600/10">SC Journal</Badge>
+        </div>
       </div>
     </DashboardCard>
   )
