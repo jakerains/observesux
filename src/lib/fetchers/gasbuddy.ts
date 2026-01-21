@@ -1,29 +1,41 @@
-// GasBuddy Gas Price Scraper using Firecrawl Agent
-// Uses spark-1-mini model with targeted GasBuddy URLs
+// GasBuddy Gas Price Scraper using Firecrawl Extract
+// Uses dedicated extract endpoint - faster than agent mode
 
 import Firecrawl from '@mendable/firecrawl-js'
 
-// Actual response format from Firecrawl agent
-// Note: prices come as strings from GasBuddy, need to parse
-interface FirecrawlAgentResponse {
-  success: boolean
-  status: string
-  data: Array<{
-    name: string
-    address: string
-    regular: { price: string | number; last_updated?: string } | null
-    mid_grade: { price: string | number; last_updated?: string } | null  // Note: mid_grade not midgrade
-    premium: { price: string | number; last_updated?: string } | null
-  }>
-  expiresAt?: string
-  creditsUsed?: number
+// JSON Schema for extraction (Firecrawl accepts JSON Schema or Zod)
+const GasStationJsonSchema = {
+  type: 'object',
+  properties: {
+    stations: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          name: { type: 'string', description: 'Gas station brand name (e.g., Casey\'s, Kum & Go)' },
+          address: { type: 'string', description: 'Full street address' },
+          regular_price: { type: ['number', 'null'], description: 'Regular unleaded price in dollars' },
+          midgrade_price: { type: ['number', 'null'], description: 'Midgrade price in dollars' },
+          premium_price: { type: ['number', 'null'], description: 'Premium price in dollars' },
+          diesel_price: { type: ['number', 'null'], description: 'Diesel price in dollars' },
+        },
+        required: ['name', 'address']
+      }
+    }
+  },
+  required: ['stations']
 }
 
-// Helper to parse price (handles both string and number)
-function parsePrice(price: string | number | undefined): number | null {
-  if (price === undefined || price === null) return null
-  const parsed = typeof price === 'string' ? parseFloat(price) : price
-  return isNaN(parsed) ? null : parsed
+// Extracted data shape
+interface ExtractedData {
+  stations: Array<{
+    name: string
+    address: string
+    regular_price: number | null
+    midgrade_price: number | null
+    premium_price: number | null
+    diesel_price: number | null
+  }>
 }
 
 // Transformed station format for database
@@ -36,16 +48,12 @@ export interface ScrapedGasStation {
   }>
 }
 
-// GasBuddy URLs for Sioux City area
-const GASBUDDY_URLS = [
-  'https://www.gasbuddy.com/home?search=sioux+city%2C+iowa&fuel=1&method=all&maxAge=0', // Regular
-  'https://www.gasbuddy.com/home?search=sioux+city%2C+iowa&fuel=2&method=all&maxAge=0', // Mid-grade
-  'https://www.gasbuddy.com/home?search=sioux+city%2C+iowa&fuel=3&method=all&maxAge=0', // Premium
-]
+// GasBuddy URL - single page with all stations
+const GASBUDDY_URL = 'https://www.gasbuddy.com/home?search=sioux+city%2C+ia&fuel=1&maxAge=0&method=all'
 
 /**
- * Scrape gas prices from GasBuddy using Firecrawl's AI agent
- * Uses spark-1-mini model for cost-efficient scraping
+ * Scrape gas prices from GasBuddy using Firecrawl's extract feature
+ * Should complete in ~20-40 seconds
  */
 export async function scrapeGasPrices(): Promise<ScrapedGasStation[]> {
   if (!process.env.FIRECRAWL_API_KEY) {
@@ -56,63 +64,59 @@ export async function scrapeGasPrices(): Promise<ScrapedGasStation[]> {
     apiKey: process.env.FIRECRAWL_API_KEY
   })
 
-  const prompt = `Extract gas station name, address, and fuel prices for regular, mid-grade, and premium tiers from the provided GasBuddy URLs for Sioux City, Iowa. For each price entry, include the 'last updated' timestamp. Ensure the data is mapped correctly from each specific fuel-type URL.`
+  console.log('[GasBuddy Scraper] Starting Firecrawl extract...')
 
-  console.log('[GasBuddy Scraper] Starting Firecrawl agent...')
-
-  let result
   try {
-    result = await firecrawl.agent({
-      prompt,
-      urls: GASBUDDY_URLS,
-      model: 'spark-1-mini',
+    const result = await firecrawl.extract({
+      urls: [GASBUDDY_URL],
+      schema: GasStationJsonSchema,
+      prompt: 'Extract all gas stations with their names, addresses, and fuel prices. Get regular, midgrade, premium, and diesel prices where available. Prices should be numbers like 2.45 not strings.',
+      timeout: 55, // Stay under Vercel's 60s limit
     })
-  } catch (firecrawlError) {
-    console.error('[GasBuddy Scraper] Firecrawl agent threw error:', firecrawlError)
-    throw new Error(`Firecrawl agent error: ${firecrawlError instanceof Error ? firecrawlError.message : String(firecrawlError)}`)
+
+    console.log('[GasBuddy Scraper] Firecrawl extract completed')
+
+    if (!result.success) {
+      console.error('[GasBuddy Scraper] Firecrawl returned error:', result)
+      throw new Error('Firecrawl extract failed')
+    }
+
+    // The data is in result.data
+    const extracted = result.data as ExtractedData | undefined
+
+    if (!extracted?.stations || extracted.stations.length === 0) {
+      console.warn('[GasBuddy Scraper] No stations extracted')
+      return []
+    }
+
+    console.log(`[GasBuddy Scraper] Extracted ${extracted.stations.length} stations`)
+
+    // Transform to our internal format
+    return extracted.stations.map(station => {
+      const fuelPrices: Array<{ fuelType: string; price: number }> = []
+
+      if (station.regular_price !== null && station.regular_price > 0) {
+        fuelPrices.push({ fuelType: 'Regular', price: station.regular_price })
+      }
+      if (station.midgrade_price !== null && station.midgrade_price > 0) {
+        fuelPrices.push({ fuelType: 'Midgrade', price: station.midgrade_price })
+      }
+      if (station.premium_price !== null && station.premium_price > 0) {
+        fuelPrices.push({ fuelType: 'Premium', price: station.premium_price })
+      }
+      if (station.diesel_price !== null && station.diesel_price > 0) {
+        fuelPrices.push({ fuelType: 'Diesel', price: station.diesel_price })
+      }
+
+      return {
+        brandName: station.name,
+        streetAddress: station.address,
+        fuelPrices
+      }
+    }).filter(station => station.fuelPrices.length > 0)
+
+  } catch (error) {
+    console.error('[GasBuddy Scraper] Error:', error)
+    throw error
   }
-
-  console.log('[GasBuddy Scraper] Firecrawl agent completed')
-  console.log('[GasBuddy Scraper] Raw result:', JSON.stringify(result, null, 2))
-
-  // Cast to actual response format
-  const response = result as unknown as FirecrawlAgentResponse
-
-  // Check for error response
-  if (!response.success) {
-    console.error('[GasBuddy Scraper] Firecrawl returned error:', response)
-    throw new Error(`Firecrawl agent failed: ${response.status || 'unknown error'}`)
-  }
-
-  if (!response.data || response.data.length === 0) {
-    console.error('[GasBuddy Scraper] No stations in response:', result)
-    return []
-  }
-
-  console.log(`[GasBuddy Scraper] Found ${response.data.length} stations`)
-
-  // Transform to our internal format
-  return response.data.map(station => {
-    const fuelPrices: Array<{ fuelType: string; price: number }> = []
-
-    const regularPrice = parsePrice(station.regular?.price)
-    const midgradePrice = parsePrice(station.mid_grade?.price)  // Note: mid_grade from API
-    const premiumPrice = parsePrice(station.premium?.price)
-
-    if (regularPrice !== null) {
-      fuelPrices.push({ fuelType: 'Regular', price: regularPrice })
-    }
-    if (midgradePrice !== null) {
-      fuelPrices.push({ fuelType: 'Midgrade', price: midgradePrice })
-    }
-    if (premiumPrice !== null) {
-      fuelPrices.push({ fuelType: 'Premium', price: premiumPrice })
-    }
-
-    return {
-      brandName: station.name,
-      streetAddress: station.address,
-      fuelPrices
-    }
-  }).filter(station => station.fuelPrices.length > 0) // Only include stations with prices
 }
