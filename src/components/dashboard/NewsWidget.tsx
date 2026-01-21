@@ -140,7 +140,7 @@ export function NewsWidget() {
       <div className="flex flex-col h-full min-h-0">
         {/* News List - fills available space */}
         {news.length > 0 ? (
-          <ScrollArea className="flex-1 min-h-[100px] -mx-2">
+          <ScrollArea className="flex-1 min-h-[100px] max-h-[300px] -mx-2">
             <div className="px-2">
               {news.map((item) => (
                 <NewsItemRow key={item.id} item={item} />
