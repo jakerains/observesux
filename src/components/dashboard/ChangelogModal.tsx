@@ -16,6 +16,15 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.2.10',
+    date: '2026-01-21',
+    added: [
+      'Weather alert modal - click alerts to view full details',
+    ],
+    changed: [],
+    fixed: [],
+  },
+  {
     version: '0.2.9',
     date: '2026-01-20',
     added: [
