@@ -593,6 +593,7 @@ function formatToolName(toolName: string): string {
     getEarthquakes: 'earthquakes',
     getSystemStatus: 'system status',
     searchKnowledgeBase: 'local info',
+    getEvents: 'events',
   }
   return names[toolName] || toolName
 }
