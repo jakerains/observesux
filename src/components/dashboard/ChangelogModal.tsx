@@ -16,6 +16,27 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.4.1',
+    date: '2026-01-21',
+    added: [
+      'User Accounts - optional sign-in with Neon Auth',
+      'Save favorites, get alerts, sync across devices',
+      'Admin role-based access for /admin panel',
+      'Custom UserMenu component matching site theme',
+      'Alert Subscriptions - push notifications for weather, river, AQI, traffic',
+      'Watchlist - save favorite cameras, bus routes, river gauges, gas stations',
+      'Chat Log User Tracking - admin can see which user sent each message',
+    ],
+    changed: [],
+    fixed: [
+      'Database connection uses correct Neon project (ep-calm-wave)',
+      'Chat logs JOIN with neon_auth.user table (TEXT to UUID cast)',
+      'SignInBanner hydration flash when logged in',
+      'Geocoding rate limiting (1.1s delay) to avoid 503 errors',
+      'Cron timeout increased to 300s for Pro plan',
+    ],
+  },
+  {
     version: '0.4.0',
     date: '2026-01-21',
     added: [

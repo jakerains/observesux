@@ -5,6 +5,26 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2026-01-21
+
+### Added
+- **User Accounts** - Optional sign-in with Neon Auth
+  - Save favorites, get alerts, sync across devices
+  - Admin role-based access for /admin panel
+  - Custom UserMenu component matching site theme
+- **Alert Subscriptions** - Push notifications for weather, river, AQI, traffic
+  - Configurable thresholds per alert type
+  - Web Push API integration (no external service needed)
+- **Watchlist** - Save favorite cameras, bus routes, river gauges, gas stations
+- **Chat Log User Tracking** - Admin can see which user sent each chat message
+
+### Fixed
+- Database connection now uses correct Neon project (ep-calm-wave)
+- Chat logs JOIN with neon_auth.user table (TEXT to UUID cast)
+- SignInBanner hydration flash when logged in
+- Geocoding rate limiting (1.1s delay) to avoid 503 errors
+- Cron timeout increased to 300s for Pro plan
+
 ## [0.4.0] - 2026-01-21
 
 ### Added
