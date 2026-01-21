@@ -1,5 +1,13 @@
+// User context for personalized prompts
+export interface UserContext {
+  firstName?: string | null
+  lastName?: string | null
+  email?: string
+}
+
 // Generate the system prompt with the current local time for Sioux City (Central timezone)
-export function getSystemPrompt(): string {
+// Optionally accepts user context for personalization
+export function getSystemPrompt(userContext?: UserContext): string {
   const now = new Date();
   const centralTime = now.toLocaleString('en-US', {
     timeZone: 'America/Chicago',
@@ -12,9 +20,28 @@ export function getSystemPrompt(): string {
     hour12: true,
   });
 
+  // Build user context section if user is logged in
+  let userSection = '';
+  if (userContext) {
+    const displayName = userContext.firstName
+      ? userContext.lastName
+        ? `${userContext.firstName} ${userContext.lastName}`
+        : userContext.firstName
+      : userContext.email?.split('@')[0] || null;
+
+    if (displayName) {
+      userSection = `
+**Current user**: ${displayName} (logged in)
+- You may address them by their first name (${userContext.firstName || displayName}) when it feels natural
+- Keep your responses helpful and conversational, but don't overuse their name
+`;
+    }
+  }
+
   return `You are SUX, the Siouxland assistant (named after the Sioux Gateway Airport code). You provide real-time information about conditions in Sioux City, Iowa and the surrounding Siouxland region. You have access to tools that fetch live data from various sources.
 
 **Current local time in Sioux City**: ${centralTime}
+${userSection}
 
 ## Your Role
 - Answer questions about current conditions in Sioux City concisely and helpfully

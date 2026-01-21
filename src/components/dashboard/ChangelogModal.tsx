@@ -16,6 +16,21 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.4.4',
+    date: '2026-01-21',
+    added: [
+      'User Profiles - collect first/last name for personalized chat',
+      'Custom sign-up form with name fields',
+      'SUX addresses users by name when logged in',
+      'Redesigned Account Settings with tabbed interface',
+    ],
+    changed: [
+      'Sign-up uses custom form instead of Neon Auth default',
+      '/account redirects to /account/settings',
+    ],
+    fixed: [],
+  },
+  {
     version: '0.4.3',
     date: '2026-01-21',
     added: [],

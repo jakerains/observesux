@@ -1,12 +1,13 @@
 import { streamText, stepCountIs, convertToModelMessages, gateway } from 'ai';
 import { chatTools } from '@/lib/ai/tools';
-import { getSystemPrompt } from '@/lib/ai/system-prompt';
+import { getSystemPrompt, type UserContext } from '@/lib/ai/system-prompt';
 import {
   createChatSession,
   ensureSessionExists,
   logChatMessage,
 } from '@/lib/db/chat-logs';
 import { getCurrentUser } from '@/lib/auth/server';
+import { getUserProfile } from '@/lib/db/profiles';
 
 export const runtime = 'nodejs';
 export const maxDuration = 30;
@@ -64,9 +65,20 @@ export async function POST(req: Request) {
   try {
     const { messages, sessionId: existingSessionId, lastLoggedMessageIndex, deviceInfo } = await req.json();
 
-    // Get current user if logged in (for chat logging)
+    // Get current user if logged in (for chat logging and personalization)
     const user = await getCurrentUser();
     const userId = user?.id;
+
+    // Fetch user profile for personalized system prompt
+    let userContext: UserContext | undefined;
+    if (userId) {
+      const profile = await getUserProfile(userId);
+      userContext = {
+        firstName: profile?.firstName,
+        lastName: profile?.lastName,
+        email: user?.email,
+      };
+    }
 
     // Get or create session ID
     // Client may provide a UUID - validate it's a proper UUID format
@@ -140,7 +152,7 @@ export async function POST(req: Request) {
 
     const result = streamText({
       model: gateway('xai/grok-4-fast-non-reasoning'),
-      system: getSystemPrompt(),
+      system: getSystemPrompt(userContext),
       messages: await convertToModelMessages(messages),
       tools: chatTools,
       stopWhen: stepCountIs(5),

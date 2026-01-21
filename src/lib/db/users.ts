@@ -489,12 +489,13 @@ export async function deleteUserAppData(
     const userName = userResult[0].name
 
     // Delete from all app tables and track counts
-    const [alertsResult, watchlistResult, pushResult, prefsResult, triggeredResult] = await Promise.all([
+    const [alertsResult, watchlistResult, pushResult, prefsResult, triggeredResult, profilesResult] = await Promise.all([
       sql`DELETE FROM alert_subscriptions WHERE user_id = ${userId} RETURNING id`,
       sql`DELETE FROM watchlist_items WHERE user_id = ${userId} RETURNING id`,
       sql`DELETE FROM push_subscriptions WHERE user_id = ${userId} RETURNING id`,
       sql`DELETE FROM user_preferences WHERE user_id = ${userId} RETURNING id`,
-      sql`DELETE FROM triggered_alerts WHERE user_id = ${userId} RETURNING id`
+      sql`DELETE FROM triggered_alerts WHERE user_id = ${userId} RETURNING id`,
+      sql`DELETE FROM user_profiles WHERE user_id = ${userId} RETURNING user_id`
     ])
 
     const deletedCounts = {
@@ -502,7 +503,8 @@ export async function deleteUserAppData(
       watchlistItems: watchlistResult.length,
       pushSubscriptions: pushResult.length,
       userPreferences: prefsResult.length,
-      triggeredAlerts: triggeredResult.length
+      triggeredAlerts: triggeredResult.length,
+      userProfiles: profilesResult.length
     }
 
     // Delete from neon_auth tables (session, account first due to FK)

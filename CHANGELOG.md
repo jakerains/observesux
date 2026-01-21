@@ -5,6 +5,22 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.4] - 2026-01-21
+
+### Added
+- **User Profiles** - Collect first/last name for personalized experience
+  - Custom sign-up form with first name, last name, email, password
+  - Profile saved to `user_profiles` table during registration
+  - SUX chat agent addresses users by name when logged in
+- **Redesigned Account Settings** - Tabbed interface with Profile, Security, Sessions
+  - `/account` now redirects to `/account/settings`
+  - Clean header with back button and user email
+  - Profile tab for name management (no duplicate fields)
+
+### Changed
+- Sign-up uses custom form instead of Neon Auth's default UI
+- System prompt dynamically includes user's name for personalization
+
 ## [0.4.3] - 2026-01-21
 
 ### Fixed

@@ -125,6 +125,23 @@ CREATE INDEX IF NOT EXISTS idx_gas_prices_station ON gas_prices(station_id);
 CREATE INDEX IF NOT EXISTS idx_gas_stations_coords ON gas_stations(latitude, longitude);
 
 -- =====================================================
+-- User Profiles (extends Neon Auth user table)
+-- =====================================================
+
+-- User profile data for personalization
+-- Links to neon_auth.user via user_id
+CREATE TABLE IF NOT EXISTS user_profiles (
+  user_id TEXT PRIMARY KEY,  -- References neon_auth.user.id
+  first_name VARCHAR(50),
+  last_name VARCHAR(50),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Index for quick lookups
+CREATE INDEX IF NOT EXISTS idx_user_profiles_updated ON user_profiles(updated_at DESC);
+
+-- =====================================================
 -- Chat Conversation Tracking
 -- =====================================================
 
