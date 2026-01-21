@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { X, Star, Bell } from 'lucide-react'
 import { useSession } from '@/lib/auth/client'
@@ -10,6 +11,8 @@ const BANNER_DISMISSED_KEY = 'sign-in-banner-dismissed'
 
 export function SignInBanner() {
   const { data: session, isPending } = useSession()
+  const pathname = usePathname()
+  const isAuthRoute = pathname?.startsWith('/auth')
   const [isDismissed, setIsDismissed] = useState(true) // Start hidden to avoid flash
   const [isVisible, setIsVisible] = useState(false)
   const [mounted, setMounted] = useState(false)
@@ -19,8 +22,8 @@ export function SignInBanner() {
   }, [])
 
   useEffect(() => {
-    // Only check after mounted and session is loaded
-    if (!mounted || isPending) return
+    // Only check after mounted and session is loaded, and never on auth pages
+    if (!mounted || isPending || isAuthRoute) return
 
     // If user is logged in, don't show
     if (session?.user) return
@@ -45,14 +48,16 @@ export function SignInBanner() {
   }
 
   // Don't render anything until mounted to avoid hydration issues
-  if (!mounted || isPending || session?.user || isDismissed) {
+  if (!mounted || isPending || session?.user || isDismissed || isAuthRoute) {
     return null
   }
 
   return (
     <div
       className={cn(
-        "fixed bottom-0 left-0 right-0 z-40 transition-all duration-300 ease-out",
+        // z-60 to sit above StatusBar/MobileNavigation (both use z-50)
+        // Lift on mobile so it clears the mobile nav bar
+        "fixed md:bottom-0 bottom-24 left-0 right-0 z-60 transition-all duration-300 ease-out",
         isVisible
           ? "translate-y-0 opacity-100"
           : "translate-y-full opacity-0"

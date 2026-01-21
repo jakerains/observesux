@@ -16,6 +16,16 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.4.3',
+    date: '2026-01-21',
+    added: [],
+    changed: [],
+    fixed: [
+      'Sign-in banner no longer appears on auth pages',
+      'Sign-in banner sits above the status bar and mobile navigation',
+    ],
+  },
+  {
     version: '0.4.2',
     date: '2026-01-21',
     added: [
