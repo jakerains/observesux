@@ -9,10 +9,19 @@ interface PushSubscriptionKeys {
   auth: string
 }
 
-interface PushSubscriptionJSON {
+interface WebPushSubscription {
+  type?: 'web'
   endpoint: string
   keys: PushSubscriptionKeys
 }
+
+interface ExpoPushSubscription {
+  type: 'expo'
+  token: string
+  platform: 'ios' | 'android'
+}
+
+type PushSubscription = WebPushSubscription | ExpoPushSubscription
 
 /**
  * GET /api/user/push-subscription
@@ -30,7 +39,7 @@ export async function GET() {
     }
 
     const subscriptions = await sql`
-      SELECT id, endpoint, created_at
+      SELECT id, endpoint, p256dh IS NOT NULL as is_web_push, platform, created_at
       FROM push_subscriptions
       WHERE user_id = ${user.id}
       ORDER BY created_at DESC
@@ -51,7 +60,7 @@ export async function GET() {
 
 /**
  * POST /api/user/push-subscription
- * Save a new push subscription
+ * Save a new push subscription (supports both Web Push and Expo Push)
  */
 export async function POST(request: NextRequest) {
   if (!isDatabaseConfigured()) {
@@ -65,29 +74,57 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const subscription = body.subscription as PushSubscriptionJSON
+    const subscription = body.subscription as PushSubscription
 
-    if (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
+    // Handle Expo Push subscription
+    if (subscription && 'token' in subscription && subscription.type === 'expo') {
+      if (!subscription.token) {
+        return NextResponse.json(
+          { error: 'Invalid Expo push token' },
+          { status: 400 }
+        )
+      }
+
+      // Upsert Expo subscription (token as endpoint, null p256dh/auth)
+      await sql`
+        INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth, platform)
+        VALUES (${user.id}, ${subscription.token}, NULL, NULL, ${subscription.platform || 'ios'})
+        ON CONFLICT (endpoint) DO UPDATE SET
+          user_id = ${user.id},
+          platform = ${subscription.platform || 'ios'},
+          created_at = NOW()
+      `
+
+      return NextResponse.json({
+        success: true,
+        message: 'Expo push subscription saved'
+      })
+    }
+
+    // Handle Web Push subscription (original behavior)
+    const webSubscription = subscription as WebPushSubscription
+    if (!webSubscription?.endpoint || !webSubscription?.keys?.p256dh || !webSubscription?.keys?.auth) {
       return NextResponse.json(
         { error: 'Invalid subscription data' },
         { status: 400 }
       )
     }
 
-    // Upsert subscription (update if endpoint exists, insert if not)
+    // Upsert Web Push subscription
     await sql`
-      INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth)
-      VALUES (${user.id}, ${subscription.endpoint}, ${subscription.keys.p256dh}, ${subscription.keys.auth})
+      INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth, platform)
+      VALUES (${user.id}, ${webSubscription.endpoint}, ${webSubscription.keys.p256dh}, ${webSubscription.keys.auth}, 'web')
       ON CONFLICT (endpoint) DO UPDATE SET
         user_id = ${user.id},
-        p256dh = ${subscription.keys.p256dh},
-        auth = ${subscription.keys.auth},
+        p256dh = ${webSubscription.keys.p256dh},
+        auth = ${webSubscription.keys.auth},
+        platform = 'web',
         created_at = NOW()
     `
 
     return NextResponse.json({
       success: true,
-      message: 'Subscription saved'
+      message: 'Web push subscription saved'
     })
   } catch (error) {
     console.error('Failed to save push subscription:', error)

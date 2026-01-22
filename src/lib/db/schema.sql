@@ -199,6 +199,55 @@ CREATE INDEX IF NOT EXISTS idx_suggestions_category ON suggestions(category);
 -- =====================================================
 
 -- =====================================================
+-- Push Notifications
+-- =====================================================
+
+-- Push notification subscriptions (supports both Web Push and Expo Push)
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id TEXT NOT NULL,  -- References neon_auth.user.id
+  endpoint TEXT UNIQUE NOT NULL,  -- Web Push endpoint URL or Expo Push token
+  p256dh TEXT,  -- Web Push key (null for Expo)
+  auth TEXT,  -- Web Push auth (null for Expo)
+  platform VARCHAR(20) DEFAULT 'web',  -- 'web', 'ios', 'android'
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Indexes for push subscription queries
+CREATE INDEX IF NOT EXISTS idx_push_subs_user ON push_subscriptions(user_id);
+CREATE INDEX IF NOT EXISTS idx_push_subs_platform ON push_subscriptions(platform);
+
+-- =====================================================
+-- Alert Subscriptions
+-- =====================================================
+
+-- User alert subscription preferences
+CREATE TABLE IF NOT EXISTS alert_subscriptions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id TEXT NOT NULL,  -- References neon_auth.user.id
+  alert_type VARCHAR(50) NOT NULL,  -- 'weather', 'river', 'air_quality', 'traffic'
+  enabled BOOLEAN DEFAULT true,
+  config JSONB DEFAULT '{}',  -- Alert-specific configuration
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(user_id, alert_type)
+);
+
+-- Triggered alerts log (for deduplication)
+CREATE TABLE IF NOT EXISTS triggered_alerts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id TEXT NOT NULL,
+  alert_type VARCHAR(50) NOT NULL,
+  alert_id VARCHAR(100) NOT NULL,  -- External alert ID
+  triggered_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(user_id, alert_type, alert_id)
+);
+
+-- Indexes for alert queries
+CREATE INDEX IF NOT EXISTS idx_alert_subs_user ON alert_subscriptions(user_id);
+CREATE INDEX IF NOT EXISTS idx_triggered_alerts_user ON triggered_alerts(user_id, triggered_at DESC);
+
+-- =====================================================
 -- RAG (Retrieval-Augmented Generation) Knowledge Base
 -- =====================================================
 

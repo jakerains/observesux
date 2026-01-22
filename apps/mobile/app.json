@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "ObserveSUX",
+    "slug": "observesux",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "observesux",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.observesux.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "ObserveSUX uses your location to show nearby traffic cameras, transit, and weather information.",
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
+      }
+    },
+    "android": {
+      "package": "com.observesux.app",
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ]
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-notifications",
+      "expo-video"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}

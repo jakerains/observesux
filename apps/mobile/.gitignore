@@ -1,0 +1,26 @@
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native builds
+ios/
+android/
+
+# env files
+.env*.local
+.env
+
+# TypeScript
+*.tsbuildinfo
+
+# macOS
+.DS_Store
+
+# @generated expo-cli sync

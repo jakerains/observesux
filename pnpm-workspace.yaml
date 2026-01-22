@@ -1,0 +1,4 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+  # Keep root as implicit workspace member for existing web app
