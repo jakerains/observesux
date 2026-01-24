@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { ChatProvider } from "@/lib/contexts/ChatContext"
 import { NeonAuthUIProvider } from "@neondatabase/auth/react/ui"
 import { authClient } from "@/lib/auth/client"
+import { InstallPrompt } from "@/components/pwa/InstallPrompt"
 import "./globals.css"
 
 const geistSans = Geist({
@@ -29,6 +30,15 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  applicationName: "Siouxland.online",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Siouxland",
+  },
+  formatDetection: {
+    telephone: false,
+  },
   openGraph: {
     title: "Siouxland.online",
     description: "Real-time observability dashboard for Sioux City, Iowa - Traffic cameras, weather, river levels, air quality, and more.",
@@ -43,11 +53,20 @@ export const metadata: Metadata = {
     description: "Real-time observability dashboard for Sioux City, Iowa - Traffic cameras, weather, river levels, air quality, and more.",
   },
   icons: {
-    icon: "/favicon.ico",
-    apple: "/favicon.ico",
+    icon: [
+      { url: "/icons/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/icons/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+    ],
+    apple: [
+      { url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+    other: [
+      { rel: "mask-icon", url: "/icons/icon-512x512.png", color: "#0f172a" },
+    ],
   },
   other: {
     "theme-color": "#0f172a",
+    "mobile-web-app-capable": "yes",
   },
 }
 
@@ -70,6 +89,7 @@ export default function RootLayout({
           >
             <ChatProvider>
               {children}
+              <InstallPrompt />
             </ChatProvider>
           </ThemeProvider>
         </NeonAuthUIProvider>

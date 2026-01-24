@@ -1,4 +1,12 @@
 import type { NextConfig } from "next"
+import withSerwistInit from "@serwist/next"
+
+const withSerwist = withSerwistInit({
+  swSrc: "src/app/sw.ts",
+  swDest: "public/sw.js",
+  // Disable in development to prevent caching issues
+  disable: process.env.NODE_ENV === "development",
+})
 
 const nextConfig: NextConfig = {
   // Optimize package imports to avoid barrel file overhead
@@ -43,6 +51,29 @@ const nextConfig: NextConfig = {
     // Remove this in production for strict type checking
     ignoreBuildErrors: false,
   },
+
+  // Security headers for PWA
+  async headers() {
+    return [
+      {
+        source: '/sw.js',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'application/javascript; charset=utf-8',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'no-cache, no-store, must-revalidate',
+          },
+          {
+            key: 'Service-Worker-Allowed',
+            value: '/',
+          },
+        ],
+      },
+    ]
+  },
 }
 
-export default nextConfig
+export default withSerwist(nextConfig)
