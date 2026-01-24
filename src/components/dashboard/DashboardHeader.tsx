@@ -10,6 +10,7 @@ import { SuggestionModal } from './SuggestionModal'
 import { UserMenu } from '@/components/auth/UserMenu'
 import { useSession } from '@/lib/auth/client'
 import { cn } from '@/lib/utils'
+import Image from 'next/image'
 
 const ACCOUNT_TOOLTIP_KEY = 'account-tooltip-seen-v1'
 
@@ -57,11 +58,16 @@ export function DashboardHeader({ onRefresh, isRefreshing }: DashboardHeaderProp
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="w-full max-w-7xl mx-auto flex h-14 items-center justify-between px-3 sm:px-4 md:px-6">
+      <div className="w-full max-w-7xl mx-auto flex h-16 items-center justify-between px-3 sm:px-4 md:px-6">
         <div className="flex items-center gap-2 sm:gap-3">
-          <h1 className="text-lg sm:text-xl font-bold tracking-tight">
-            Siouxland.online
-          </h1>
+          <Image
+            src="/siouxlandonlinelogo_black.png"
+            alt="Siouxland Online"
+            width={220}
+            height={55}
+            className="h-10 sm:h-12 w-auto"
+            priority
+          />
           <Badge variant="default" className="hidden sm:flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
             Live

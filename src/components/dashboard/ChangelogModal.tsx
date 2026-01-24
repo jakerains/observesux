@@ -16,6 +16,22 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.5.0',
+    date: '2026-01-24',
+    added: [
+      'PWA Support - install as a native-like app with offline support',
+      'Install prompt for Android/Chrome and iOS instructions',
+      'Push notification infrastructure ready',
+      'App shortcuts for Weather and Cameras',
+      'New Siouxland Online branding with custom logo and icons',
+    ],
+    changed: [
+      'Removed sign-in banner from bottom of page',
+      'Enlarged header logo for better visibility',
+    ],
+    fixed: [],
+  },
+  {
     version: '0.4.5',
     date: '2026-01-24',
     added: [],
