@@ -600,6 +600,39 @@ export const SUGGESTION_STATUSES: { value: SuggestionStatus; label: string; colo
 ]
 
 // ============================================
+// News Categories
+// ============================================
+
+export type NewsCategory = 'all' | 'crime' | 'government' | 'business' | 'weather' | 'sports'
+
+export interface NewsCategoryConfig {
+  id: NewsCategory
+  label: string
+  keywords: string[]
+  color: string
+}
+
+export const NEWS_CATEGORIES: NewsCategoryConfig[] = [
+  { id: 'all', label: 'All', keywords: [], color: 'bg-gray-500' },
+  { id: 'crime', label: 'Crime', keywords: ['arrest', 'police', 'crime', 'shooting', 'court', 'charged', 'jail', 'murder', 'assault', 'robbery', 'theft', 'drug', 'investigation', 'suspect', 'victim', 'sheriff', 'officer'], color: 'bg-red-500' },
+  { id: 'government', label: 'Government', keywords: ['council', 'mayor', 'city', 'county', 'board', 'vote', 'election', 'commissioner', 'ordinance', 'budget', 'meeting', 'legislation', 'law', 'policy', 'official'], color: 'bg-blue-600' },
+  { id: 'business', label: 'Business', keywords: ['business', 'company', 'jobs', 'opening', 'closing', 'store', 'restaurant', 'economic', 'development', 'hiring', 'layoff', 'market', 'retail', 'investment'], color: 'bg-emerald-500' },
+  { id: 'weather', label: 'Weather', keywords: ['storm', 'snow', 'flood', 'weather', 'temperature', 'tornado', 'warning', 'advisory', 'ice', 'rain', 'wind', 'blizzard', 'forecast', 'cold', 'heat'], color: 'bg-sky-500' },
+  { id: 'sports', label: 'Sports', keywords: ['sports', 'game', 'team', 'playoff', 'championship', 'football', 'basketball', 'baseball', 'soccer', 'hockey', 'win', 'score', 'musketeers', 'explorers', 'huskers'], color: 'bg-orange-500' },
+]
+
+export interface NewsItem {
+  id: string
+  title: string
+  link: string
+  description?: string
+  pubDate: Date
+  source: string
+  category?: string
+  isBreaking?: boolean
+}
+
+// ============================================
 // Dashboard State
 // ============================================
 

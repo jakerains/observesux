@@ -5,6 +5,22 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.3] - 2026-01-24
+
+### Added
+- News widget category filtering (All, Crime, Government, Business, Weather, Sports)
+- Breaking news detection with highlighted styling and animated badge
+- News category type definitions for keyword-based filtering
+
+### Changed
+- News refresh interval reduced from 5 minutes to 2 minutes
+- Source badge colors now handle name variations from different feeds
+
+### Fixed
+- Sioux City Journal RSS feed now returns fresh content (fixed query parameter)
+- Removed broken RSS feeds (KTIV, KMEG/KPTH, KWIT no longer provide RSS)
+- Google News query reverted to simpler format for better results
+
 ## [0.5.2] - 2026-01-24
 
 ### Added

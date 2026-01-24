@@ -1,10 +1,21 @@
 import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
-export const revalidate = 300 // Revalidate every 5 minutes
+export const revalidate = 120 // Revalidate every 2 minutes
 
 // Only show news from the last 3 days (72 hours)
 const MAX_AGE_HOURS = 72
+
+// Breaking news detection patterns
+const BREAKING_NEWS_PATTERNS = [
+  /breaking/i,
+  /urgent/i,
+  /just\s+in/i,
+  /developing/i,
+  /alert:/i,
+  /update:/i,
+  /live:/i,
+]
 
 interface NewsItem {
   id: string
@@ -14,6 +25,7 @@ interface NewsItem {
   pubDate: Date
   source: string
   category?: string
+  isBreaking?: boolean
 }
 
 interface ApiResponse {
@@ -50,31 +62,36 @@ function isRecentEnough(date: Date | null): boolean {
   return ageInHours <= MAX_AGE_HOURS && ageInHours >= 0 // Also filter out future dates
 }
 
+// Check if a news item should be marked as breaking news
+function isBreakingNews(title: string, description?: string): boolean {
+  const textToCheck = `${title} ${description || ''}`.toLowerCase()
+  return BREAKING_NEWS_PATTERNS.some(pattern => pattern.test(textToCheck))
+}
+
 // RSS feed URLs for Sioux City area news
-// Note: Google News RSS aggregates from many sources, providing fresher content
+// Note: Some feeds have been tested and verified to return fresh content
 const NEWS_FEEDS = [
   {
-    // Google News RSS for Sioux City - aggregates from many sources, very fresh
+    // Google News RSS for Sioux City - simple query works better than exact match
     url: 'https://news.google.com/rss/search?q=Sioux+City+Iowa&hl=en-US&gl=US&ceid=US:en',
     source: 'Google News',
     fallbackUrl: 'https://news.google.com/search?q=Sioux%20City%20Iowa',
     isGoogleNews: true
   },
   {
-    url: 'https://www.ktiv.com/search/?f=rss&t=article&c=news/local&l=50&s=start_time&sd=desc',
-    source: 'KTIV',
-    fallbackUrl: 'https://www.ktiv.com/news/local/'
-  },
-  {
+    // Siouxland Proud / KCAU9
     url: 'https://www.siouxlandproud.com/feed/',
     source: 'Siouxland Proud',
     fallbackUrl: 'https://www.siouxlandproud.com/news/local-news/'
   },
   {
-    url: 'https://siouxcityjournal.com/search/?f=rss&t=article&l=50&s=start_time&sd=desc&k%5B%5D=%23topstory',
+    // Sioux City Journal - use news/local category instead of topstory tag
+    url: 'https://siouxcityjournal.com/search/?f=rss&t=article&c=news/local&l=25&s=start_time&sd=desc',
     source: 'Sioux City Journal',
     fallbackUrl: 'https://siouxcityjournal.com/news/local/'
   }
+  // Note: KTIV RSS feed no longer available (returns HTML)
+  // Note: KMEG/KPTH and KWIT feeds not available
 ]
 
 // Simple XML parser for RSS feeds
@@ -154,14 +171,18 @@ function parseRSSItem(item: string, defaultSource: string, isGoogleNews: boolean
       return stripped.slice(0, 200)
     }
 
+    const cleanedTitle = decodeHtml(title)
+    const cleanedDescription = description ? cleanDescription(description) : undefined
+
     return {
       id: `${source.toLowerCase().replace(/\s+/g, '-')}-${hashCode(link)}-${hashCode(title)}`,
-      title: decodeHtml(title),
+      title: cleanedTitle,
       link,
-      description: description ? cleanDescription(description) : undefined,
+      description: cleanedDescription,
       pubDate: pubDate!, // We know it's valid because isRecentEnough passed
       source,
-      category
+      category,
+      isBreaking: isBreakingNews(cleanedTitle, cleanedDescription)
     }
   } catch {
     return null
@@ -179,7 +200,7 @@ async function fetchRSSFeed(feedConfig: typeof NEWS_FEEDS[0]): Promise<NewsItem[
         'User-Agent': 'SiouxCityObservatory/1.0 (News Aggregator)',
         'Accept': 'application/rss+xml, application/xml, text/xml'
       },
-      next: { revalidate: 300 }
+      next: { revalidate: 120 }
     })
 
     clearTimeout(timeoutId)
@@ -260,9 +281,15 @@ export async function GET() {
       return false
     })
 
-    // Sort by date and take top 20
+    // Sort by breaking news first, then by date, and take top 20
     const allNews = deduped
-      .sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime())
+      .sort((a, b) => {
+        // Breaking news first
+        if (a.isBreaking && !b.isBreaking) return -1
+        if (!a.isBreaking && b.isBreaking) return 1
+        // Then by date
+        return new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
+      })
       .slice(0, 20)
 
     const response: ApiResponse = {

@@ -16,6 +16,21 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.5.3',
+    date: '2026-01-24',
+    added: [
+      'News category filtering (Crime, Government, Business, Weather, Sports)',
+      'Breaking news detection with highlighted styling',
+    ],
+    changed: [
+      'News refresh interval reduced to 2 minutes',
+    ],
+    fixed: [
+      'Sioux City Journal RSS feed now returns fresh content',
+      'Removed broken RSS feeds (KTIV, KMEG, KWIT)',
+    ],
+  },
+  {
     version: '0.5.2',
     date: '2026-01-24',
     added: [
