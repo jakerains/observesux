@@ -1,4 +1,5 @@
-import { streamText, stepCountIs, convertToModelMessages, gateway } from 'ai';
+import { streamText, stepCountIs, convertToModelMessages } from 'ai';
+import { openai } from '@ai-sdk/openai';
 import { chatTools } from '@/lib/ai/tools';
 import { getSystemPrompt, type UserContext } from '@/lib/ai/system-prompt';
 import {
@@ -151,7 +152,7 @@ export async function POST(req: Request) {
     const toolCallsUsed: string[] = [];
 
     const result = streamText({
-      model: gateway('xai/grok-4-fast-non-reasoning'),
+      model: openai('gpt-5-mini-2025-08-07'),
       system: getSystemPrompt(userContext),
       messages: await convertToModelMessages(messages),
       tools: chatTools,
