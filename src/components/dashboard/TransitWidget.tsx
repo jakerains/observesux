@@ -9,7 +9,8 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { useTransit } from '@/lib/hooks/useDataFetching'
 import { useTransitSelection } from '@/lib/contexts/TransitContext'
 import { useDashboardLayout } from '@/lib/contexts/DashboardLayoutContext'
-import { Bus, Clock, MapPin, Route, Circle, ChevronRight, ChevronUp, ChevronDown, Map, Navigation } from 'lucide-react'
+import { Bus, Clock, MapPin, Route, Circle, ChevronRight, ChevronUp, ChevronDown, Map, Navigation, RefreshCw } from 'lucide-react'
+import { formatDistanceToNow } from 'date-fns'
 import { cn } from '@/lib/utils'
 import type { BusPosition, TransitRoute } from '@/types'
 import { getDataFreshness } from '@/lib/utils/dataFreshness'
@@ -230,7 +231,6 @@ export function TransitWidget() {
       title="Sioux City Transit"
       icon={<Bus className="h-4 w-4" />}
       status={status}
-      lastUpdated={lastUpdated}
       action={refreshAction}
     >
       {/* Active Buses Summary */}
@@ -344,18 +344,23 @@ export function TransitWidget() {
       </div>
 
       {/* Footer */}
-      <div className="mt-3 pt-2 border-t flex items-center justify-between text-xs text-muted-foreground">
+      <div className="mt-2 pt-2 border-t flex items-center justify-between text-xs text-muted-foreground">
         <span className="flex items-center gap-1">
           <MapPin className="h-3 w-3" />
           MLK Transit Center
         </span>
+        {lastUpdated && (
+          <span className="flex items-center gap-1">
+            <RefreshCw className="h-3 w-3" />
+            {formatDistanceToNow(lastUpdated, { addSuffix: true })}
+          </span>
+        )}
         <a
           href="https://siouxcity.passiogo.com"
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-1 hover:text-foreground transition-colors"
         >
-          <Clock className="h-3 w-3" />
           Passio GO
         </a>
       </div>
