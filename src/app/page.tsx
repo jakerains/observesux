@@ -37,7 +37,6 @@ import { DraggableWidget } from '@/components/dashboard/DraggableWidget'
 import { VoiceAgentWidget } from '@/components/dashboard/VoiceAgentWidget'
 import { ChatWidget } from '@/components/dashboard/ChatWidget'
 import { ChangelogModal } from '@/components/dashboard/ChangelogModal'
-import { SignInBanner } from '@/components/auth/SignInBanner'
 import { DashboardLayoutProvider, useDashboardLayout } from '@/lib/contexts/DashboardLayoutContext'
 import { TransitProvider } from '@/lib/contexts/TransitContext'
 import { MapFocusProvider } from '@/lib/contexts/MapFocusContext'
@@ -237,9 +236,6 @@ function DashboardContent() {
 
       {/* Voice Agent - Floating button */}
       <VoiceAgentWidget />
-
-      {/* Sign-in prompt for anonymous users */}
-      <SignInBanner />
     </div>
   )
 }

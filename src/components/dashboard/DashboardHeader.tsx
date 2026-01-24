@@ -58,14 +58,14 @@ export function DashboardHeader({ onRefresh, isRefreshing }: DashboardHeaderProp
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="w-full max-w-7xl mx-auto flex h-14 items-center justify-between px-3 sm:px-4 md:px-6">
+      <div className="w-full max-w-7xl mx-auto flex h-16 items-center justify-between px-3 sm:px-4 md:px-6">
         <div className="flex items-center gap-2 sm:gap-3">
           <Image
             src="/siouxlandonlinelogo_black.png"
             alt="Siouxland Online"
-            width={180}
-            height={45}
-            className="h-8 sm:h-10 w-auto"
+            width={220}
+            height={55}
+            className="h-10 sm:h-12 w-auto"
             priority
           />
           <Badge variant="default" className="hidden sm:flex items-center gap-1">
