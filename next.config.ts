@@ -52,6 +52,9 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: false,
   },
 
+  // Empty turbopack config to allow dev mode (Serwist is disabled in dev anyway)
+  turbopack: {},
+
   // Security headers for PWA
   async headers() {
     return [
