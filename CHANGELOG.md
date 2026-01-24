@@ -5,6 +5,23 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-01-24
+
+### Added
+- **PWA Support** - Install Siouxland Online as a native-like app
+  - Full Progressive Web App with Serwist service worker
+  - Offline support with cached pages and data
+  - Install prompt for Android/Chrome and iOS instructions
+  - Push notification infrastructure ready
+  - App shortcuts for Weather and Cameras
+- **New Branding** - Updated logo and icons throughout the app
+  - New Siouxland Online logo in header
+  - Custom PWA icons generated from brand assets
+
+### Changed
+- Removed sign-in banner from bottom of page
+- Enlarged header logo for better visibility
+
 ## [0.4.5] - 2026-01-24
 
 ### Fixed

@@ -16,35 +16,7 @@ const serwist = new Serwist({
   skipWaiting: true,
   clientsClaim: true,
   navigationPreload: true,
-  runtimeCaching: [
-    // Cache API responses with network-first strategy
-    {
-      urlPattern: /^https:\/\/.*\/api\/.*/i,
-      handler: "NetworkFirst",
-      options: {
-        cacheName: "api-cache",
-        expiration: {
-          maxEntries: 100,
-          maxAgeSeconds: 60 * 5, // 5 minutes
-        },
-        networkTimeoutSeconds: 10,
-      },
-    },
-    // Cache external weather/traffic images
-    {
-      urlPattern: /^https:\/\/(iowadotsnapshot|webpubcontent|weathercams)\..*/i,
-      handler: "CacheFirst",
-      options: {
-        cacheName: "external-images",
-        expiration: {
-          maxEntries: 50,
-          maxAgeSeconds: 60 * 2, // 2 minutes (cameras update frequently)
-        },
-      },
-    },
-    // Default caching from Serwist
-    ...defaultCache,
-  ],
+  runtimeCaching: defaultCache,
   fallbacks: {
     entries: [
       {
@@ -84,7 +56,7 @@ self.addEventListener("push", (event) => {
     data.body = event.data.text()
   }
 
-  const options: NotificationOptions = {
+  const options = {
     body: data.body,
     icon: data.icon,
     badge: data.badge,
@@ -96,7 +68,7 @@ self.addEventListener("push", (event) => {
       { action: "view", title: "View" },
       { action: "dismiss", title: "Dismiss" },
     ],
-  }
+  } as NotificationOptions
 
   event.waitUntil(self.registration.showNotification(data.title, options))
 })

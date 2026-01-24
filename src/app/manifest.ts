@@ -98,9 +98,5 @@ export default function manifest(): MetadataRoute.Manifest {
       },
     ],
     related_applications: [],
-    handle_links: 'preferred',
-    launch_handler: {
-      client_mode: ['navigate-existing', 'auto'],
-    },
   }
 }
