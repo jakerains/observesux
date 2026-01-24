@@ -12,7 +12,7 @@ export async function GET() {
     const response: ApiResponse<CommunityEventsData> = {
       data: eventsData,
       timestamp: new Date(),
-      source: 'explore_siouxland',
+      source: 'multiple', // Events aggregated from multiple sources
     }
 
     return NextResponse.json(response)

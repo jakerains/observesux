@@ -244,7 +244,7 @@ export const chatTools = {
   }),
 
   getEvents: tool({
-    description: 'Get upcoming community events in Sioux City from Explore Siouxland. Use this when users ask about events, things to do, activities, festivals, concerts, or what\'s happening in the area. Each event includes a URL link to the full event page with location, time, and contact details - always share this link so users can get more info.',
+    description: 'Get upcoming community events in Sioux City from multiple sources including Explore Siouxland and Hard Rock Casino. Use this when users ask about events, things to do, activities, festivals, concerts, shows, or what\'s happening in the area. Each event includes a source field showing where it came from and a URL link to the full event page - always share the link so users can get more info.',
     inputSchema: z.object({}),
     execute: async () => {
       const data = await fetchApi('/api/events');

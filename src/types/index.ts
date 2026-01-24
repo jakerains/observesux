@@ -547,6 +547,7 @@ export interface CommunityEvent {
   location?: string
   description?: string
   url?: string
+  source?: string // Which event source this came from
 }
 
 export interface CommunityEventsData {
