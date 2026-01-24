@@ -11,7 +11,7 @@ import { fileURLToPath } from 'url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
-const SOURCE = join(ROOT, 'public', 'siouxlandonlineicon.png')
+const SOURCE = join(ROOT, 'public', 'siouxlandonlineicon_black.png')
 const OUTPUT_DIR = join(ROOT, 'public', 'icons')
 
 // Icon sizes for PWA

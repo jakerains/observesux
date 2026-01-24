@@ -61,7 +61,7 @@ export function DashboardHeader({ onRefresh, isRefreshing }: DashboardHeaderProp
       <div className="w-full max-w-7xl mx-auto flex h-14 items-center justify-between px-3 sm:px-4 md:px-6">
         <div className="flex items-center gap-2 sm:gap-3">
           <Image
-            src="/siouxlandonlinelogo.png"
+            src="/siouxlandonlinelogo_black.png"
             alt="Siouxland Online"
             width={180}
             height={45}
