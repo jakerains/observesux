@@ -2,8 +2,8 @@ import type { MetadataRoute } from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Siouxland.online - Real-Time Dashboard',
-    short_name: 'Siouxland',
+    name: 'Siouxland Online',
+    short_name: 'Siouxland Online',
     description: 'Real-time observability dashboard for Sioux City, Iowa - Traffic cameras, weather, river levels, air quality, and more.',
     start_url: '/',
     display: 'standalone',

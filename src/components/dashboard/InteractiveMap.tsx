@@ -9,7 +9,7 @@ import { useBusInterpolation } from '@/lib/hooks/useBusInterpolation'
 import { useAircraftInterpolation } from '@/lib/hooks/useAircraftInterpolation'
 import { useTransitSelection } from '@/lib/contexts/TransitContext'
 import { useMapFocus } from '@/lib/contexts/MapFocusContext'
-import { Map, Layers, Camera, Waves, AlertTriangle, CloudRain, Snowflake, Bus, Plane, Fuel } from 'lucide-react'
+import { Map, Layers, Camera, Waves, AlertTriangle, CloudRain, Snowflake, Bus, Plane, Fuel, ChevronDown } from 'lucide-react'
 import type { SuxAssociation } from '@/types'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -198,98 +198,111 @@ interface LayerToggleProps {
 }
 
 function LayerToggle({ layers, onToggle, radarSource, onRadarSourceChange, radarTime, radarFrame = 0, totalFrames = 1, radarLoading, radarError, activeBuses = 0, activeAircraft = 0, gasStationCount = 0 }: LayerToggleProps) {
+  const [isExpanded, setIsExpanded] = useState(false)
+
+  // Count active layers for the badge
+  const activeCount = Object.values(layers).filter(Boolean).length
+
   return (
     <div className="absolute top-2 right-2 z-[1000] bg-background/95 backdrop-blur rounded-lg shadow-lg p-2 min-w-[140px]">
-      <div className="text-xs font-medium mb-2 flex items-center gap-1">
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="text-xs font-medium flex items-center gap-1 w-full hover:bg-muted rounded px-1 py-0.5 transition-colors"
+      >
         <Layers className="h-3 w-3" />
         Layers
-      </div>
-      <div className="space-y-1">
-        <button
-          onClick={() => onToggle('radar')}
-          className={`flex items-center gap-2 w-full px-2 py-1 rounded text-xs transition-colors ${
-            layers.radar ? 'bg-green-500/20 text-green-500' : 'hover:bg-muted'
-          }`}
-        >
-          <CloudRain className={`h-3 w-3 ${radarLoading ? 'animate-pulse' : ''}`} />
-          Radar
-          {layers.radar && radarTime && (
-            <span className="text-[10px] opacity-70 ml-auto">{radarTime}</span>
-          )}
-        </button>
-        <button
-          onClick={() => onToggle('cameras')}
-          className={`flex items-center gap-2 w-full px-2 py-1 rounded text-xs transition-colors ${
-            layers.cameras ? 'bg-blue-500/20 text-blue-500' : 'hover:bg-muted'
-          }`}
-        >
-          <Camera className="h-3 w-3" />
-          Cameras
-        </button>
-        <button
-          onClick={() => onToggle('rivers')}
-          className={`flex items-center gap-2 w-full px-2 py-1 rounded text-xs transition-colors ${
-            layers.rivers ? 'bg-cyan-500/20 text-cyan-500' : 'hover:bg-muted'
-          }`}
-        >
-          <Waves className="h-3 w-3" />
-          Rivers
-        </button>
-        <button
-          onClick={() => onToggle('events')}
-          className={`flex items-center gap-2 w-full px-2 py-1 rounded text-xs transition-colors ${
-            layers.events ? 'bg-red-500/20 text-red-500' : 'hover:bg-muted'
-          }`}
-        >
-          <AlertTriangle className="h-3 w-3" />
-          Events
-        </button>
-        <button
-          onClick={() => onToggle('snowplows')}
-          className={`flex items-center gap-2 w-full px-2 py-1 rounded text-xs transition-colors ${
-            layers.snowplows ? 'bg-orange-500/20 text-orange-500' : 'hover:bg-muted'
-          }`}
-        >
-          <Snowflake className="h-3 w-3" />
-          Snowplows
-        </button>
-        <button
-          onClick={() => onToggle('transit')}
-          className={`flex items-center gap-2 w-full px-2 py-1 rounded text-xs transition-colors ${
-            layers.transit ? 'bg-emerald-500/20 text-emerald-500' : 'hover:bg-muted'
-          }`}
-        >
-          <Bus className="h-3 w-3" />
-          Transit
-          {layers.transit && activeBuses > 0 && (
-            <span className="text-[10px] opacity-70 ml-auto">{activeBuses}</span>
-          )}
-        </button>
-        <button
-          onClick={() => onToggle('aircraft')}
-          className={`flex items-center gap-2 w-full px-2 py-1 rounded text-xs transition-colors ${
-            layers.aircraft ? 'bg-sky-500/20 text-sky-500' : 'hover:bg-muted'
-          }`}
-        >
-          <Plane className="h-3 w-3" />
-          Aircraft
-          {layers.aircraft && activeAircraft > 0 && (
-            <span className="text-[10px] opacity-70 ml-auto">{activeAircraft}</span>
-          )}
-        </button>
-        <button
-          onClick={() => onToggle('gasStations')}
-          className={`flex items-center gap-2 w-full px-2 py-1 rounded text-xs transition-colors ${
-            layers.gasStations ? 'bg-green-500/20 text-green-500' : 'hover:bg-muted'
-          }`}
-        >
-          <Fuel className="h-3 w-3" />
-          Gas Stations
-          {layers.gasStations && gasStationCount > 0 && (
-            <span className="text-[10px] opacity-70 ml-auto">{gasStationCount}</span>
-          )}
-        </button>
-      </div>
+        <span className="ml-1 text-[10px] text-muted-foreground">({activeCount})</span>
+        <ChevronDown className={`h-3 w-3 ml-auto transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isExpanded && (
+        <div className="space-y-1 mt-2 pt-2 border-t">
+          <button
+            onClick={() => onToggle('radar')}
+            className={`flex items-center gap-2 w-full px-2 py-1 rounded text-xs transition-colors ${
+              layers.radar ? 'bg-green-500/20 text-green-500' : 'hover:bg-muted'
+            }`}
+          >
+            <CloudRain className={`h-3 w-3 ${radarLoading ? 'animate-pulse' : ''}`} />
+            Radar
+            {layers.radar && radarTime && (
+              <span className="text-[10px] opacity-70 ml-auto">{radarTime}</span>
+            )}
+          </button>
+          <button
+            onClick={() => onToggle('cameras')}
+            className={`flex items-center gap-2 w-full px-2 py-1 rounded text-xs transition-colors ${
+              layers.cameras ? 'bg-blue-500/20 text-blue-500' : 'hover:bg-muted'
+            }`}
+          >
+            <Camera className="h-3 w-3" />
+            Cameras
+          </button>
+          <button
+            onClick={() => onToggle('rivers')}
+            className={`flex items-center gap-2 w-full px-2 py-1 rounded text-xs transition-colors ${
+              layers.rivers ? 'bg-cyan-500/20 text-cyan-500' : 'hover:bg-muted'
+            }`}
+          >
+            <Waves className="h-3 w-3" />
+            Rivers
+          </button>
+          <button
+            onClick={() => onToggle('events')}
+            className={`flex items-center gap-2 w-full px-2 py-1 rounded text-xs transition-colors ${
+              layers.events ? 'bg-red-500/20 text-red-500' : 'hover:bg-muted'
+            }`}
+          >
+            <AlertTriangle className="h-3 w-3" />
+            Events
+          </button>
+          <button
+            onClick={() => onToggle('snowplows')}
+            className={`flex items-center gap-2 w-full px-2 py-1 rounded text-xs transition-colors ${
+              layers.snowplows ? 'bg-orange-500/20 text-orange-500' : 'hover:bg-muted'
+            }`}
+          >
+            <Snowflake className="h-3 w-3" />
+            Snowplows
+          </button>
+          <button
+            onClick={() => onToggle('transit')}
+            className={`flex items-center gap-2 w-full px-2 py-1 rounded text-xs transition-colors ${
+              layers.transit ? 'bg-emerald-500/20 text-emerald-500' : 'hover:bg-muted'
+            }`}
+          >
+            <Bus className="h-3 w-3" />
+            Transit
+            {layers.transit && activeBuses > 0 && (
+              <span className="text-[10px] opacity-70 ml-auto">{activeBuses}</span>
+            )}
+          </button>
+          <button
+            onClick={() => onToggle('aircraft')}
+            className={`flex items-center gap-2 w-full px-2 py-1 rounded text-xs transition-colors ${
+              layers.aircraft ? 'bg-sky-500/20 text-sky-500' : 'hover:bg-muted'
+            }`}
+          >
+            <Plane className="h-3 w-3" />
+            Aircraft
+            {layers.aircraft && activeAircraft > 0 && (
+              <span className="text-[10px] opacity-70 ml-auto">{activeAircraft}</span>
+            )}
+          </button>
+          <button
+            onClick={() => onToggle('gasStations')}
+            className={`flex items-center gap-2 w-full px-2 py-1 rounded text-xs transition-colors ${
+              layers.gasStations ? 'bg-green-500/20 text-green-500' : 'hover:bg-muted'
+            }`}
+          >
+            <Fuel className="h-3 w-3" />
+            Gas Stations
+            {layers.gasStations && gasStationCount > 0 && (
+              <span className="text-[10px] opacity-70 ml-auto">{gasStationCount}</span>
+            )}
+          </button>
+        </div>
+      )}
     </div>
   )
 }

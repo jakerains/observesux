@@ -16,6 +16,17 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.5.1',
+    date: '2026-01-24',
+    added: [
+      'Collapsible layers menu on interactive map',
+    ],
+    changed: [
+      'PWA app name displays as "Siouxland Online" on home screens',
+    ],
+    fixed: [],
+  },
+  {
     version: '0.5.0',
     date: '2026-01-24',
     added: [

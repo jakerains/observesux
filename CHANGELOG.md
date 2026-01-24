@@ -5,6 +5,14 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2026-01-24
+
+### Added
+- Collapsible layers menu on interactive map - tap "Layers" to expand/collapse
+
+### Changed
+- PWA app name now displays as "Siouxland Online" on home screens
+
 ## [0.5.0] - 2026-01-24
 
 ### Added
