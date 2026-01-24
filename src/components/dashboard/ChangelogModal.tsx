@@ -16,6 +16,16 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.5.2',
+    date: '2026-01-24',
+    added: [
+      'Splash screen with progress bar on initial load',
+      'Tracks data sources and shows loading progress',
+    ],
+    changed: [],
+    fixed: [],
+  },
+  {
     version: '0.5.1',
     date: '2026-01-24',
     added: [

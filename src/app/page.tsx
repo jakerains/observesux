@@ -1,7 +1,7 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import { Suspense, useState, useCallback, useMemo } from 'react'
+import { Suspense, useState, useCallback, useMemo, useEffect } from 'react'
 import { useSWRConfig } from 'swr'
 import {
   DndContext,
@@ -42,6 +42,7 @@ import { TransitProvider } from '@/lib/contexts/TransitContext'
 import { MapFocusProvider } from '@/lib/contexts/MapFocusContext'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent } from '@/components/ui/card'
+import { SplashScreen } from '@/components/splash/SplashScreen'
 import packageJson from '../../package.json'
 
 // Dynamic import for the map component (requires client-side rendering)
@@ -104,7 +105,16 @@ function getWidgetClassName(widgetId: string, size: string): string {
 function DashboardContent() {
   const { mutate } = useSWRConfig()
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [showSplash, setShowSplash] = useState(true)
   const { widgets, widgetOrder, setWidgetOrder, isWidgetEnabled, getWidgetConfig } = useDashboardLayout()
+
+  // Check if we've shown splash recently (within session)
+  useEffect(() => {
+    const splashShown = sessionStorage.getItem('splash-shown')
+    if (splashShown) {
+      setShowSplash(false)
+    }
+  }, [])
 
   // Sensors for drag and drop
   const sensors = useSensors(
@@ -154,8 +164,16 @@ function DashboardContent() {
     setTimeout(() => setIsRefreshing(false), 500)
   }, [mutate])
 
+  const handleSplashComplete = useCallback(() => {
+    sessionStorage.setItem('splash-shown', 'true')
+    setShowSplash(false)
+  }, [])
+
   return (
     <div className="min-h-screen pb-24 md:pb-16">
+      {/* Splash Screen */}
+      {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
+
       {/* Header */}
       <DashboardHeader onRefresh={handleRefresh} isRefreshing={isRefreshing} />
 
