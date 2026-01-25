@@ -84,7 +84,7 @@ async function fetchFromSource(source: EventSource): Promise<CommunityEvent[]> {
   console.log(`[Events] Fetching ${source.name} via Firecrawl...`)
   const startTime = Date.now()
 
-  const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
+  const response = await fetch('https://api.firecrawl.dev/v2/scrape', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -94,7 +94,10 @@ async function fetchFromSource(source: EventSource): Promise<CommunityEvent[]> {
       url: source.url,
       formats: ['markdown'],
       onlyMainContent: true,
-      waitFor: 2000, // Wait 2s for JS to load
+      // v2 supports actions for waiting on JS content
+      actions: [
+        { type: 'wait', milliseconds: 2000 }
+      ],
     }),
     signal: AbortSignal.timeout(30000), // 30s timeout for Firecrawl
   })
