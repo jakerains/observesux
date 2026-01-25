@@ -71,6 +71,17 @@ function RootLayoutInner() {
           }}
         />
         <Stack.Screen
+          name="digest/[id]"
+          options={{
+            title: 'Siouxland Digest',
+            presentation: 'formSheet',
+            sheetGrabberVisible: true,
+            sheetAllowedDetents: [0.85, 1.0],
+            sheetExpandsWhenScrolledToEdge: false,
+            headerShown: true,
+          }}
+        />
+        <Stack.Screen
           name="auth/callback"
           options={{
             title: '',

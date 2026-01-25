@@ -79,6 +79,7 @@ export const endpoints = {
   flights: '/api/flights',
   outages: '/api/outages',
   status: '/api/status',
+  digest: '/api/user/digest',
 } as const;
 
 /**
@@ -95,4 +96,5 @@ export const refreshIntervals = {
   gasPrices: 60 * 1000, // 1 minute
   flights: 5 * 60 * 1000, // 5 minutes
   outages: 5 * 60 * 1000, // 5 minutes
+  digest: 60 * 1000, // 1 minute
 } as const;

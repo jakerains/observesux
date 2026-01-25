@@ -1,5 +1,6 @@
 import type { NextConfig } from "next"
 import withSerwistInit from "@serwist/next"
+import { withWorkflow } from "workflow/next"
 
 const withSerwist = withSerwistInit({
   swSrc: "src/app/sw.ts",
@@ -79,4 +80,4 @@ const nextConfig: NextConfig = {
   },
 }
 
-export default withSerwist(nextConfig)
+export default withWorkflow(withSerwist(nextConfig))

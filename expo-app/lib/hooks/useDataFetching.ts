@@ -21,6 +21,7 @@ import type {
   GasStation,
   Flight,
   PowerOutage,
+  DigestResponse,
 } from '../types';
 
 /**
@@ -198,6 +199,20 @@ export function useOutages() {
   return useQuery({
     queryKey: ['outages'],
     queryFn: () => fetcher<ApiResponse<PowerOutage[]>>(endpoints.outages),
+    refetchInterval: interval,
+    staleTime: interval / 2,
+  });
+}
+
+/**
+ * Digest hook
+ * Note: This endpoint returns { digest, available } directly (not wrapped in data/timestamp)
+ */
+export function useDigest() {
+  const interval = useRefreshInterval(refreshIntervals.digest);
+  return useQuery({
+    queryKey: ['digest'],
+    queryFn: () => fetcher<DigestResponse>(endpoints.digest),
     refetchInterval: interval,
     staleTime: interval / 2,
   });

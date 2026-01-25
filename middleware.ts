@@ -14,6 +14,12 @@ const PROTECTED_ROUTES = [
   '/api/user',      // User-specific API endpoints
 ]
 
+// Routes that should be excluded from middleware entirely
+const EXCLUDED_ROUTES = [
+  '/_workflow',     // Vercel Workflow internal routes
+  '/api/workflow',  // Workflow API endpoints
+]
+
 // Routes that should redirect logged-in users away
 const AUTH_ROUTES = [
   '/auth/sign-in',
@@ -22,6 +28,12 @@ const AUTH_ROUTES = [
 
 export function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl
+
+  // Skip middleware for excluded routes (workflow internal routes, etc.)
+  const isExcludedRoute = EXCLUDED_ROUTES.some(route => pathname.startsWith(route))
+  if (isExcludedRoute) {
+    return NextResponse.next()
+  }
 
   // For protected routes, check for session cookie
   // Neon Auth uses 'better-auth.session_token' cookie
@@ -90,7 +102,8 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - public files (images, etc.)
+     * - _workflow (Vercel Workflow internal routes)
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|_workflow|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

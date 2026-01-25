@@ -16,6 +16,25 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.6.1',
+    date: '2026-01-25',
+    added: [
+      'Vercel Workflow DevKit for durable digest generation',
+      'Automatic retry on data fetch failures',
+      'Workflow UI for step-by-step execution visibility',
+      'Standalone news fetcher for direct RSS parsing',
+    ],
+    changed: [
+      'Digest cron triggers durable workflow instead of inline execution',
+      'Data fetchers called directly (no HTTP self-calls)',
+    ],
+    fixed: [
+      'Digest "Data unavailable" bug from missing database column',
+      'HTTP self-call timeouts during cron execution',
+      'Silent failures now visible in workflow UI',
+    ],
+  },
+  {
     version: '0.6.0',
     date: '2026-01-25',
     added: [

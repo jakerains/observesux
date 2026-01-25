@@ -7,6 +7,7 @@ import { ScrollView, RefreshControl, View, PlatformColor } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { WeatherWidget } from '@/components/widgets/WeatherWidget';
+import { DigestWidget } from '@/components/widgets/DigestWidget';
 import { TransitWidget } from '@/components/widgets/TransitWidget';
 import { AirQualityWidget } from '@/components/widgets/AirQualityWidget';
 import { GasPricesWidget } from '@/components/widgets/GasPricesWidget';
@@ -39,6 +40,7 @@ export default function HomeScreen() {
 
       <View style={{ gap: 12 }}>
         <WeatherWidget />
+        <DigestWidget />
         <AirQualityWidget />
         <GasPricesWidget />
         <TransitWidget />

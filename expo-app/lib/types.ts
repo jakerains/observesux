@@ -209,5 +209,22 @@ export interface WidgetConfig {
   refreshInterval: number;
 }
 
+// Digest types
+export type DigestEdition = 'morning' | 'midday' | 'evening';
+
+export interface Digest {
+  id: string;
+  edition: DigestEdition;
+  date: string;
+  summary: string;
+  content: string;
+  createdAt: string;
+}
+
+export interface DigestResponse {
+  digest: Digest | null;
+  available: boolean;
+}
+
 // Data freshness status
 export type DataStatus = 'live' | 'stale' | 'error' | 'loading';

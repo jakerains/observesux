@@ -5,6 +5,26 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - 2026-01-25
+
+### Added
+- Vercel Workflow DevKit integration for durable digest generation
+  - Each data fetch is now a retryable step with automatic retry on failure
+  - Workflow UI provides full visibility into step-by-step execution
+  - New `/api/workflow/digest` endpoint for manual workflow control
+- Standalone news fetcher (`src/lib/fetchers/news.ts`) for direct RSS parsing
+- Database migration for missing `summary` column in digests table
+
+### Changed
+- Digest cron handler now triggers durable workflow instead of inline execution
+- Data fetchers called directly (no HTTP self-calls that caused timeouts)
+- Middleware excludes workflow paths from authentication checks
+
+### Fixed
+- Digest generation "Data unavailable" bug caused by missing database column
+- HTTP self-call timeouts during cron execution
+- Silent failures in digest data aggregation now visible in workflow UI
+
 ## [0.6.0] - 2026-01-25
 
 ### Added
