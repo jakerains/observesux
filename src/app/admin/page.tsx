@@ -37,6 +37,7 @@ import {
   Sunset,
   Moon,
   Sparkles,
+  CalendarDays,
 } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
@@ -1022,6 +1023,33 @@ function ToolsPanel() {
     timestamp?: string
   } | null>(null)
 
+  // Events scraper state
+  const [eventsScrapeStatus, setEventsScrapeStatus] = useState<'idle' | 'running' | 'success' | 'error'>('idle')
+  const [eventsScrapeResult, setEventsScrapeResult] = useState<{
+    eventsScraped?: number
+    durationMs?: number
+    message?: string
+    timestamp?: string
+  } | null>(null)
+  const [eventsStats, setEventsStats] = useState<{
+    totalEvents: number
+    sourceBreakdown: Record<string, number>
+    oldestEvent: string | null
+    newestEvent: string | null
+  } | null>(null)
+
+  // Fetch events cache stats on mount
+  useEffect(() => {
+    fetch('/api/admin/events-scrape')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.stats) {
+          setEventsStats(data.stats)
+        }
+      })
+      .catch(console.error)
+  }, [])
+
   // Poll for workflow status
   const pollStatus = useCallback(async (workflowRunId: string) => {
     try {
@@ -1075,6 +1103,42 @@ function ToolsPanel() {
     } catch (error) {
       setGasScrapeStatus('error')
       setGasScrapeResult({ message: error instanceof Error ? error.message : 'Request failed' })
+    }
+  }
+
+  const runEventsScrape = async () => {
+    setEventsScrapeStatus('running')
+    setEventsScrapeResult(null)
+
+    try {
+      const res = await fetch('/api/admin/events-scrape', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+      const data = await res.json()
+
+      if (res.ok && data.success) {
+        setEventsScrapeStatus('success')
+        setEventsScrapeResult({
+          eventsScraped: data.eventsScraped,
+          durationMs: data.durationMs,
+          message: data.message,
+          timestamp: data.timestamp
+        })
+        // Refresh stats
+        const statsRes = await fetch('/api/admin/events-scrape')
+        const statsData = await statsRes.json()
+        if (statsData.success && statsData.stats) {
+          setEventsStats(statsData.stats)
+        }
+      } else {
+        setEventsScrapeStatus('error')
+        setEventsScrapeResult({ message: data.error || 'Unknown error' })
+      }
+    } catch (error) {
+      setEventsScrapeStatus('error')
+      setEventsScrapeResult({ message: error instanceof Error ? error.message : 'Request failed' })
     }
   }
 
@@ -1153,6 +1217,110 @@ function ToolsPanel() {
             <p>• Automatic scrape runs daily at 6:00 AM CST</p>
             <p>• Uses Firecrawl to parse GasBuddy data</p>
             <p>• New stations are automatically geocoded</p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Community Events Scraper */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-purple-500/10">
+              <CalendarDays className="h-5 w-5 text-purple-500" />
+            </div>
+            <div>
+              <CardTitle className="text-lg">Community Events Scraper</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Scrape events from Explore Siouxland and Hard Rock Casino via Firecrawl
+              </p>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Cache Stats */}
+          {eventsStats && (
+            <div className="p-3 rounded-lg bg-muted/50 text-sm">
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-medium">{eventsStats.totalEvents} events cached</span>
+                {eventsStats.newestEvent && (
+                  <span className="text-xs text-muted-foreground">
+                    Last scraped: {formatDistanceToNow(new Date(eventsStats.newestEvent), { addSuffix: true })}
+                  </span>
+                )}
+              </div>
+              {Object.keys(eventsStats.sourceBreakdown).length > 0 && (
+                <div className="flex gap-2">
+                  {Object.entries(eventsStats.sourceBreakdown).map(([source, count]) => (
+                    <Badge key={source} variant="secondary" className="text-xs">
+                      {source}: {count}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="flex items-center gap-4">
+            <Button
+              onClick={runEventsScrape}
+              disabled={eventsScrapeStatus === 'running'}
+              className="gap-2"
+            >
+              {eventsScrapeStatus === 'running' ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Scraping...
+                </>
+              ) : (
+                <>
+                  <Play className="h-4 w-4" />
+                  Scrape Events Now
+                </>
+              )}
+            </Button>
+
+            {eventsScrapeStatus === 'success' && (
+              <div className="flex items-center gap-2 text-green-600">
+                <CheckCircle2 className="h-4 w-4" />
+                <span className="text-sm">Success</span>
+              </div>
+            )}
+
+            {eventsScrapeStatus === 'error' && (
+              <div className="flex items-center gap-2 text-red-600">
+                <XCircle className="h-4 w-4" />
+                <span className="text-sm">Failed</span>
+              </div>
+            )}
+          </div>
+
+          {eventsScrapeResult && (
+            <div className={cn(
+              'p-3 rounded-lg text-sm',
+              eventsScrapeStatus === 'success' ? 'bg-green-500/10' : 'bg-red-500/10'
+            )}>
+              {eventsScrapeStatus === 'success' ? (
+                <div className="space-y-1">
+                  <p><strong>{eventsScrapeResult.eventsScraped}</strong> events scraped</p>
+                  {eventsScrapeResult.durationMs && (
+                    <p className="text-xs text-muted-foreground">
+                      Completed in {(eventsScrapeResult.durationMs / 1000).toFixed(1)}s
+                    </p>
+                  )}
+                  {eventsScrapeResult.message && (
+                    <p className="text-xs text-muted-foreground">{eventsScrapeResult.message}</p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-red-600">{eventsScrapeResult.message}</p>
+              )}
+            </div>
+          )}
+
+          <div className="text-xs text-muted-foreground space-y-1">
+            <p>• Events are cached for 7 days to reduce API calls</p>
+            <p>• Uses Firecrawl v2 with JavaScript rendering</p>
+            <p>• Sources: Explore Siouxland, Hard Rock Casino</p>
           </div>
         </CardContent>
       </Card>
