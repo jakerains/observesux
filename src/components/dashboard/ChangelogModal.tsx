@@ -16,6 +16,22 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.5.8',
+    date: '2026-01-24',
+    added: [
+      'Digest promo video composition with Remotion',
+      'Standalone account pages for alerts and watchlist',
+      'Screenshot capture script for promotional assets',
+    ],
+    changed: [
+      'Map widget locked at top of dashboard (not draggable)',
+      'Digest and Weather now appear first below map',
+    ],
+    fixed: [
+      'JSX type import for React 19 compatibility',
+    ],
+  },
+  {
     version: '0.5.7',
     date: '2026-01-24',
     added: [

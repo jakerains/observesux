@@ -5,6 +5,21 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.8] - 2026-01-24
+
+### Added
+- Digest promo video composition with Remotion (4 animated scenes)
+- Standalone account pages for alerts (`/account/alerts`) and watchlist (`/account/watchlist`)
+- Screenshot capture script for promotional assets
+
+### Changed
+- Map widget now locked at top of dashboard (not draggable)
+- Default widget order: Digest and Weather appear first below map
+- Introduced `LOCKED_WIDGETS` array for non-reorderable widgets
+
+### Fixed
+- JSX type import for React 19 compatibility in Remotion scenes
+
 ## [0.5.7] - 2026-01-24
 
 ### Added
