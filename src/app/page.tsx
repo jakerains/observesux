@@ -191,7 +191,7 @@ function DashboardContent() {
 
       {/* Main Dashboard Grid */}
       <main className="w-full max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 items-start [grid-auto-flow:dense]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 items-stretch [grid-auto-flow:dense]">
           {/* Locked widgets - always at top, not draggable */}
           {lockedWidgetIds.map((widgetId) => {
             const WidgetComponent = WIDGET_COMPONENTS[widgetId]

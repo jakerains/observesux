@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import ReactMarkdown from 'react-markdown'
 import { DashboardCard } from './DashboardCard'
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -123,9 +124,9 @@ export function DigestWidget() {
       status="live"
       lastUpdated={new Date(digest.createdAt)}
     >
-      <div className="space-y-3">
+      <div className="flex flex-col h-full">
         {/* Edition badge and date */}
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
           <Badge variant="secondary" className="gap-1 text-xs">
             <EditionIcon className="h-3 w-3" />
             {editionLabels[digest.edition]}
@@ -133,18 +134,22 @@ export function DigestWidget() {
           <span>{formatDigestDate(digest.date, digest.createdAt)}</span>
         </div>
 
-        {/* Summary */}
-        <p className="text-sm leading-relaxed">
-          {digest.summary || 'Check out today\'s community digest for weather, news, events, and more.'}
-        </p>
+        {/* Summary - rendered as markdown */}
+        <div className="flex-1 prose prose-sm dark:prose-invert prose-p:text-foreground prose-p:leading-relaxed prose-strong:text-foreground prose-strong:font-semibold max-w-none">
+          <ReactMarkdown>
+            {digest.summary || 'Check out today\'s community digest for weather, news, events, and more.'}
+          </ReactMarkdown>
+        </div>
 
-        {/* Read more link */}
-        <Button asChild variant="outline" size="sm" className="gap-2">
-          <Link href="/account/digest">
-            Read Full Digest
-            <ArrowRight className="h-3 w-3" />
-          </Link>
-        </Button>
+        {/* Read more link - pinned to bottom */}
+        <div className="mt-auto pt-3">
+          <Button asChild variant="outline" size="sm" className="gap-2">
+            <Link href="/account/digest">
+              Read Full Digest
+              <ArrowRight className="h-3 w-3" />
+            </Link>
+          </Button>
+        </div>
       </div>
     </DashboardCard>
   )
