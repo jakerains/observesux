@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { User, LogOut, Settings, Bell, Star } from 'lucide-react'
+import { User, LogOut, Settings, Bell, Star, Newspaper } from 'lucide-react'
 import { useSession, signOut } from '@/lib/auth/client'
 import { cn } from '@/lib/utils'
 
@@ -94,6 +94,12 @@ export function UserMenu() {
           <a href="/account/watchlist" className="cursor-pointer">
             <Star className="mr-2 h-4 w-4" />
             My Watchlist
+          </a>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <a href="/account/digest" className="cursor-pointer">
+            <Newspaper className="mr-2 h-4 w-4" />
+            Siouxland Digest
           </a>
         </DropdownMenuItem>
         <DropdownMenuSeparator />

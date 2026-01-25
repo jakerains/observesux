@@ -32,6 +32,11 @@ import {
   ChevronUp,
   ShieldX,
   Users,
+  Newspaper,
+  Sun,
+  Sunset,
+  Moon,
+  Sparkles,
 } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
@@ -60,6 +65,12 @@ import {
   type SuggestionStatus,
 } from '@/types'
 import { useSession } from '@/lib/auth/client'
+import {
+  getCurrentEdition,
+  editionLabels,
+  type Digest,
+  type DigestEdition
+} from '@/lib/digest/types'
 
 // Types for chat logs
 interface ChatSession {
@@ -506,6 +517,328 @@ function ChatLogsPanel() {
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+// Digest Panel Component
+function DigestPanel() {
+  const [digests, setDigests] = useState<Digest[]>([])
+  const [loading, setLoading] = useState(true)
+  const [generating, setGenerating] = useState<DigestEdition | null>(null)
+  const [lastResult, setLastResult] = useState<{
+    success: boolean
+    edition?: DigestEdition
+    message?: string
+  } | null>(null)
+
+  const editions: DigestEdition[] = ['morning', 'midday', 'evening']
+  const editionIcons: Record<DigestEdition, typeof Sun> = {
+    morning: Sun,
+    midday: Sunset,
+    evening: Moon
+  }
+
+  // Get today's date in Chicago timezone
+  const todayDate = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chicago' })
+  const currentEdition = getCurrentEdition()
+
+  const fetchDigests = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/user/digest?history=1&limit=20')
+      const data = await res.json()
+      setDigests(data.digests || [])
+    } catch (error) {
+      console.error('Failed to fetch digests:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchDigests()
+  }, [fetchDigests])
+
+  const generateDigest = async (edition: DigestEdition) => {
+    setGenerating(edition)
+    setLastResult(null)
+    try {
+      const res = await fetch('/api/user/digest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ edition })
+      })
+      const data = await res.json()
+
+      if (res.ok && data.success) {
+        setLastResult({
+          success: true,
+          edition,
+          message: `${editionLabels[edition]} generated successfully!`
+        })
+        fetchDigests() // Refresh the list
+      } else {
+        setLastResult({
+          success: false,
+          edition,
+          message: data.error || 'Failed to generate digest'
+        })
+      }
+    } catch (error) {
+      setLastResult({
+        success: false,
+        edition,
+        message: error instanceof Error ? error.message : 'Request failed'
+      })
+    } finally {
+      setGenerating(null)
+    }
+  }
+
+  // Check if an edition exists for today
+  const hasEditionToday = (edition: DigestEdition): boolean => {
+    return digests.some(d => d.edition === edition && d.date === todayDate)
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Generation Controls */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Newspaper className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <CardTitle className="text-lg">Generate Digest</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Manually generate a community digest for any edition
+              </p>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {editions.map((edition) => {
+              const Icon = editionIcons[edition]
+              const hasToday = hasEditionToday(edition)
+              const isCurrentEdition = edition === currentEdition
+              const isGenerating = generating === edition
+
+              return (
+                <Card
+                  key={edition}
+                  className={cn(
+                    'relative overflow-hidden',
+                    isCurrentEdition && 'ring-2 ring-primary/50'
+                  )}
+                >
+                  <CardContent className="pt-4">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className={cn(
+                        'p-2 rounded-lg',
+                        edition === 'morning' && 'bg-amber-500/10',
+                        edition === 'midday' && 'bg-orange-500/10',
+                        edition === 'evening' && 'bg-indigo-500/10'
+                      )}>
+                        <Icon className={cn(
+                          'h-5 w-5',
+                          edition === 'morning' && 'text-amber-500',
+                          edition === 'midday' && 'text-orange-500',
+                          edition === 'evening' && 'text-indigo-500'
+                        )} />
+                      </div>
+                      <div>
+                        <p className="font-medium">{editionLabels[edition]}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {edition === 'morning' && '5am - 11am'}
+                          {edition === 'midday' && '11am - 4pm'}
+                          {edition === 'evening' && '4pm - 5am'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {hasToday ? (
+                          <Badge variant="secondary" className="gap-1 text-xs">
+                            <CheckCircle2 className="h-3 w-3 text-green-500" />
+                            Generated
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-xs">Not generated</Badge>
+                        )}
+                      </div>
+                      <Button
+                        size="sm"
+                        variant={hasToday ? 'outline' : 'default'}
+                        onClick={() => generateDigest(edition)}
+                        disabled={generating !== null}
+                        className="gap-2"
+                      >
+                        {isGenerating ? (
+                          <>
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="h-3 w-3" />
+                            {hasToday ? 'Regenerate' : 'Generate'}
+                          </>
+                        )}
+                      </Button>
+                    </div>
+
+                    {isCurrentEdition && (
+                      <Badge className="absolute top-2 right-2 text-xs">Current</Badge>
+                    )}
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
+
+          {/* Result message */}
+          {lastResult && (
+            <div className={cn(
+              'p-3 rounded-lg text-sm flex items-center gap-2',
+              lastResult.success ? 'bg-green-500/10 text-green-700' : 'bg-red-500/10 text-red-700'
+            )}>
+              {lastResult.success ? (
+                <CheckCircle2 className="h-4 w-4" />
+              ) : (
+                <XCircle className="h-4 w-4" />
+              )}
+              {lastResult.message}
+            </div>
+          )}
+
+          <div className="text-xs text-muted-foreground space-y-1">
+            <p>• Digests are auto-generated at 6:00 AM, 12:00 PM, and 6:00 PM CST</p>
+            <p>• Each edition aggregates weather, news, events, traffic, and more</p>
+            <p>• The dashboard widget shows the most recent digest</p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Cron Schedule */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-blue-500/10">
+              <Clock className="h-5 w-5 text-blue-500" />
+            </div>
+            <div>
+              <CardTitle className="text-lg">Automated Schedule</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Digest cron jobs configured for this project
+              </p>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="border rounded-lg divide-y">
+            <div className="p-3 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Sun className="h-4 w-4 text-amber-500" />
+                <div>
+                  <p className="text-sm font-medium">Morning Edition</p>
+                  <p className="text-xs text-muted-foreground">/api/cron/digest</p>
+                </div>
+              </div>
+              <Badge variant="secondary">Daily 6:00 AM CST</Badge>
+            </div>
+            <div className="p-3 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Sunset className="h-4 w-4 text-orange-500" />
+                <div>
+                  <p className="text-sm font-medium">Midday Edition</p>
+                  <p className="text-xs text-muted-foreground">/api/cron/digest</p>
+                </div>
+              </div>
+              <Badge variant="secondary">Daily 12:00 PM CST</Badge>
+            </div>
+            <div className="p-3 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Moon className="h-4 w-4 text-indigo-500" />
+                <div>
+                  <p className="text-sm font-medium">Evening Edition</p>
+                  <p className="text-xs text-muted-foreground">/api/cron/digest</p>
+                </div>
+              </div>
+              <Badge variant="secondary">Daily 6:00 PM CST</Badge>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Recent Digests */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-purple-500/10">
+                <Calendar className="h-5 w-5 text-purple-500" />
+              </div>
+              <div>
+                <CardTitle className="text-lg">Recent Digests</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  History of generated digests
+                </p>
+              </div>
+            </div>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={fetchDigests}>
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="space-y-3">
+              {[...Array(3)].map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
+            </div>
+          ) : digests.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Newspaper className="h-10 w-10 mx-auto mb-3 opacity-50" />
+              <p className="text-sm">No digests generated yet</p>
+            </div>
+          ) : (
+            <div className="border rounded-lg divide-y max-h-96 overflow-y-auto">
+              {digests.map((digest) => {
+                const Icon = editionIcons[digest.edition]
+                return (
+                  <div key={digest.id} className="p-3 flex items-center gap-3">
+                    <Icon className={cn(
+                      'h-4 w-4',
+                      digest.edition === 'morning' && 'text-amber-500',
+                      digest.edition === 'midday' && 'text-orange-500',
+                      digest.edition === 'evening' && 'text-indigo-500'
+                    )} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium">
+                        {editionLabels[digest.edition]}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {digest.summary || 'No summary'}
+                      </p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-xs font-medium">{digest.date}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {format(new Date(digest.createdAt), 'h:mm a')}
+                      </p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }
@@ -1006,6 +1339,10 @@ export default function AdminPage() {
               <Lightbulb className="h-4 w-4" />
               Suggestions
             </TabsTrigger>
+            <TabsTrigger value="digest" className="flex items-center gap-2">
+              <Newspaper className="h-4 w-4" />
+              Digest
+            </TabsTrigger>
             <TabsTrigger value="tools" className="flex items-center gap-2">
               <Wrench className="h-4 w-4" />
               Tools
@@ -1026,6 +1363,10 @@ export default function AdminPage() {
 
           <TabsContent value="suggestions">
             <SuggestionsPanel />
+          </TabsContent>
+
+          <TabsContent value="digest">
+            <DigestPanel />
           </TabsContent>
 
           <TabsContent value="tools">

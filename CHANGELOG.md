@@ -5,6 +5,23 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.4] - 2026-01-24
+
+### Added
+- Admin Digest panel for managing community newsletter generation
+  - Manual generation controls for Morning, Midday, and Evening editions
+  - Status badges showing which editions have been generated today
+  - Recent digest history with timestamps
+- Automated digest generation via Vercel Cron jobs
+  - Morning edition at 6:00 AM CST
+  - Midday edition at 12:00 PM CST
+  - Evening edition at 6:00 PM CST
+- Dashboard digest widget showing latest community digest summary
+
+### Changed
+- Digest page is now view-only (generation moved to admin panel)
+- Digest generation uses edition-based system instead of per-user digests
+
 ## [0.5.3] - 2026-01-24
 
 ### Added

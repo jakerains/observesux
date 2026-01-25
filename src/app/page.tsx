@@ -31,6 +31,7 @@ import { EarthquakeWidget } from '@/components/dashboard/EarthquakeWidget'
 import { TrafficEventsWidget } from '@/components/dashboard/TrafficEventsWidget'
 import { NewsWidget } from '@/components/dashboard/NewsWidget'
 import { GasPricesWidget } from '@/components/dashboard/GasPricesWidget'
+import { DigestWidget } from '@/components/dashboard/DigestWidget'
 import { StatusBar } from '@/components/dashboard/StatusBar'
 import { MobileNavigation } from '@/components/dashboard/MobileNavigation'
 import { DraggableWidget } from '@/components/dashboard/DraggableWidget'
@@ -74,6 +75,7 @@ function WidgetSkeleton() {
 
 // Widget component mapping
 const WIDGET_COMPONENTS: Record<string, React.ComponentType> = {
+  'digest': DigestWidget,
   'weather': WeatherWidget,
   'aviation-weather': AviationWeatherWidget,
   'river': RiverGauge,

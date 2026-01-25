@@ -16,6 +16,19 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.5.4',
+    date: '2026-01-24',
+    added: [
+      'Admin Digest panel for managing community newsletter',
+      'Automated digest generation via cron (6am, 12pm, 6pm CST)',
+      'Dashboard digest widget showing latest summary',
+    ],
+    changed: [
+      'Digest page is now view-only (generation moved to admin)',
+    ],
+    fixed: [],
+  },
+  {
     version: '0.5.3',
     date: '2026-01-24',
     added: [
