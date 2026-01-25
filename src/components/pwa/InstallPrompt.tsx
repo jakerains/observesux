@@ -17,6 +17,14 @@ export function InstallPrompt() {
   const [dismissed, setDismissed] = useState(false)
 
   useEffect(() => {
+    // Don't show on auth pages or when opened from mobile app
+    const isAuthPage = window.location.pathname.startsWith('/auth')
+    const isMobileApp = new URLSearchParams(window.location.search).get('mobile') === 'true'
+    if (isAuthPage || isMobileApp) {
+      setDismissed(true)
+      return
+    }
+
     // Check if already installed as PWA
     const standalone = window.matchMedia('(display-mode: standalone)').matches
     setIsStandalone(standalone)

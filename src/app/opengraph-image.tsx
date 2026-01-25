@@ -172,7 +172,15 @@ export default async function Image() {
               gap: '12px',
             }}
           >
-            <span style={{ color: '#22c55e', display: 'flex' }}>●</span>
+            <span
+              style={{
+                width: '10px',
+                height: '10px',
+                borderRadius: '9999px',
+                backgroundColor: '#22c55e',
+                display: 'flex',
+              }}
+            />
             Real-Time Dashboard for Sioux City, Iowa
           </div>
 

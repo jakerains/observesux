@@ -1,14 +1,16 @@
 import { NextResponse } from 'next/server'
-import { getCurrentUser } from '@/lib/auth/server'
+import { getCurrentUserFromRequest } from '@/lib/auth/server'
 import { getUserProfile, upsertUserProfile } from '@/lib/db/profiles'
 
 /**
  * GET /api/user/profile
  * Get the current user's profile
+ *
+ * Supports both cookie-based auth (web) and Bearer token auth (mobile)
  */
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const user = await getCurrentUser()
+    const user = await getCurrentUserFromRequest(request)
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -32,10 +34,12 @@ export async function GET() {
 /**
  * PUT /api/user/profile
  * Update the current user's profile
+ *
+ * Supports both cookie-based auth (web) and Bearer token auth (mobile)
  */
 export async function PUT(request: Request) {
   try {
-    const user = await getCurrentUser()
+    const user = await getCurrentUserFromRequest(request)
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

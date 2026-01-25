@@ -16,27 +16,23 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
-    version: '0.5.9',
-    date: '2026-01-24',
-    added: [],
-    changed: [],
-    fixed: [
-      'User dropdown menu now appears above map',
-    ],
-  },
-  {
-    version: '0.5.8',
-    date: '2026-01-24',
+    version: '0.6.0',
+    date: '2026-01-25',
     added: [
+      'Expo iOS app with native mobile experience',
+      'Mobile authentication with Bearer token support',
+      'App icons generated from Siouxland Online branding',
       'Digest promo video composition with Remotion',
       'Standalone account pages for alerts and watchlist',
-      'Screenshot capture script for promotional assets',
     ],
     changed: [
+      'Chat API database operations are now non-fatal',
+      'Profile API accepts both cookie and Bearer token auth',
       'Map widget locked at top of dashboard (not draggable)',
-      'Digest and Weather now appear first below map',
     ],
     fixed: [
+      'Mobile auth callback now retrieves session token correctly',
+      'User dropdown menu now appears above map',
       'JSX type import for React 19 compatibility',
     ],
   },

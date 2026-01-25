@@ -6,7 +6,7 @@ import { SectionHeading } from '../components/SectionHeading'
 import type { DigestPromoProps } from '../types'
 
 const FeatureIcon = ({ icon, color }: { icon: string; color: string }) => {
-  const iconMap: Record<string, JSX.Element> = {
+  const iconMap: Record<string, React.JSX.Element> = {
     weather: (
       <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2}>
         <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" />
