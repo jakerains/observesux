@@ -128,6 +128,20 @@ async function checkExistingDigest(edition: DigestEdition): Promise<{ exists: bo
 }
 
 /**
+ * Prune old digests (wrapped in a step for workflow compatibility)
+ */
+async function pruneOldDigestsStep(daysToKeep: number): Promise<void> {
+  "use step"
+
+  try {
+    await pruneOldDigests(daysToKeep)
+    console.log(`[Digest Workflow] Successfully pruned digests older than ${daysToKeep} days`)
+  } catch (err) {
+    console.error('[Digest Workflow] Failed to prune old digests:', err)
+  }
+}
+
+/**
  * Main digest generation workflow
  *
  * @param input - Optional edition override. If not provided, auto-detects based on time.
@@ -212,10 +226,8 @@ export async function digestWorkflow(
       }
     }
 
-    // Prune old digests asynchronously (don't wait)
-    pruneOldDigests(30).catch(err =>
-      console.error('[Digest Workflow] Failed to prune old digests:', err)
-    )
+    // Prune old digests (as a step so it works in workflow context)
+    await pruneOldDigestsStep(30)
 
     console.log(`[Digest Workflow] ${edition} edition generated successfully in ${totalDuration}ms`)
 
