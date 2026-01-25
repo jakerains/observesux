@@ -16,8 +16,9 @@ const PROTECTED_ROUTES = [
 
 // Routes that should be excluded from middleware entirely
 const EXCLUDED_ROUTES = [
-  '/_workflow',     // Vercel Workflow internal routes
-  '/api/workflow',  // Workflow API endpoints
+  '/_workflow',           // Vercel Workflow internal routes
+  '/.well-known/workflow', // Vercel Workflow well-known routes
+  '/api/workflow',        // Workflow API endpoints
 ]
 
 // Routes that should redirect logged-in users away
@@ -103,7 +104,8 @@ export const config = {
      * - favicon.ico (favicon file)
      * - public files (images, etc.)
      * - _workflow (Vercel Workflow internal routes)
+     * - .well-known/workflow (Vercel Workflow well-known routes)
      */
-    '/((?!_next/static|_next/image|_workflow|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|_workflow|\\.well-known/workflow|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
