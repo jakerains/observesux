@@ -716,7 +716,7 @@ function DigestPanel() {
           )}
 
           <div className="text-xs text-muted-foreground space-y-1">
-            <p>• Digests are auto-generated at 6:00 AM, 12:00 PM, and 6:00 PM CST</p>
+            <p>• Digests are auto-generated at 6:15 AM, 12:00 PM, and 6:00 PM CST</p>
             <p>• Each edition aggregates weather, news, events, traffic, and more</p>
             <p>• The dashboard widget shows the most recent digest</p>
           </div>
@@ -748,7 +748,7 @@ function DigestPanel() {
                   <p className="text-xs text-muted-foreground">/api/cron/digest</p>
                 </div>
               </div>
-              <Badge variant="secondary">Daily 6:00 AM CST</Badge>
+              <Badge variant="secondary">Daily 6:15 AM CST</Badge>
             </div>
             <div className="p-3 flex items-center justify-between">
               <div className="flex items-center gap-3">

@@ -129,7 +129,7 @@ export default function DigestPage() {
                         No digest available yet
                       </h3>
                       <p className="text-sm text-muted-foreground/70 mt-1">
-                        Digests are generated automatically at 6am, 12pm, and 6pm
+                        Digests are generated automatically at 6:15am, 12pm, and 6pm
                       </p>
                     </div>
                   </div>
