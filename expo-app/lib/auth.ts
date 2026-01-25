@@ -1,104 +1,123 @@
 /**
  * Authentication utilities
- * Handles WebBrowser-based OAuth flow
+ * Native email/password authentication - no web browser needed
  */
 
-import * as WebBrowser from 'expo-web-browser';
-import * as Linking from 'expo-linking';
 import { API_BASE_URL } from './api';
 
-// Ensure WebBrowser sessions complete properly
-WebBrowser.maybeCompleteAuthSession();
-
-// The deep link scheme configured in app.json
-const SCHEME = 'siouxland';
-
 /**
- * Start the sign-in flow
- * Opens the web app's sign-in page in a browser
- * Returns a token on successful authentication
- *
- * Flow:
- * 1. Open web sign-in page with callbackUrl pointing to mobile-callback
- * 2. User signs in on web
- * 3. Web redirects to mobile-callback page
- * 4. Mobile callback page extracts session token and redirects to mobile app
+ * Sign in with email and password
+ * Calls the Neon Auth API directly
  */
-export async function startSignIn(): Promise<{ token: string } | { error: string }> {
-  // Create the deep link URL that the web will redirect to
-  const mobileRedirect = Linking.createURL('auth/callback');
-
-  // Build the callback URL for after web sign-in completes
-  // This goes to our mobile-callback page which handles the token extraction
-  const callbackUrl = `${API_BASE_URL}/auth/mobile-callback?redirect=${encodeURIComponent(mobileRedirect)}`;
-
-  // Build the auth URL - Neon Auth uses callbackUrl for post-login redirect
-  const authUrl = `${API_BASE_URL}/auth/sign-in?callbackUrl=${encodeURIComponent(callbackUrl)}&mobile=true`;
-
+export async function signInWithEmail(
+  email: string,
+  password: string
+): Promise<{ token: string; user: { id: string; email: string; name?: string } } | { error: string }> {
   try {
-    const result = await WebBrowser.openAuthSessionAsync(authUrl, mobileRedirect);
+    const response = await fetch(`${API_BASE_URL}/api/auth/sign-in/email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    });
 
-    if (result.type === 'success' && result.url) {
-      // Parse the callback URL to extract the token
-      const url = Linking.parse(result.url);
-      const token = url.queryParams?.token as string | undefined;
+    const data = await response.json();
 
-      if (token) {
-        return { token };
-      }
-
-      const error = url.queryParams?.error as string | undefined;
-      return { error: error || 'No token received' };
+    if (!response.ok) {
+      // Handle specific error messages from the API
+      const errorMessage = data?.message || data?.error || 'Invalid email or password';
+      return { error: errorMessage };
     }
 
-    if (result.type === 'cancel' || result.type === 'dismiss') {
-      return { error: 'Sign in cancelled' };
+    // The API returns session data with a token
+    if (data?.token) {
+      return {
+        token: data.token,
+        user: data.user || { id: '', email },
+      };
     }
 
-    return { error: 'Sign in failed' };
+    // Fallback: check if session is in the response
+    if (data?.session?.token) {
+      return {
+        token: data.session.token,
+        user: data.user || { id: '', email },
+      };
+    }
+
+    return { error: 'No authentication token received' };
   } catch (error) {
     console.error('Sign in error:', error);
-    return { error: 'An error occurred during sign in' };
+    return { error: 'Network error. Please check your connection.' };
   }
 }
 
 /**
- * Open the sign-up page
+ * Sign up with email, password, and name
+ * Creates a new account via Neon Auth API
  */
-export async function startSignUp(): Promise<{ token: string } | { error: string }> {
-  const mobileRedirect = Linking.createURL('auth/callback');
-  const callbackUrl = `${API_BASE_URL}/auth/mobile-callback?redirect=${encodeURIComponent(mobileRedirect)}`;
-  const authUrl = `${API_BASE_URL}/auth/sign-up?callbackUrl=${encodeURIComponent(callbackUrl)}&mobile=true`;
-
+export async function signUpWithEmail(
+  email: string,
+  password: string,
+  name: string
+): Promise<{ token: string; user: { id: string; email: string; name: string } } | { error: string }> {
   try {
-    const result = await WebBrowser.openAuthSessionAsync(authUrl, mobileRedirect);
+    const response = await fetch(`${API_BASE_URL}/api/auth/sign-up/email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({ email, password, name }),
+    });
 
-    if (result.type === 'success' && result.url) {
-      const url = Linking.parse(result.url);
-      const token = url.queryParams?.token as string | undefined;
+    const data = await response.json();
 
-      if (token) {
-        return { token };
+    if (!response.ok) {
+      // Handle specific error messages
+      if (response.status === 409 || data?.code === 'USER_ALREADY_EXISTS') {
+        return { error: 'An account with this email already exists.' };
       }
-
-      const error = url.queryParams?.error as string | undefined;
-      return { error: error || 'No token received' };
+      const errorMessage = data?.message || data?.error || 'Failed to create account';
+      return { error: errorMessage };
     }
 
-    if (result.type === 'cancel' || result.type === 'dismiss') {
-      return { error: 'Sign up cancelled' };
+    // The API returns session data with a token
+    if (data?.token) {
+      return {
+        token: data.token,
+        user: data.user || { id: '', email, name },
+      };
     }
 
-    return { error: 'Sign up failed' };
+    // Fallback: check if session is in the response
+    if (data?.session?.token) {
+      return {
+        token: data.session.token,
+        user: data.user || { id: '', email, name },
+      };
+    }
+
+    return { error: 'No authentication token received' };
   } catch (error) {
     console.error('Sign up error:', error);
-    return { error: 'An error occurred during sign up' };
+    return { error: 'Network error. Please check your connection.' };
   }
 }
 
 /**
- * Get the deep link URL for auth callbacks
+ * Legacy: Start sign-in flow via WebBrowser (deprecated)
+ * Kept for backwards compatibility but no longer used
  */
-export function getAuthCallbackUrl(): string {
-  return `${SCHEME}://auth/callback`;
+export async function startSignIn(): Promise<{ token: string } | { error: string }> {
+  return { error: 'Please use the native sign-in screen' };
+}
+
+/**
+ * Legacy: Start sign-up flow via WebBrowser (deprecated)
+ */
+export async function startSignUp(): Promise<{ token: string } | { error: string }> {
+  return { error: 'Please use the native sign-up screen' };
 }

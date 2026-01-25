@@ -2,14 +2,13 @@
  * More Screen - Settings, account, and additional sections
  */
 
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import { View, ScrollView, Pressable, Linking, Switch, Text, PlatformColor, Alert } from 'react-native';
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Constants from 'expo-constants';
 import { useAuth, useSettings, getThemeLabel, getUnitsLabel, getRefreshLabel } from '../../../lib/contexts';
-import { startSignIn } from '../../../lib/auth';
 import {
   registerForPushNotifications,
   registerPushTokenWithServer,
@@ -126,7 +125,6 @@ function MenuSection({
 export default function MoreScreen() {
   const { user, isAuthenticated, signOut, token } = useAuth();
   const { settings, updateSetting } = useSettings();
-  const [isSigningIn, setIsSigningIn] = useState(false);
 
   const version = Constants.expoConfig?.version || '1.0.0';
 
@@ -134,25 +132,13 @@ export default function MoreScreen() {
     Linking.openURL('https://siouxland.online');
   };
 
-  const handleSignIn = useCallback(async () => {
-    if (isSigningIn) return;
-    setIsSigningIn(true);
-
-    try {
-      const result = await startSignIn();
-
-      if ('error' in result) {
-        if (result.error !== 'Sign in cancelled') {
-          Alert.alert('Sign In Failed', result.error);
-        }
-      }
-      // Success is handled by the auth callback
-    } catch {
-      Alert.alert('Error', 'An error occurred during sign in');
-    } finally {
-      setIsSigningIn(false);
+  const handleSignIn = useCallback(() => {
+    if (process.env.EXPO_OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-  }, [isSigningIn]);
+    // Navigate to native sign-in screen
+    router.push('/auth/sign-in');
+  }, []);
 
   const handleSignOut = useCallback(async () => {
     Alert.alert(
@@ -238,7 +224,7 @@ export default function MoreScreen() {
         ) : (
           <MenuItem
             sfSymbol="person"
-            label={isSigningIn ? 'Signing in...' : 'Sign In'}
+            label="Sign In"
             subtitle="Sync settings across devices"
             onPress={handleSignIn}
           />
