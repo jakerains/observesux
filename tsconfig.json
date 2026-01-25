@@ -45,7 +45,8 @@
   ],
   "exclude": [
     "node_modules",
-    "expo-app"
-  ],
-  "extends": "expo/tsconfig.base"
+    "expo-app",
+    "ios",
+    "android"
+  ]
 }
