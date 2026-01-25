@@ -16,6 +16,16 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.5.5',
+    date: '2026-01-24',
+    added: [],
+    changed: [
+      'Morning digest runs at 6:15 AM (after gas price scrape)',
+      'Alert check cron reduced from 5min to hourly',
+    ],
+    fixed: [],
+  },
+  {
     version: '0.5.4',
     date: '2026-01-24',
     added: [
