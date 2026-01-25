@@ -1,0 +1,49 @@
+/**
+ * Home screen - Main dashboard with widgets
+ */
+
+import { useCallback, useState } from 'react';
+import { ScrollView, RefreshControl, View, PlatformColor } from 'react-native';
+import { useQueryClient } from '@tanstack/react-query';
+import * as Haptics from 'expo-haptics';
+import { WeatherWidget } from '@/components/widgets/WeatherWidget';
+import { TransitWidget } from '@/components/widgets/TransitWidget';
+import { AirQualityWidget } from '@/components/widgets/AirQualityWidget';
+import { GasPricesWidget } from '@/components/widgets/GasPricesWidget';
+import { NewsWidget } from '@/components/widgets/NewsWidget';
+import { QuickStatsBar } from '@/components/QuickStatsBar';
+
+export default function HomeScreen() {
+  const queryClient = useQueryClient();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(async () => {
+    if (process.env.EXPO_OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setRefreshing(true);
+    await queryClient.invalidateQueries();
+    setTimeout(() => setRefreshing(false), 500);
+  }, [queryClient]);
+
+  return (
+    <ScrollView
+      style={{ backgroundColor: PlatformColor('systemBackground') }}
+      contentInsetAdjustmentBehavior="automatic"
+      contentContainerStyle={{ padding: 16, gap: 12 }}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
+      <QuickStatsBar />
+
+      <View style={{ gap: 12 }}>
+        <WeatherWidget />
+        <AirQualityWidget />
+        <GasPricesWidget />
+        <TransitWidget />
+        <NewsWidget />
+      </View>
+    </ScrollView>
+  );
+}

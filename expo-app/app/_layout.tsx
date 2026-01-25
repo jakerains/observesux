@@ -4,74 +4,96 @@
  */
 
 import { useEffect } from 'react';
-import { useColorScheme } from 'react-native';
-import { Stack } from 'expo-router';
+import { Stack } from 'expo-router/stack';
 import { StatusBar } from 'expo-status-bar';
+import { PlatformColor } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { Colors } from '@/constants/Colors';
+import { AuthProvider, SettingsProvider, useAuth } from '../lib/contexts';
+import { configureNotifications } from '../lib/notifications';
 
 // Prevent the splash screen from auto-hiding before assets load
 SplashScreen.preventAutoHideAsync();
+
+// Configure push notifications
+configureNotifications();
 
 // Create a React Query client
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Don't refetch on window focus (mobile doesn't have this concept)
       refetchOnWindowFocus: false,
-      // Keep data fresh for 30 seconds
       staleTime: 30 * 1000,
-      // Retry failed requests twice
       retry: 2,
-      // Don't throw errors, handle them in components
       throwOnError: false,
     },
   },
 });
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme() ?? 'light';
-  const colors = Colors[colorScheme];
+/**
+ * Inner layout with access to auth context for passing token to settings
+ */
+function RootLayoutInner() {
+  const { token } = useAuth();
 
+  const headerOptions = {
+    headerStyle: { backgroundColor: '#000000' },
+    headerShadowVisible: false,
+    headerBackButtonDisplayMode: 'minimal' as const,
+    headerTintColor: '#ffffff',
+    headerTitleStyle: { color: '#ffffff', fontSize: 17, fontWeight: '600' as const },
+  };
+
+  return (
+    <SettingsProvider authToken={token}>
+      <StatusBar style="light" />
+      <Stack screenOptions={headerOptions}>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="camera/[id]"
+          options={{
+            title: 'Camera',
+            presentation: 'formSheet',
+            sheetGrabberVisible: true,
+            sheetAllowedDetents: [0.75, 1.0],
+            headerShown: true,
+          }}
+        />
+        <Stack.Screen
+          name="alert/[id]"
+          options={{
+            title: 'Alert',
+            presentation: 'formSheet',
+            sheetGrabberVisible: true,
+            sheetAllowedDetents: [0.6, 1.0],
+            headerShown: true,
+          }}
+        />
+        <Stack.Screen
+          name="auth/callback"
+          options={{
+            title: '',
+            headerShown: false,
+            presentation: 'fullScreenModal',
+          }}
+        />
+      </Stack>
+    </SettingsProvider>
+  );
+}
+
+export default function RootLayout() {
   useEffect(() => {
-    // Hide splash screen after a brief delay for smooth transition
-    const hideSplash = async () => {
-      await SplashScreen.hideAsync();
-    };
-    hideSplash();
+    SplashScreen.hideAsync();
   }, []);
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: PlatformColor('systemBackground') }}>
       <QueryClientProvider client={queryClient}>
-        <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: colors.background },
-            animation: 'slide_from_right',
-          }}
-        >
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen
-            name="camera/[id]"
-            options={{
-              headerShown: true,
-              presentation: 'modal',
-              title: 'Camera',
-            }}
-          />
-          <Stack.Screen
-            name="alert/[id]"
-            options={{
-              headerShown: true,
-              presentation: 'modal',
-              title: 'Weather Alert',
-            }}
-          />
-        </Stack>
+        <AuthProvider>
+          <RootLayoutInner />
+        </AuthProvider>
       </QueryClientProvider>
     </GestureHandlerRootView>
   );

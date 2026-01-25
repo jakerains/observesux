@@ -2,14 +2,13 @@
  * Gas Prices Widget - Local fuel prices
  */
 
-import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useThemeColors } from '@/lib/hooks/useColorScheme';
+import { useState } from 'react';
+import { View, Pressable, Text, PlatformColor } from 'react-native';
+import { SymbolView } from 'expo-symbols';
+import * as Haptics from 'expo-haptics';
 import { useGasPrices, getDataStatus } from '@/lib/hooks/useDataFetching';
 import { refreshIntervals } from '@/lib/api';
 import { DashboardCard } from '../DashboardCard';
-import { ThemedText } from '../ThemedText';
 import { CardSkeleton } from '../LoadingState';
 import type { GasStation } from '@/lib/types';
 
@@ -29,37 +28,50 @@ interface StationRowProps {
 }
 
 function StationRow({ station, fuelType, isLowest }: StationRowProps) {
-  const colors = useThemeColors();
   const price = station.prices[fuelType];
 
   if (!price) return null;
 
   return (
-    <View style={[styles.stationRow, { borderColor: colors.separator }]}>
-      <View style={styles.stationInfo}>
-        <ThemedText weight="medium" numberOfLines={1}>
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 10,
+        borderBottomWidth: 0.5,
+        borderBottomColor: PlatformColor('separator'),
+      }}
+    >
+      <View style={{ flex: 1, marginRight: 12 }}>
+        <Text numberOfLines={1} style={{ fontWeight: '500', color: PlatformColor('label') }}>
           {station.name}
-        </ThemedText>
-        <ThemedText variant="muted" numberOfLines={1}>
+        </Text>
+        <Text numberOfLines={1} style={{ color: PlatformColor('secondaryLabel') }}>
           {station.address}
-        </ThemedText>
+        </Text>
       </View>
 
-      <View style={styles.priceContainer}>
-        <ThemedText
-          style={[
-            styles.price,
-            isLowest && { color: colors.success },
-          ]}
-          weight="bold"
+      <View style={{ alignItems: 'flex-end' }}>
+        <Text
+          style={{
+            fontSize: 18,
+            fontWeight: '700',
+            color: isLowest ? '#22c55e' : PlatformColor('label'),
+          }}
         >
           ${price.toFixed(2)}
-        </ThemedText>
+        </Text>
         {isLowest && (
-          <View style={[styles.lowestBadge, { backgroundColor: colors.successBackground }]}>
-            <ThemedText variant="caption" style={{ color: colors.success }}>
-              Lowest
-            </ThemedText>
+          <View
+            style={{
+              paddingHorizontal: 6,
+              paddingVertical: 2,
+              borderRadius: 4,
+              marginTop: 2,
+              backgroundColor: 'rgba(34, 197, 94, 0.15)',
+            }}
+          >
+            <Text style={{ fontSize: 10, color: '#22c55e' }}>Lowest</Text>
           </View>
         )}
       </View>
@@ -68,11 +80,10 @@ function StationRow({ station, fuelType, isLowest }: StationRowProps) {
 }
 
 export function GasPricesWidget() {
-  const colors = useThemeColors();
   const [selectedFuel, setSelectedFuel] = useState<FuelType>('regular');
   const { data, isLoading, isError, refetch, isFetching } = useGasPrices();
 
-  const stations = data?.data || [];
+  const stations = Array.isArray(data?.data) ? data.data : [];
 
   // Sort stations by selected fuel price
   const sortedStations = [...stations]
@@ -91,7 +102,7 @@ export function GasPricesWidget() {
 
   if (isLoading) {
     return (
-      <DashboardCard title="Gas Prices" icon="car-outline" status="loading">
+      <DashboardCard title="Gas Prices" sfSymbol="fuelpump.fill" status="loading">
         <CardSkeleton lines={4} />
       </DashboardCard>
     );
@@ -101,11 +112,11 @@ export function GasPricesWidget() {
     return (
       <DashboardCard
         title="Gas Prices"
-        icon="car-outline"
+        sfSymbol="fuelpump.fill"
         status="error"
         onRefresh={() => refetch()}
       >
-        <ThemedText variant="muted">Unable to load gas prices</ThemedText>
+        <Text style={{ color: PlatformColor('secondaryLabel') }}>Unable to load gas prices</Text>
       </DashboardCard>
     );
   }
@@ -113,46 +124,57 @@ export function GasPricesWidget() {
   return (
     <DashboardCard
       title="Gas Prices"
-      icon="car-outline"
+      sfSymbol="fuelpump.fill"
       status={status}
       onRefresh={() => refetch()}
       isRefreshing={isFetching}
     >
       {/* Fuel Type Tabs */}
-      <View style={styles.tabs}>
+      <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
         {fuelTypes.map((fuel) => (
-          <TouchableOpacity
+          <Pressable
             key={fuel.key}
-            style={[
-              styles.tab,
-              selectedFuel === fuel.key && {
-                backgroundColor: colors.primary,
-              },
-              { borderColor: colors.separator },
-            ]}
-            onPress={() => setSelectedFuel(fuel.key)}
+            onPress={() => {
+              if (process.env.EXPO_OS === 'ios') {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              }
+              setSelectedFuel(fuel.key);
+            }}
+            style={{
+              flex: 1,
+              paddingVertical: 8,
+              paddingHorizontal: 12,
+              borderRadius: 8,
+              borderCurve: 'continuous',
+              alignItems: 'center',
+              backgroundColor: selectedFuel === fuel.key
+                ? PlatformColor('systemBlue')
+                : PlatformColor('tertiarySystemFill'),
+            }}
           >
-            <ThemedText
-              variant="caption"
-              weight={selectedFuel === fuel.key ? 'semibold' : 'normal'}
-              style={selectedFuel === fuel.key ? { color: colors.primaryForeground } : undefined}
+            <Text
+              style={{
+                fontSize: 12,
+                fontWeight: selectedFuel === fuel.key ? '600' : '400',
+                color: selectedFuel === fuel.key ? '#fff' : PlatformColor('label'),
+              }}
             >
               {fuel.label}
-            </ThemedText>
-          </TouchableOpacity>
+            </Text>
+          </Pressable>
         ))}
       </View>
 
       {/* Station List */}
       {sortedStations.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Ionicons name="car-outline" size={32} color={colors.textMuted} />
-          <ThemedText variant="muted" style={styles.emptyText}>
+        <View style={{ alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <SymbolView name="fuelpump" tintColor={PlatformColor('tertiaryLabel')} size={32} />
+          <Text style={{ marginTop: 8, color: PlatformColor('secondaryLabel') }}>
             No prices available
-          </ThemedText>
+          </Text>
         </View>
       ) : (
-        <View style={styles.stationList}>
+        <View>
           {sortedStations.map((station) => (
             <StationRow
               key={station.id}
@@ -166,52 +188,3 @@ export function GasPricesWidget() {
     </DashboardCard>
   );
 }
-
-const styles = StyleSheet.create({
-  tabs: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 16,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    alignItems: 'center',
-  },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  emptyText: {
-    marginTop: 8,
-  },
-  stationList: {
-    gap: 0,
-  },
-  stationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  stationInfo: {
-    flex: 1,
-    marginRight: 12,
-  },
-  priceContainer: {
-    alignItems: 'flex-end',
-  },
-  price: {
-    fontSize: 18,
-  },
-  lowestBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    marginTop: 2,
-  },
-});

@@ -1,0 +1,358 @@
+/**
+ * Map Screen - Interactive map with cameras, buses, traffic
+ */
+
+import { useState, useRef, useMemo } from 'react';
+import { View, Pressable, ScrollView, Text, PlatformColor, useColorScheme, StyleSheet } from 'react-native';
+import MapView, { Marker, Callout, PROVIDER_DEFAULT, Region } from 'react-native-maps';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { Image } from 'expo-image';
+import { SymbolView, type SymbolViewProps } from 'expo-symbols';
+import * as Haptics from 'expo-haptics';
+import { useCameras, useTransit, useTrafficEvents } from '@/lib/hooks/useDataFetching';
+
+const SIOUX_CITY_CENTER: Region = {
+  latitude: 42.4963,
+  longitude: -96.4049,
+  latitudeDelta: 0.15,
+  longitudeDelta: 0.15,
+};
+
+type LayerType = 'cameras' | 'buses' | 'traffic';
+
+function LayerToggle({
+  sfSymbol,
+  label,
+  active,
+  onPress,
+  count,
+}: {
+  sfSymbol: string;
+  label: string;
+  active: boolean;
+  onPress: () => void;
+  count?: number;
+}) {
+  return (
+    <Pressable
+      onPress={() => {
+        if (process.env.EXPO_OS === 'ios') {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+        onPress();
+      }}
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 20,
+        gap: 6,
+        backgroundColor: active ? PlatformColor('systemBlue') : PlatformColor('secondarySystemBackground'),
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+      }}
+    >
+      <SymbolView name={sfSymbol as SymbolViewProps['name']} tintColor={active ? '#fff' : PlatformColor('label')} size={18} />
+      <Text style={{ fontSize: 12, fontWeight: active ? '600' : '400', color: active ? '#fff' : PlatformColor('label') }}>
+        {label}
+      </Text>
+      {count !== undefined && count > 0 && (
+        <View
+          style={{
+            minWidth: 18,
+            height: 18,
+            borderRadius: 9,
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingHorizontal: 4,
+            backgroundColor: active ? '#fff' : PlatformColor('systemBlue'),
+          }}
+        >
+          <Text style={{ fontSize: 10, fontWeight: '600', color: active ? PlatformColor('systemBlue') : '#fff' }}>
+            {count}
+          </Text>
+        </View>
+      )}
+    </Pressable>
+  );
+}
+
+export default function MapScreen() {
+  const colorScheme = useColorScheme();
+  const insets = useSafeAreaInsets();
+  const mapRef = useRef<MapView>(null);
+  const router = useRouter();
+
+  const [activeLayers, setActiveLayers] = useState<Set<LayerType>>(new Set(['cameras', 'buses']));
+
+  const { data: camerasData } = useCameras();
+  const { data: transitData } = useTransit();
+  const { data: trafficData } = useTrafficEvents();
+
+  const cameras = Array.isArray(camerasData?.data) ? camerasData.data : [];
+  const buses = Array.isArray(transitData?.data) ? transitData.data : [];
+  const trafficEvents = Array.isArray(trafficData?.data) ? trafficData.data : [];
+
+  const toggleLayer = (layer: LayerType) => {
+    setActiveLayers((prev) => {
+      const next = new Set(prev);
+      if (next.has(layer)) {
+        next.delete(layer);
+      } else {
+        next.add(layer);
+      }
+      return next;
+    });
+  };
+
+  const resetMapView = () => {
+    if (process.env.EXPO_OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    mapRef.current?.animateToRegion(SIOUX_CITY_CENTER, 500);
+  };
+
+  const mapStyle = useMemo(() => {
+    if (colorScheme === 'dark') {
+      return [
+        { elementType: 'geometry', stylers: [{ color: '#1d2c4d' }] },
+        { elementType: 'labels.text.fill', stylers: [{ color: '#8ec3b9' }] },
+        { elementType: 'labels.text.stroke', stylers: [{ color: '#1a3646' }] },
+        { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#304a7d' }] },
+        { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#17263c' }] },
+      ];
+    }
+    return [];
+  }, [colorScheme]);
+
+  return (
+    <View style={{ flex: 1, backgroundColor: PlatformColor('systemBackground') }}>
+      <MapView
+        ref={mapRef}
+        style={{ flex: 1 }}
+        provider={PROVIDER_DEFAULT}
+        initialRegion={SIOUX_CITY_CENTER}
+        showsUserLocation
+        showsMyLocationButton={false}
+        showsCompass={false}
+        customMapStyle={mapStyle}
+      >
+        {activeLayers.has('cameras') &&
+          cameras.map((camera) => (
+            <Marker
+              key={`camera-${camera.id}`}
+              coordinate={{ latitude: camera.latitude, longitude: camera.longitude }}
+            >
+              <View
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 14,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderWidth: 2,
+                  borderColor: '#ffffff',
+                  backgroundColor: '#3b82f6',
+                }}
+              >
+                <SymbolView name="video.fill" tintColor="#fff" size={14} />
+              </View>
+              <Callout
+                tooltip
+                onPress={() => {
+                  if (process.env.EXPO_OS === 'ios') {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }
+                  router.push({
+                    pathname: '/camera/[id]',
+                    params: {
+                      id: camera.id,
+                      name: camera.name,
+                      imageUrl: camera.snapshotUrl,
+                      streamUrl: camera.streamUrl || '',
+                    },
+                  });
+                }}
+              >
+                <View
+                  style={{
+                    width: 200,
+                    borderRadius: 12,
+                    borderCurve: 'continuous',
+                    overflow: 'hidden',
+                    backgroundColor: colorScheme === 'dark' ? '#1c1c1e' : '#ffffff',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                  }}
+                >
+                  {/* Camera Preview Image */}
+                  <View style={{ position: 'relative' }}>
+                    <Image
+                      source={{ uri: camera.snapshotUrl }}
+                      style={{ width: 200, height: 120 }}
+                      contentFit="cover"
+                      transition={200}
+                    />
+                    {/* Video badge */}
+                    {camera.streamUrl && (
+                      <View
+                        style={{
+                          position: 'absolute',
+                          top: 8,
+                          right: 8,
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          backgroundColor: 'rgba(59, 130, 246, 0.9)',
+                          paddingHorizontal: 6,
+                          paddingVertical: 3,
+                          borderRadius: 4,
+                          gap: 4,
+                        }}
+                      >
+                        <SymbolView name="video.fill" tintColor="#ffffff" size={10} />
+                        <Text style={{ color: '#ffffff', fontSize: 9, fontWeight: '600' }}>VIDEO</Text>
+                      </View>
+                    )}
+                  </View>
+                  {/* Camera Info */}
+                  <View style={{ padding: 10 }}>
+                    <Text
+                      numberOfLines={2}
+                      style={{
+                        fontSize: 13,
+                        fontWeight: '600',
+                        color: colorScheme === 'dark' ? '#ffffff' : '#000000',
+                        marginBottom: 4,
+                      }}
+                    >
+                      {camera.name}
+                    </Text>
+                    {camera.roadway && (
+                      <Text
+                        numberOfLines={1}
+                        style={{
+                          fontSize: 11,
+                          color: colorScheme === 'dark' ? '#8e8e93' : '#6b7280',
+                        }}
+                      >
+                        {camera.roadway}
+                      </Text>
+                    )}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6 }}>
+                      <Text
+                        style={{
+                          fontSize: 11,
+                          color: '#3b82f6',
+                          fontWeight: '500',
+                        }}
+                      >
+                        Tap for full view
+                      </Text>
+                      <SymbolView name="chevron.right" tintColor="#3b82f6" size={10} style={{ marginLeft: 2 }} />
+                    </View>
+                  </View>
+                </View>
+              </Callout>
+            </Marker>
+          ))}
+
+        {activeLayers.has('buses') &&
+          buses.map((bus) => (
+            <Marker
+              key={`bus-${bus.id}`}
+              coordinate={{ latitude: bus.latitude, longitude: bus.longitude }}
+              title={bus.routeName || `Route ${bus.routeId}`}
+              description={bus.nextStop ? `Next: ${bus.nextStop}` : undefined}
+              rotation={bus.heading}
+            >
+              <View
+                style={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: 12,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderWidth: 2,
+                  borderColor: '#ffffff',
+                  backgroundColor: bus.routeColor || '#22c55e',
+                }}
+              >
+                <SymbolView name="bus.fill" tintColor="#fff" size={12} />
+              </View>
+            </Marker>
+          ))}
+
+        {activeLayers.has('traffic') &&
+          trafficEvents.map((event) => (
+            <Marker
+              key={`traffic-${event.id}`}
+              coordinate={{ latitude: event.latitude, longitude: event.longitude }}
+              title={event.title}
+              description={event.description}
+            >
+              <View
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 14,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderWidth: 2,
+                  borderColor: '#ffffff',
+                  backgroundColor:
+                    event.severity === 'critical' ? '#ef4444' : event.severity === 'major' ? '#f97316' : '#f59e0b',
+                }}
+              >
+                <SymbolView name="exclamationmark.triangle.fill" tintColor="#fff" size={14} />
+              </View>
+            </Marker>
+          ))}
+      </MapView>
+
+      {/* Layer Controls */}
+      <View style={{ position: 'absolute', top: insets.top + 12, left: 0, right: 0, paddingHorizontal: 12 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+          <LayerToggle
+            sfSymbol="video.fill"
+            label="Cameras"
+            active={activeLayers.has('cameras')}
+            onPress={() => toggleLayer('cameras')}
+            count={cameras.length}
+          />
+          <LayerToggle
+            sfSymbol="bus.fill"
+            label="Buses"
+            active={activeLayers.has('buses')}
+            onPress={() => toggleLayer('buses')}
+            count={buses.length}
+          />
+          <LayerToggle
+            sfSymbol="exclamationmark.triangle.fill"
+            label="Traffic"
+            active={activeLayers.has('traffic')}
+            onPress={() => toggleLayer('traffic')}
+            count={trafficEvents.length}
+          />
+        </ScrollView>
+      </View>
+
+      {/* Map Controls */}
+      <View style={{ position: 'absolute', right: 16, bottom: insets.bottom + 100 }}>
+        <Pressable
+          onPress={resetMapView}
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: 22,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: PlatformColor('secondarySystemBackground'),
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+          }}
+        >
+          <SymbolView name="location.fill" tintColor={PlatformColor('systemBlue')} size={22} />
+        </Pressable>
+      </View>
+    </View>
+  );
+}

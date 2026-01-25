@@ -2,11 +2,10 @@
  * Weather Widget - Current conditions and forecast
  */
 
-import React from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Pressable, Text, PlatformColor } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useThemeColors } from '@/lib/hooks/useColorScheme';
+import { SymbolView, type SymbolViewProps } from 'expo-symbols';
+import * as Haptics from 'expo-haptics';
 import {
   useWeather,
   useWeatherAlerts,
@@ -14,61 +13,59 @@ import {
 } from '@/lib/hooks/useDataFetching';
 import { refreshIntervals } from '@/lib/api';
 import { DashboardCard } from '../DashboardCard';
-import { ThemedText } from '../ThemedText';
 import { CardSkeleton } from '../LoadingState';
 
-// Map NWS icon codes to Ionicons
-const weatherIcons: Record<string, keyof typeof Ionicons.glyphMap> = {
-  skc: 'sunny',
-  few: 'partly-sunny',
-  sct: 'partly-sunny',
-  bkn: 'cloudy',
-  ovc: 'cloudy',
-  wind_skc: 'sunny',
-  wind_few: 'partly-sunny',
-  wind_sct: 'partly-sunny',
-  wind_bkn: 'cloudy',
-  wind_ovc: 'cloudy',
-  snow: 'snow',
-  rain_snow: 'snow',
-  rain_sleet: 'rainy',
-  snow_sleet: 'snow',
-  fzra: 'rainy',
-  rain_fzra: 'rainy',
-  snow_fzra: 'snow',
-  sleet: 'rainy',
-  rain: 'rainy',
-  rain_showers: 'rainy',
-  rain_showers_hi: 'rainy',
-  tsra: 'thunderstorm',
-  tsra_sct: 'thunderstorm',
-  tsra_hi: 'thunderstorm',
-  tornado: 'warning',
-  hurricane: 'warning',
-  tropical_storm: 'warning',
-  dust: 'warning',
-  smoke: 'warning',
-  haze: 'cloudy',
-  hot: 'sunny',
-  cold: 'snow',
-  blizzard: 'snow',
-  fog: 'cloudy',
+// Map NWS icon codes to SF Symbols
+const weatherIcons: Record<string, string> = {
+  skc: 'sun.max.fill',
+  few: 'cloud.sun.fill',
+  sct: 'cloud.sun.fill',
+  bkn: 'cloud.fill',
+  ovc: 'cloud.fill',
+  wind_skc: 'sun.max.fill',
+  wind_few: 'cloud.sun.fill',
+  wind_sct: 'cloud.sun.fill',
+  wind_bkn: 'cloud.fill',
+  wind_ovc: 'cloud.fill',
+  snow: 'snowflake',
+  rain_snow: 'cloud.snow.fill',
+  rain_sleet: 'cloud.sleet.fill',
+  snow_sleet: 'cloud.snow.fill',
+  fzra: 'cloud.rain.fill',
+  rain_fzra: 'cloud.rain.fill',
+  snow_fzra: 'cloud.snow.fill',
+  sleet: 'cloud.sleet.fill',
+  rain: 'cloud.rain.fill',
+  rain_showers: 'cloud.rain.fill',
+  rain_showers_hi: 'cloud.sun.rain.fill',
+  tsra: 'cloud.bolt.rain.fill',
+  tsra_sct: 'cloud.bolt.fill',
+  tsra_hi: 'cloud.bolt.rain.fill',
+  tornado: 'tornado',
+  hurricane: 'hurricane',
+  tropical_storm: 'tropicalstorm',
+  dust: 'sun.dust.fill',
+  smoke: 'smoke.fill',
+  haze: 'sun.haze.fill',
+  hot: 'thermometer.sun.fill',
+  cold: 'thermometer.snowflake',
+  blizzard: 'wind.snow',
+  fog: 'cloud.fog.fill',
 };
 
-function getWeatherIcon(iconCode: string): keyof typeof Ionicons.glyphMap {
+function getWeatherIcon(iconCode: string): string {
   // Extract base code from NWS icon URL or code
   const code = iconCode?.split('/').pop()?.split(',')[0]?.split('?')[0] || '';
-  return weatherIcons[code] || 'partly-sunny';
+  return weatherIcons[code] || 'cloud.sun.fill';
 }
 
 export function WeatherWidget() {
   const router = useRouter();
-  const colors = useThemeColors();
   const { data, isLoading, isError, refetch, isFetching } = useWeather();
   const { data: alertsData } = useWeatherAlerts();
 
   const weather = data?.data;
-  const alerts = alertsData?.data || [];
+  const alerts = Array.isArray(alertsData?.data) ? alertsData.data : [];
   const hasAlerts = alerts.length > 0;
 
   const status = getDataStatus(
@@ -80,7 +77,7 @@ export function WeatherWidget() {
 
   if (isLoading) {
     return (
-      <DashboardCard title="Weather" icon="partly-sunny-outline" status="loading">
+      <DashboardCard title="Weather" sfSymbol="cloud.sun.fill" status="loading">
         <CardSkeleton lines={4} />
       </DashboardCard>
     );
@@ -90,153 +87,118 @@ export function WeatherWidget() {
     return (
       <DashboardCard
         title="Weather"
-        icon="partly-sunny-outline"
+        sfSymbol="cloud.sun.fill"
         status="error"
         onRefresh={() => refetch()}
       >
-        <ThemedText variant="muted">Unable to load weather data</ThemedText>
+        <Text style={{ color: PlatformColor('secondaryLabel') }}>Unable to load weather data</Text>
       </DashboardCard>
     );
   }
 
-  const iconName = getWeatherIcon(weather.icon);
+  const sfSymbol = getWeatherIcon(weather.icon);
 
   return (
     <DashboardCard
       title="Weather"
-      icon="partly-sunny-outline"
+      sfSymbol="cloud.sun.fill"
       status={status}
       onRefresh={() => refetch()}
       isRefreshing={isFetching}
     >
       {/* Alert Banner */}
       {hasAlerts && (
-        <TouchableOpacity
-          style={[styles.alertBanner, { backgroundColor: colors.warningBackground }]}
-          onPress={() => router.push(`/alert/${alerts[0].id}`)}
+        <Pressable
+          onPress={() => {
+            if (process.env.EXPO_OS === 'ios') {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            }
+            router.push(`/alert/${alerts[0].id}`);
+          }}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            padding: 10,
+            borderRadius: 8,
+            borderCurve: 'continuous',
+            marginBottom: 16,
+            gap: 8,
+            backgroundColor: 'rgba(245, 158, 11, 0.15)',
+          }}
         >
-          <Ionicons name="warning" size={16} color={colors.warning} />
-          <ThemedText
-            variant="caption"
-            weight="medium"
-            style={[styles.alertText, { color: colors.warning }]}
+          <SymbolView name="exclamationmark.triangle.fill" tintColor="#f59e0b" size={16} />
+          <Text
             numberOfLines={1}
+            style={{ flex: 1, fontSize: 12, fontWeight: '500', color: '#f59e0b' }}
           >
             {alerts[0].event}
-          </ThemedText>
-          <Ionicons name="chevron-forward" size={14} color={colors.warning} />
-        </TouchableOpacity>
+          </Text>
+          <SymbolView name="chevron.right" tintColor="#f59e0b" size={14} />
+        </Pressable>
       )}
 
       {/* Main Temperature Display */}
-      <View style={styles.mainRow}>
-        <View style={styles.tempContainer}>
-          <Ionicons
-            name={iconName}
-            size={48}
-            color={colors.accent}
-            style={styles.weatherIcon}
-          />
-          <View>
-            <ThemedText style={styles.temperature}>
-              {Math.round(weather.temperature)}°
-            </ThemedText>
-            <ThemedText variant="secondary" numberOfLines={1}>
-              {weather.conditions}
-            </ThemedText>
-          </View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
+        <SymbolView
+          name={sfSymbol as SymbolViewProps['name']}
+          tintColor={PlatformColor('systemBlue')}
+          size={48}
+          style={{ marginRight: 12 }}
+        />
+        <View>
+          <Text selectable style={{ fontSize: 48, fontWeight: '700', lineHeight: 54, color: PlatformColor('label') }}>
+            {Math.round(weather.temperature)}°
+          </Text>
+          <Text selectable numberOfLines={1} style={{ color: PlatformColor('secondaryLabel') }}>
+            {weather.conditions}
+          </Text>
         </View>
       </View>
 
       {/* Details Grid */}
-      <View style={styles.detailsGrid}>
-        <View style={styles.detailItem}>
-          <Ionicons name="thermometer-outline" size={16} color={colors.textMuted} />
-          <ThemedText variant="caption" style={styles.detailLabel}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16 }}>
+        <View style={{ flexDirection: 'column', alignItems: 'flex-start', minWidth: '40%' }}>
+          <SymbolView name="thermometer.medium" tintColor={PlatformColor('secondaryLabel')} size={16} />
+          <Text style={{ marginTop: 2, marginBottom: 2, fontSize: 12, color: PlatformColor('tertiaryLabel') }}>
             Feels Like
-          </ThemedText>
-          <ThemedText variant="secondary" weight="medium">
+          </Text>
+          <Text style={{ fontWeight: '500', color: PlatformColor('secondaryLabel') }}>
             {Math.round(weather.feelsLike)}°
-          </ThemedText>
+          </Text>
         </View>
 
-        <View style={styles.detailItem}>
-          <Ionicons name="water-outline" size={16} color={colors.textMuted} />
-          <ThemedText variant="caption" style={styles.detailLabel}>
+        <View style={{ flexDirection: 'column', alignItems: 'flex-start', minWidth: '40%' }}>
+          <SymbolView name="humidity.fill" tintColor={PlatformColor('secondaryLabel')} size={16} />
+          <Text style={{ marginTop: 2, marginBottom: 2, fontSize: 12, color: PlatformColor('tertiaryLabel') }}>
             Humidity
-          </ThemedText>
-          <ThemedText variant="secondary" weight="medium">
+          </Text>
+          <Text style={{ fontWeight: '500', color: PlatformColor('secondaryLabel') }}>
             {weather.humidity}%
-          </ThemedText>
+          </Text>
         </View>
 
-        <View style={styles.detailItem}>
-          <Ionicons name="flag-outline" size={16} color={colors.textMuted} />
-          <ThemedText variant="caption" style={styles.detailLabel}>
+        <View style={{ flexDirection: 'column', alignItems: 'flex-start', minWidth: '40%' }}>
+          <SymbolView name="wind" tintColor={PlatformColor('secondaryLabel')} size={16} />
+          <Text style={{ marginTop: 2, marginBottom: 2, fontSize: 12, color: PlatformColor('tertiaryLabel') }}>
             Wind
-          </ThemedText>
-          <ThemedText variant="secondary" weight="medium">
+          </Text>
+          <Text style={{ fontWeight: '500', color: PlatformColor('secondaryLabel') }}>
             {weather.windDirection} {Math.round(weather.windSpeed)} mph
-          </ThemedText>
+          </Text>
         </View>
 
         {weather.windGust && weather.windGust > weather.windSpeed && (
-          <View style={styles.detailItem}>
-            <Ionicons name="speedometer-outline" size={16} color={colors.textMuted} />
-            <ThemedText variant="caption" style={styles.detailLabel}>
+          <View style={{ flexDirection: 'column', alignItems: 'flex-start', minWidth: '40%' }}>
+            <SymbolView name="gauge.with.dots.needle.67percent" tintColor={PlatformColor('secondaryLabel')} size={16} />
+            <Text style={{ marginTop: 2, marginBottom: 2, fontSize: 12, color: PlatformColor('tertiaryLabel') }}>
               Gusts
-            </ThemedText>
-            <ThemedText variant="secondary" weight="medium">
+            </Text>
+            <Text style={{ fontWeight: '500', color: PlatformColor('secondaryLabel') }}>
               {Math.round(weather.windGust)} mph
-            </ThemedText>
+            </Text>
           </View>
         )}
       </View>
     </DashboardCard>
   );
 }
-
-const styles = StyleSheet.create({
-  alertBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 16,
-    gap: 8,
-  },
-  alertText: {
-    flex: 1,
-  },
-  mainRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  tempContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  weatherIcon: {
-    marginRight: 12,
-  },
-  temperature: {
-    fontSize: 48,
-    fontWeight: '700',
-    lineHeight: 54,
-  },
-  detailsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 16,
-  },
-  detailItem: {
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    minWidth: '40%',
-  },
-  detailLabel: {
-    marginTop: 2,
-    marginBottom: 2,
-  },
-});

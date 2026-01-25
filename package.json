@@ -1,6 +1,6 @@
 {
   "name": "siouxland-online",
-  "version": "0.5.7",
+  "version": "0.5.8",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -9,7 +9,9 @@
     "lint": "eslint",
     "remotion:preview": "remotion preview",
     "remotion:render": "remotion render",
-    "remotion:still": "remotion still"
+    "remotion:still": "remotion still",
+    "android": "expo run:android",
+    "ios": "expo run:ios"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.12",
@@ -58,7 +60,9 @@
     "swr": "^2.3.8",
     "tailwind-merge": "^3.4.0",
     "web-push": "^3.6.7",
-    "zod": "^4.3.5"
+    "zod": "^4.3.5",
+    "expo": "~54.0.32",
+    "react-native": "0.81.5"
   },
   "devDependencies": {
     "@remotion/cli": "^4.0.321",

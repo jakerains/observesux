@@ -2,265 +2,173 @@
  * Weather Alert Detail Modal
  */
 
-import React from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, ScrollView, Text, PlatformColor } from 'react-native';
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { SymbolView } from 'expo-symbols';
 import { format } from 'date-fns';
-import { useThemeColors } from '@/lib/hooks/useColorScheme';
 import { useWeatherAlerts } from '@/lib/hooks/useDataFetching';
-import { ThemedView } from '@/components/ThemedView';
-import { ThemedText } from '@/components/ThemedText';
 import { LoadingSpinner } from '@/components/LoadingState';
 
-const severityColors: Record<string, { bg: string; text: string; icon: string }> = {
-  Extreme: { bg: '#7f1d1d', text: '#ffffff', icon: '#ef4444' },
-  Severe: { bg: '#ef4444', text: '#ffffff', icon: '#ef4444' },
-  Moderate: { bg: '#f97316', text: '#ffffff', icon: '#f97316' },
-  Minor: { bg: '#f59e0b', text: '#000000', icon: '#f59e0b' },
-  Unknown: { bg: '#64748b', text: '#ffffff', icon: '#64748b' },
+const severityColors: Record<string, { bg: string; text: string }> = {
+  Extreme: { bg: '#7f1d1d', text: '#ffffff' },
+  Severe: { bg: '#ef4444', text: '#ffffff' },
+  Moderate: { bg: '#f97316', text: '#ffffff' },
+  Minor: { bg: '#f59e0b', text: '#000000' },
+  Unknown: { bg: '#64748b', text: '#ffffff' },
 };
 
 export default function AlertDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const colors = useThemeColors();
   const insets = useSafeAreaInsets();
 
   const { data, isLoading } = useWeatherAlerts();
-  const alerts = data?.data || [];
+  const alerts = Array.isArray(data?.data) ? data.data : [];
   const alert = alerts.find((a) => a.id === id);
-
-  if (isLoading) {
-    return (
-      <ThemedView style={styles.container}>
-        <LoadingSpinner message="Loading alert..." />
-      </ThemedView>
-    );
-  }
-
-  if (!alert) {
-    return (
-      <ThemedView style={styles.container}>
-        <View style={styles.notFound}>
-          <Ionicons name="alert-circle-outline" size={64} color={colors.textMuted} />
-          <ThemedText variant="muted" style={styles.notFoundText}>
-            Alert not found
-          </ThemedText>
-        </View>
-      </ThemedView>
-    );
-  }
-
-  const severityStyle = severityColors[alert.severity] || severityColors.Unknown;
+  const title = alert?.event ?? 'Alert';
 
   return (
-    <ThemedView style={styles.container}>
+    <View style={{ flex: 1, backgroundColor: PlatformColor('systemBackground') }}>
       <Stack.Screen
         options={{
-          title: alert.event,
+          title,
         }}
       />
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[
-          styles.content,
-          { paddingBottom: insets.bottom + 32 },
-        ]}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Severity Badge */}
-        <View
-          style={[
-            styles.severityBadge,
-            { backgroundColor: severityStyle.bg },
-          ]}
+      {isLoading ? (
+        <LoadingSpinner message="Loading alert..." />
+      ) : !alert ? (
+        <View style={{ flex: 1, backgroundColor: PlatformColor('systemBackground'), justifyContent: 'center', alignItems: 'center' }}>
+          <SymbolView name="exclamationmark.circle" tintColor={PlatformColor('tertiaryLabel')} size={64} />
+          <Text style={{ marginTop: 16, color: PlatformColor('secondaryLabel') }}>
+            Alert not found
+          </Text>
+        </View>
+      ) : (
+        <ScrollView
+          contentInsetAdjustmentBehavior="automatic"
+          contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 32 }}
         >
-          <Ionicons name="warning" size={20} color={severityStyle.text} />
-          <ThemedText
-            weight="semibold"
-            style={[styles.severityText, { color: severityStyle.text }]}
+          {/* Severity Badge */}
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              alignSelf: 'flex-start',
+              paddingHorizontal: 12,
+              paddingVertical: 8,
+              borderRadius: 8,
+              borderCurve: 'continuous',
+              marginBottom: 16,
+              gap: 8,
+              backgroundColor: severityColors[alert.severity]?.bg || severityColors.Unknown.bg,
+            }}
           >
-            {alert.severity} - {alert.event}
-          </ThemedText>
-        </View>
-
-        {/* Headline */}
-        <ThemedText variant="subtitle" weight="semibold" style={styles.headline}>
-          {alert.headline}
-        </ThemedText>
-
-        {/* Time Info */}
-        <View style={[styles.timeCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-          <View style={styles.timeRow}>
-            <Ionicons name="time-outline" size={18} color={colors.textMuted} />
-            <View style={styles.timeContent}>
-              <ThemedText variant="caption">Onset</ThemedText>
-              <ThemedText weight="medium">
-                {format(new Date(alert.onset), 'MMM d, yyyy h:mm a')}
-              </ThemedText>
-            </View>
-          </View>
-          <View style={styles.timeDivider} />
-          <View style={styles.timeRow}>
-            <Ionicons name="timer-outline" size={18} color={colors.textMuted} />
-            <View style={styles.timeContent}>
-              <ThemedText variant="caption">Expires</ThemedText>
-              <ThemedText weight="medium">
-                {format(new Date(alert.expires), 'MMM d, yyyy h:mm a')}
-              </ThemedText>
-            </View>
-          </View>
-        </View>
-
-        {/* Area */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="location-outline" size={18} color={colors.accent} />
-            <ThemedText weight="semibold" style={styles.sectionTitle}>
-              Affected Area
-            </ThemedText>
-          </View>
-          <ThemedText variant="secondary">{alert.areaDesc}</ThemedText>
-        </View>
-
-        {/* Description */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="document-text-outline" size={18} color={colors.accent} />
-            <ThemedText weight="semibold" style={styles.sectionTitle}>
-              Description
-            </ThemedText>
-          </View>
-          <ThemedText variant="secondary" style={styles.description}>
-            {alert.description}
-          </ThemedText>
-        </View>
-
-        {/* Instructions */}
-        {alert.instruction && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Ionicons name="shield-checkmark-outline" size={18} color={colors.accent} />
-              <ThemedText weight="semibold" style={styles.sectionTitle}>
-                Safety Instructions
-              </ThemedText>
-            </View>
-            <View
-              style={[
-                styles.instructionBox,
-                { backgroundColor: colors.infoBackground, borderColor: colors.info },
-              ]}
+            <SymbolView
+              name="exclamationmark.triangle.fill"
+              tintColor={severityColors[alert.severity]?.text || severityColors.Unknown.text}
+              size={20}
+            />
+            <Text
+              style={{
+                fontSize: 14,
+                fontWeight: '600',
+                color: severityColors[alert.severity]?.text || severityColors.Unknown.text,
+              }}
             >
-              <ThemedText style={{ color: colors.info }}>
-                {alert.instruction}
-              </ThemedText>
+              {alert.severity} - {alert.event}
+            </Text>
+          </View>
+
+          {/* Headline */}
+          <Text selectable style={{ fontSize: 17, fontWeight: '600', marginBottom: 16, color: PlatformColor('label') }}>
+            {alert.headline}
+          </Text>
+
+          {/* Time Info */}
+          <View
+            style={{
+              borderRadius: 12,
+              borderCurve: 'continuous',
+              padding: 16,
+              marginBottom: 20,
+              backgroundColor: PlatformColor('secondarySystemBackground'),
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <SymbolView name="clock" tintColor={PlatformColor('secondaryLabel')} size={18} />
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 12, color: PlatformColor('secondaryLabel') }}>Onset</Text>
+                <Text style={{ fontWeight: '500', color: PlatformColor('label') }}>
+                  {format(new Date(alert.onset), 'MMM d, yyyy h:mm a')}
+                </Text>
+              </View>
+            </View>
+            <View style={{ height: 0.5, backgroundColor: PlatformColor('separator'), marginVertical: 12 }} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <SymbolView name="timer" tintColor={PlatformColor('secondaryLabel')} size={18} />
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 12, color: PlatformColor('secondaryLabel') }}>Expires</Text>
+                <Text style={{ fontWeight: '500', color: PlatformColor('label') }}>
+                  {format(new Date(alert.expires), 'MMM d, yyyy h:mm a')}
+                </Text>
+              </View>
             </View>
           </View>
-        )}
 
-        {/* Meta Info */}
-        <View style={styles.metaInfo}>
-          <View style={styles.metaRow}>
-            <ThemedText variant="caption">Urgency:</ThemedText>
-            <ThemedText variant="caption" weight="medium">
-              {alert.urgency}
-            </ThemedText>
+          {/* Area */}
+          <View style={{ marginBottom: 20 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <SymbolView name="location" tintColor={PlatformColor('systemBlue')} size={18} />
+              <Text style={{ fontSize: 15, fontWeight: '600', color: PlatformColor('label') }}>Affected Area</Text>
+            </View>
+            <Text selectable style={{ color: PlatformColor('secondaryLabel'), lineHeight: 20 }}>{alert.areaDesc}</Text>
           </View>
-          <View style={styles.metaRow}>
-            <ThemedText variant="caption">Certainty:</ThemedText>
-            <ThemedText variant="caption" weight="medium">
-              {alert.certainty}
-            </ThemedText>
+
+          {/* Description */}
+          <View style={{ marginBottom: 20 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <SymbolView name="doc.text" tintColor={PlatformColor('systemBlue')} size={18} />
+              <Text style={{ fontSize: 15, fontWeight: '600', color: PlatformColor('label') }}>Description</Text>
+            </View>
+            <Text selectable style={{ color: PlatformColor('secondaryLabel'), lineHeight: 22 }}>{alert.description}</Text>
           </View>
-        </View>
-      </ScrollView>
-    </ThemedView>
+
+          {/* Instructions */}
+          {alert.instruction && (
+            <View style={{ marginBottom: 20 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                <SymbolView name="shield.checkered" tintColor={PlatformColor('systemBlue')} size={18} />
+                <Text style={{ fontSize: 15, fontWeight: '600', color: PlatformColor('label') }}>Safety Instructions</Text>
+              </View>
+              <View
+                style={{
+                  padding: 16,
+                  borderRadius: 10,
+                  borderCurve: 'continuous',
+                  backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                  borderWidth: 1,
+                  borderColor: 'rgba(59, 130, 246, 0.3)',
+                }}
+              >
+                <Text selectable style={{ color: PlatformColor('systemBlue'), lineHeight: 20 }}>{alert.instruction}</Text>
+              </View>
+            </View>
+          )}
+
+          {/* Meta Info */}
+          <View style={{ paddingTop: 16, borderTopWidth: 0.5, borderTopColor: PlatformColor('separator') }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+              <Text style={{ fontSize: 12, color: PlatformColor('secondaryLabel') }}>Urgency:</Text>
+              <Text style={{ fontSize: 12, fontWeight: '500', color: PlatformColor('secondaryLabel') }}>{alert.urgency}</Text>
+            </View>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+              <Text style={{ fontSize: 12, color: PlatformColor('secondaryLabel') }}>Certainty:</Text>
+              <Text style={{ fontSize: 12, fontWeight: '500', color: PlatformColor('secondaryLabel') }}>{alert.certainty}</Text>
+            </View>
+          </View>
+        </ScrollView>
+      )}
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  content: {
-    padding: 16,
-  },
-  notFound: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  notFoundText: {
-    marginTop: 16,
-  },
-  severityBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    marginBottom: 16,
-    gap: 8,
-  },
-  severityText: {
-    fontSize: 14,
-  },
-  headline: {
-    marginBottom: 16,
-  },
-  timeCard: {
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: 16,
-    marginBottom: 20,
-  },
-  timeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  timeContent: {
-    flex: 1,
-  },
-  timeDivider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: 'rgba(0,0,0,0.1)',
-    marginVertical: 12,
-  },
-  section: {
-    marginBottom: 20,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
-  },
-  sectionTitle: {
-    fontSize: 15,
-  },
-  description: {
-    lineHeight: 22,
-  },
-  instructionBox: {
-    padding: 16,
-    borderRadius: 10,
-    borderWidth: 1,
-  },
-  metaInfo: {
-    paddingTop: 16,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(0,0,0,0.1)',
-  },
-  metaRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-});

@@ -2,39 +2,51 @@
  * Quick Stats Bar - Top of dashboard showing key metrics at a glance
  */
 
-import React from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useThemeColors } from '@/lib/hooks/useColorScheme';
+import { View, ScrollView, Text, PlatformColor } from 'react-native';
+import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { useWeather, useAirQuality, useTransit } from '@/lib/hooks/useDataFetching';
-import { ThemedText } from './ThemedText';
 import { Skeleton } from './LoadingState';
 
 interface StatItemProps {
-  icon: keyof typeof Ionicons.glyphMap;
+  sfSymbol: string;
   label: string;
   value: string;
-  color?: string;
+  tintColor?: string;
 }
 
-function StatItem({ icon, label, value, color }: StatItemProps) {
-  const colors = useThemeColors();
-
+function StatItem({ sfSymbol, label, value, tintColor }: StatItemProps) {
   return (
-    <View style={[styles.statItem, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-      <Ionicons
-        name={icon}
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 10,
+        paddingHorizontal: 14,
+        borderRadius: 10,
+        borderCurve: 'continuous',
+        backgroundColor: PlatformColor('secondarySystemBackground'),
+      }}
+    >
+      <SymbolView
+        name={sfSymbol as SymbolViewProps['name']}
+        tintColor={tintColor || PlatformColor('systemBlue')}
         size={18}
-        color={color || colors.accent}
-        style={styles.statIcon}
+        style={{ marginRight: 8 }}
       />
       <View>
-        <ThemedText variant="caption" style={styles.statLabel}>
+        <Text
+          style={{
+            fontSize: 10,
+            textTransform: 'uppercase',
+            letterSpacing: 0.5,
+            color: PlatformColor('secondaryLabel'),
+          }}
+        >
           {label}
-        </ThemedText>
-        <ThemedText weight="semibold" style={styles.statValue}>
+        </Text>
+        <Text style={{ fontSize: 15, fontWeight: '600', color: PlatformColor('label') }}>
           {value}
-        </ThemedText>
+        </Text>
       </View>
     </View>
   );
@@ -42,7 +54,15 @@ function StatItem({ icon, label, value, color }: StatItemProps) {
 
 function StatSkeleton() {
   return (
-    <View style={styles.statSkeleton}>
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 10,
+        paddingHorizontal: 14,
+        borderRadius: 10,
+      }}
+    >
       <Skeleton width={18} height={18} borderRadius={9} />
       <View style={{ marginLeft: 8 }}>
         <Skeleton width={40} height={12} />
@@ -53,18 +73,17 @@ function StatSkeleton() {
 }
 
 export function QuickStatsBar() {
-  const colors = useThemeColors();
   const { data: weatherData, isLoading: weatherLoading } = useWeather();
   const { data: aqiData, isLoading: aqiLoading } = useAirQuality();
   const { data: transitData, isLoading: transitLoading } = useTransit();
 
   const weather = weatherData?.data;
   const aqi = aqiData?.data;
-  const buses = transitData?.data || [];
+  const buses = Array.isArray(transitData?.data) ? transitData.data : [];
 
   // Determine AQI color
-  const getAqiColor = (value?: number) => {
-    if (!value) return colors.textMuted;
+  const getAqiColor = (value?: number): string => {
+    if (!value) return '#6b7280';
     if (value <= 50) return '#22c55e';
     if (value <= 100) return '#f59e0b';
     if (value <= 150) return '#f97316';
@@ -75,15 +94,15 @@ export function QuickStatsBar() {
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      style={styles.container}
-      contentContainerStyle={styles.content}
+      style={{ marginBottom: 16, marginHorizontal: -16 }}
+      contentContainerStyle={{ paddingHorizontal: 16, gap: 10 }}
     >
       {/* Temperature */}
       {weatherLoading ? (
         <StatSkeleton />
       ) : weather ? (
         <StatItem
-          icon="thermometer-outline"
+          sfSymbol="thermometer.medium"
           label="Temp"
           value={`${Math.round(weather.temperature)}°F`}
         />
@@ -94,10 +113,10 @@ export function QuickStatsBar() {
         <StatSkeleton />
       ) : aqi ? (
         <StatItem
-          icon="leaf-outline"
+          sfSymbol="leaf.fill"
           label="AQI"
           value={`${aqi.aqi}`}
-          color={getAqiColor(aqi.aqi)}
+          tintColor={getAqiColor(aqi.aqi)}
         />
       ) : null}
 
@@ -106,7 +125,7 @@ export function QuickStatsBar() {
         <StatSkeleton />
       ) : weather ? (
         <StatItem
-          icon="flag-outline"
+          sfSymbol="wind"
           label="Wind"
           value={`${Math.round(weather.windSpeed)} mph`}
         />
@@ -117,9 +136,10 @@ export function QuickStatsBar() {
         <StatSkeleton />
       ) : (
         <StatItem
-          icon="bus-outline"
+          sfSymbol="bus.fill"
           label="Buses"
           value={`${buses.length} active`}
+          tintColor="#22c55e"
         />
       )}
 
@@ -128,7 +148,7 @@ export function QuickStatsBar() {
         <StatSkeleton />
       ) : weather ? (
         <StatItem
-          icon="water-outline"
+          sfSymbol="humidity.fill"
           label="Humidity"
           value={`${weather.humidity}%`}
         />
@@ -136,41 +156,3 @@ export function QuickStatsBar() {
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: 16,
-    marginHorizontal: -16, // Extend to edges
-  },
-  content: {
-    paddingHorizontal: 16,
-    gap: 10,
-  },
-  statItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 10,
-    borderWidth: 1,
-  },
-  statIcon: {
-    marginRight: 8,
-  },
-  statLabel: {
-    fontSize: 10,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    opacity: 0.7,
-  },
-  statValue: {
-    fontSize: 15,
-  },
-  statSkeleton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 10,
-  },
-});

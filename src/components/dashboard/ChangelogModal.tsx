@@ -16,6 +16,23 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.5.8',
+    date: '2026-01-25',
+    added: [
+      'Expo iOS app with native mobile experience',
+      'Mobile authentication with Bearer token support',
+      'App icons generated from Siouxland Online branding',
+    ],
+    changed: [
+      'Chat API database operations are now non-fatal',
+      'Profile API accepts both cookie and Bearer token auth',
+    ],
+    fixed: [
+      'Mobile auth callback now retrieves session token correctly',
+      'TypeScript error in chat route with tool types',
+    ],
+  },
+  {
     version: '0.5.7',
     date: '2026-01-24',
     added: [

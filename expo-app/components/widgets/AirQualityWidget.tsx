@@ -2,14 +2,10 @@
  * Air Quality Widget - AQI display
  */
 
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useThemeColors } from '@/lib/hooks/useColorScheme';
+import { View, Text, PlatformColor } from 'react-native';
 import { useAirQuality, getDataStatus } from '@/lib/hooks/useDataFetching';
 import { refreshIntervals } from '@/lib/api';
 import { DashboardCard } from '../DashboardCard';
-import { ThemedText } from '../ThemedText';
 import { Skeleton } from '../LoadingState';
 
 // AQI category colors
@@ -23,7 +19,6 @@ const aqiColors: Record<string, { bg: string; text: string }> = {
 };
 
 export function AirQualityWidget() {
-  const colors = useThemeColors();
   const { data, isLoading, isError, refetch, isFetching } = useAirQuality();
 
   const aqi = data?.data;
@@ -37,10 +32,10 @@ export function AirQualityWidget() {
 
   if (isLoading) {
     return (
-      <DashboardCard title="Air Quality" icon="leaf-outline" status="loading">
-        <View style={styles.loadingContainer}>
+      <DashboardCard title="Air Quality" sfSymbol="leaf.fill" status="loading">
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <Skeleton width={80} height={80} borderRadius={40} />
-          <View style={styles.loadingDetails}>
+          <View style={{ marginLeft: 16 }}>
             <Skeleton width={120} height={20} />
             <Skeleton width={80} height={16} style={{ marginTop: 8 }} />
           </View>
@@ -53,11 +48,11 @@ export function AirQualityWidget() {
     return (
       <DashboardCard
         title="Air Quality"
-        icon="leaf-outline"
+        sfSymbol="leaf.fill"
         status="error"
         onRefresh={() => refetch()}
       >
-        <ThemedText variant="muted">Unable to load air quality data</ThemedText>
+        <Text style={{ color: PlatformColor('secondaryLabel') }}>Unable to load air quality data</Text>
       </DashboardCard>
     );
   }
@@ -67,36 +62,42 @@ export function AirQualityWidget() {
   return (
     <DashboardCard
       title="Air Quality"
-      icon="leaf-outline"
+      sfSymbol="leaf.fill"
       status={status}
       onRefresh={() => refetch()}
       isRefreshing={isFetching}
     >
-      <View style={styles.container}>
+      <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
         {/* AQI Circle */}
-        <View style={[styles.aqiCircle, { backgroundColor: aqiColor.bg }]}>
-          <ThemedText style={[styles.aqiNumber, { color: aqiColor.text }]}>
+        <View
+          style={{
+            width: 80,
+            height: 80,
+            borderRadius: 40,
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginRight: 16,
+            backgroundColor: aqiColor.bg,
+          }}
+        >
+          <Text style={{ fontSize: 28, fontWeight: '700', lineHeight: 32, color: aqiColor.text }}>
             {aqi.aqi}
-          </ThemedText>
-          <ThemedText style={[styles.aqiLabel, { color: aqiColor.text }]}>
-            AQI
-          </ThemedText>
+          </Text>
+          <Text style={{ fontSize: 11, fontWeight: '500', color: aqiColor.text }}>AQI</Text>
         </View>
 
         {/* Details */}
-        <View style={styles.details}>
-          <ThemedText weight="semibold">{aqi.category}</ThemedText>
-          <ThemedText variant="muted" style={styles.pollutant}>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontWeight: '600', color: PlatformColor('label') }}>{aqi.category}</Text>
+          <Text style={{ marginTop: 2, marginBottom: 8, color: PlatformColor('secondaryLabel') }}>
             Primary: {aqi.primaryPollutant}
-          </ThemedText>
+          </Text>
 
           {/* Pollutant list */}
           {aqi.pollutants?.slice(0, 3).map((p) => (
-            <View key={p.name} style={styles.pollutantRow}>
-              <ThemedText variant="caption">{p.name}</ThemedText>
-              <ThemedText variant="caption" weight="medium">
-                {p.aqi}
-              </ThemedText>
+            <View key={p.name} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 2 }}>
+              <Text style={{ fontSize: 12, color: PlatformColor('secondaryLabel') }}>{p.name}</Text>
+              <Text style={{ fontSize: 12, fontWeight: '500', color: PlatformColor('secondaryLabel') }}>{p.aqi}</Text>
             </View>
           ))}
         </View>
@@ -104,46 +105,3 @@ export function AirQualityWidget() {
     </DashboardCard>
   );
 }
-
-const styles = StyleSheet.create({
-  loadingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  loadingDetails: {
-    marginLeft: 16,
-  },
-  container: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  aqiCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 16,
-  },
-  aqiNumber: {
-    fontSize: 28,
-    fontWeight: '700',
-    lineHeight: 32,
-  },
-  aqiLabel: {
-    fontSize: 11,
-    fontWeight: '500',
-  },
-  details: {
-    flex: 1,
-  },
-  pollutant: {
-    marginTop: 2,
-    marginBottom: 8,
-  },
-  pollutantRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 2,
-  },
-});

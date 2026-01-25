@@ -92,11 +92,13 @@ export interface TrafficCamera {
   name: string;
   latitude: number;
   longitude: number;
-  imageUrl: string;
-  videoUrl?: string;
-  source: 'iowa-dot' | 'ktiv';
+  snapshotUrl: string;
+  streamUrl?: string;
+  source?: 'iowa-dot' | 'ktiv';
   direction?: string;
   roadway?: string;
+  description?: string;
+  isActive?: boolean;
   lastUpdated?: string;
 }
 

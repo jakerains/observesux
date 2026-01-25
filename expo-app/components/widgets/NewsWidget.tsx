@@ -2,16 +2,14 @@
  * News Widget - Local news feed
  */
 
-import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Linking } from 'react-native';
+import { View, Pressable, Linking, Text, PlatformColor } from 'react-native';
 import { Image } from 'expo-image';
-import { Ionicons } from '@expo/vector-icons';
+import { SymbolView } from 'expo-symbols';
 import { formatDistanceToNow } from 'date-fns';
-import { useThemeColors } from '@/lib/hooks/useColorScheme';
+import * as Haptics from 'expo-haptics';
 import { useNews, getDataStatus } from '@/lib/hooks/useDataFetching';
 import { refreshIntervals } from '@/lib/api';
 import { DashboardCard } from '../DashboardCard';
-import { ThemedText } from '../ThemedText';
 import { CardSkeleton } from '../LoadingState';
 import type { NewsItem } from '@/lib/types';
 
@@ -20,9 +18,10 @@ interface NewsRowProps {
 }
 
 function NewsRow({ item }: NewsRowProps) {
-  const colors = useThemeColors();
-
   const handlePress = async () => {
+    if (process.env.EXPO_OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     if (item.link) {
       await Linking.openURL(item.link);
     }
@@ -33,55 +32,59 @@ function NewsRow({ item }: NewsRowProps) {
     : '';
 
   return (
-    <TouchableOpacity
-      style={[styles.newsRow, { borderColor: colors.separator }]}
+    <Pressable
       onPress={handlePress}
-      activeOpacity={0.7}
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 12,
+        borderBottomWidth: 0.5,
+        borderBottomColor: PlatformColor('separator'),
+      }}
     >
       {item.imageUrl && (
         <Image
           source={{ uri: item.imageUrl }}
-          style={styles.thumbnail}
+          style={{
+            width: 60,
+            height: 45,
+            borderRadius: 6,
+            marginRight: 12,
+            backgroundColor: PlatformColor('tertiarySystemFill'),
+          }}
           contentFit="cover"
           transition={200}
         />
       )}
 
-      <View style={styles.newsContent}>
-        <ThemedText weight="medium" numberOfLines={2} style={styles.newsTitle}>
+      <View style={{ flex: 1, marginRight: 8 }}>
+        <Text
+          numberOfLines={2}
+          style={{ fontSize: 14, fontWeight: '500', lineHeight: 18, marginBottom: 4, color: PlatformColor('label') }}
+        >
           {item.title}
-        </ThemedText>
+        </Text>
 
-        <View style={styles.newsMeta}>
-          <ThemedText variant="caption" style={{ color: colors.accent }}>
-            {item.source}
-          </ThemedText>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Text style={{ fontSize: 12, color: PlatformColor('systemBlue') }}>{item.source}</Text>
           {timeAgo && (
             <>
-              <ThemedText variant="caption" style={styles.dot}>
-                •
-              </ThemedText>
-              <ThemedText variant="caption">{timeAgo}</ThemedText>
+              <Text style={{ fontSize: 12, marginHorizontal: 6, color: PlatformColor('tertiaryLabel') }}>•</Text>
+              <Text style={{ fontSize: 12, color: PlatformColor('secondaryLabel') }}>{timeAgo}</Text>
             </>
           )}
         </View>
       </View>
 
-      <Ionicons
-        name="chevron-forward"
-        size={16}
-        color={colors.textMuted}
-        style={styles.chevron}
-      />
-    </TouchableOpacity>
+      <SymbolView name="chevron.right" tintColor={PlatformColor('tertiaryLabel')} size={16} style={{ marginLeft: 4 }} />
+    </Pressable>
   );
 }
 
 export function NewsWidget() {
-  const colors = useThemeColors();
   const { data, isLoading, isError, refetch, isFetching } = useNews();
 
-  const news = data?.data || [];
+  const news = Array.isArray(data?.data) ? data.data : [];
   const displayNews = news.slice(0, 5);
 
   const status = getDataStatus(
@@ -93,7 +96,7 @@ export function NewsWidget() {
 
   if (isLoading) {
     return (
-      <DashboardCard title="News" icon="newspaper-outline" status="loading">
+      <DashboardCard title="News" sfSymbol="newspaper.fill" status="loading">
         <CardSkeleton lines={5} />
       </DashboardCard>
     );
@@ -103,11 +106,11 @@ export function NewsWidget() {
     return (
       <DashboardCard
         title="News"
-        icon="newspaper-outline"
+        sfSymbol="newspaper.fill"
         status="error"
         onRefresh={() => refetch()}
       >
-        <ThemedText variant="muted">Unable to load news</ThemedText>
+        <Text style={{ color: PlatformColor('secondaryLabel') }}>Unable to load news</Text>
       </DashboardCard>
     );
   }
@@ -115,20 +118,20 @@ export function NewsWidget() {
   return (
     <DashboardCard
       title="News"
-      icon="newspaper-outline"
+      sfSymbol="newspaper.fill"
       status={status}
       onRefresh={() => refetch()}
       isRefreshing={isFetching}
     >
       {displayNews.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Ionicons name="newspaper-outline" size={32} color={colors.textMuted} />
-          <ThemedText variant="muted" style={styles.emptyText}>
+        <View style={{ alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <SymbolView name="newspaper" tintColor={PlatformColor('tertiaryLabel')} size={32} />
+          <Text style={{ marginTop: 8, color: PlatformColor('secondaryLabel') }}>
             No news available
-          </ThemedText>
+          </Text>
         </View>
       ) : (
-        <View style={styles.newsList}>
+        <View>
           {displayNews.map((item) => (
             <NewsRow key={item.id} item={item} />
           ))}
@@ -137,49 +140,3 @@ export function NewsWidget() {
     </DashboardCard>
   );
 }
-
-const styles = StyleSheet.create({
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  emptyText: {
-    marginTop: 8,
-  },
-  newsList: {
-    gap: 0,
-  },
-  newsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  thumbnail: {
-    width: 60,
-    height: 45,
-    borderRadius: 6,
-    marginRight: 12,
-    backgroundColor: '#e2e8f0',
-  },
-  newsContent: {
-    flex: 1,
-    marginRight: 8,
-  },
-  newsTitle: {
-    fontSize: 14,
-    lineHeight: 18,
-    marginBottom: 4,
-  },
-  newsMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  dot: {
-    marginHorizontal: 6,
-  },
-  chevron: {
-    marginLeft: 4,
-  },
-});

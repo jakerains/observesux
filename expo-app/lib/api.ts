@@ -2,11 +2,9 @@
  * API configuration and base fetcher
  */
 
-// Configure this to point to your web app's API
-// In production, use your actual domain
-export const API_BASE_URL = __DEV__
-  ? 'http://localhost:3000' // Development
-  : 'https://siouxland.online'; // Production
+// Configure this to point to your web app's API (override via EXPO_PUBLIC_API_URL)
+export const API_BASE_URL =
+  process.env.EXPO_PUBLIC_API_URL?.trim() || 'https://siouxland.online';
 
 /**
  * Base fetcher with error handling
@@ -27,6 +25,41 @@ export async function fetcher<T>(endpoint: string): Promise<T> {
 
   return response.json();
 }
+
+/**
+ * Authenticated fetcher with Bearer token
+ */
+export async function authenticatedFetcher<T>(
+  endpoint: string,
+  token: string
+): Promise<T> {
+  const url = `${API_BASE_URL}${endpoint}`;
+
+  const response = await fetch(url, {
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`API Error: ${response.status} ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * User-related API endpoints
+ */
+export const userEndpoints = {
+  profile: '/api/user/profile',
+  preferences: '/api/user/preferences',
+  alertSubscriptions: '/api/user/alert-subscriptions',
+  watchlist: '/api/user/watchlist',
+  mobilePush: '/api/user/mobile-push',
+} as const;
 
 /**
  * API endpoints

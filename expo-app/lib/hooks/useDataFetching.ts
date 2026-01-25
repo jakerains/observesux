@@ -5,6 +5,7 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetcher, endpoints, refreshIntervals } from '../api';
+import { useSettings } from '../contexts/SettingsContext';
 import type {
   ApiResponse,
   WeatherObservation,
@@ -23,14 +24,28 @@ import type {
 } from '../types';
 
 /**
+ * Hook to get the effective refresh interval with user's multiplier applied
+ */
+function useRefreshInterval(baseInterval: number): number {
+  try {
+    const { settings } = useSettings();
+    return baseInterval * settings.refreshMultiplier;
+  } catch {
+    // If settings context is not available, use base interval
+    return baseInterval;
+  }
+}
+
+/**
  * Weather data hook
  */
 export function useWeather() {
+  const interval = useRefreshInterval(refreshIntervals.weather);
   return useQuery({
     queryKey: ['weather'],
     queryFn: () => fetcher<ApiResponse<WeatherObservation>>(endpoints.weather),
-    refetchInterval: refreshIntervals.weather,
-    staleTime: refreshIntervals.weather / 2,
+    refetchInterval: interval,
+    staleTime: interval / 2,
   });
 }
 
@@ -38,11 +53,12 @@ export function useWeather() {
  * Weather forecast hook
  */
 export function useWeatherForecast() {
+  const interval = useRefreshInterval(refreshIntervals.weather * 5);
   return useQuery({
     queryKey: ['weather', 'forecast'],
     queryFn: () => fetcher<ApiResponse<WeatherForecastDay[]>>(endpoints.weatherForecast),
-    refetchInterval: refreshIntervals.weather * 5, // Less frequent for forecast
-    staleTime: refreshIntervals.weather * 2,
+    refetchInterval: interval, // Less frequent for forecast
+    staleTime: interval / 2,
   });
 }
 
@@ -50,11 +66,12 @@ export function useWeatherForecast() {
  * Weather alerts hook
  */
 export function useWeatherAlerts() {
+  const interval = useRefreshInterval(refreshIntervals.weather);
   return useQuery({
     queryKey: ['weather', 'alerts'],
     queryFn: () => fetcher<ApiResponse<WeatherAlert[]>>(endpoints.weatherAlerts),
-    refetchInterval: refreshIntervals.weather,
-    staleTime: refreshIntervals.weather / 2,
+    refetchInterval: interval,
+    staleTime: interval / 2,
   });
 }
 
@@ -62,11 +79,12 @@ export function useWeatherAlerts() {
  * Transit buses hook
  */
 export function useTransit() {
+  const interval = useRefreshInterval(refreshIntervals.transit);
   return useQuery({
     queryKey: ['transit'],
     queryFn: () => fetcher<ApiResponse<Bus[]>>(endpoints.transit),
-    refetchInterval: refreshIntervals.transit,
-    staleTime: refreshIntervals.transit / 2,
+    refetchInterval: interval,
+    staleTime: interval / 2,
   });
 }
 
@@ -85,11 +103,12 @@ export function useTransitRoutes() {
  * Traffic cameras hook
  */
 export function useCameras() {
+  const interval = useRefreshInterval(refreshIntervals.cameras);
   return useQuery({
     queryKey: ['cameras'],
     queryFn: () => fetcher<ApiResponse<TrafficCamera[]>>(endpoints.cameras),
-    refetchInterval: refreshIntervals.cameras,
-    staleTime: refreshIntervals.cameras / 2,
+    refetchInterval: interval,
+    staleTime: interval / 2,
   });
 }
 
@@ -97,11 +116,12 @@ export function useCameras() {
  * Traffic events hook
  */
 export function useTrafficEvents() {
+  const interval = useRefreshInterval(refreshIntervals.trafficEvents);
   return useQuery({
     queryKey: ['traffic-events'],
     queryFn: () => fetcher<ApiResponse<TrafficEvent[]>>(endpoints.trafficEvents),
-    refetchInterval: refreshIntervals.trafficEvents,
-    staleTime: refreshIntervals.trafficEvents / 2,
+    refetchInterval: interval,
+    staleTime: interval / 2,
   });
 }
 
@@ -109,11 +129,12 @@ export function useTrafficEvents() {
  * News hook
  */
 export function useNews() {
+  const interval = useRefreshInterval(refreshIntervals.news);
   return useQuery({
     queryKey: ['news'],
     queryFn: () => fetcher<ApiResponse<NewsItem[]>>(endpoints.news),
-    refetchInterval: refreshIntervals.news,
-    staleTime: refreshIntervals.news / 2,
+    refetchInterval: interval,
+    staleTime: interval / 2,
   });
 }
 
@@ -121,11 +142,12 @@ export function useNews() {
  * Air quality hook
  */
 export function useAirQuality() {
+  const interval = useRefreshInterval(refreshIntervals.airQuality);
   return useQuery({
     queryKey: ['air-quality'],
     queryFn: () => fetcher<ApiResponse<AirQuality>>(endpoints.airQuality),
-    refetchInterval: refreshIntervals.airQuality,
-    staleTime: refreshIntervals.airQuality / 2,
+    refetchInterval: interval,
+    staleTime: interval / 2,
   });
 }
 
@@ -133,11 +155,12 @@ export function useAirQuality() {
  * River levels hook
  */
 export function useRivers() {
+  const interval = useRefreshInterval(refreshIntervals.rivers);
   return useQuery({
     queryKey: ['rivers'],
     queryFn: () => fetcher<ApiResponse<RiverReading[]>>(endpoints.rivers),
-    refetchInterval: refreshIntervals.rivers,
-    staleTime: refreshIntervals.rivers / 2,
+    refetchInterval: interval,
+    staleTime: interval / 2,
   });
 }
 
@@ -145,11 +168,12 @@ export function useRivers() {
  * Gas prices hook
  */
 export function useGasPrices() {
+  const interval = useRefreshInterval(refreshIntervals.gasPrices);
   return useQuery({
     queryKey: ['gas-prices'],
     queryFn: () => fetcher<ApiResponse<GasStation[]>>(endpoints.gasPrices),
-    refetchInterval: refreshIntervals.gasPrices,
-    staleTime: refreshIntervals.gasPrices / 2,
+    refetchInterval: interval,
+    staleTime: interval / 2,
   });
 }
 
@@ -157,11 +181,12 @@ export function useGasPrices() {
  * Flights hook
  */
 export function useFlights() {
+  const interval = useRefreshInterval(refreshIntervals.flights);
   return useQuery({
     queryKey: ['flights'],
     queryFn: () => fetcher<ApiResponse<Flight[]>>(endpoints.flights),
-    refetchInterval: refreshIntervals.flights,
-    staleTime: refreshIntervals.flights / 2,
+    refetchInterval: interval,
+    staleTime: interval / 2,
   });
 }
 
@@ -169,11 +194,12 @@ export function useFlights() {
  * Power outages hook
  */
 export function useOutages() {
+  const interval = useRefreshInterval(refreshIntervals.outages);
   return useQuery({
     queryKey: ['outages'],
     queryFn: () => fetcher<ApiResponse<PowerOutage[]>>(endpoints.outages),
-    refetchInterval: refreshIntervals.outages,
-    staleTime: refreshIntervals.outages / 2,
+    refetchInterval: interval,
+    staleTime: interval / 2,
   });
 }
 

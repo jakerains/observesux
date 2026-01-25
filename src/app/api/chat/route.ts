@@ -1,4 +1,4 @@
-import { streamText, stepCountIs, convertToModelMessages } from 'ai';
+import { streamText, stepCountIs, convertToModelMessages, safeValidateUIMessages } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { chatTools } from '@/lib/ai/tools';
 import { getSystemPrompt, type UserContext } from '@/lib/ai/system-prompt';
@@ -76,7 +76,60 @@ export async function POST(req: Request) {
   const startTime = Date.now();
 
   try {
-    const { messages, sessionId: existingSessionId, lastLoggedMessageIndex, deviceInfo } = await req.json();
+    const body = await req.json();
+    const { messages: incomingMessages, sessionId: existingSessionId, lastLoggedMessageIndex, deviceInfo } = body ?? {};
+
+    if (!Array.isArray(incomingMessages)) {
+      return new Response(JSON.stringify({ error: 'Invalid request: messages must be an array' }), {
+        status: 400,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+        },
+      });
+    }
+
+    console.log('[Chat] Incoming messages summary:', {
+      count: incomingMessages.length,
+      sample: incomingMessages.slice(0, 2).map((message) => ({
+        role: message?.role,
+        hasParts: Array.isArray(message?.parts),
+        hasContent: typeof message?.content === 'string' || Array.isArray(message?.content),
+        keys: message && typeof message === 'object' ? Object.keys(message) : null,
+      })),
+    });
+
+    // Normalize incoming messages to AI SDK UI message format (parts array).
+    const normalizedMessages = incomingMessages.map((message) => {
+      if (!message || typeof message !== 'object') return message;
+      if (Array.isArray(message.parts)) return message;
+      if (typeof message.content === 'string') {
+        return { ...message, parts: [{ type: 'text', text: message.content }] };
+      }
+      if (Array.isArray(message.content)) {
+        return { ...message, parts: message.content };
+      }
+      return { ...message, parts: [] };
+    });
+
+    const validation = await safeValidateUIMessages({
+      messages: normalizedMessages,
+      // Cast to satisfy TypeScript's strict variance checking
+      // The tools have compatible runtime behavior, but Record<string, never> vs unknown doesn't unify
+      tools: chatTools as Parameters<typeof safeValidateUIMessages>[0]['tools'],
+    });
+
+    if (!validation.success) {
+      return new Response(JSON.stringify({ error: validation.error.message }), {
+        status: 400,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+        },
+      });
+    }
+
+    const messages = validation.data;
 
     // Get current user if logged in (for chat logging and personalization)
     // Non-fatal: chat works without personalization

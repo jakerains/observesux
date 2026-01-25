@@ -5,6 +5,28 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.8] - 2026-01-25
+
+### Added
+- Expo iOS app with native mobile experience
+  - Bottom tab navigation (Home, Map, Weather, Cameras, More)
+  - Native SF Symbols and iOS design patterns
+  - React Query for data fetching with automatic refresh
+  - Deep linking support (siouxland:// URL scheme)
+- Mobile authentication with Bearer token support
+  - New `/api/auth/mobile-token` endpoint for secure token exchange
+  - Server-side token validation for mobile API calls
+  - Dual auth strategy (cookies for web, Bearer tokens for mobile)
+- App icons generated from Siouxland Online branding
+
+### Changed
+- Chat API database operations are now non-fatal (chat works even if logging fails)
+- Profile API now accepts both cookie and Bearer token authentication
+
+### Fixed
+- Mobile auth callback now properly retrieves session token from server
+- TypeScript error in chat route with tool type variance
+
 ## [0.5.7] - 2026-01-24
 
 ### Added

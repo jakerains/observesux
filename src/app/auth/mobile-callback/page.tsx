@@ -2,7 +2,6 @@
 
 import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { useSession } from '@/lib/auth/client'
 
 /**
  * Mobile Auth Callback Content
@@ -10,29 +9,36 @@ import { useSession } from '@/lib/auth/client'
  */
 function MobileCallbackContent() {
   const searchParams = useSearchParams()
-  const { data: session, isPending } = useSession()
   const [error, setError] = useState<string | null>(null)
   const [redirecting, setRedirecting] = useState(false)
 
   const redirectUrl = searchParams.get('redirect') || 'siouxland://auth/callback'
 
   useEffect(() => {
-    if (isPending) return
+    async function getMobileToken() {
+      try {
+        // Call server API to get token from HTTP-only cookie session
+        const response = await fetch('/api/auth/mobile-token')
 
-    if (session?.session?.token) {
-      // We have a session, redirect to mobile app with token
-      setRedirecting(true)
-      const mobileUrl = `${redirectUrl}?token=${encodeURIComponent(session.session.token)}`
+        if (response.ok) {
+          const { token } = await response.json()
+          setRedirecting(true)
 
-      // Small delay to show the redirecting message
-      setTimeout(() => {
-        window.location.href = mobileUrl
-      }, 500)
-    } else if (!isPending) {
-      // No session - user may not have completed sign in
-      setError('No active session. Please try signing in again.')
+          // Small delay to show the redirecting message
+          setTimeout(() => {
+            window.location.href = `${redirectUrl}?token=${encodeURIComponent(token)}`
+          }, 500)
+        } else {
+          // No session - user may not have completed sign in
+          setError('No active session. Please try signing in again.')
+        }
+      } catch {
+        setError('Failed to get authentication token.')
+      }
     }
-  }, [session, isPending, redirectUrl])
+
+    getMobileToken()
+  }, [redirectUrl])
 
   if (error) {
     return (
@@ -92,8 +98,8 @@ function LoadingFallback() {
  * Mobile Auth Callback Page
  *
  * This page handles the redirect after a user signs in from the mobile app.
- * It checks for an active session and redirects back to the mobile app
- * with the session token via deep link.
+ * It calls the server API to get the session token (from HTTP-only cookies)
+ * and redirects back to the mobile app with the token via deep link.
  */
 export default function MobileCallback() {
   return (

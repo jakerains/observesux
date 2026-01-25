@@ -2,16 +2,8 @@
  * Loading state components - skeletons and spinners
  */
 
-import React from 'react';
-import {
-  View,
-  StyleSheet,
-  ActivityIndicator,
-  Animated,
-  Easing,
-} from 'react-native';
-import { useThemeColors } from '@/lib/hooks/useColorScheme';
-import { ThemedText } from './ThemedText';
+import { useEffect, useRef } from 'react';
+import { View, ActivityIndicator, Animated, Easing, Text, PlatformColor } from 'react-native';
 
 interface SkeletonProps {
   width?: number | string;
@@ -26,10 +18,9 @@ export function Skeleton({
   borderRadius = 4,
   style,
 }: SkeletonProps) {
-  const colors = useThemeColors();
-  const opacity = React.useRef(new Animated.Value(0.3)).current;
+  const opacity = useRef(new Animated.Value(0.3)).current;
 
-  React.useEffect(() => {
+  useEffect(() => {
     const animation = Animated.loop(
       Animated.sequence([
         Animated.timing(opacity, {
@@ -57,7 +48,7 @@ export function Skeleton({
           width,
           height,
           borderRadius,
-          backgroundColor: colors.separator,
+          backgroundColor: PlatformColor('tertiarySystemFill'),
           opacity,
         },
         style,
@@ -72,15 +63,11 @@ interface LoadingSpinnerProps {
 }
 
 export function LoadingSpinner({ size = 'large', message }: LoadingSpinnerProps) {
-  const colors = useThemeColors();
-
   return (
-    <View style={styles.spinnerContainer}>
-      <ActivityIndicator size={size} color={colors.accent} />
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: PlatformColor('systemBackground') }}>
+      <ActivityIndicator size={size} color={PlatformColor('systemBlue')} />
       {message && (
-        <ThemedText variant="muted" style={styles.spinnerMessage}>
-          {message}
-        </ThemedText>
+        <Text style={{ marginTop: 12, color: PlatformColor('secondaryLabel') }}>{message}</Text>
       )}
     </View>
   );
@@ -92,37 +79,16 @@ interface CardSkeletonProps {
 
 export function CardSkeleton({ lines = 3 }: CardSkeletonProps) {
   return (
-    <View style={styles.cardSkeleton}>
-      <Skeleton width="60%" height={24} style={styles.skeletonTitle} />
+    <View style={{ padding: 16 }}>
+      <Skeleton width="60%" height={24} style={{ marginBottom: 16 }} />
       {Array.from({ length: lines }).map((_, i) => (
         <Skeleton
           key={i}
           width={i === lines - 1 ? '80%' : '100%'}
           height={16}
-          style={styles.skeletonLine}
+          style={{ marginBottom: 8 }}
         />
       ))}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  spinnerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  spinnerMessage: {
-    marginTop: 12,
-  },
-  cardSkeleton: {
-    padding: 16,
-  },
-  skeletonTitle: {
-    marginBottom: 16,
-  },
-  skeletonLine: {
-    marginBottom: 8,
-  },
-});

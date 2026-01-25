@@ -1,140 +1,126 @@
 /**
- * Tab layout - Bottom navigation matching iOS design
- * Mirrors the web app's MobileNavigation component
+ * Tab layout for Siouxland Online
+ * Uses expo-router Tabs with SF Symbols and custom SUX center tab
  */
 
 import { Tabs } from 'expo-router';
-import { useColorScheme, Platform, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
-import { Colors } from '@/constants/Colors';
+import { Image, View } from 'react-native';
+import { SymbolView } from 'expo-symbols';
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const suxImage = require('../../assets/sux.png');
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme() ?? 'light';
-  const colors = Colors[colorScheme];
-
   return (
     <Tabs
+      initialRouteName="(0-home)"
       screenOptions={{
-        // Tab bar styling
-        tabBarActiveTintColor: colors.tabIconSelected,
-        tabBarInactiveTintColor: colors.tabIconDefault,
+        headerShown: false,
+        tabBarActiveTintColor: '#3b82f6',
+        tabBarInactiveTintColor: '#6b7280',
         tabBarStyle: {
-          position: 'absolute',
-          backgroundColor: Platform.OS === 'ios'
-            ? 'transparent'
-            : colorScheme === 'dark'
-              ? 'rgba(15, 23, 42, 0.95)'
-              : 'rgba(255, 255, 255, 0.95)',
-          borderTopColor: colors.separator,
-          borderTopWidth: StyleSheet.hairlineWidth,
-          height: Platform.OS === 'ios' ? 88 : 64,
+          backgroundColor: '#000000',
+          borderTopColor: '#1f1f1f',
+          height: 85,
+          paddingBottom: 30,
           paddingTop: 8,
-          paddingBottom: Platform.OS === 'ios' ? 28 : 8,
-          elevation: 0, // Remove Android shadow
         },
-        tabBarBackground: Platform.OS === 'ios'
-          ? () => (
-              <BlurView
-                intensity={80}
-                tint={colorScheme === 'dark' ? 'dark' : 'light'}
-                style={StyleSheet.absoluteFill}
-              />
-            )
-          : undefined,
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '500',
+        sceneStyle: {
+          backgroundColor: '#000000',
         },
-
-        // Header styling
-        headerStyle: {
-          backgroundColor: colors.background,
-        },
-        headerTintColor: colors.text,
-        headerTitleStyle: {
-          fontWeight: '600',
-        },
-        headerShadowVisible: false,
       }}
     >
-      {/* Home / Dashboard */}
       <Tabs.Screen
-        name="index"
+        name="(0-home)"
         options={{
           title: 'Home',
-          headerTitle: 'Siouxland Online',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? 'home' : 'home-outline'}
+          tabBarIcon: ({ focused }) => (
+            <SymbolView
+              name={focused ? 'house.fill' : 'house'}
+              tintColor={focused ? '#3b82f6' : '#6b7280'}
               size={24}
-              color={color}
             />
           ),
         }}
       />
-
-      {/* Map */}
       <Tabs.Screen
-        name="map"
+        name="(map)"
         options={{
           title: 'Map',
-          headerTitle: 'Interactive Map',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? 'map' : 'map-outline'}
+          tabBarIcon: ({ focused }) => (
+            <SymbolView
+              name={focused ? 'map.fill' : 'map'}
+              tintColor={focused ? '#3b82f6' : '#6b7280'}
               size={24}
-              color={color}
             />
           ),
         }}
       />
-
-      {/* Weather */}
       <Tabs.Screen
-        name="weather"
+        name="(sux)"
         options={{
-          title: 'Weather',
-          headerTitle: 'Weather',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? 'partly-sunny' : 'partly-sunny-outline'}
-              size={24}
-              color={color}
-            />
+          title: 'SUX',
+          tabBarIcon: ({ focused }) => (
+            <View
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 22,
+                backgroundColor: focused ? '#1f1f1f' : 'transparent',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: 4,
+              }}
+            >
+              <Image
+                source={suxImage}
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 18,
+                  opacity: focused ? 1 : 0.7,
+                }}
+                alt="SUX assistant"
+                accessibilityLabel="SUX assistant"
+              />
+            </View>
           ),
+          tabBarLabelStyle: {
+            marginTop: -4,
+          },
         }}
       />
-
-      {/* Cameras */}
       <Tabs.Screen
-        name="cameras"
+        name="(cameras)"
         options={{
           title: 'Cameras',
-          headerTitle: 'Traffic Cameras',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? 'videocam' : 'videocam-outline'}
+          tabBarIcon: ({ focused }) => (
+            <SymbolView
+              name={focused ? 'video.fill' : 'video'}
+              tintColor={focused ? '#3b82f6' : '#6b7280'}
               size={24}
-              color={color}
             />
           ),
         }}
       />
-
-      {/* More / Settings */}
       <Tabs.Screen
-        name="more"
+        name="(more)"
         options={{
           title: 'More',
-          headerTitle: 'More',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? 'ellipsis-horizontal' : 'ellipsis-horizontal-outline'}
+          tabBarIcon: ({ focused }) => (
+            <SymbolView
+              name={focused ? 'ellipsis.circle.fill' : 'ellipsis.circle'}
+              tintColor={focused ? '#3b82f6' : '#6b7280'}
               size={24}
-              color={color}
             />
           ),
+        }}
+      />
+      {/* Hide weather tab - moved to home screen widget */}
+      <Tabs.Screen
+        name="(weather)"
+        options={{
+          href: null,
         }}
       />
     </Tabs>

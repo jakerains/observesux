@@ -2,14 +2,12 @@
  * Transit Widget - Real-time bus tracking
  */
 
-import React from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useThemeColors } from '@/lib/hooks/useColorScheme';
+import { View, Pressable, Text, PlatformColor } from 'react-native';
+import { SymbolView } from 'expo-symbols';
+import * as Haptics from 'expo-haptics';
 import { useTransit, getDataStatus } from '@/lib/hooks/useDataFetching';
 import { refreshIntervals } from '@/lib/api';
 import { DashboardCard } from '../DashboardCard';
-import { ThemedText } from '../ThemedText';
 import { CardSkeleton } from '../LoadingState';
 import type { Bus } from '@/lib/types';
 
@@ -29,11 +27,19 @@ function OccupancyBadge({ occupancy }: { occupancy?: Bus['occupancy'] }) {
   const config = occupancyConfig[occupancy] || occupancyConfig.MANY_SEATS;
 
   return (
-    <View style={[styles.badge, { backgroundColor: config.color + '20' }]}>
-      <View style={[styles.badgeDot, { backgroundColor: config.color }]} />
-      <ThemedText variant="caption" style={{ color: config.color }}>
-        {config.label}
-      </ThemedText>
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
+        gap: 4,
+        backgroundColor: config.color + '20',
+      }}
+    >
+      <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: config.color }} />
+      <Text style={{ fontSize: 10, color: config.color }}>{config.label}</Text>
     </View>
   );
 }
@@ -56,10 +62,17 @@ function ScheduleBadge({ adherence }: { adherence?: number }) {
   }
 
   return (
-    <View style={[styles.badge, { backgroundColor: color + '20' }]}>
-      <ThemedText variant="caption" style={{ color }}>
-        {label}
-      </ThemedText>
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
+        backgroundColor: color + '20',
+      }}
+    >
+      <Text style={{ fontSize: 10, color }}>{label}</Text>
     </View>
   );
 }
@@ -70,53 +83,61 @@ interface BusRowProps {
 }
 
 function BusRow({ bus, onPress }: BusRowProps) {
-  const colors = useThemeColors();
-
   return (
-    <TouchableOpacity
-      style={[styles.busRow, { borderColor: colors.separator }]}
-      onPress={onPress}
-      activeOpacity={0.7}
+    <Pressable
+      onPress={() => {
+        if (process.env.EXPO_OS === 'ios') {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+        onPress?.();
+      }}
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 8,
+        borderBottomWidth: 0.5,
+        borderBottomColor: PlatformColor('separator'),
+      }}
     >
       <View
-        style={[
-          styles.routeBadge,
-          { backgroundColor: bus.routeColor || colors.accent },
-        ]}
+        style={{
+          width: 40,
+          height: 28,
+          borderRadius: 6,
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginRight: 12,
+          backgroundColor: bus.routeColor || PlatformColor('systemBlue'),
+        }}
       >
-        <ThemedText
-          variant="caption"
-          weight="bold"
-          style={styles.routeNumber}
-        >
+        <Text style={{ color: '#ffffff', fontSize: 12, fontWeight: '700' }}>
           {bus.routeName?.split(' ')[0] || bus.routeId}
-        </ThemedText>
+        </Text>
       </View>
 
-      <View style={styles.busInfo}>
-        <ThemedText weight="medium" numberOfLines={1}>
+      <View style={{ flex: 1, marginRight: 8 }}>
+        <Text numberOfLines={1} style={{ fontWeight: '500', color: PlatformColor('label') }}>
           {bus.routeName || `Route ${bus.routeId}`}
-        </ThemedText>
+        </Text>
         {bus.nextStop && (
-          <ThemedText variant="muted" numberOfLines={1}>
+          <Text numberOfLines={1} style={{ color: PlatformColor('secondaryLabel') }}>
             Next: {bus.nextStop}
-          </ThemedText>
+          </Text>
         )}
       </View>
 
-      <View style={styles.busStatus}>
+      <View style={{ flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
         <OccupancyBadge occupancy={bus.occupancy} />
         <ScheduleBadge adherence={bus.scheduleAdherence} />
       </View>
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
 export function TransitWidget() {
-  const colors = useThemeColors();
   const { data, isLoading, isError, refetch, isFetching } = useTransit();
 
-  const buses = data?.data || [];
+  const buses = Array.isArray(data?.data) ? data.data : [];
   const activeBuses = buses.slice(0, 5); // Show top 5 buses
 
   const status = getDataStatus(
@@ -128,7 +149,7 @@ export function TransitWidget() {
 
   if (isLoading) {
     return (
-      <DashboardCard title="Transit" icon="bus-outline" status="loading">
+      <DashboardCard title="Transit" sfSymbol="bus.fill" status="loading">
         <CardSkeleton lines={4} />
       </DashboardCard>
     );
@@ -138,11 +159,11 @@ export function TransitWidget() {
     return (
       <DashboardCard
         title="Transit"
-        icon="bus-outline"
+        sfSymbol="bus.fill"
         status="error"
         onRefresh={() => refetch()}
       >
-        <ThemedText variant="muted">Unable to load transit data</ThemedText>
+        <Text style={{ color: PlatformColor('secondaryLabel') }}>Unable to load transit data</Text>
       </DashboardCard>
     );
   }
@@ -150,89 +171,31 @@ export function TransitWidget() {
   return (
     <DashboardCard
       title="Transit"
-      icon="bus-outline"
+      sfSymbol="bus.fill"
       status={status}
       onRefresh={() => refetch()}
       isRefreshing={isFetching}
     >
       {activeBuses.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Ionicons name="bus-outline" size={32} color={colors.textMuted} />
-          <ThemedText variant="muted" style={styles.emptyText}>
+        <View style={{ alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <SymbolView name="bus" tintColor={PlatformColor('tertiaryLabel')} size={32} />
+          <Text style={{ marginTop: 8, color: PlatformColor('secondaryLabel') }}>
             No active buses
-          </ThemedText>
+          </Text>
         </View>
       ) : (
-        <View style={styles.busList}>
+        <View style={{ gap: 8 }}>
           {activeBuses.map((bus) => (
             <BusRow key={bus.id} bus={bus} />
           ))}
 
           {buses.length > 5 && (
-            <ThemedText variant="muted" style={styles.moreText}>
+            <Text style={{ textAlign: 'center', marginTop: 8, color: PlatformColor('secondaryLabel') }}>
               +{buses.length - 5} more active
-            </ThemedText>
+            </Text>
           )}
         </View>
       )}
     </DashboardCard>
   );
 }
-
-const styles = StyleSheet.create({
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  emptyText: {
-    marginTop: 8,
-  },
-  busList: {
-    gap: 8,
-  },
-  busRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  routeBadge: {
-    width: 40,
-    height: 28,
-    borderRadius: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  routeNumber: {
-    color: '#ffffff',
-    fontSize: 12,
-  },
-  busInfo: {
-    flex: 1,
-    marginRight: 8,
-  },
-  busStatus: {
-    flexDirection: 'column',
-    alignItems: 'flex-end',
-    gap: 4,
-  },
-  badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    gap: 4,
-  },
-  badgeDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  moreText: {
-    textAlign: 'center',
-    marginTop: 8,
-  },
-});
