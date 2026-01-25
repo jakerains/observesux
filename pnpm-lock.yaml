@@ -82,7 +82,7 @@ importers:
         version: 1.2.8(@types/react-dom@19.2.3(@types/react@19.2.8))(@types/react@19.2.8)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@serwist/next':
         specifier: ^9.5.0
-        version: 9.5.0(next@16.1.2(@babel/core@7.28.6)(@opentelemetry/api@1.9.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react@19.2.3)(typescript@5.9.3)(webpack@5.96.1(esbuild@0.25.0))
+        version: 9.5.0(next@16.1.2(@babel/core@7.28.6)(@opentelemetry/api@1.9.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react@19.2.3)(typescript@5.9.3)(webpack@5.96.1)
       '@vercel/analytics':
         specifier: ^1.6.1
         version: 1.6.1(next@16.1.2(@babel/core@7.28.6)(@opentelemetry/api@1.9.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react@19.2.3)
@@ -183,6 +183,9 @@ importers:
       eslint-config-next:
         specifier: 16.1.2
         version: 16.1.2(@typescript-eslint/parser@8.53.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3))(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3)
+      playwright-core:
+        specifier: ^1.58.0
+        version: 1.58.0
       remotion:
         specifier: ^4.0.321
         version: 4.0.407(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -4175,6 +4178,11 @@ packages:
     resolution: {integrity: sha512-5gTmgEY/sqK6gFXLIsQNH19lWb4ebPDLA4SdLP7dsWkIXHWlG66oPuVvXSGFPppYZz8ZDZq0dYYrbHfBCVUb1Q==}
     engines: {node: '>=12'}
 
+  playwright-core@1.58.0:
+    resolution: {integrity: sha512-aaoB1RWrdNi3//rOeKuMiS65UCcgOVljU46At6eFcOFPFHWtd2weHRRow6z/n+Lec0Lvu0k9ZPKJSjPugikirw==}
+    engines: {node: '>=18'}
+    hasBin: true
+
   possible-typed-array-names@1.1.0:
     resolution: {integrity: sha512-/+5VFTchJDoVj3bhoqi6UeymcD00DAwb1nJwamzPvHEszJ4FpF6SNNbUbOS8yI56qHzdV8eK0qEfOSiodkTdxg==}
     engines: {node: '>= 0.4'}
@@ -6603,14 +6611,14 @@ snapshots:
       '@remotion/media-parser': 4.0.407
       '@remotion/studio': 4.0.407(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@remotion/studio-shared': 4.0.407(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
-      css-loader: 5.2.7(webpack@5.96.1(esbuild@0.25.0))
+      css-loader: 5.2.7(webpack@5.96.1)
       esbuild: 0.25.0
       react: 19.2.3
       react-dom: 19.2.3(react@19.2.3)
       react-refresh: 0.9.0
       remotion: 4.0.407(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       source-map: 0.7.3
-      style-loader: 4.0.0(webpack@5.96.1(esbuild@0.25.0))
+      style-loader: 4.0.0(webpack@5.96.1)
       webpack: 5.96.1(esbuild@0.25.0)
     transitivePeerDependencies:
       - '@swc/core'
@@ -6821,11 +6829,11 @@ snapshots:
     optionalDependencies:
       typescript: 5.9.3
 
-  '@serwist/next@9.5.0(next@16.1.2(@babel/core@7.28.6)(@opentelemetry/api@1.9.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react@19.2.3)(typescript@5.9.3)(webpack@5.96.1(esbuild@0.25.0))':
+  '@serwist/next@9.5.0(next@16.1.2(@babel/core@7.28.6)(@opentelemetry/api@1.9.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react@19.2.3)(typescript@5.9.3)(webpack@5.96.1)':
     dependencies:
       '@serwist/build': 9.5.0(typescript@5.9.3)
       '@serwist/utils': 9.5.0
-      '@serwist/webpack-plugin': 9.5.0(typescript@5.9.3)(webpack@5.96.1(esbuild@0.25.0))
+      '@serwist/webpack-plugin': 9.5.0(typescript@5.9.3)(webpack@5.96.1)
       '@serwist/window': 9.5.0(typescript@5.9.3)
       browserslist: 4.28.1
       glob: 10.5.0
@@ -6842,7 +6850,7 @@ snapshots:
 
   '@serwist/utils@9.5.0': {}
 
-  '@serwist/webpack-plugin@9.5.0(typescript@5.9.3)(webpack@5.96.1(esbuild@0.25.0))':
+  '@serwist/webpack-plugin@9.5.0(typescript@5.9.3)(webpack@5.96.1)':
     dependencies:
       '@serwist/build': 9.5.0(typescript@5.9.3)
       '@serwist/utils': 9.5.0
@@ -7677,7 +7685,7 @@ snapshots:
       shebang-command: 2.0.0
       which: 2.0.2
 
-  css-loader@5.2.7(webpack@5.96.1(esbuild@0.25.0)):
+  css-loader@5.2.7(webpack@5.96.1):
     dependencies:
       icss-utils: 5.1.0(postcss@8.5.6)
       loader-utils: 2.0.4
@@ -9484,6 +9492,8 @@ snapshots:
 
   picomatch@4.0.3: {}
 
+  playwright-core@1.58.0: {}
+
   possible-typed-array-names@1.1.0: {}
 
   postcss-modules-extract-imports@3.1.0(postcss@8.5.6):
@@ -10092,7 +10102,7 @@ snapshots:
 
   strip-json-comments@3.1.1: {}
 
-  style-loader@4.0.0(webpack@5.96.1(esbuild@0.25.0)):
+  style-loader@4.0.0(webpack@5.96.1):
     dependencies:
       webpack: 5.96.1(esbuild@0.25.0)
 

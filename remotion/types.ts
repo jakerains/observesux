@@ -20,3 +20,27 @@ export type PromoVideoProps = {
   copy: PromoCopy
   theme: PromoTheme
 }
+
+export type DigestCopy = {
+  headline: string
+  subheadline: string
+  timeLabel: string
+  features: Array<{
+    icon: string
+    title: string
+    description: string
+  }>
+  previewItems: Array<{
+    category: string
+    value: string
+    trend?: 'up' | 'down' | 'neutral'
+  }>
+  ctaPrimary: string
+  ctaSecondary: string
+  siteUrl: string
+}
+
+export type DigestPromoProps = {
+  copy: DigestCopy
+  theme: PromoTheme
+}
