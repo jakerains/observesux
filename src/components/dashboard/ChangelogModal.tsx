@@ -16,6 +16,19 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.6.3',
+    date: '2026-01-25',
+    added: [
+      'Database caching for weather, rivers, air quality, and forecasts',
+      'Cache-first fetching reduces external API calls',
+      'Events cached for 7 days, weather for 15-30 min, rivers for 30 min',
+    ],
+    changed: [
+      'All fetchers check database cache before external API calls',
+      'Chat agent benefits from caching via internal API routes',
+    ],
+  },
+  {
     version: '0.6.2',
     date: '2026-01-25',
     added: [

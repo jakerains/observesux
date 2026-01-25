@@ -1,4 +1,5 @@
 import type { RiverGaugeReading, FloodStage, Earthquake } from '@/types'
+import { getCachedRivers, cacheRivers } from '@/lib/db/rivers'
 
 // USGS gauge sites near Sioux City
 const GAUGE_SITES = {
@@ -74,7 +75,18 @@ function isValidWaterTemp(value: number): boolean {
   return value >= -40 && value <= 120 // -40 to 120°F is reasonable
 }
 
-export async function fetchRiverGauges(): Promise<RiverGaugeReading[]> {
+export async function fetchRiverGauges(forceRefresh = false): Promise<RiverGaugeReading[]> {
+  // Check cache first (unless force refresh)
+  if (!forceRefresh) {
+    const cached = await getCachedRivers()
+    if (cached && cached.length > 0) {
+      console.log(`[Rivers] Using ${cached.length} cached readings`)
+      return cached
+    }
+  }
+
+  console.log('[Rivers] Cache miss - fetching from USGS API')
+
   try {
     const siteIds = Object.values(GAUGE_SITES).join(',')
 
@@ -140,7 +152,7 @@ export async function fetchRiverGauges(): Promise<RiverGaugeReading[]> {
     }
 
     // Convert to array and determine flood stages
-    return Array.from(readings.values()).map(reading => {
+    const results = Array.from(readings.values()).map(reading => {
       const isMissouri = reading.siteId === GAUGE_SITES.missouri
       const stages = isMissouri ? MISSOURI_FLOOD_STAGES : BIG_SIOUX_FLOOD_STAGES
 
@@ -160,6 +172,11 @@ export async function fetchRiverGauges(): Promise<RiverGaugeReading[]> {
         timestamp: reading.timestamp || new Date()
       }
     })
+
+    // Cache results (non-blocking)
+    cacheRivers(results).catch(() => {})
+
+    return results
   } catch (error) {
     console.error('Failed to fetch USGS river data:', error)
     return []

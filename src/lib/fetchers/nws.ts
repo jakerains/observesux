@@ -1,4 +1,5 @@
 import type { WeatherObservation, WeatherAlert, WeatherForecast, HourlyWeatherForecast, ForecastPeriod, HourlyForecast } from '@/types'
+import { getCachedWeather, cacheWeather, getCachedForecast, cacheForecast } from '@/lib/db/weather'
 
 // Sioux City coordinates
 const SIOUX_CITY_LAT = 42.4997
@@ -91,7 +92,18 @@ function degreesToCardinal(degrees: number | null): string | null {
   return directions[index]
 }
 
-export async function fetchNWSObservations(): Promise<WeatherObservation> {
+export async function fetchNWSObservations(forceRefresh = false): Promise<WeatherObservation> {
+  // Check cache first (unless force refresh)
+  if (!forceRefresh) {
+    const cached = await getCachedWeather(STATION_ID)
+    if (cached) {
+      console.log('[Weather] Using cached observation')
+      return cached
+    }
+  }
+
+  console.log('[Weather] Cache miss - fetching from NWS API')
+
   try {
     const response = await fetch(
       `https://api.weather.gov/stations/${STATION_ID}/observations/latest`,
@@ -111,7 +123,7 @@ export async function fetchNWSObservations(): Promise<WeatherObservation> {
     const data = await response.json()
     const props: NWSObservationProperties = data.properties
 
-    return {
+    const observation: WeatherObservation = {
       stationId: STATION_ID,
       stationName: 'Sioux City Gateway Airport',
       timestamp: new Date(props.timestamp),
@@ -129,6 +141,11 @@ export async function fetchNWSObservations(): Promise<WeatherObservation> {
       heatIndex: celsiusToFahrenheit(props.heatIndex?.value),
       windChill: celsiusToFahrenheit(props.windChill?.value)
     }
+
+    // Cache the result (non-blocking)
+    cacheWeather(observation).catch(() => {})
+
+    return observation
   } catch (error) {
     console.error('Failed to fetch NWS observations:', error)
     // Return a default observation with null values
@@ -234,7 +251,24 @@ interface NWSHourlyPeriod {
   shortForecast: string
 }
 
-export async function fetchNWSForecast(): Promise<WeatherForecast> {
+export async function fetchNWSForecast(forceRefresh = false): Promise<WeatherForecast> {
+  const cacheKey = { gridId: NWS_GRID_OFFICE, gridX: NWS_GRID_X, gridY: NWS_GRID_Y }
+
+  // Check cache first (unless force refresh)
+  if (!forceRefresh) {
+    const cachedPeriods = await getCachedForecast(cacheKey)
+    if (cachedPeriods && cachedPeriods.length > 0) {
+      console.log('[Forecast] Using cached forecast')
+      return {
+        periods: cachedPeriods,
+        generatedAt: new Date(),
+        updateTime: new Date()
+      }
+    }
+  }
+
+  console.log('[Forecast] Cache miss - fetching from NWS API')
+
   try {
     const response = await fetch(
       `https://api.weather.gov/gridpoints/${NWS_GRID_OFFICE}/${NWS_GRID_X},${NWS_GRID_Y}/forecast`,
@@ -270,6 +304,9 @@ export async function fetchNWSForecast(): Promise<WeatherForecast> {
       icon: period.icon,
       isDaytime: period.isDaytime
     }))
+
+    // Cache the result (non-blocking)
+    cacheForecast(cacheKey, periods).catch(() => {})
 
     return {
       periods,

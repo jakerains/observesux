@@ -5,6 +5,22 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.3] - 2026-01-25
+
+### Added
+- Database caching layer for external API data
+  - Weather observations cached for 15 minutes
+  - Weather forecasts cached for 30 minutes
+  - River gauge readings cached for 30 minutes
+  - Air quality data cached for 60 minutes
+  - Community events cached for 7 days
+- New cache tables: `weather_cache`, `forecast_cache`, `river_cache`, `air_quality_cache`
+- Cache-first fetching pattern reduces external API calls significantly
+
+### Changed
+- All fetchers now check database cache before making external API calls
+- Chat agent benefits from caching via internal API routes
+
 ## [0.6.2] - 2026-01-25
 
 ### Added

@@ -1,5 +1,6 @@
 import type { AirQualityReading, AQICategory } from '@/types'
 import { getAQICategoryFromValue } from '@/types'
+import { getCachedAirQuality, cacheAirQuality } from '@/lib/db/air-quality'
 
 // Sioux City coordinates
 const SIOUX_CITY_LAT = 42.5
@@ -105,11 +106,25 @@ export async function fetchMesonetAirQuality(): Promise<AirQualityReading | null
   }
 }
 
-// Combined fetcher that tries AirNow first, then falls back
-export async function fetchAirQuality(): Promise<AirQualityReading> {
+// Combined fetcher that tries cache first, then AirNow, then falls back
+export async function fetchAirQuality(forceRefresh = false): Promise<AirQualityReading> {
+  // Check cache first (unless force refresh)
+  if (!forceRefresh) {
+    const cached = await getCachedAirQuality()
+    if (cached && cached.length > 0) {
+      console.log('[AirQuality] Using cached data')
+      // Return the first reading (usually only one for our location)
+      return cached[0]
+    }
+  }
+
+  console.log('[AirQuality] Cache miss - fetching from AirNow API')
+
   // Try AirNow first
   const airnowData = await fetchAirNowData()
   if (airnowData) {
+    // Cache the result (non-blocking)
+    cacheAirQuality([airnowData]).catch(() => {})
     return airnowData
   }
 
