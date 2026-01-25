@@ -160,6 +160,93 @@ export function useTransit(refreshInterval = 30000) {
   )
 }
 
+// GTFS Static Data (routes, shapes, stops)
+export interface GtfsApiResponse {
+  stops?: Record<string, {
+    stopId: string
+    stopName: string
+    latitude: number
+    longitude: number
+    wheelchairBoarding?: boolean
+  }>
+  routes?: Array<{
+    id: string
+    shortName: string
+    longName: string
+    color: string
+    textColor: string
+  }>
+  shapes?: Array<{
+    routeId: string
+    shapeId: string
+    coordinates: [number, number][]
+    color: string
+  }>
+  routeStops?: Record<string, string[]>
+  timestamp: string
+}
+
+export function useGtfsData(refreshInterval = 3600000) { // 1 hour
+  return useSWR<GtfsApiResponse>(
+    '/api/transit/gtfs',
+    fetcher,
+    {
+      refreshInterval,
+      dedupingInterval: 300000, // 5 minutes
+      revalidateOnFocus: false,
+    }
+  )
+}
+
+// Route shapes for a specific route
+export interface RouteShapeResponse {
+  shapes: Array<{
+    routeId: string
+    shapeId: string
+    coordinates: [number, number][]
+    color: string
+  }>
+  routeId: string
+  timestamp: string
+}
+
+export function useRouteShape(routeId: string | null) {
+  return useSWR<RouteShapeResponse>(
+    routeId ? `/api/transit/gtfs?type=shapes&routeId=${routeId}` : null,
+    fetcher,
+    {
+      refreshInterval: 3600000, // 1 hour
+      dedupingInterval: 60000,
+      revalidateOnFocus: false,
+    }
+  )
+}
+
+// Stops for a specific route
+export interface RouteStopsResponse {
+  stops: Array<{
+    stopId: string
+    stopName: string
+    latitude: number
+    longitude: number
+    wheelchairBoarding?: boolean
+  }>
+  routeId: string
+  timestamp: string
+}
+
+export function useRouteStops(routeId: string | null) {
+  return useSWR<RouteStopsResponse>(
+    routeId ? `/api/transit/gtfs?type=stops&routeId=${routeId}` : null,
+    fetcher,
+    {
+      refreshInterval: 3600000, // 1 hour
+      dedupingInterval: 60000,
+      revalidateOnFocus: false,
+    }
+  )
+}
+
 // ============================================
 // Power Outages
 // ============================================

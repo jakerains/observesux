@@ -19,7 +19,9 @@ import { Settings, RotateCcw, GripVertical, Eye, EyeOff } from 'lucide-react'
 import { useDashboardLayout, WidgetConfig } from '@/lib/contexts/DashboardLayoutContext'
 
 interface SettingsModalProps {
-  trigger?: React.ReactNode
+  trigger?: React.ReactNode | null
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
 function getWidgetIcon(id: string): string {
@@ -65,8 +67,10 @@ function WidgetToggle({ widget, onToggle }: { widget: WidgetConfig; onToggle: (e
   )
 }
 
-export function SettingsModal({ trigger }: SettingsModalProps) {
-  const [open, setOpen] = useState(false)
+export function SettingsModal({ trigger, open: openProp, onOpenChange }: SettingsModalProps) {
+  const [internalOpen, setInternalOpen] = useState(false)
+  const open = openProp ?? internalOpen
+  const setOpen = onOpenChange ?? setInternalOpen
   const { widgets, widgetOrder, setWidgetEnabled, resetToDefault } = useDashboardLayout()
 
   // Get widgets in order
@@ -101,14 +105,16 @@ export function SettingsModal({ trigger }: SettingsModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button variant="ghost" size="icon" className="h-9 w-9">
-            <Settings className="h-5 w-5" />
-            <span className="sr-only">Settings</span>
-          </Button>
-        )}
-      </DialogTrigger>
+      {trigger !== null && (
+        <DialogTrigger asChild>
+          {trigger || (
+            <Button variant="ghost" size="icon" className="h-9 w-9">
+              <Settings className="h-5 w-5" />
+              <span className="sr-only">Settings</span>
+            </Button>
+          )}
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">

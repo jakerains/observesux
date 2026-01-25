@@ -3,13 +3,11 @@
 import { useState, useEffect } from 'react'
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { RefreshCw, Moon, Sun, Settings, Lightbulb, X, Sparkles } from "lucide-react"
+import { RefreshCw, Moon, Sun, Lightbulb, X, Sparkles } from "lucide-react"
 import { useTheme } from "next-themes"
-import { SettingsModal } from './SettingsModal'
 import { SuggestionModal } from './SuggestionModal'
 import { UserMenu } from '@/components/auth/UserMenu'
 import { useSession } from '@/lib/auth/client'
-import { cn } from '@/lib/utils'
 import Image from 'next/image'
 
 const ACCOUNT_TOOLTIP_KEY = 'account-tooltip-seen-v1'
@@ -113,15 +111,6 @@ export function DashboardHeader({ onRefresh, isRefreshing }: DashboardHeaderProp
               >
                 <Lightbulb className="h-4 w-4" />
                 <span className="sr-only">Submit suggestion</span>
-              </Button>
-            }
-          />
-
-          <SettingsModal
-            trigger={
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <Settings className="h-4 w-4" />
-                <span className="sr-only">Settings</span>
               </Button>
             }
           />

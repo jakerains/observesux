@@ -16,6 +16,23 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.5.7',
+    date: '2026-01-24',
+    added: [
+      'Transit occupancy status (Empty, Seats Available, Standing Only, Full)',
+      'Real-time schedule adherence indicators (On Time, Early, Late)',
+      'Trip progress tracking for each bus',
+      'Stop name resolution from GTFS data',
+      'Route path polylines on map when route selected',
+      'Stop markers along selected routes',
+    ],
+    changed: [
+      'Dashboard settings moved to user dropdown menu',
+      'Bus popups show richer info (occupancy, schedule, next stops)',
+    ],
+    fixed: [],
+  },
+  {
     version: '0.5.6',
     date: '2026-01-24',
     added: [

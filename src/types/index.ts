@@ -233,6 +233,30 @@ export function getAQIColor(category: AQICategory): string {
 // Transit
 // ============================================
 
+// GTFS-RT Occupancy Status (0-6)
+export type OccupancyStatus =
+  | 'empty'           // 0 - EMPTY
+  | 'many_seats'      // 1 - MANY_SEATS_AVAILABLE
+  | 'few_seats'       // 2 - FEW_SEATS_AVAILABLE
+  | 'standing_only'   // 3 - STANDING_ROOM_ONLY
+  | 'crushed'         // 4 - CRUSHED_STANDING_ROOM_ONLY
+  | 'full'            // 5 - FULL
+  | 'not_accepting'   // 6 - NOT_ACCEPTING_PASSENGERS
+  | 'unknown'
+
+export type ScheduleAdherence = 'early' | 'on-time' | 'late' | 'unknown'
+
+export interface TransitStop {
+  id: string
+  name: string
+  sequence: number
+  scheduledArrival?: string // HH:MM:SS format
+  scheduledDeparture?: string
+  latitude: number
+  longitude: number
+  wheelchairBoarding?: boolean
+}
+
 export interface BusPosition {
   vehicleId: string
   routeId: string
@@ -243,8 +267,35 @@ export interface BusPosition {
   heading: number
   speed: number
   timestamp: Date
+  // Enhanced fields from GTFS-RT
+  tripId?: string
+  occupancyStatus?: OccupancyStatus
+  occupancyRaw?: number // Raw GTFS-RT value 0-6
+  // Stop information
+  currentStopSequence?: number
+  currentStopId?: string
+  currentStopName?: string
+  // Upcoming stops with names
+  upcomingStops?: TransitStop[]
+  // Schedule data
+  scheduleAdherence?: ScheduleAdherence
+  scheduledArrival?: string // Expected arrival at current stop
+  minutesOffSchedule?: number // Negative = early, positive = late
+  // Trip progress
+  tripProgress?: {
+    currentStop: number
+    totalStops: number
+  }
+  // Legacy fields (deprecated)
   nextStop?: string
   nextStopEta?: Date
+}
+
+export interface RouteShape {
+  routeId: string
+  shapeId: string
+  coordinates: [number, number][] // [lat, lng] pairs
+  color: string
 }
 
 export interface TransitData {
@@ -263,6 +314,91 @@ export interface TransitRoute {
   longName: string
   color: string
   textColor: string
+}
+
+// GTFS Static Data types
+export interface GtfsStop {
+  stopId: string
+  stopName: string
+  latitude: number
+  longitude: number
+  wheelchairBoarding?: boolean
+}
+
+export interface GtfsStopTime {
+  tripId: string
+  stopId: string
+  arrivalTime: string // HH:MM:SS
+  departureTime: string
+  stopSequence: number
+}
+
+export interface GtfsData {
+  stops: Map<string, GtfsStop>
+  routes: TransitRoute[]
+  shapes: Map<string, RouteShape>
+  stopTimes: Map<string, GtfsStopTime[]> // tripId -> stop times
+  tripToRoute: Map<string, string> // tripId -> routeId
+  tripToShape: Map<string, string> // tripId -> shapeId
+}
+
+// Helper functions
+export function getOccupancyFromRaw(raw: number | undefined): OccupancyStatus {
+  if (raw === undefined || raw === null) return 'unknown'
+  switch (raw) {
+    case 0: return 'empty'
+    case 1: return 'many_seats'
+    case 2: return 'few_seats'
+    case 3: return 'standing_only'
+    case 4: return 'crushed'
+    case 5: return 'full'
+    case 6: return 'not_accepting'
+    default: return 'unknown'
+  }
+}
+
+export function getOccupancyLabel(status: OccupancyStatus): string {
+  switch (status) {
+    case 'empty': return 'Empty'
+    case 'many_seats': return 'Seats Available'
+    case 'few_seats': return 'Few Seats'
+    case 'standing_only': return 'Standing Only'
+    case 'crushed': return 'Very Crowded'
+    case 'full': return 'Full'
+    case 'not_accepting': return 'Not Boarding'
+    default: return 'Unknown'
+  }
+}
+
+export function getOccupancyColor(status: OccupancyStatus): string {
+  switch (status) {
+    case 'empty': return '#22c55e' // green
+    case 'many_seats': return '#22c55e' // green
+    case 'few_seats': return '#eab308' // yellow
+    case 'standing_only': return '#f97316' // orange
+    case 'crushed': return '#ef4444' // red
+    case 'full': return '#ef4444' // red
+    case 'not_accepting': return '#6b7280' // gray
+    default: return '#6b7280' // gray
+  }
+}
+
+export function getScheduleAdherenceLabel(adherence: ScheduleAdherence): string {
+  switch (adherence) {
+    case 'early': return 'Early'
+    case 'on-time': return 'On Time'
+    case 'late': return 'Late'
+    default: return ''
+  }
+}
+
+export function getScheduleAdherenceColor(adherence: ScheduleAdherence): string {
+  switch (adherence) {
+    case 'early': return '#3b82f6' // blue
+    case 'on-time': return '#22c55e' // green
+    case 'late': return '#ef4444' // red
+    default: return '#6b7280' // gray
+  }
 }
 
 // ============================================

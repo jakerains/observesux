@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState, useRef, useMemo } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline, CircleMarker } from 'react-leaflet'
 import { DashboardCard } from './DashboardCard'
 import { Badge } from "@/components/ui/badge"
 import { useCameras, useRivers, useTrafficEvents, useSnowplows, useTransit, useAircraft, useGasPrices } from '@/lib/hooks/useDataFetching'
@@ -10,7 +10,7 @@ import { useAircraftInterpolation } from '@/lib/hooks/useAircraftInterpolation'
 import { useTransitSelection } from '@/lib/contexts/TransitContext'
 import { useMapFocus } from '@/lib/contexts/MapFocusContext'
 import { Map, Layers, Camera, Waves, AlertTriangle, CloudRain, Snowflake, Bus, Plane, Fuel, ChevronDown } from 'lucide-react'
-import type { SuxAssociation } from '@/types'
+import type { SuxAssociation, OccupancyStatus, ScheduleAdherence, TransitStop } from '@/types'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -503,8 +503,15 @@ export function InteractiveMap() {
   // Interpolate aircraft positions for smooth movement
   const aircraft = useAircraftInterpolation(rawAircraft, 15000)
 
-  // Transit selection for highlighting
-  const { selectedBusId, selectedRouteId, clearSelection } = useTransitSelection()
+  // Transit selection for highlighting, route shapes and stops
+  const {
+    selectedBusId,
+    selectedRouteId,
+    clearSelection,
+    selectedRouteShape,
+    selectedRouteStops,
+    showRoutePath
+  } = useTransitSelection()
 
   const radarFrames = useMemo(() => {
     if (!radarData?.radar) return []
@@ -705,10 +712,85 @@ export function InteractiveMap() {
             </Marker>
           ))}
 
+          {/* Route Path Polylines - shown when route is selected */}
+          {layers.transit && showRoutePath && selectedRouteId && selectedRouteShape && selectedRouteShape.map((shape, index) => (
+            <Polyline
+              key={`shape-${shape.shapeId}-${index}`}
+              positions={shape.coordinates.map(([lat, lng]) => [lat, lng] as [number, number])}
+              pathOptions={{
+                color: shape.color || '#3b82f6',
+                weight: 4,
+                opacity: 0.8,
+                lineCap: 'round',
+                lineJoin: 'round',
+              }}
+            />
+          ))}
+
+          {/* Stop Markers - shown when route is selected */}
+          {layers.transit && showRoutePath && selectedRouteId && selectedRouteStops && selectedRouteStops.map((stop, index) => (
+            <CircleMarker
+              key={`stop-${stop.stopId}-${index}`}
+              center={[stop.latitude, stop.longitude]}
+              radius={6}
+              pathOptions={{
+                color: '#ffffff',
+                weight: 2,
+                fillColor: selectedRouteShape?.[0]?.color || '#3b82f6',
+                fillOpacity: 0.8,
+              }}
+            >
+              <Popup>
+                <div className="min-w-[150px]">
+                  <h4 className="font-medium text-sm">{stop.stopName}</h4>
+                  <p className="text-xs text-gray-500">Stop #{index + 1}</p>
+                  {stop.wheelchairBoarding && (
+                    <p className="text-xs text-blue-600">♿ Wheelchair accessible</p>
+                  )}
+                </div>
+              </Popup>
+            </CircleMarker>
+          ))}
+
           {/* Bus/Transit Markers - with smooth interpolation */}
           {layers.transit && buses.map((bus) => {
             const isHighlighted = selectedBusId === bus.vehicleId ||
               (selectedRouteId !== null && bus.routeId === selectedRouteId)
+
+            // Helper functions for occupancy and schedule display
+            const getOccupancyDisplay = (status?: string) => {
+              if (!status || status === 'unknown') return null
+              const labels: Record<string, string> = {
+                empty: 'Empty',
+                many_seats: 'Seats Available',
+                few_seats: 'Few Seats',
+                standing_only: 'Standing Only',
+                crushed: 'Very Crowded',
+                full: 'Full',
+                not_accepting: 'Not Boarding'
+              }
+              const colors: Record<string, string> = {
+                empty: '#22c55e',
+                many_seats: '#22c55e',
+                few_seats: '#eab308',
+                standing_only: '#f97316',
+                crushed: '#ef4444',
+                full: '#ef4444',
+                not_accepting: '#6b7280'
+              }
+              return { label: labels[status] || status, color: colors[status] || '#6b7280' }
+            }
+
+            const getScheduleDisplay = (adherence?: string, minutesOff?: number) => {
+              if (!adherence || adherence === 'unknown') return null
+              if (adherence === 'on-time') return { label: 'On Time', color: '#22c55e' }
+              if (adherence === 'early') return { label: `${Math.abs(minutesOff || 0)}m early`, color: '#3b82f6' }
+              if (adherence === 'late') return { label: `${Math.abs(minutesOff || 0)}m late`, color: '#ef4444' }
+              return null
+            }
+
+            const occupancy = getOccupancyDisplay(bus.occupancyStatus)
+            const schedule = getScheduleDisplay(bus.scheduleAdherence, bus.minutesOffSchedule)
 
             return (
               <Marker
@@ -723,18 +805,63 @@ export function InteractiveMap() {
                 }}
               >
                 <Popup>
-                  <div className="min-w-[180px]">
+                  <div className="min-w-[200px]">
                     <h4 className="font-medium text-sm mb-1">{bus.routeName}</h4>
+
+                    {/* Status badges */}
+                    <div className="flex flex-wrap gap-1 mb-2">
+                      {occupancy && (
+                        <span
+                          className="text-[10px] px-1.5 py-0.5 rounded-full"
+                          style={{ backgroundColor: `${occupancy.color}20`, color: occupancy.color }}
+                        >
+                          {occupancy.label}
+                        </span>
+                      )}
+                      {schedule && (
+                        <span
+                          className="text-[10px] px-1.5 py-0.5 rounded-full"
+                          style={{ backgroundColor: `${schedule.color}20`, color: schedule.color }}
+                        >
+                          {schedule.label}
+                        </span>
+                      )}
+                    </div>
+
                     <div className="text-xs space-y-1">
                       <p>Vehicle: <Badge variant="outline" className="text-xs">{bus.vehicleId}</Badge></p>
                       <p>Speed: {bus.speed.toFixed(0)} mph</p>
-                      <p>Heading: {bus.heading}°</p>
-                      {bus.nextStop && <p>Next Stop: {bus.nextStop}</p>}
+
+                      {/* Trip progress */}
+                      {bus.tripProgress && (
+                        <p>Progress: Stop {bus.tripProgress.currentStop} of {bus.tripProgress.totalStops}</p>
+                      )}
+
+                      {/* Current stop */}
+                      {bus.currentStopName && (
+                        <p>At: <strong>{bus.currentStopName}</strong></p>
+                      )}
+
+                      {/* Next stops */}
+                      {bus.upcomingStops && bus.upcomingStops.length > 0 && (
+                        <div className="mt-1 pt-1 border-t">
+                          <p className="font-medium mb-0.5">Next Stops:</p>
+                          {bus.upcomingStops.slice(0, 3).map((stop, i) => (
+                            <p key={stop.id} className="text-gray-600">
+                              {i + 1}. {stop.name}
+                              {stop.scheduledArrival && (
+                                <span className="text-gray-400 ml-1">({stop.scheduledArrival.slice(0, 5)})</span>
+                              )}
+                            </p>
+                          ))}
+                        </div>
+                      )}
                     </div>
+
                     {isHighlighted && (
                       <button
                         onClick={clearSelection}
-                        className="mt-2 w-full text-xs bg-muted hover:bg-muted/80 px-2 py-1 rounded"
+                        className="mt-2 w-full text-xs bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded"
                       >
                         Clear selection
                       </button>

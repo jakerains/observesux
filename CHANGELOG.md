@@ -5,6 +5,23 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.7] - 2026-01-24
+
+### Added
+- Enhanced transit data with occupancy status (Empty, Seats Available, Standing Only, Full)
+- Real-time schedule adherence indicators (On Time, Early, Late with minutes)
+- Trip progress tracking ("Stop 3 of 15") for each bus
+- Stop name resolution from GTFS data (no more raw IDs)
+- Route path polylines on map when route is selected
+- Stop markers along selected routes
+- New `/api/transit/gtfs` endpoint for static GTFS data
+- Upcoming stops with scheduled times in bus popups
+
+### Changed
+- Dashboard settings moved to user dropdown menu for cleaner header
+- Transit API now uses dynamic routes from GTFS instead of hardcoded data
+- Bus popups show richer information (occupancy, schedule, next stops)
+
 ## [0.5.6] - 2026-01-24
 
 ### Added
