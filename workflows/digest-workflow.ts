@@ -54,7 +54,13 @@ async function generateDigestContent(
     system: systemPrompt,
     prompt: userPrompt,
     maxOutputTokens: 2000,
-    temperature: 0.7
+    // GPT-5.2 settings - temperature not supported for reasoning models
+    providerOptions: {
+      openai: {
+        reasoningEffort: 'low', // Low reasoning for content generation (faster)
+        textVerbosity: 'medium', // Balanced output length
+      },
+    },
   })
 
   const aiDuration = Date.now() - aiStartTime

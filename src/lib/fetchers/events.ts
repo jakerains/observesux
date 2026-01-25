@@ -3,10 +3,7 @@ import type { CommunityEvent, CommunityEventsData } from '@/types'
 // ============================================
 // Event Source Configuration
 // ============================================
-// Add new event sources here. Each source needs:
-// - name: Display name for the source
-// - url: Jina Reader URL (prefix actual URL with https://r.jina.ai/)
-// - parser: Function to extract events from the markdown
+// Using Firecrawl API for reliable web scraping
 
 interface EventSource {
   name: string
@@ -17,15 +14,17 @@ interface EventSource {
 const EVENT_SOURCES: EventSource[] = [
   {
     name: 'Explore Siouxland',
-    url: 'https://r.jina.ai/exploresiouxland.com/events/',
+    url: 'https://exploresiouxland.com/events/',
     parser: parseExploreSiouxlandEvents,
   },
   {
     name: 'Hard Rock Casino',
-    url: 'https://r.jina.ai/www.hardrockcasinosiouxcity.com/events-list/',
+    url: 'https://www.hardrockcasinosiouxcity.com/events-list/',
     parser: parseHardRockEvents,
   },
 ]
+
+const FIRECRAWL_API_KEY = process.env.FIRECRAWL_API_KEY
 
 // ============================================
 // Main Fetcher
@@ -33,9 +32,18 @@ const EVENT_SOURCES: EventSource[] = [
 
 /**
  * Fetches community events from all configured sources in parallel.
- * Each source is fetched via Jina Reader which converts webpages to markdown.
+ * Uses Firecrawl API for reliable web scraping.
  */
 export async function fetchCommunityEvents(): Promise<CommunityEventsData> {
+  if (!FIRECRAWL_API_KEY) {
+    console.warn('[Events] FIRECRAWL_API_KEY not configured, skipping events fetch')
+    return {
+      events: [],
+      rawMarkdown: 'Firecrawl API key not configured',
+      fetchedAt: new Date(),
+    }
+  }
+
   const results = await Promise.allSettled(
     EVENT_SOURCES.map(source => fetchFromSource(source))
   )
@@ -70,22 +78,41 @@ export async function fetchCommunityEvents(): Promise<CommunityEventsData> {
 }
 
 /**
- * Fetches and parses events from a single source.
+ * Fetches and parses events from a single source using Firecrawl.
  */
 async function fetchFromSource(source: EventSource): Promise<CommunityEvent[]> {
-  const response = await fetch(source.url, {
+  console.log(`[Events] Fetching ${source.name} via Firecrawl...`)
+  const startTime = Date.now()
+
+  const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
+    method: 'POST',
     headers: {
-      'Accept': 'text/markdown',
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${FIRECRAWL_API_KEY}`,
     },
-    signal: AbortSignal.timeout(15000),
+    body: JSON.stringify({
+      url: source.url,
+      formats: ['markdown'],
+      onlyMainContent: true,
+      waitFor: 2000, // Wait 2s for JS to load
+    }),
+    signal: AbortSignal.timeout(30000), // 30s timeout for Firecrawl
   })
 
   if (!response.ok) {
-    throw new Error(`Jina Reader returned ${response.status}: ${response.statusText}`)
+    const errorText = await response.text()
+    throw new Error(`Firecrawl returned ${response.status}: ${errorText}`)
   }
 
-  const markdown = await response.text()
-  return source.parser(markdown, source.name)
+  const data = await response.json()
+  const duration = Date.now() - startTime
+  console.log(`[Events] ${source.name} scraped in ${duration}ms`)
+
+  if (!data.success || !data.data?.markdown) {
+    throw new Error(`Firecrawl returned no markdown for ${source.url}`)
+  }
+
+  return source.parser(data.data.markdown, source.name)
 }
 
 /**
