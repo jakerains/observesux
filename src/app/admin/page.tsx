@@ -526,10 +526,14 @@ function DigestPanel() {
   const [digests, setDigests] = useState<Digest[]>([])
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState<DigestEdition | null>(null)
+  const [generatedDigest, setGeneratedDigest] = useState<Digest | null>(null)
+  const [showPreview, setShowPreview] = useState(false)
   const [lastResult, setLastResult] = useState<{
     success: boolean
     edition?: DigestEdition
     message?: string
+    workflowRunId?: string
+    generationTimeMs?: number
   } | null>(null)
 
   const editions: DigestEdition[] = ['morning', 'midday', 'evening']
@@ -563,6 +567,8 @@ function DigestPanel() {
   const generateDigest = async (edition: DigestEdition, force: boolean = false) => {
     setGenerating(edition)
     setLastResult(null)
+    setGeneratedDigest(null)
+    setShowPreview(false)
     try {
       const res = await fetch('/api/user/digest', {
         method: 'POST',
@@ -578,14 +584,21 @@ function DigestPanel() {
           edition,
           message: data.skipped
             ? `${editionLabels[edition]} already exists for today`
-            : `${editionLabels[edition]} ${action} successfully!`
+            : `${editionLabels[edition]} ${action} successfully!`,
+          workflowRunId: data.workflowRunId,
+          generationTimeMs: data.generationTimeMs
         })
+        if (data.digest && !data.skipped) {
+          setGeneratedDigest(data.digest)
+          setShowPreview(true)
+        }
         fetchDigests() // Refresh the list
       } else {
         setLastResult({
           success: false,
           edition,
-          message: data.error || 'Failed to generate digest'
+          message: data.error || 'Failed to generate digest',
+          workflowRunId: data.workflowRunId
         })
       }
     } catch (error) {
@@ -597,6 +610,27 @@ function DigestPanel() {
     } finally {
       setGenerating(null)
     }
+  }
+
+  // Get data source counts from digest snapshot
+  const getDataSourceStats = (digest: Digest) => {
+    const snapshot = digest.dataSnapshot as Record<string, unknown> | null
+    if (!snapshot) return null
+
+    const weather = snapshot.weather as Record<string, unknown> | null
+    const stats = {
+      hasWeather: !!(weather?.current),
+      hasForecast: !!(weather?.forecast),
+      alertCount: Array.isArray(weather?.alerts) ? weather.alerts.length : 0,
+      riverCount: Array.isArray(snapshot.rivers) ? snapshot.rivers.length : 0,
+      hasAirQuality: !!snapshot.airQuality,
+      trafficCount: Array.isArray(snapshot.traffic) ? snapshot.traffic.length : 0,
+      newsCount: Array.isArray(snapshot.news) ? snapshot.news.length : 0,
+      eventCount: Array.isArray(snapshot.events) ? snapshot.events.length : 0,
+      hasGasPrices: !!snapshot.gasPrices,
+      hasFlights: !!snapshot.flights
+    }
+    return stats
   }
 
   // Check if an edition exists for today
@@ -703,18 +737,126 @@ function DigestPanel() {
             })}
           </div>
 
+          {/* Generation Progress */}
+          {generating && (
+            <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
+              <div className="flex items-center gap-3 mb-2">
+                <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
+                <span className="font-medium text-blue-700">Generating {editionLabels[generating]}...</span>
+              </div>
+              <div className="text-xs text-blue-600 space-y-1 ml-8">
+                <p>• Fetching weather, forecast, and alerts from NWS...</p>
+                <p>• Fetching river levels from USGS...</p>
+                <p>• Fetching air quality from AirNow...</p>
+                <p>• Fetching traffic events from Iowa DOT...</p>
+                <p>• Fetching local news from RSS feeds...</p>
+                <p>• Fetching community events...</p>
+                <p>• Fetching gas prices from database...</p>
+                <p>• Generating content with AI...</p>
+              </div>
+            </div>
+          )}
+
           {/* Result message */}
-          {lastResult && (
+          {lastResult && !generating && (
             <div className={cn(
-              'p-3 rounded-lg text-sm flex items-center gap-2',
-              lastResult.success ? 'bg-green-500/10 text-green-700' : 'bg-red-500/10 text-red-700'
+              'p-4 rounded-lg text-sm',
+              lastResult.success ? 'bg-green-500/10 border border-green-500/20' : 'bg-red-500/10 border border-red-500/20'
             )}>
-              {lastResult.success ? (
-                <CheckCircle2 className="h-4 w-4" />
-              ) : (
-                <XCircle className="h-4 w-4" />
+              <div className="flex items-center gap-2 mb-2">
+                {lastResult.success ? (
+                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                ) : (
+                  <XCircle className="h-5 w-5 text-red-600" />
+                )}
+                <span className={cn('font-medium', lastResult.success ? 'text-green-700' : 'text-red-700')}>
+                  {lastResult.message}
+                </span>
+              </div>
+              {lastResult.generationTimeMs && (
+                <p className="text-xs text-muted-foreground ml-7">
+                  Generated in {(lastResult.generationTimeMs / 1000).toFixed(1)}s
+                </p>
               )}
-              {lastResult.message}
+              {lastResult.workflowRunId && (
+                <p className="text-xs text-muted-foreground ml-7 font-mono">
+                  Workflow: {lastResult.workflowRunId}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Generated Digest Preview */}
+          {showPreview && generatedDigest && (
+            <div className="border rounded-lg overflow-hidden">
+              <div className="p-3 bg-muted/50 border-b flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  <span className="font-medium text-sm">Generated Digest Preview</span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowPreview(false)}
+                >
+                  Hide
+                </Button>
+              </div>
+
+              {/* Data Source Stats */}
+              {(() => {
+                const stats = getDataSourceStats(generatedDigest)
+                if (!stats) return null
+                return (
+                  <div className="p-3 bg-muted/30 border-b">
+                    <p className="text-xs font-medium text-muted-foreground mb-2">Data Sources Used:</p>
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant={stats.hasWeather ? 'default' : 'destructive'} className="text-xs">
+                        Weather {stats.hasWeather ? '✓' : '✗'}
+                      </Badge>
+                      <Badge variant={stats.hasForecast ? 'default' : 'destructive'} className="text-xs">
+                        Forecast {stats.hasForecast ? '✓' : '✗'}
+                      </Badge>
+                      <Badge variant={stats.alertCount > 0 ? 'secondary' : 'outline'} className="text-xs">
+                        {stats.alertCount} Alerts
+                      </Badge>
+                      <Badge variant={stats.riverCount > 0 ? 'default' : 'destructive'} className="text-xs">
+                        {stats.riverCount} Rivers
+                      </Badge>
+                      <Badge variant={stats.hasAirQuality ? 'default' : 'destructive'} className="text-xs">
+                        AQI {stats.hasAirQuality ? '✓' : '✗'}
+                      </Badge>
+                      <Badge variant={stats.trafficCount > 0 ? 'secondary' : 'outline'} className="text-xs">
+                        {stats.trafficCount} Traffic
+                      </Badge>
+                      <Badge variant={stats.newsCount > 0 ? 'default' : 'destructive'} className="text-xs">
+                        {stats.newsCount} News
+                      </Badge>
+                      <Badge variant={stats.eventCount > 0 ? 'default' : 'destructive'} className="text-xs">
+                        {stats.eventCount} Events
+                      </Badge>
+                      <Badge variant={stats.hasGasPrices ? 'default' : 'destructive'} className="text-xs">
+                        Gas {stats.hasGasPrices ? '✓' : '✗'}
+                      </Badge>
+                    </div>
+                  </div>
+                )
+              })()}
+
+              {/* Summary */}
+              {generatedDigest.summary && (
+                <div className="p-3 border-b bg-primary/5">
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Summary:</p>
+                  <p className="text-sm">{generatedDigest.summary}</p>
+                </div>
+              )}
+
+              {/* Content Preview */}
+              <ScrollArea className="h-[300px]">
+                <div className="p-4 prose prose-sm max-w-none dark:prose-invert">
+                  <ChatMarkdown content={generatedDigest.content || ''} />
+                </div>
+              </ScrollArea>
             </div>
           )}
 
