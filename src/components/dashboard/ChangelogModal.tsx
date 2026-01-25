@@ -16,6 +16,24 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.6.2',
+    date: '2026-01-25',
+    added: [
+      'Force Regenerate toggle in admin digest panel',
+      'Digest preview with data source stats in admin UI',
+      'Comprehensive debugging logs for workflow steps',
+    ],
+    changed: [
+      'GPT-5.2 config: reasoningEffort and textVerbosity settings',
+      'Events fetcher migrated from Jina to Firecrawl v2 API',
+    ],
+    fixed: [
+      'pruneOldDigests wrapped in workflow step for compatibility',
+      'Middleware excludes .well-known/workflow routes',
+      'Admin panel force regenerate option',
+    ],
+  },
+  {
     version: '0.6.1',
     date: '2026-01-25',
     added: [

@@ -5,6 +5,27 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.2] - 2026-01-25
+
+### Added
+- Force Regenerate toggle in admin digest panel to replace existing digests
+- Digest generation preview with data source stats in admin UI
+- Comprehensive debugging logs for workflow step execution
+
+### Changed
+- GPT-5.2 configuration updated for reasoning models
+  - Removed unsupported `temperature` parameter
+  - Added `reasoningEffort: 'low'` for faster content generation
+  - Added `textVerbosity: 'medium'` for balanced output
+- Events fetcher migrated from Jina Reader to Firecrawl v2 API
+  - More reliable scraping with browser actions support
+  - 30-second timeout for JavaScript-heavy pages
+
+### Fixed
+- `pruneOldDigests` now wrapped in workflow step (was failing due to fetch restriction)
+- Middleware now excludes `.well-known/workflow` routes for proper orchestration
+- Admin digest panel correctly reflects database state with force regenerate option
+
 ## [0.6.1] - 2026-01-25
 
 ### Added
