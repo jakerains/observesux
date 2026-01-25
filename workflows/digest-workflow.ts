@@ -21,6 +21,7 @@ import { getCurrentEdition, type DigestEdition, type DigestData } from '@/lib/di
 
 export interface DigestWorkflowInput {
   edition?: DigestEdition
+  force?: boolean // Skip "already exists" check and regenerate
 }
 
 export interface DigestWorkflowOutput {
@@ -138,7 +139,8 @@ export async function digestWorkflow(
   "use workflow"
 
   const edition = input?.edition ?? getCurrentEdition()
-  console.log(`[Digest Workflow] Starting ${edition} edition generation`)
+  const force = input?.force ?? false
+  console.log(`[Digest Workflow] Starting ${edition} edition generation${force ? ' (forced)' : ''}`)
 
   // Check database configuration
   if (!isDatabaseConfigured()) {
@@ -149,17 +151,21 @@ export async function digestWorkflow(
     }
   }
 
-  // Check if today's edition already exists
-  const existingCheck = await checkExistingDigest(edition)
-  if (existingCheck.exists) {
-    console.log(`[Digest Workflow] ${edition} edition already exists for today, skipping`)
-    return {
-      success: true,
-      edition,
-      skipped: true,
-      digestId: existingCheck.digestId,
-      message: `${edition} edition already exists for today`
+  // Check if today's edition already exists (skip if force=true)
+  if (!force) {
+    const existingCheck = await checkExistingDigest(edition)
+    if (existingCheck.exists) {
+      console.log(`[Digest Workflow] ${edition} edition already exists for today, skipping`)
+      return {
+        success: true,
+        edition,
+        skipped: true,
+        digestId: existingCheck.digestId,
+        message: `${edition} edition already exists for today`
+      }
     }
+  } else {
+    console.log(`[Digest Workflow] Force flag set, regenerating ${edition} edition`)
   }
 
   const startTime = Date.now()

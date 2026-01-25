@@ -560,22 +560,25 @@ function DigestPanel() {
     fetchDigests()
   }, [fetchDigests])
 
-  const generateDigest = async (edition: DigestEdition) => {
+  const generateDigest = async (edition: DigestEdition, force: boolean = false) => {
     setGenerating(edition)
     setLastResult(null)
     try {
       const res = await fetch('/api/user/digest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ edition })
+        body: JSON.stringify({ edition, force })
       })
       const data = await res.json()
 
       if (res.ok && data.success) {
+        const action = force ? 'regenerated' : 'generated'
         setLastResult({
           success: true,
           edition,
-          message: `${editionLabels[edition]} generated successfully!`
+          message: data.skipped
+            ? `${editionLabels[edition]} already exists for today`
+            : `${editionLabels[edition]} ${action} successfully!`
         })
         fetchDigests() // Refresh the list
       } else {
@@ -673,7 +676,7 @@ function DigestPanel() {
                       <Button
                         size="sm"
                         variant={hasToday ? 'outline' : 'default'}
-                        onClick={() => generateDigest(edition)}
+                        onClick={() => generateDigest(edition, hasToday)}
                         disabled={generating !== null}
                         className="gap-2"
                       >

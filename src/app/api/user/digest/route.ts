@@ -31,21 +31,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get edition from request body, or auto-detect based on time of day
+    // Get edition and force flag from request body
     let edition: DigestEdition = getCurrentEdition()
+    let force = false
     try {
       const body = await request.json()
       if (body.edition && ['morning', 'midday', 'evening'].includes(body.edition)) {
         edition = body.edition
       }
+      if (body.force === true) {
+        force = true
+      }
     } catch {
       // No body or invalid JSON - use auto-detected edition
     }
 
-    console.log(`[Digest API] Starting ${edition} edition workflow`)
+    console.log(`[Digest API] Starting ${edition} edition workflow${force ? ' (forced)' : ''}`)
 
     // Start the durable workflow
-    const run = await start(digestWorkflow, [{ edition }])
+    const run = await start(digestWorkflow, [{ edition, force }])
 
     console.log(`[Digest API] Workflow started with run ID: ${run.runId}`)
 
