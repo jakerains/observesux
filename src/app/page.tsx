@@ -38,7 +38,7 @@ import { DraggableWidget } from '@/components/dashboard/DraggableWidget'
 import { VoiceAgentWidget } from '@/components/dashboard/VoiceAgentWidget'
 import { ChatWidget } from '@/components/dashboard/ChatWidget'
 import { ChangelogModal } from '@/components/dashboard/ChangelogModal'
-import { DashboardLayoutProvider, useDashboardLayout } from '@/lib/contexts/DashboardLayoutContext'
+import { DashboardLayoutProvider, useDashboardLayout, LOCKED_WIDGETS } from '@/lib/contexts/DashboardLayoutContext'
 import { TransitProvider } from '@/lib/contexts/TransitContext'
 import { MapFocusProvider } from '@/lib/contexts/MapFocusContext'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -130,10 +130,20 @@ function DashboardContent() {
     })
   )
 
-  // Get enabled widgets in order
+  // Get enabled widgets in order, separating locked from sortable
   const enabledWidgetIds = useMemo(() => {
     return widgetOrder.filter(id => isWidgetEnabled(id))
   }, [widgetOrder, isWidgetEnabled])
+
+  // Locked widgets (always at top, not draggable)
+  const lockedWidgetIds = useMemo(() => {
+    return enabledWidgetIds.filter(id => LOCKED_WIDGETS.includes(id))
+  }, [enabledWidgetIds])
+
+  // Sortable widgets (can be reordered)
+  const sortableWidgetIds = useMemo(() => {
+    return enabledWidgetIds.filter(id => !LOCKED_WIDGETS.includes(id))
+  }, [enabledWidgetIds])
 
   // Handle drag end
   const handleDragEnd = useCallback((event: DragEndEvent) => {
@@ -181,14 +191,35 @@ function DashboardContent() {
 
       {/* Main Dashboard Grid */}
       <main className="w-full max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6">
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-        >
-          <SortableContext items={enabledWidgetIds} strategy={rectSortingStrategy}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 items-start [grid-auto-flow:dense]">
-              {enabledWidgetIds.map((widgetId) => {
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 items-start [grid-auto-flow:dense]">
+          {/* Locked widgets - always at top, not draggable */}
+          {lockedWidgetIds.map((widgetId) => {
+            const WidgetComponent = WIDGET_COMPONENTS[widgetId]
+            const config = getWidgetConfig(widgetId)
+
+            if (!WidgetComponent || !config) return null
+
+            return (
+              <div
+                key={widgetId}
+                className={`h-full ${getWidgetClassName(widgetId, config.size)}`}
+                data-widget-id={widgetId}
+              >
+                <Suspense fallback={<WidgetSkeleton />}>
+                  <WidgetComponent />
+                </Suspense>
+              </div>
+            )
+          })}
+
+          {/* Sortable widgets - can be reordered by user */}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext items={sortableWidgetIds} strategy={rectSortingStrategy}>
+              {sortableWidgetIds.map((widgetId) => {
                 const WidgetComponent = WIDGET_COMPONENTS[widgetId]
                 const config = getWidgetConfig(widgetId)
 
@@ -206,9 +237,9 @@ function DashboardContent() {
                   </DraggableWidget>
                 )
               })}
-            </div>
-          </SortableContext>
-        </DndContext>
+            </SortableContext>
+          </DndContext>
+        </div>
 
         {/* Empty state when all widgets are hidden */}
         {enabledWidgetIds.length === 0 && (
