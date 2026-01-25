@@ -172,10 +172,26 @@ export async function digestWorkflow(
 
   try {
     // Step 1: Aggregate all data (each fetch is a retryable sub-step)
+    console.log('[Digest Workflow] Step 1: Aggregating data from all sources...')
     const digestData = await aggregateAllData()
 
+    // Log what data we got
+    console.log('[Digest Workflow] Data aggregation complete. Summary:')
+    console.log(`  - Weather: ${digestData.weather.current ? 'YES' : 'NO'}`)
+    console.log(`  - Forecast: ${digestData.weather.forecast ? `YES (${digestData.weather.forecast.periods.length} periods)` : 'NO'}`)
+    console.log(`  - Alerts: ${digestData.weather.alerts.length}`)
+    console.log(`  - Rivers: ${digestData.rivers.length}`)
+    console.log(`  - Air Quality: ${digestData.airQuality ? 'YES' : 'NO'}`)
+    console.log(`  - Traffic: ${digestData.traffic.length}`)
+    console.log(`  - News: ${digestData.news.length}`)
+    console.log(`  - Events: ${digestData.events.length}`)
+    console.log(`  - Gas Prices: ${digestData.gasPrices ? 'YES' : 'NO'}`)
+    console.log(`  - Flights: ${digestData.flights ? 'YES' : 'NO'}`)
+
     // Step 2: Generate AI content
+    console.log('[Digest Workflow] Step 2: Generating AI content...')
     const { summary, content } = await generateDigestContent(edition, digestData)
+    console.log(`[Digest Workflow] AI content generated. Summary length: ${summary.length}, Content length: ${content.length}`)
 
     const totalDuration = Date.now() - startTime
 
