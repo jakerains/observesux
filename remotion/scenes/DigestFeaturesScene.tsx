@@ -1,3 +1,4 @@
+import type { JSX } from 'react'
 import { AbsoluteFill, Sequence, spring, useCurrentFrame, useVideoConfig, interpolate } from 'remotion'
 import { fontFamilies } from '../fonts'
 import { SceneShell } from '../components/SceneShell'
