@@ -13,6 +13,18 @@ import { getUserProfile } from '@/lib/db/profiles';
 export const runtime = 'nodejs';
 export const maxDuration = 30;
 
+// CORS headers for mobile app
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Accept',
+};
+
+// Handle CORS preflight
+export async function OPTIONS() {
+  return new Response(null, { status: 204, headers: corsHeaders });
+}
+
 // Extract text content from various AI SDK message formats
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function extractMessageContent(message: any): string {
@@ -67,18 +79,24 @@ export async function POST(req: Request) {
     const { messages, sessionId: existingSessionId, lastLoggedMessageIndex, deviceInfo } = await req.json();
 
     // Get current user if logged in (for chat logging and personalization)
-    const user = await getCurrentUser();
-    const userId = user?.id;
-
-    // Fetch user profile for personalized system prompt
+    // Non-fatal: chat works without personalization
+    let userId: string | undefined;
     let userContext: UserContext | undefined;
-    if (userId) {
-      const profile = await getUserProfile(userId);
-      userContext = {
-        firstName: profile?.firstName,
-        lastName: profile?.lastName,
-        email: user?.email,
-      };
+    try {
+      const user = await getCurrentUser();
+      userId = user?.id;
+
+      // Fetch user profile for personalized system prompt
+      if (userId) {
+        const profile = await getUserProfile(userId);
+        userContext = {
+          firstName: profile?.firstName,
+          lastName: profile?.lastName,
+          email: user?.email,
+        };
+      }
+    } catch (authError) {
+      console.warn('[Chat] Auth/profile fetch failed (non-fatal):', authError);
     }
 
     // Get or create session ID
@@ -96,55 +114,57 @@ export async function POST(req: Request) {
       metadata.isTouchDevice = deviceInfo.isTouchDevice;
     }
 
-    if (!sessionId) {
-      isNewSession = true;
-      sessionId = await createChatSession({
-        userId,
-        userAgent: req.headers.get('user-agent') || undefined,
-        ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0] ||
-                   req.headers.get('x-real-ip') ||
-                   undefined,
-        metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
-      });
-    } else if (isNewSession === false) {
-      // Client provided a session ID - ensure it exists in DB, create if not
-      // This handles the case where client has a session ID but it's a new browser session
-      // Also updates user_id if user logs in mid-session
-      await ensureSessionExists(sessionId, {
-        userId,
-        userAgent: req.headers.get('user-agent') || undefined,
-        ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0] ||
-                   req.headers.get('x-real-ip') ||
-                   undefined,
-        metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
-      });
+    // Database session management - non-fatal (chat works without logging)
+    try {
+      if (!sessionId) {
+        isNewSession = true;
+        sessionId = await createChatSession({
+          userId,
+          userAgent: req.headers.get('user-agent') || undefined,
+          ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0] ||
+                     req.headers.get('x-real-ip') ||
+                     undefined,
+          metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
+        });
+      } else if (isNewSession === false) {
+        // Client provided a session ID - ensure it exists in DB, create if not
+        await ensureSessionExists(sessionId, {
+          userId,
+          userAgent: req.headers.get('user-agent') || undefined,
+          ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0] ||
+                     req.headers.get('x-real-ip') ||
+                     undefined,
+          metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
+        });
+      }
+    } catch (sessionError) {
+      console.warn('[Chat] Session management failed (non-fatal):', sessionError);
+      sessionId = null; // Clear session ID so we don't try to log messages
     }
 
-    // Log only NEW user messages (ones we haven't logged yet)
-    // lastLoggedMessageIndex tells us where we left off
+    // Log user message - non-fatal
     const startIndex = typeof lastLoggedMessageIndex === 'number' ? lastLoggedMessageIndex + 1 : 0;
     const userMessages = messages.filter((m: { role: string }) => m.role === 'user');
 
-    // Only log the most recent user message if it's new
     if (sessionId && userMessages.length > 0) {
-      const lastUserMessage = userMessages[userMessages.length - 1];
-      const lastUserMessageIndex = messages.indexOf(lastUserMessage);
+      try {
+        const lastUserMessage = userMessages[userMessages.length - 1];
+        const lastUserMessageIndex = messages.indexOf(lastUserMessage);
 
-      // Only log if this message hasn't been logged yet
-      if (lastUserMessageIndex >= startIndex || isNewSession) {
-        // Extract text content from various AI SDK message formats
-        const content = extractMessageContent(lastUserMessage);
+        if (lastUserMessageIndex >= startIndex || isNewSession) {
+          const content = extractMessageContent(lastUserMessage);
 
-        if (content) {
-          await logChatMessage({
-            sessionId,
-            role: 'user',
-            content,
-          });
-          console.log('[Chat Log] User message logged:', content.substring(0, 50));
-        } else {
-          console.warn('[Chat Log] Could not extract content from user message:', JSON.stringify(lastUserMessage));
+          if (content) {
+            await logChatMessage({
+              sessionId,
+              role: 'user',
+              content,
+            });
+            console.log('[Chat Log] User message logged:', content.substring(0, 50));
+          }
         }
+      } catch (logError) {
+        console.warn('[Chat] Message logging failed (non-fatal):', logError);
       }
     }
 
@@ -152,7 +172,7 @@ export async function POST(req: Request) {
     const toolCallsUsed: string[] = [];
 
     const result = streamText({
-      model: openai('gpt-5-mini-2025-08-07'),
+      model: openai('gpt-5-mini'),
       system: getSystemPrompt(userContext),
       messages: await convertToModelMessages(messages),
       tools: chatTools,
@@ -168,16 +188,20 @@ export async function POST(req: Request) {
         }
       },
       onFinish: async ({ text }) => {
-        // Log the assistant's response after streaming completes
+        // Log the assistant's response after streaming completes - non-fatal
         if (sessionId && text) {
-          const responseTime = Date.now() - startTime;
-          await logChatMessage({
-            sessionId,
-            role: 'assistant',
-            content: text,
-            toolCalls: toolCallsUsed.length > 0 ? toolCallsUsed : undefined,
-            responseTimeMs: responseTime,
-          });
+          try {
+            const responseTime = Date.now() - startTime;
+            await logChatMessage({
+              sessionId,
+              role: 'assistant',
+              content: text,
+              toolCalls: toolCallsUsed.length > 0 ? toolCallsUsed : undefined,
+              responseTimeMs: responseTime,
+            });
+          } catch (logError) {
+            console.warn('[Chat] Response logging failed (non-fatal):', logError);
+          }
         }
       },
       onError: (error) => {
@@ -187,6 +211,11 @@ export async function POST(req: Request) {
 
     // Include sessionId in the response headers for the client to track
     const response = result.toUIMessageStreamResponse();
+
+    // Add CORS headers for mobile app
+    for (const [key, value] of Object.entries(corsHeaders)) {
+      response.headers.set(key, value);
+    }
 
     // Add session ID header so client can include it in future requests
     if (sessionId) {
@@ -198,6 +227,13 @@ export async function POST(req: Request) {
     return response;
   } catch (error) {
     console.error('Chat API error:', error);
-    return new Response('Failed to process chat request', { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return new Response(JSON.stringify({ error: errorMessage }), {
+      status: 500,
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json',
+      },
+    });
   }
 }
