@@ -48,6 +48,8 @@ import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Switch } from '@/components/ui/switch'
+import { Label } from '@/components/ui/label'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -528,6 +530,7 @@ function DigestPanel() {
   const [generating, setGenerating] = useState<DigestEdition | null>(null)
   const [generatedDigest, setGeneratedDigest] = useState<Digest | null>(null)
   const [showPreview, setShowPreview] = useState(false)
+  const [forceRegenerate, setForceRegenerate] = useState(false)
   const [lastResult, setLastResult] = useState<{
     success: boolean
     edition?: DigestEdition
@@ -656,6 +659,24 @@ function DigestPanel() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Force Regenerate Toggle */}
+          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+            <div className="flex items-center gap-2">
+              <RefreshCw className="h-4 w-4 text-muted-foreground" />
+              <Label htmlFor="force-regenerate" className="text-sm font-medium cursor-pointer">
+                Force Regenerate
+              </Label>
+              <span className="text-xs text-muted-foreground">
+                (Replace existing digest even if one exists for today)
+              </span>
+            </div>
+            <Switch
+              id="force-regenerate"
+              checked={forceRegenerate}
+              onCheckedChange={setForceRegenerate}
+            />
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {editions.map((edition) => {
               const Icon = editionIcons[edition]
@@ -709,20 +730,20 @@ function DigestPanel() {
                       </div>
                       <Button
                         size="sm"
-                        variant={hasToday ? 'outline' : 'default'}
-                        onClick={() => generateDigest(edition, hasToday)}
+                        variant={(hasToday || forceRegenerate) ? 'outline' : 'default'}
+                        onClick={() => generateDigest(edition, hasToday || forceRegenerate)}
                         disabled={generating !== null}
-                        className="gap-2"
+                        className={cn("gap-2", forceRegenerate && "border-amber-500 text-amber-600 hover:bg-amber-50")}
                       >
                         {isGenerating ? (
                           <>
                             <Loader2 className="h-3 w-3 animate-spin" />
-                            Generating...
+                            {forceRegenerate ? 'Force Generating...' : 'Generating...'}
                           </>
                         ) : (
                           <>
-                            <Sparkles className="h-3 w-3" />
-                            {hasToday ? 'Regenerate' : 'Generate'}
+                            {forceRegenerate ? <RefreshCw className="h-3 w-3" /> : <Sparkles className="h-3 w-3" />}
+                            {forceRegenerate ? 'Force Generate' : (hasToday ? 'Regenerate' : 'Generate')}
                           </>
                         )}
                       </Button>
