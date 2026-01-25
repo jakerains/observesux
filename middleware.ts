@@ -21,17 +21,28 @@ const AUTH_ROUTES = [
 ]
 
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
-
-  // Check if this is a protected route
-  const isProtectedRoute = PROTECTED_ROUTES.some(route =>
-    pathname.startsWith(route)
-  )
+  const { pathname, searchParams } = request.nextUrl
 
   // For protected routes, check for session cookie
   // Neon Auth uses 'better-auth.session_token' cookie
   const sessionCookie = request.cookies.get('better-auth.session_token')
   const hasSession = !!sessionCookie?.value
+
+  // Check if there's a pending mobile callback and user is now authenticated
+  // This catches the redirect after successful sign-in
+  const mobileCallback = request.cookies.get('mobile_callback_url')?.value
+  if (hasSession && mobileCallback && !pathname.startsWith('/auth/mobile-callback')) {
+    // User just signed in and has a pending mobile callback - redirect to it
+    const redirectUrl = new URL(mobileCallback, request.url)
+    const response = NextResponse.redirect(redirectUrl)
+    response.cookies.delete('mobile_callback_url')
+    return response
+  }
+
+  // Check if this is a protected route
+  const isProtectedRoute = PROTECTED_ROUTES.some(route =>
+    pathname.startsWith(route)
+  )
 
   if (isProtectedRoute && !hasSession) {
     // Redirect to sign-in page
@@ -40,10 +51,32 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(signInUrl)
   }
 
-  // Redirect authenticated users away from auth pages
+  // Handle auth routes
   const isAuthRoute = AUTH_ROUTES.some(route => pathname.startsWith(route))
-  if (isAuthRoute && hasSession) {
-    return NextResponse.redirect(new URL('/', request.url))
+
+  if (isAuthRoute) {
+    // Check if this is a mobile app sign-in request
+    const isMobile = searchParams.get('mobile') === 'true'
+    const callbackUrl = searchParams.get('callbackUrl')
+
+    if (isMobile && callbackUrl) {
+      // Store mobile callback URL in a cookie for later use
+      const response = NextResponse.next()
+      response.cookies.set('mobile_callback_url', callbackUrl, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 10, // 10 minutes
+        path: '/',
+      })
+      return response
+    }
+
+    // Redirect authenticated users away from auth pages
+    if (hasSession) {
+      // Regular web redirect to home (mobile callback already handled above)
+      return NextResponse.redirect(new URL('/', request.url))
+    }
   }
 
   return NextResponse.next()

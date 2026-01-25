@@ -1,0 +1,13 @@
+# Ignore Expo mobile app and native builds
+expo-app/
+ios/
+android/
+.expo/
+
+# Ignore Remotion video project
+remotion/
+
+# Other
+.github/
+*.md
+!README.md
