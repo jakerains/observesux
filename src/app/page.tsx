@@ -202,7 +202,7 @@ function DashboardContent() {
             return (
               <div
                 key={widgetId}
-                className={`h-full ${getWidgetClassName(widgetId, config.size)}`}
+                className={`h-full isolate ${getWidgetClassName(widgetId, config.size)}`}
                 data-widget-id={widgetId}
               >
                 <Suspense fallback={<WidgetSkeleton />}>

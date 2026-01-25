@@ -16,6 +16,15 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.5.9',
+    date: '2026-01-24',
+    added: [],
+    changed: [],
+    fixed: [
+      'User dropdown menu now appears above map',
+    ],
+  },
+  {
     version: '0.5.8',
     date: '2026-01-24',
     added: [
