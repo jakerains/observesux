@@ -5,6 +5,19 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.6] - 2026-01-24
+
+### Added
+- SEO: robots.ts for search engine crawl directives
+- SEO: sitemap.ts for XML sitemap generation
+- SEO: JSON-LD structured data (Organization, LocalBusiness, WebSite schemas)
+- SEO: Page metadata layouts for auth, account, and admin routes
+
+### Changed
+- Rebranded from "ObserveSUX" to "Siouxland Online" throughout codebase
+- Updated all User-Agent strings to "SiouxlandOnline/1.0"
+- Package renamed from "observesux" to "siouxland-online"
+
 ## [0.5.5] - 2026-01-24
 
 ### Changed

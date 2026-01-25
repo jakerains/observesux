@@ -21,7 +21,7 @@ export async function geocodeAddress(address: string): Promise<GeocodedLocation 
 
     const response = await fetch(url.toString(), {
       headers: {
-        'User-Agent': 'ObserveSUX/1.0 (https://observesux.vercel.app)',
+        'User-Agent': 'SiouxlandOnline/1.0 (https://siouxland.online)',
         'Accept': 'application/json'
       }
     })

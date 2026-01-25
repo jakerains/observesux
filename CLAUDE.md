@@ -1,10 +1,10 @@
-# Claude Code Instructions for ObserveSUX
+# Claude Code Instructions for Siouxland Online
 
 Project-specific instructions for Claude Code when working on this codebase.
 
 ## Project Overview
 
-ObserveSUX is a real-time observability dashboard for Sioux City, Iowa. It aggregates data from multiple public APIs (weather, traffic, transit, etc.) into a responsive dashboard.
+Siouxland Online is a real-time observability dashboard for Sioux City, Iowa. It aggregates data from multiple public APIs (weather, traffic, transit, etc.) into a responsive dashboard.
 
 ## Tech Stack
 

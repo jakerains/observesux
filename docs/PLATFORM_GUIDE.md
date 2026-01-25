@@ -1,6 +1,6 @@
 # Siouxland.online Platform Guide
 
-This comprehensive guide documents all features, widgets, and functionality of the Siouxland.online (ObserveSUX) real-time observability dashboard. Use this reference to answer user questions about the platform.
+This comprehensive guide documents all features, widgets, and functionality of the Siouxland Online real-time observability dashboard. Use this reference to answer user questions about the platform.
 
 ---
 
@@ -22,7 +22,7 @@ This comprehensive guide documents all features, widgets, and functionality of t
 
 ### What is Siouxland.online?
 
-Siouxland.online (also known as ObserveSUX) is a real-time observability dashboard for Sioux City, Iowa and the surrounding Siouxland region. It aggregates data from multiple public APIs and displays live information about weather, traffic, transit, air quality, river levels, aviation, and more in a responsive, customizable dashboard.
+Siouxland Online is a real-time observability dashboard for Sioux City, Iowa and the surrounding Siouxland region. It aggregates data from multiple public APIs and displays live information about weather, traffic, transit, air quality, river levels, aviation, and more in a responsive, customizable dashboard.
 
 ### Key Features
 

@@ -189,8 +189,8 @@ All data is sourced from **free, public APIs**:
 
 ```bash
 # Clone the repository
-git clone https://github.com/jakerains/observesux.git
-cd observesux
+git clone https://github.com/jakerains/siouxland-online.git
+cd siouxland-online
 
 # Install dependencies
 pnpm install

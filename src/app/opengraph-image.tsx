@@ -215,7 +215,7 @@ export default async function Image() {
             fontSize: '16px',
           }}
         >
-          <span>observesux.vercel.app</span>
+          <span>siouxland.online</span>
         </div>
       </div>
     ),

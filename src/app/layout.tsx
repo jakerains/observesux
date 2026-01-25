@@ -70,6 +70,80 @@ export const metadata: Metadata = {
   },
 }
 
+// JSON-LD Structured Data for SEO
+function JsonLdSchema() {
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'WebSite',
+        '@id': 'https://siouxland.online/#website',
+        url: 'https://siouxland.online',
+        name: 'Siouxland Online',
+        description: 'Real-time observability dashboard for Sioux City, Iowa',
+        publisher: { '@id': 'https://siouxland.online/#organization' },
+      },
+      {
+        '@type': 'Organization',
+        '@id': 'https://siouxland.online/#organization',
+        name: 'Siouxland Online',
+        url: 'https://siouxland.online',
+        logo: {
+          '@type': 'ImageObject',
+          url: 'https://siouxland.online/icons/icon-512x512.png',
+          width: 512,
+          height: 512,
+        },
+        sameAs: ['https://github.com/jakerains/siouxland-online'],
+      },
+      {
+        '@type': 'LocalBusiness',
+        '@id': 'https://siouxland.online/#localbusiness',
+        name: 'Siouxland Online',
+        description:
+          'Real-time community dashboard providing weather, traffic, news, and local information for the Siouxland region.',
+        url: 'https://siouxland.online',
+        areaServed: {
+          '@type': 'GeoCircle',
+          geoMidpoint: {
+            '@type': 'GeoCoordinates',
+            latitude: 42.4997,
+            longitude: -96.4003,
+          },
+          geoRadius: '80467', // 50 miles in meters
+        },
+        address: {
+          '@type': 'PostalAddress',
+          addressLocality: 'Sioux City',
+          addressRegion: 'IA',
+          addressCountry: 'US',
+        },
+        geo: {
+          '@type': 'GeoCoordinates',
+          latitude: 42.4997,
+          longitude: -96.4003,
+        },
+        knowsAbout: [
+          'Weather',
+          'Traffic',
+          'Local News',
+          'Air Quality',
+          'River Levels',
+          'Transit',
+          'Aviation',
+        ],
+      },
+    ],
+  }
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+    />
+  )
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -77,6 +151,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <JsonLdSchema />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-background`}
       >

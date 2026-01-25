@@ -97,7 +97,7 @@ export async function fetchNWSObservations(): Promise<WeatherObservation> {
       `https://api.weather.gov/stations/${STATION_ID}/observations/latest`,
       {
         headers: {
-          'User-Agent': '(ObserveSUX Dashboard, contact@example.com)',
+          'User-Agent': 'SiouxlandOnline/1.0 (https://siouxland.online)',
           'Accept': 'application/geo+json'
         },
         next: { revalidate: 60 } // Cache for 1 minute
@@ -156,7 +156,7 @@ export async function fetchNWSAlerts(): Promise<WeatherAlert[]> {
       `https://api.weather.gov/alerts/active?point=${SIOUX_CITY_LAT},${SIOUX_CITY_LON}`,
       {
         headers: {
-          'User-Agent': '(ObserveSUX Dashboard, contact@example.com)',
+          'User-Agent': 'SiouxlandOnline/1.0 (https://siouxland.online)',
           'Accept': 'application/geo+json'
         },
         next: { revalidate: 60 } // Cache for 1 minute
@@ -240,7 +240,7 @@ export async function fetchNWSForecast(): Promise<WeatherForecast> {
       `https://api.weather.gov/gridpoints/${NWS_GRID_OFFICE}/${NWS_GRID_X},${NWS_GRID_Y}/forecast`,
       {
         headers: {
-          'User-Agent': '(ObserveSUX Dashboard, contact@example.com)',
+          'User-Agent': 'SiouxlandOnline/1.0 (https://siouxland.online)',
           'Accept': 'application/geo+json'
         },
         next: { revalidate: 300 } // Cache for 5 minutes
@@ -292,7 +292,7 @@ export async function fetchNWSHourlyForecast(): Promise<HourlyWeatherForecast> {
       `https://api.weather.gov/gridpoints/${NWS_GRID_OFFICE}/${NWS_GRID_X},${NWS_GRID_Y}/forecast/hourly`,
       {
         headers: {
-          'User-Agent': '(ObserveSUX Dashboard, contact@example.com)',
+          'User-Agent': 'SiouxlandOnline/1.0 (https://siouxland.online)',
           'Accept': 'application/geo+json'
         },
         next: { revalidate: 300 } // Cache for 5 minutes

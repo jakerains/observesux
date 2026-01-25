@@ -16,6 +16,20 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.5.6',
+    date: '2026-01-24',
+    added: [
+      'SEO: robots.txt and sitemap.xml generation',
+      'SEO: JSON-LD structured data for rich search results',
+      'SEO: Page metadata for all routes',
+    ],
+    changed: [
+      'Rebranded from "ObserveSUX" to "Siouxland Online"',
+      'Updated User-Agent strings across all API fetchers',
+    ],
+    fixed: [],
+  },
+  {
     version: '0.5.5',
     date: '2026-01-24',
     added: [],

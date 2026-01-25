@@ -203,7 +203,7 @@ async function geocodeAddress(address: string): Promise<{ latitude: number; long
   try {
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'ObserveSUX/1.0 (https://siouxland.online)'
+        'User-Agent': 'SiouxlandOnline/1.0 (https://siouxland.online)'
       }
     })
 
