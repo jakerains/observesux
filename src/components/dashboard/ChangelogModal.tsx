@@ -16,6 +16,22 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.6.4',
+    date: '2026-01-25',
+    added: [
+      'Weekly cron job for community events refresh',
+      'Events now refreshed automatically every Sunday',
+    ],
+    changed: [
+      'Events fetcher simplified to cache-only architecture',
+      'No external API calls during normal event requests',
+    ],
+    fixed: [
+      'Events parser regex to match Firecrawl markdown format',
+      'Hard Rock Casino parser for bold links and date formats',
+    ],
+  },
+  {
     version: '0.6.3',
     date: '2026-01-25',
     added: [

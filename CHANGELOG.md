@@ -5,6 +5,24 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.4] - 2026-01-25
+
+### Added
+- Weekly cron job for community events refresh (`/api/cron/events`)
+  - Runs every Sunday at 6 AM UTC (midnight Central)
+  - Firecrawl scraping now only happens via cron, not on-demand
+
+### Changed
+- Events fetcher simplified to cache-only architecture
+  - Normal requests always serve from database cache (fast)
+  - No external API calls during regular operation
+- Events scraper admin tool now triggers force refresh
+
+### Fixed
+- Explore Siouxland events parser regex to match Firecrawl markdown format
+- Hard Rock Casino events parser to handle bold links (`[**title**](url)`)
+- Hard Rock date parsing for escaped pipe characters and optional times
+
 ## [0.6.3] - 2026-01-25
 
 ### Added

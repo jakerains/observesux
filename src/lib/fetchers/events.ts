@@ -1,11 +1,12 @@
 import type { CommunityEvent, CommunityEventsData } from '@/types'
-import { getCachedEvents, hasValidCache, cacheEvents } from '@/lib/db/events'
+import { getCachedEvents, cacheEvents } from '@/lib/db/events'
 
 // ============================================
 // Event Source Configuration
 // ============================================
 // Using Firecrawl API for reliable web scraping
-// Events are cached in the database for 7 days
+// Events are refreshed weekly via cron and served from database cache
+// Normal requests always serve from cache (fast, no external API calls)
 
 interface EventSource {
   name: string
@@ -33,26 +34,38 @@ const FIRECRAWL_API_KEY = process.env.FIRECRAWL_API_KEY
 // ============================================
 
 /**
- * Fetches community events - uses cached data if available (up to 7 days old),
- * otherwise scrapes fresh data from sources and caches it.
+ * Fetches community events from database cache.
+ *
+ * Normal operation: Always serves from cache (fast, no external API calls)
+ * Force refresh: Scrapes fresh data via Firecrawl (used by weekly cron)
+ *
+ * Events are refreshed weekly via /api/cron/events
  */
 export async function fetchCommunityEvents(forceRefresh = false): Promise<CommunityEventsData> {
-  // Try to get cached events first (unless force refresh)
-  if (!forceRefresh) {
-    const cachedEvents = await getCachedEvents()
-    if (cachedEvents && cachedEvents.length > 0) {
-      console.log(`[Events] Using ${cachedEvents.length} cached events`)
-      return {
-        events: cachedEvents,
-        fetchedAt: new Date(),
-        fromCache: true,
-      }
+  // Force refresh: scrape fresh data (called by cron or admin)
+  if (forceRefresh) {
+    console.log('[Events] Force refresh - scraping fresh data via Firecrawl')
+    return scrapeAndCacheEvents()
+  }
+
+  // Normal operation: always serve from cache
+  const cachedEvents = await getCachedEvents()
+  if (cachedEvents && cachedEvents.length > 0) {
+    console.log(`[Events] Serving ${cachedEvents.length} cached events`)
+    return {
+      events: cachedEvents,
+      fetchedAt: new Date(),
+      fromCache: true,
     }
   }
 
-  // No cache or force refresh - scrape fresh data
-  console.log('[Events] Cache miss or force refresh - scraping fresh data')
-  return scrapeAndCacheEvents()
+  // Cache empty - return empty (cron will populate)
+  console.log('[Events] Cache empty - waiting for cron to populate')
+  return {
+    events: [],
+    fetchedAt: new Date(),
+    fromCache: true,
+  }
 }
 
 /**
@@ -153,7 +166,11 @@ async function fetchFromSource(source: EventSource): Promise<CommunityEvent[]> {
     throw new Error(`Firecrawl returned no markdown for ${source.url}`)
   }
 
-  return source.parser(data.data.markdown, source.name)
+  const markdown = data.data.markdown
+  const events = source.parser(markdown, source.name)
+  console.log(`[Events] ${source.name} parsed ${events.length} events`)
+
+  return events
 }
 
 /**
@@ -201,19 +218,20 @@ function parseEventDate(dateStr: string): Date {
 
 /**
  * Parser for Explore Siouxland events.
- * Format:
- *   [![Image N](imageUrl)](eventUrl)
- *   Month Day
+ * Format (from Firecrawl markdown):
+ *   [![](imageUrl)](eventUrl)
+ *   Jan 25
  *   [to]
- *   [Month Day]
+ *   [Jan 30]
  *   Event Title
  */
 function parseExploreSiouxlandEvents(markdown: string, sourceName: string): CommunityEvent[] {
   const events: CommunityEvent[] = []
   const lines = markdown.split('\n')
 
-  // Pattern for event link: [![Image N](imageUrl)](eventUrl)
-  const eventLinkPattern = /^\[!\[Image \d+\]\([^)]+\)\]\(([^)]+)\)$/
+  // Pattern for event link: [![](imageUrl)](eventUrl) or [![alt](imageUrl)](eventUrl)
+  // The alt text can be empty or contain any text
+  const eventLinkPattern = /^\[!\[[^\]]*\]\([^)]+\)\]\(([^)]+)\)$/
   // Pattern for date: "Jan 21" or "Feb 07"
   const datePattern = /^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2}$/i
 
@@ -286,25 +304,26 @@ function parseExploreSiouxlandEvents(markdown: string, sourceName: string): Comm
 
 /**
  * Parser for Hard Rock Casino Sioux City events.
- * Format:
- *   [#### EVENT NAME](eventUrl)
- *   MONTH DD | TIME
+ * Format (from Firecrawl markdown):
+ *   [**EVENT NAME**](eventUrl)
+ *   JANUARY 31 \| 6PM
  *   [LEARN MORE](url)
  */
 function parseHardRockEvents(markdown: string, sourceName: string): CommunityEvent[] {
   const events: CommunityEvent[] = []
   const lines = markdown.split('\n')
 
-  // Pattern for event title: [#### EVENT NAME](url) or [#### EVENT NAME [FREE SHOW]](url)
-  const titlePattern = /^\[#{1,4}\s*(.+?)\]\(([^)]+)\)$/
-  // Pattern for date/time: "JANUARY 24 | 8PM" or "MARCH 20 | 8:30PM"
-  const dateTimePattern = /^([A-Z]+)\s+(\d{1,2})\s*\|\s*(\d{1,2}(?::\d{2})?(?:AM|PM)?)/i
+  // Pattern for event title: [**EVENT NAME**](url) - bold text link
+  const titlePattern = /^\[\*\*(.+?)\*\*\]\(([^)]+)\)$/
+  // Pattern for date/time: "JANUARY 24 | 8PM" or "MARCH 20 | 8:30PM" or "JANUARY 31 \| 6PM" (escaped pipe)
+  // Also handle dates without time like "MARCH 14"
+  const dateTimePattern = /^([A-Z]+)\s+(\d{1,2})(?:\s*\\?\|\s*(\d{1,2}(?::\d{2})?(?:AM|PM)?))?/i
 
   let i = 0
   while (i < lines.length) {
     const line = lines[i].trim()
 
-    // Look for title pattern
+    // Look for title pattern (bold link)
     const titleMatch = line.match(titlePattern)
     if (titleMatch) {
       const title = titleMatch[1].trim()
@@ -313,6 +332,7 @@ function parseHardRockEvents(markdown: string, sourceName: string): CommunityEve
       // Skip navigation/generic links
       if (title.toLowerCase() === 'learn more' ||
           title.toLowerCase() === 'back to top' ||
+          title.toLowerCase() === 'view more' ||
           title.length < 3) {
         i++
         continue
@@ -326,10 +346,13 @@ function parseHardRockEvents(markdown: string, sourceName: string): CommunityEve
         const nextLine = lines[j].trim()
         const dateMatch = nextLine.match(dateTimePattern)
         if (dateMatch) {
-          // Capitalize month properly: JANUARY -> January
-          const month = dateMatch[1].charAt(0) + dateMatch[1].slice(1).toLowerCase()
+          // Capitalize month properly: JANUARY -> January, FEBRAURY -> February (typo fix)
+          let monthStr = dateMatch[1].toLowerCase()
+          // Fix common typos
+          if (monthStr === 'febraury') monthStr = 'february'
+          const month = monthStr.charAt(0).toUpperCase() + monthStr.slice(1)
           date = `${month} ${dateMatch[2]}`
-          time = dateMatch[3]
+          time = dateMatch[3] // May be undefined for events without time
           break
         }
       }
