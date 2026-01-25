@@ -1,9 +1,11 @@
 import type { CommunityEvent, CommunityEventsData } from '@/types'
+import { getCachedEvents, hasValidCache, cacheEvents } from '@/lib/db/events'
 
 // ============================================
 // Event Source Configuration
 // ============================================
 // Using Firecrawl API for reliable web scraping
+// Events are cached in the database for 7 days
 
 interface EventSource {
   name: string
@@ -31,10 +33,32 @@ const FIRECRAWL_API_KEY = process.env.FIRECRAWL_API_KEY
 // ============================================
 
 /**
- * Fetches community events from all configured sources in parallel.
- * Uses Firecrawl API for reliable web scraping.
+ * Fetches community events - uses cached data if available (up to 7 days old),
+ * otherwise scrapes fresh data from sources and caches it.
  */
-export async function fetchCommunityEvents(): Promise<CommunityEventsData> {
+export async function fetchCommunityEvents(forceRefresh = false): Promise<CommunityEventsData> {
+  // Try to get cached events first (unless force refresh)
+  if (!forceRefresh) {
+    const cachedEvents = await getCachedEvents()
+    if (cachedEvents && cachedEvents.length > 0) {
+      console.log(`[Events] Using ${cachedEvents.length} cached events`)
+      return {
+        events: cachedEvents,
+        fetchedAt: new Date(),
+        fromCache: true,
+      }
+    }
+  }
+
+  // No cache or force refresh - scrape fresh data
+  console.log('[Events] Cache miss or force refresh - scraping fresh data')
+  return scrapeAndCacheEvents()
+}
+
+/**
+ * Scrape events from all sources and cache them
+ */
+async function scrapeAndCacheEvents(): Promise<CommunityEventsData> {
   if (!FIRECRAWL_API_KEY) {
     console.warn('[Events] FIRECRAWL_API_KEY not configured, skipping events fetch')
     return {
@@ -45,7 +69,7 @@ export async function fetchCommunityEvents(): Promise<CommunityEventsData> {
   }
 
   const results = await Promise.allSettled(
-    EVENT_SOURCES.map(source => fetchFromSource(source))
+    EVENT_SOURCES.map(source => fetchAndCacheSource(source))
   )
 
   const allEvents: CommunityEvent[] = []
@@ -75,6 +99,20 @@ export async function fetchCommunityEvents(): Promise<CommunityEventsData> {
       : undefined,
     fetchedAt: new Date(),
   }
+}
+
+/**
+ * Fetch events from a source and cache them
+ */
+async function fetchAndCacheSource(source: EventSource): Promise<CommunityEvent[]> {
+  const events = await fetchFromSource(source)
+
+  // Cache the events for this source
+  if (events.length > 0) {
+    await cacheEvents(events, source.name)
+  }
+
+  return events
 }
 
 /**

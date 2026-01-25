@@ -690,6 +690,7 @@ export interface CommunityEventsData {
   events: CommunityEvent[]
   rawMarkdown?: string // Fallback if parsing is incomplete
   fetchedAt: Date
+  fromCache?: boolean // True if data was served from database cache
 }
 
 // ============================================
