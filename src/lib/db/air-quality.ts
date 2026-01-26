@@ -28,15 +28,7 @@ export async function getCachedAirQuality(): Promise<AirQualityReading[] | null>
       WHERE expires_at > NOW()
       ORDER BY aqi DESC
       LIMIT 1
-    ` as {
-      latitude: number
-      longitude: number
-      aqi: number
-      category: string
-      primaryPollutant: string
-      reportingArea: string
-      timestamp: Date
-    }[]
+    `
 
     if (readings.length === 0) {
       return null
@@ -44,12 +36,12 @@ export async function getCachedAirQuality(): Promise<AirQualityReading[] | null>
 
     console.log(`[AirQuality DB] Found cached air quality reading`)
 
-    // Map to AirQualityReading type
+    // PostgreSQL NUMERIC comes back as strings - convert to numbers
     return readings.map(r => ({
-      latitude: r.latitude,
-      longitude: r.longitude,
+      latitude: r.latitude != null ? parseFloat(r.latitude) : 0,
+      longitude: r.longitude != null ? parseFloat(r.longitude) : 0,
       timestamp: r.timestamp,
-      aqi: r.aqi,
+      aqi: r.aqi != null ? parseInt(r.aqi, 10) : 0,
       category: r.category as AQICategory,
       primaryPollutant: r.primaryPollutant,
       source: 'airnow' as const,

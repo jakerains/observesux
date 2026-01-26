@@ -15,7 +15,7 @@ export async function getCachedRivers(): Promise<RiverGaugeReading[] | null> {
   }
 
   try {
-    const readings = await sql`
+    const rows = await sql`
       SELECT
         site_id as "siteId",
         site_name as "siteName",
@@ -33,11 +33,28 @@ export async function getCachedRivers(): Promise<RiverGaugeReading[] | null> {
       FROM river_cache
       WHERE expires_at > NOW()
       ORDER BY site_name ASC
-    ` as RiverGaugeReading[]
+    `
 
-    if (readings.length === 0) {
+    if (rows.length === 0) {
       return null
     }
+
+    // PostgreSQL NUMERIC comes back as strings - convert to numbers
+    const readings: RiverGaugeReading[] = rows.map(row => ({
+      siteId: row.siteId,
+      siteName: row.siteName,
+      latitude: row.latitude ? parseFloat(row.latitude) : 0,
+      longitude: row.longitude ? parseFloat(row.longitude) : 0,
+      gaugeHeight: row.gaugeHeight ? parseFloat(row.gaugeHeight) : null,
+      discharge: row.discharge ? parseFloat(row.discharge) : null,
+      waterTemp: row.waterTemp ? parseFloat(row.waterTemp) : null,
+      floodStage: row.floodStage as RiverGaugeReading['floodStage'],
+      actionStage: row.actionStage ? parseFloat(row.actionStage) : null,
+      floodStageLevel: row.floodStageLevel ? parseFloat(row.floodStageLevel) : null,
+      moderateFloodStage: row.moderateFloodStage ? parseFloat(row.moderateFloodStage) : null,
+      majorFloodStage: row.majorFloodStage ? parseFloat(row.majorFloodStage) : null,
+      timestamp: row.timestamp,
+    }))
 
     console.log(`[Rivers DB] Found ${readings.length} cached river readings`)
     return readings

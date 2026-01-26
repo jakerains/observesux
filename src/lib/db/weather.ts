@@ -41,23 +41,7 @@ export async function getCachedWeather(stationId: string): Promise<WeatherObserv
       WHERE station_id = ${stationId}
         AND expires_at > NOW()
       LIMIT 1
-    ` as {
-      stationId: string
-      stationName: string
-      timestamp: Date
-      temperature: number | null
-      humidity: number | null
-      windSpeed: number | null
-      windDirection: string | null
-      windGust: number | null
-      pressure: number | null
-      visibility: number | null
-      conditions: string
-      icon: string | null
-      dewpoint: number | null
-      heatIndex: number | null
-      windChill: number | null
-    }[]
+    `
 
     if (readings.length === 0) {
       return null
@@ -65,24 +49,25 @@ export async function getCachedWeather(stationId: string): Promise<WeatherObserv
 
     console.log(`[Weather DB] Found cached weather for ${stationId}`)
 
+    // PostgreSQL NUMERIC comes back as strings - convert to numbers
     const r = readings[0]
     return {
       stationId: r.stationId,
       stationName: r.stationName,
       timestamp: r.timestamp,
-      temperature: r.temperature,
+      temperature: r.temperature != null ? parseFloat(r.temperature) : null,
       temperatureUnit: 'F' as const,
-      humidity: r.humidity,
-      windSpeed: r.windSpeed,
+      humidity: r.humidity != null ? parseFloat(r.humidity) : null,
+      windSpeed: r.windSpeed != null ? parseFloat(r.windSpeed) : null,
       windDirection: r.windDirection,
-      windGust: r.windGust,
-      pressure: r.pressure,
-      visibility: r.visibility,
+      windGust: r.windGust != null ? parseFloat(r.windGust) : null,
+      pressure: r.pressure != null ? parseFloat(r.pressure) : null,
+      visibility: r.visibility != null ? parseFloat(r.visibility) : null,
       conditions: r.conditions,
       icon: r.icon || undefined,
-      dewpoint: r.dewpoint,
-      heatIndex: r.heatIndex,
-      windChill: r.windChill,
+      dewpoint: r.dewpoint != null ? parseFloat(r.dewpoint) : null,
+      heatIndex: r.heatIndex != null ? parseFloat(r.heatIndex) : null,
+      windChill: r.windChill != null ? parseFloat(r.windChill) : null,
     }
   } catch (error) {
     console.error('[Weather DB] Error fetching cached weather:', error)
