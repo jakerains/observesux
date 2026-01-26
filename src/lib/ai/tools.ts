@@ -283,9 +283,13 @@ export const chatTools = {
   }),
 
   // Web search via Vercel AI Gateway (uses OIDC authentication)
-  perplexity_search: gateway.tools.perplexitySearch({
-    maxResults: 5,
-    searchLanguageFilter: ['en'],
-    country: 'US',
-  }),
+  // Wrap gateway tool to add description since gateway.tools don't include one
+  perplexity_search: {
+    ...gateway.tools.perplexitySearch({
+      maxResults: 5,
+      searchLanguageFilter: ['en'],
+      country: 'US',
+    }),
+    description: 'Search the web for realtime information about Siouxland topics. Use this FIRST for: sports schedules/scores (Musketeers, Explorers), specific event dates, business info not in knowledge base, regional news. Do NOT use for general/non-local queries.',
+  },
 };
