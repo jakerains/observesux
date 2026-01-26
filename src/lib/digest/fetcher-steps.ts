@@ -13,11 +13,13 @@
 import { RetryableError } from 'workflow'
 import type {
   DigestData,
+  DigestEdition,
   WeatherForecastSummary,
   GasPriceSummary,
   FlightDelaySummary,
   NewsArticle,
   LocalEvent,
+  SchoolUpdate,
 } from './types'
 import type {
   WeatherObservation,
@@ -28,6 +30,7 @@ import type {
 } from '@/types'
 
 // Import fetchers directly (no HTTP)
+import Firecrawl from '@mendable/firecrawl-js'
 import { fetchNWSObservations, fetchNWSForecast, fetchNWSAlerts } from '@/lib/fetchers/nws'
 import { fetchRiverGauges } from '@/lib/fetchers/usgs'
 import { fetchAirQuality } from '@/lib/fetchers/airnow'
@@ -440,11 +443,133 @@ export async function fetchFlightsStep(): Promise<FlightDelaySummary | null> {
   }
 }
 
+// Keywords that indicate school closings or delays
+const SCHOOL_CLOSING_KEYWORDS = ['closing', 'closed', 'closure', 'cancel', 'cancelled', 'canceled']
+const SCHOOL_DELAY_KEYWORDS = ['delay', 'delayed', 'late start', '2 hour', '2-hour', 'two hour']
+
+/**
+ * Fetch school updates via Firecrawl search
+ * Searches for school closings, delays, and announcements in the Siouxland area
+ */
+export async function fetchSchoolUpdatesStep(): Promise<SchoolUpdate[]> {
+  "use step"
+
+  console.log('[fetchSchoolUpdatesStep] Starting Firecrawl school search...')
+  const startTime = Date.now()
+
+  const apiKey = process.env.FIRECRAWL_API_KEY
+  if (!apiKey) {
+    console.warn('[fetchSchoolUpdatesStep] FIRECRAWL_API_KEY not configured, skipping')
+    return []
+  }
+
+  try {
+    const firecrawl = new Firecrawl({ apiKey })
+
+    // Search for school closings and delays in Siouxland
+    // Use news sources for time-sensitive information
+    const searchQuery = 'Sioux City school closing OR delay OR late start OR canceled'
+
+    console.log(`[fetchSchoolUpdatesStep] Searching: "${searchQuery}"`)
+
+    const data = await firecrawl.search(searchQuery, {
+      limit: 5,
+      location: 'Iowa, United States',
+      tbs: 'qdr:d', // Past 24 hours - school announcements are time-sensitive
+      scrapeOptions: {
+        formats: ['markdown'],
+        onlyMainContent: true,
+      },
+    })
+
+    const duration = Date.now() - startTime
+
+    // Extract web results
+    const webResults = data.web || []
+    console.log(`[fetchSchoolUpdatesStep] Completed in ${duration}ms, got ${webResults.length} results`)
+
+    if (webResults.length === 0) {
+      console.log('[fetchSchoolUpdatesStep] No school updates found')
+      return []
+    }
+
+    // Process and filter results
+    const updates: SchoolUpdate[] = webResults
+      .map((r): SchoolUpdate | null => {
+        const result = r as {
+          title?: string
+          url?: string
+          description?: string
+          markdown?: string
+          metadata?: { title?: string; url?: string; description?: string }
+        }
+
+        const title = result.title || result.metadata?.title || ''
+        const url = result.url || result.metadata?.url || ''
+        const snippet = result.description || result.metadata?.description || ''
+        const content = result.markdown || ''
+
+        // Extract source from URL
+        let source = 'Web'
+        try {
+          const urlObj = new URL(url)
+          source = urlObj.hostname.replace('www.', '')
+        } catch {
+          // Keep default source
+        }
+
+        // Check for closing/delay keywords in title and content
+        const textToCheck = `${title} ${snippet} ${content}`.toLowerCase()
+        const isClosing = SCHOOL_CLOSING_KEYWORDS.some(kw => textToCheck.includes(kw))
+        const isDelay = SCHOOL_DELAY_KEYWORDS.some(kw => textToCheck.includes(kw))
+
+        // Only include results that are actually about school closings/delays
+        if (!isClosing && !isDelay) {
+          return null
+        }
+
+        return {
+          title,
+          snippet: snippet.slice(0, 300), // Limit snippet length
+          url,
+          source,
+          isClosing,
+          isDelay,
+        }
+      })
+      .filter((u): u is SchoolUpdate => u !== null)
+
+    console.log(`[fetchSchoolUpdatesStep] Filtered to ${updates.length} relevant school updates`)
+    if (updates.length > 0) {
+      console.log('[fetchSchoolUpdatesStep] Updates:', updates.map(u =>
+        `${u.isClosing ? '🚫' : '⏰'} ${u.title.slice(0, 60)}`
+      ).join('; '))
+    }
+
+    return updates
+  } catch (error) {
+    const duration = Date.now() - startTime
+    console.error(`[fetchSchoolUpdatesStep] Failed after ${duration}ms:`, error)
+
+    // Network errors are retryable
+    if (error instanceof Error && (
+      error.message.includes('fetch') ||
+      error.message.includes('timeout') ||
+      error.message.includes('ECONNREFUSED')
+    )) {
+      throw new RetryableError(`School updates fetch failed: ${error.message}`, { retryAfter: 15_000 })
+    }
+
+    return []
+  }
+}
+
 /**
  * Aggregates all data from direct fetcher calls
  * This is the main entry point for workflow data collection
+ * @param edition - The digest edition (morning, midday, evening). School updates only fetched for morning.
  */
-export async function aggregateAllData(): Promise<DigestData> {
+export async function aggregateAllData(edition?: DigestEdition): Promise<DigestData> {
   console.log('╔════════════════════════════════════════════════════════════╗')
   console.log('║         DIGEST DATA AGGREGATION STARTING                   ║')
   console.log('╚════════════════════════════════════════════════════════════╝')
@@ -452,7 +577,10 @@ export async function aggregateAllData(): Promise<DigestData> {
 
   // Fetch all data sources in parallel
   // Each step function handles its own retries
-  console.log('[aggregateAllData] Fetching all data sources in parallel...')
+  console.log(`[aggregateAllData] Fetching all data sources in parallel... (edition: ${edition || 'unknown'})`)
+
+  // School updates only fetched for morning edition (most relevant for closings/delays)
+  const shouldFetchSchools = edition === 'morning'
 
   const [
     weather,
@@ -464,7 +592,8 @@ export async function aggregateAllData(): Promise<DigestData> {
     news,
     events,
     gasPrices,
-    flights
+    flights,
+    schools
   ] = await Promise.all([
     fetchWeatherStep(),
     fetchForecastStep(),
@@ -475,7 +604,8 @@ export async function aggregateAllData(): Promise<DigestData> {
     fetchNewsStep(),
     fetchEventsStep(),
     fetchGasPricesStep(),
-    fetchFlightsStep()
+    fetchFlightsStep(),
+    shouldFetchSchools ? fetchSchoolUpdatesStep() : Promise.resolve([])
   ])
 
   const duration = Date.now() - startTime
@@ -494,6 +624,7 @@ export async function aggregateAllData(): Promise<DigestData> {
   console.log(`║ Events:      ${events.length > 0 ? `✓ ${events.length} events` : '○ 0 events'}`)
   console.log(`║ Gas Prices:  ${gasPrices ? `✓ $${gasPrices.averageRegular} avg` : '✗ NULL'}`)
   console.log(`║ Flights:     ${flights ? `✓ ${flights.totalDelays} delays` : '✗ NULL'}`)
+  console.log(`║ Schools:     ${schools.length > 0 ? `✓ ${schools.length} updates` : '○ 0 updates'}`)
   console.log('╠════════════════════════════════════════════════════════════╣')
   console.log(`║ Total time: ${duration}ms                                  `)
   console.log('╚════════════════════════════════════════════════════════════╝')
@@ -511,6 +642,7 @@ export async function aggregateAllData(): Promise<DigestData> {
     events,
     gasPrices,
     flights,
+    schools,
     timestamp: new Date().toISOString()
   }
 }

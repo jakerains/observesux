@@ -79,6 +79,7 @@ export interface DigestData {
   events: LocalEvent[]
   gasPrices: GasPriceSummary | null
   flights: FlightDelaySummary | null
+  schools: SchoolUpdate[] // School closings, delays, and announcements from Firecrawl
   timestamp: string
 }
 
@@ -120,6 +121,18 @@ export interface FlightDelaySummary {
     scheduledTime: string
     status: string
   }>
+}
+
+/**
+ * School update from Firecrawl search
+ */
+export interface SchoolUpdate {
+  title: string
+  snippet: string
+  url: string
+  source: string
+  isClosing?: boolean // Detected as a closing/delay announcement
+  isDelay?: boolean
 }
 
 /**

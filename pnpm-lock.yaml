@@ -44,6 +44,9 @@ importers:
       '@neondatabase/toolkit':
         specifier: ^0.1.2
         version: 0.1.2(typescript@5.9.3)
+      '@openrouter/ai-sdk-provider':
+        specifier: ^2.0.2
+        version: 2.0.2(ai@6.0.39(zod@4.3.5))(zod@4.3.5)
       '@radix-ui/react-avatar':
         specifier: ^1.1.11
         version: 1.1.11(@types/react-dom@19.2.3(@types/react@19.2.8))(@types/react@19.2.8)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -1950,6 +1953,16 @@ packages:
   '@oclif/plugin-help@6.2.31':
     resolution: {integrity: sha512-o4xR98DEFf+VqY+M9B3ZooTm2T/mlGvyBHwHcnsPJCEnvzHqEA9xUlCUK4jm7FBXHhkppziMgCC2snsueLoIpQ==}
     engines: {node: '>=18.0.0'}
+
+  '@openrouter/ai-sdk-provider@2.0.2':
+    resolution: {integrity: sha512-G+8Z7Q4R61anj/nk/hmb1JAAjYpP/LEFA4mjQnitMGDLscoeThPpOl6xFKalzfkd2WSweeKRYAID5HxzEMCbPQ==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      ai: ^6.0.0
+      zod: ^3.25.0 || ^4.0.0
+
+  '@openrouter/sdk@0.1.27':
+    resolution: {integrity: sha512-RH//L10bSmc81q25zAZudiI4kNkLgxF2E+WU42vghp3N6TEvZ6F0jK7uT3tOxkEn91gzmMw9YVmDENy7SJsajQ==}
 
   '@opentelemetry/api@1.9.0':
     resolution: {integrity: sha512-3giAOQvZiH5F9bMlMiv8+GSPMeqg0dbaeo58/0SlA9sxSqZhnUtxzX9/2FzyhS9sWQf5S0GJE0AKBrFqjpeYcg==}
@@ -10332,6 +10345,16 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
+  '@openrouter/ai-sdk-provider@2.0.2(ai@6.0.39(zod@4.3.5))(zod@4.3.5)':
+    dependencies:
+      '@openrouter/sdk': 0.1.27
+      ai: 6.0.39(zod@4.3.5)
+      zod: 4.3.5
+
+  '@openrouter/sdk@0.1.27':
+    dependencies:
+      zod: 4.3.5
+
   '@opentelemetry/api@1.9.0': {}
 
   '@peculiar/asn1-android@2.6.0':
@@ -16982,7 +17005,7 @@ snapshots:
       ansi-escapes: 7.2.0
       supports-hyperlinks: 4.4.0
 
-  terser-webpack-plugin@5.3.16(@swc/core@1.15.3)(esbuild@0.25.0)(webpack@5.96.1(@swc/core@1.15.3)):
+  terser-webpack-plugin@5.3.16(@swc/core@1.15.3)(esbuild@0.25.0)(webpack@5.96.1(@swc/core@1.15.3)(esbuild@0.25.0)):
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
       jest-worker: 27.5.1
@@ -17406,7 +17429,7 @@ snapshots:
       neo-async: 2.6.2
       schema-utils: 3.3.0
       tapable: 2.3.0
-      terser-webpack-plugin: 5.3.16(@swc/core@1.15.3)(esbuild@0.25.0)(webpack@5.96.1(@swc/core@1.15.3))
+      terser-webpack-plugin: 5.3.16(@swc/core@1.15.3)(esbuild@0.25.0)(webpack@5.96.1(@swc/core@1.15.3)(esbuild@0.25.0))
       watchpack: 2.5.1
       webpack-sources: 3.3.3
     transitivePeerDependencies:

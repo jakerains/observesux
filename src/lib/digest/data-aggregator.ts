@@ -291,6 +291,7 @@ export async function aggregateDigestData(): Promise<DigestData> {
     events,
     gasPrices,
     flights,
+    schools: [], // School updates are fetched via Firecrawl in the workflow, not this legacy HTTP aggregator
     timestamp: new Date().toISOString()
   }
 }

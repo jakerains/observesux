@@ -5,6 +5,29 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.1] - 2026-01-26
+
+### Added
+- **Firecrawl web search**: Chat agent now uses Firecrawl for real-time web searches (replaced Perplexity gateway)
+  - Searches include scraped page content for better answers
+  - Location-aware results prioritizing Iowa/Siouxland
+- **School updates in morning digest**: Firecrawl searches for school closings/delays
+  - Dedicated search for "Sioux City school closing OR delay OR late start"
+  - Results filtered to past 24 hours for relevance
+  - Only runs for morning edition (when school info matters most)
+- **Dark mode as default**: New users start with dark theme
+- **Updated branding**: New favicon and icons featuring Siouxland bridge imagery
+- **OpenGraph social sharing**: Uses screenshot image for link previews
+
+### Changed
+- **Switched to Anthropic models**: Chat and digest now use Claude instead of OpenAI
+- Chat agent provides direct answers without unnecessary clarifying questions
+- PWA install prompt is now less aggressive
+
+### Fixed
+- Mobile navigation behavior improvements
+- AI tool descriptions updated to route sports queries correctly
+
 ## [0.7.0] - 2026-01-26
 
 ### Added

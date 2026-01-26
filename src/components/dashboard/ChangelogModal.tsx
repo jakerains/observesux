@@ -16,6 +16,25 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.7.1',
+    date: '2026-01-26',
+    added: [
+      'Firecrawl web search for real-time info in chat',
+      'School closings/delays in morning digest via Firecrawl',
+      'Dark mode as default theme',
+      'New favicon and icons with Siouxland bridge',
+    ],
+    changed: [
+      'Switched to Anthropic Claude models',
+      'Chat agent answers directly without unnecessary questions',
+      'PWA install prompt is less aggressive',
+    ],
+    fixed: [
+      'Mobile navigation behavior',
+      'Sports queries routed to web search correctly',
+    ],
+  },
+  {
     version: '0.7.0',
     date: '2026-01-26',
     added: [

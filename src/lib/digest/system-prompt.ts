@@ -229,6 +229,18 @@ export function buildDigestPrompt(
     prompt += `No active incidents\n`
   }
 
+  // School updates from Firecrawl (dedicated search for closings/delays)
+  if (data.schools && data.schools.length > 0) {
+    prompt += `\n### 🏫 SCHOOL UPDATES (From Live Search - PRIORITIZE THESE!)\n`
+    for (const update of data.schools) {
+      const type = update.isClosing ? '[CLOSING]' : update.isDelay ? '[DELAY]' : '[UPDATE]'
+      prompt += `- ${type} ${update.title}`
+      if (update.snippet) prompt += ` - ${update.snippet.slice(0, 150)}`
+      if (update.url) prompt += ` [URL: ${update.url}]`
+      prompt += ` (Source: ${update.source})\n`
+    }
+  }
+
   // Check for school-related news (closings, delays, cancellations)
   const schoolKeywords = ['school', 'closing', 'closed', 'delay', 'delayed', 'late start', 'cancel', 'cancelled', 'canceled', 'dismiss', 'snow day']
   const schoolRelatedNews = data.news.filter(article =>
@@ -238,9 +250,9 @@ export function buildDigestPrompt(
     )
   )
 
-  // Highlight school-related news separately if found
+  // Highlight school-related news separately if found (in addition to Firecrawl results)
   if (schoolRelatedNews.length > 0) {
-    prompt += `\n### ⚠️ POTENTIAL SCHOOL CLOSINGS/DELAYS (Highlight these!)\n`
+    prompt += `\n### ⚠️ SCHOOL-RELATED NEWS (From RSS Feeds)\n`
     for (const article of schoolRelatedNews) {
       const breaking = article.isBreaking ? '[BREAKING] ' : ''
       const url = article.link ? ` [URL: ${article.link}]` : ''

@@ -285,11 +285,16 @@ export const chatTools = {
 
   // Web search via Firecrawl
   webSearch: tool({
-    description: 'Search the web for realtime Siouxland information. USE IMMEDIATELY (no clarifying questions) for: Sioux City Musketeers schedules/scores, Sioux City Explorers, local sports, specific event dates, business info. "Sioux City hockey" means Musketeers - just search, don\'t ask.',
+    description: 'Search the web for realtime Siouxland information. USE IMMEDIATELY (no clarifying questions) for: Sioux City Musketeers schedules/scores, Sioux City Explorers, local sports, specific event dates, business info. "Sioux City hockey" means Musketeers - just search, don\'t ask. When searching for schedules or upcoming events, include the current year/season context.',
     inputSchema: z.object({
-      query: z.string().describe('The search query - be specific, include "Sioux City" or team names'),
+      query: z.string().describe('The search query - be specific, include "Sioux City" or team names. For schedules, include the year (e.g., "2026" or "January 2026")'),
     }),
     execute: async ({ query }) => {
+      // Add current date context to help with time-sensitive queries
+      const now = new Date();
+      const currentMonth = now.toLocaleString('en-US', { month: 'long' });
+      const currentYear = now.getFullYear();
+      console.log(`[Web Search] Query: "${query}" (Current: ${currentMonth} ${currentYear})`);
       const apiKey = process.env.FIRECRAWL_API_KEY;
       if (!apiKey) {
         return { error: 'Web search is not configured' };
@@ -298,31 +303,39 @@ export const chatTools = {
       try {
         const firecrawl = new Firecrawl({ apiKey });
         const data = await firecrawl.search(query, {
-          limit: 5,
+          limit: 3,
           location: 'Iowa, United States',
+          tbs: 'qdr:y', // Prioritize results from the past year
+          // Scrape the actual page content so agent gets real data, not just links
+          scrapeOptions: {
+            formats: ['markdown'],
+            onlyMainContent: true,
+          },
         });
 
         // SDK returns SearchData directly with web/news/images arrays
+        // When scrapeOptions is used, results include markdown content
         const webResults = data.web || [];
         if (webResults.length === 0) {
           return { error: 'Search returned no results' };
         }
 
-        // Return web results in a clean format
-        // Results can be SearchResultWeb or Document types
+        // Return results with actual content for the agent to use
         return {
           results: webResults.map((r) => {
-            // Handle both SearchResultWeb and Document types
             const result = r as {
               title?: string;
               url?: string;
               description?: string;
+              markdown?: string;
               metadata?: { title?: string; url?: string; description?: string };
             };
             return {
               title: result.title || result.metadata?.title || '',
               url: result.url || result.metadata?.url || '',
               snippet: result.description || result.metadata?.description || '',
+              // Include scraped content so agent can extract actual info
+              content: result.markdown || '',
             };
           }),
         };

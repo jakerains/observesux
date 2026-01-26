@@ -12,7 +12,7 @@
  */
 
 import { generateText } from 'ai'
-import { openai } from '@ai-sdk/openai'
+import { createOpenRouter } from '@openrouter/ai-sdk-provider'
 import { aggregateAllData } from '@/lib/digest/fetcher-steps'
 import { getDigestSystemPrompt, buildDigestPrompt } from '@/lib/digest/system-prompt'
 import { saveDigest, getTodaysDigest, pruneOldDigests } from '@/lib/db/digest'
@@ -49,18 +49,15 @@ async function generateDigestContent(
   console.log('[Digest Workflow] Calling AI model...')
   const aiStartTime = Date.now()
 
+  const openrouter = createOpenRouter({
+    apiKey: process.env.OPENROUTER_API_KEY,
+  })
+
   const result = await generateText({
-    model: openai('gpt-5.2'),
+    model: openrouter('anthropic/claude-opus-4.5'),
     system: systemPrompt,
     prompt: userPrompt,
     maxOutputTokens: 2000,
-    // GPT-5.2 settings - temperature not supported for reasoning models
-    providerOptions: {
-      openai: {
-        reasoningEffort: 'low', // Low reasoning for content generation (faster)
-        textVerbosity: 'medium', // Balanced output length
-      },
-    },
   })
 
   const aiDuration = Date.now() - aiStartTime
@@ -192,8 +189,9 @@ export async function digestWorkflow(
 
   try {
     // Step 1: Aggregate all data (each fetch is a retryable sub-step)
+    // Pass edition so school updates are only fetched for morning digest
     console.log('[Digest Workflow] Step 1: Aggregating data from all sources...')
-    const digestData = await aggregateAllData()
+    const digestData = await aggregateAllData(edition)
 
     // Log what data we got
     console.log('[Digest Workflow] Data aggregation complete. Summary:')
@@ -207,6 +205,7 @@ export async function digestWorkflow(
     console.log(`  - Events: ${digestData.events.length}`)
     console.log(`  - Gas Prices: ${digestData.gasPrices ? 'YES' : 'NO'}`)
     console.log(`  - Flights: ${digestData.flights ? 'YES' : 'NO'}`)
+    console.log(`  - Schools: ${digestData.schools?.length || 0} (Firecrawl)`)
 
     // Step 2: Generate AI content
     console.log('[Digest Workflow] Step 2: Generating AI content...')

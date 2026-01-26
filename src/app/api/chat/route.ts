@@ -1,5 +1,5 @@
 import { streamText, stepCountIs, convertToModelMessages, safeValidateUIMessages } from 'ai';
-import { openai } from '@ai-sdk/openai';
+import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { chatTools } from '@/lib/ai/tools';
 import { getSystemPrompt, type UserContext } from '@/lib/ai/system-prompt';
 import {
@@ -224,8 +224,13 @@ export async function POST(req: Request) {
     // Track tool calls during the stream
     const toolCallsUsed: string[] = [];
 
+    const MODEL_ID = 'anthropic/claude-haiku-4.5';
+    const openrouter = createOpenRouter({
+      apiKey: process.env.OPENROUTER_API_KEY,
+    });
+    console.log(`[Chat] Using model: ${MODEL_ID}`);
     const result = streamText({
-      model: openai('gpt-5-mini'),
+      model: openrouter(MODEL_ID),
       system: getSystemPrompt(userContext),
       messages: await convertToModelMessages(messages),
       tools: chatTools,

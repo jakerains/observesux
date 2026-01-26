@@ -260,7 +260,7 @@ function ChatLogsPanel() {
       {/* Sidebar - Session List */}
       <div
         className={cn(
-          'flex flex-col border-r bg-muted/30',
+          'flex flex-col border-r bg-muted/30 min-h-0',
           isMobile && selectedSession ? 'hidden' : 'flex',
           isMobile ? 'w-full' : 'w-80'
         )}
@@ -325,7 +325,7 @@ function ChatLogsPanel() {
         )}
 
         {/* Session List */}
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1 min-h-0">
           {loading ? (
             <div className="p-4 space-y-3">
               {[...Array(5)].map((_, i) => (
