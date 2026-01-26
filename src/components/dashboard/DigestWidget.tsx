@@ -108,7 +108,7 @@ export function DigestWidget() {
             No digest available yet
           </p>
           <Button asChild variant="outline" size="sm">
-            <Link href="/account/digest">
+            <Link href="/digest">
               Generate First Digest
             </Link>
           </Button>
@@ -144,7 +144,7 @@ export function DigestWidget() {
         {/* Read more link - pinned to bottom */}
         <div className="mt-auto pt-3">
           <Button asChild variant="outline" size="sm" className="gap-2">
-            <Link href="/account/digest">
+            <Link href="/digest">
               Read Full Digest
               <ArrowRight className="h-3 w-3" />
             </Link>

@@ -6,7 +6,10 @@ import {
   getLatestDigest,
   getRecentDigests,
   getTodaysDigest,
+  getTodaysDigestVersions,
   getDigestById,
+  setActiveDigest,
+  getDigestsByDate,
 } from '@/lib/db/digest'
 import { digestWorkflow } from '@/../workflows/digest-workflow'
 import { getCurrentEdition, type DigestEdition } from '@/lib/digest/types'
@@ -60,48 +63,78 @@ export async function POST(request: NextRequest) {
     const startTime = Date.now()
 
     while (Date.now() - startTime < maxWaitMs) {
-      const status = await run.status
+      try {
+        const status = await run.status
 
-      if (status === 'completed') {
-        // Get the result
-        const result = await run.returnValue
+        if (status === 'completed') {
+          // Get the result
+          const result = await run.returnValue
 
-        if (result.success && result.digestId) {
-          // Fetch the saved digest to return
-          const digest = await getDigestById(result.digestId)
-          return NextResponse.json({
-            success: true,
-            digest,
-            workflowRunId: run.runId,
-            generationTimeMs: result.generationTimeMs
-          })
-        } else if (result.skipped) {
-          // Edition already exists
-          const digest = result.digestId ? await getDigestById(result.digestId) : null
-          return NextResponse.json({
-            success: true,
-            skipped: true,
-            message: result.message,
-            digest
-          })
-        } else {
+          if (result.success && result.digestId) {
+            // Fetch the saved digest to return
+            const digest = await getDigestById(result.digestId)
+            return NextResponse.json({
+              success: true,
+              digest,
+              workflowRunId: run.runId,
+              generationTimeMs: result.generationTimeMs
+            })
+          } else if (result.skipped) {
+            // Edition already exists
+            const digest = result.digestId ? await getDigestById(result.digestId) : null
+            return NextResponse.json({
+              success: true,
+              skipped: true,
+              message: result.message,
+              digest
+            })
+          } else {
+            return NextResponse.json({
+              success: false,
+              error: result.error || 'Workflow completed without success'
+            }, { status: 500 })
+          }
+        }
+
+        if (status === 'failed' || status === 'cancelled') {
           return NextResponse.json({
             success: false,
-            error: result.error || 'Workflow completed without success'
+            error: `Workflow ${status}`,
+            workflowRunId: run.runId
           }, { status: 500 })
         }
-      }
 
-      if (status === 'failed' || status === 'cancelled') {
-        return NextResponse.json({
-          success: false,
-          error: `Workflow ${status}`,
-          workflowRunId: run.runId
-        }, { status: 500 })
-      }
+        // Still running - wait and poll again
+        await new Promise(resolve => setTimeout(resolve, pollIntervalMs))
+      } catch (pollError) {
+        // Handle WorkflowRunNotFoundError - common in local dev when state is lost
+        const errorMessage = pollError instanceof Error ? pollError.message : String(pollError)
+        if (errorMessage.includes('not found') || errorMessage.includes('WorkflowRunNotFoundError')) {
+          console.warn('[Digest API] Workflow run lost (common in local dev), checking if digest was created...')
 
-      // Still running - wait and poll again
-      await new Promise(resolve => setTimeout(resolve, pollIntervalMs))
+          // Check if a digest was created recently for this edition
+          const recentDigest = await getTodaysDigest(edition)
+          if (recentDigest) {
+            const createdRecently = Date.now() - new Date(recentDigest.createdAt).getTime() < 60000 // Within last minute
+            if (createdRecently) {
+              return NextResponse.json({
+                success: true,
+                digest: recentDigest,
+                workflowRunId: run.runId,
+                message: 'Workflow state lost but digest was saved successfully'
+              })
+            }
+          }
+
+          // Workflow state lost and no digest found
+          return NextResponse.json({
+            success: false,
+            error: 'Workflow state lost (local dev issue). Please restart dev server and try again.',
+            workflowRunId: run.runId
+          }, { status: 500 })
+        }
+        throw pollError // Re-throw other errors
+      }
     }
 
     // Workflow is still running after max wait
@@ -128,6 +161,8 @@ export async function POST(request: NextRequest) {
  * - edition: 'morning' | 'midday' | 'evening' - Get today's specific edition
  * - id: Get a specific digest by ID
  * - history: '1' to get recent history instead of just latest
+ * - versions: '1' to get all versions for an edition today (admin)
+ * - date: Get all digests for a specific date (YYYY-MM-DD)
  * - limit: Number of historical digests to return (default 14)
  */
 export async function GET(request: NextRequest) {
@@ -140,6 +175,9 @@ export async function GET(request: NextRequest) {
     const edition = searchParams.get('edition') as DigestEdition | null
     const digestId = searchParams.get('id')
     const wantHistory = searchParams.get('history') === '1'
+    const wantVersions = searchParams.get('versions') === '1'
+    const activeOnly = searchParams.get('activeOnly') !== '0' // Default to active only
+    const date = searchParams.get('date')
     const limit = Math.min(parseInt(searchParams.get('limit') || '14', 10), 50)
 
     // If specific ID requested
@@ -151,7 +189,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ digest })
     }
 
-    // If specific edition for today requested
+    // If requesting all digests for a specific date
+    if (date) {
+      const digests = await getDigestsByDate(date)
+      return NextResponse.json({ digests })
+    }
+
+    // If requesting all versions for an edition today (admin feature)
+    if (wantVersions && edition && ['morning', 'midday', 'evening'].includes(edition)) {
+      const digests = await getTodaysDigestVersions(edition)
+      return NextResponse.json({
+        digests,
+        count: digests.length
+      })
+    }
+
+    // If specific edition for today requested (returns active only)
     if (edition && ['morning', 'midday', 'evening'].includes(edition)) {
       const digest = await getTodaysDigest(edition)
       return NextResponse.json({
@@ -162,14 +215,14 @@ export async function GET(request: NextRequest) {
 
     // If history requested
     if (wantHistory) {
-      const digests = await getRecentDigests(limit)
+      const digests = await getRecentDigests(limit, activeOnly)
       return NextResponse.json({
         digests,
         hasMore: digests.length === limit
       })
     }
 
-    // Default: return the latest digest
+    // Default: return the latest active digest
     const digest = await getLatestDigest()
     return NextResponse.json({
       digest,
@@ -179,6 +232,54 @@ export async function GET(request: NextRequest) {
     console.error('[Digest API] Error fetching digest:', error)
     return NextResponse.json(
       { error: 'Failed to fetch digest' },
+      { status: 500 }
+    )
+  }
+}
+
+/**
+ * PATCH /api/user/digest
+ * Set a specific digest as active (admin only)
+ */
+export async function PATCH(request: NextRequest) {
+  if (!isDatabaseConfigured()) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 })
+  }
+
+  try {
+    // Auth check - require admin
+    const user = await getCurrentUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Check for admin role
+    const userRole = (user as { role?: string }).role
+    if (userRole !== 'admin') {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+    }
+
+    const body = await request.json()
+    const { digestId } = body
+
+    if (!digestId) {
+      return NextResponse.json({ error: 'digestId required' }, { status: 400 })
+    }
+
+    const success = await setActiveDigest(digestId)
+    if (!success) {
+      return NextResponse.json({ error: 'Failed to set active digest' }, { status: 500 })
+    }
+
+    const digest = await getDigestById(digestId)
+    return NextResponse.json({
+      success: true,
+      digest
+    })
+  } catch (error) {
+    console.error('[Digest API] Error setting active digest:', error)
+    return NextResponse.json(
+      { error: 'Failed to set active digest' },
       { status: 500 }
     )
   }

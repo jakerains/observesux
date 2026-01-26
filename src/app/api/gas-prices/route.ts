@@ -117,7 +117,9 @@ export async function GET() {
         s.prices.find(p => p.fuelType === 'Regular')?.price === lowestRegular
       )
       if (cheapest) {
-        cheapestStation = cheapest.brandName
+        cheapestStation = cheapest.streetAddress
+          ? `${cheapest.brandName} at ${cheapest.streetAddress}`
+          : cheapest.brandName
       }
     }
 

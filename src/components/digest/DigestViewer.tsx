@@ -15,7 +15,8 @@ import {
   Timer,
   Sun,
   Sunset,
-  Moon
+  Moon,
+  ExternalLink
 } from 'lucide-react'
 import { editionLabels, type Digest, type DigestEdition } from '@/lib/digest/types'
 
@@ -162,6 +163,18 @@ export function DigestViewer({
                 // Style strong/bold
                 strong: ({ children }) => (
                   <strong className="font-semibold text-foreground">{children}</strong>
+                ),
+                // Style links with external indicator
+                a: ({ href, children }) => (
+                  <a
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline inline-flex items-center gap-0.5"
+                  >
+                    {children}
+                    <ExternalLink className="h-3 w-3 inline-block ml-0.5 opacity-70" />
+                  </a>
                 )
               }}
             >

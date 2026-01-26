@@ -107,7 +107,7 @@ export function UserMenu() {
             </a>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <a href="/account/digest" className="cursor-pointer">
+            <a href="/digest" className="cursor-pointer">
               <Newspaper className="mr-2 h-4 w-4" />
               Siouxland Digest
             </a>

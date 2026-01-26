@@ -5,6 +5,35 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.6] - 2026-01-26
+
+### Added
+- **Digest version control**: Generate multiple versions per edition, select which is active
+  - New `is_active` and `version` columns in digests table
+  - Admin UI shows version badges and "Set Active" buttons
+  - Only active versions display on homepage widget
+- **Deep linking in digest**: News and events now include clickable URLs
+  - AI embeds inline Markdown links for news stories and events
+  - External link icon on rendered links in DigestViewer
+- **School closings priority**: Morning edition now highlights school closings/delays
+  - Keyword scanning in news for school-related terms
+  - Weather-based detection (extreme cold, blizzards, ice storms)
+  - Dedicated "School & Community Alerts" section for morning edition
+- **Admin URL routing**: Tabs now persist in URL (`/admin?tab=digest`)
+- **Cheapest gas station**: Digest now includes station name and address for lowest price
+
+### Changed
+- Digest route moved from `/account/digest` to `/digest`
+- Increased news items from 5 to 8 for better school closing detection
+- System prompt redesigned with edition-specific priorities and tone
+
+### Fixed
+- Summary markdown now renders properly in admin panel (bold, italic)
+- Recent digests list renders markdown instead of raw `**` syntax
+- Admin digest status pills now correctly check `isActive` flag
+- Date comparison for "Generated today" badge handles Date objects
+- Workflow error handling recovers from local dev state loss
+
 ## [0.6.5] - 2026-01-25
 
 ### Fixed

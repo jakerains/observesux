@@ -10,6 +10,7 @@ function getTodayDate(): string {
 
 /**
  * Save a new digest to the database
+ * Creates a new version and sets it as active (deactivating previous versions)
  */
 export async function saveDigest(data: {
   edition: DigestEdition
@@ -26,22 +27,36 @@ export async function saveDigest(data: {
   const date = getTodayDate()
 
   try {
+    // Get the next version number for this edition/date
+    const versionResult = await sql`
+      SELECT COALESCE(MAX(version), 0) + 1 as next_version
+      FROM digests
+      WHERE edition = ${data.edition} AND date = ${date}
+    `
+    const nextVersion = versionResult[0]?.next_version || 1
+
+    // Deactivate any currently active digest for this edition/date
+    await sql`
+      UPDATE digests
+      SET is_active = false
+      WHERE edition = ${data.edition}
+        AND date = ${date}
+        AND is_active = true
+    `
+
+    // Insert the new digest as active
     const result = await sql`
-      INSERT INTO digests (edition, date, summary, content, data_snapshot, generation_time_ms)
+      INSERT INTO digests (edition, date, summary, content, data_snapshot, generation_time_ms, is_active, version)
       VALUES (
         ${data.edition},
         ${date},
         ${data.summary},
         ${data.content},
         ${data.dataSnapshot ? JSON.stringify(data.dataSnapshot) : null},
-        ${data.generationTimeMs}
+        ${data.generationTimeMs},
+        true,
+        ${nextVersion}
       )
-      ON CONFLICT (edition, date) DO UPDATE SET
-        summary = EXCLUDED.summary,
-        content = EXCLUDED.content,
-        data_snapshot = EXCLUDED.data_snapshot,
-        generation_time_ms = EXCLUDED.generation_time_ms,
-        created_at = NOW()
       RETURNING
         id,
         edition,
@@ -50,7 +65,9 @@ export async function saveDigest(data: {
         content,
         data_snapshot as "dataSnapshot",
         generation_time_ms as "generationTimeMs",
-        created_at as "createdAt"
+        created_at as "createdAt",
+        is_active as "isActive",
+        version
     `
 
     if (result.length === 0) return null
@@ -63,7 +80,9 @@ export async function saveDigest(data: {
       content: result[0].content,
       dataSnapshot: result[0].dataSnapshot,
       generationTimeMs: result[0].generationTimeMs,
-      createdAt: result[0].createdAt
+      createdAt: result[0].createdAt,
+      isActive: result[0].isActive ?? true,
+      version: result[0].version ?? 1
     } as Digest
   } catch (error) {
     console.error('[Digest DB] Failed to save digest:', error)
@@ -72,7 +91,7 @@ export async function saveDigest(data: {
 }
 
 /**
- * Get today's digest for a specific edition
+ * Get today's ACTIVE digest for a specific edition
  */
 export async function getTodaysDigest(
   edition: DigestEdition
@@ -91,16 +110,24 @@ export async function getTodaysDigest(
         content,
         data_snapshot as "dataSnapshot",
         generation_time_ms as "generationTimeMs",
-        created_at as "createdAt"
+        created_at as "createdAt",
+        is_active as "isActive",
+        version
       FROM digests
       WHERE edition = ${edition}
         AND date = ${date}
+        AND is_active = true
     `
 
     if (result.length === 0) return null
 
     const row = result[0]
-    return { ...row, summary: row.summary || '' } as Digest
+    return {
+      ...row,
+      summary: row.summary || '',
+      isActive: row.isActive ?? true,
+      version: row.version ?? 1
+    } as Digest
   } catch (error) {
     console.error('[Digest DB] Failed to get today\'s digest:', error)
     return null
@@ -108,7 +135,48 @@ export async function getTodaysDigest(
 }
 
 /**
- * Get the latest digest (most recent, any edition)
+ * Get ALL versions of today's digests for a specific edition (for admin)
+ */
+export async function getTodaysDigestVersions(
+  edition: DigestEdition
+): Promise<Digest[]> {
+  if (!isDatabaseConfigured()) return []
+
+  const date = getTodayDate()
+
+  try {
+    const result = await sql`
+      SELECT
+        id,
+        edition,
+        date,
+        summary,
+        content,
+        data_snapshot as "dataSnapshot",
+        generation_time_ms as "generationTimeMs",
+        created_at as "createdAt",
+        is_active as "isActive",
+        version
+      FROM digests
+      WHERE edition = ${edition}
+        AND date = ${date}
+      ORDER BY version DESC
+    `
+
+    return result.map(row => ({
+      ...row,
+      summary: row.summary || '',
+      isActive: row.isActive ?? false,
+      version: row.version ?? 1
+    })) as Digest[]
+  } catch (error) {
+    console.error('[Digest DB] Failed to get today\'s digest versions:', error)
+    return []
+  }
+}
+
+/**
+ * Get the latest ACTIVE digest (most recent, any edition)
  */
 export async function getLatestDigest(): Promise<Digest | null> {
   if (!isDatabaseConfigured()) return null
@@ -123,8 +191,11 @@ export async function getLatestDigest(): Promise<Digest | null> {
         content,
         data_snapshot as "dataSnapshot",
         generation_time_ms as "generationTimeMs",
-        created_at as "createdAt"
+        created_at as "createdAt",
+        is_active as "isActive",
+        version
       FROM digests
+      WHERE is_active = true
       ORDER BY created_at DESC
       LIMIT 1
     `
@@ -132,7 +203,12 @@ export async function getLatestDigest(): Promise<Digest | null> {
     if (result.length === 0) return null
 
     const row = result[0]
-    return { ...row, summary: row.summary || '' } as Digest
+    return {
+      ...row,
+      summary: row.summary || '',
+      isActive: row.isActive ?? true,
+      version: row.version ?? 1
+    } as Digest
   } catch (error) {
     console.error('[Digest DB] Failed to get latest digest:', error)
     return null
@@ -140,35 +216,68 @@ export async function getLatestDigest(): Promise<Digest | null> {
 }
 
 /**
- * Get recent digests (for history view)
+ * Get recent digests (for history view) - returns ALL versions, with active ones first
  */
 export async function getRecentDigests(
-  limit: number = 14
+  limit: number = 14,
+  activeOnly: boolean = false
 ): Promise<Digest[]> {
   if (!isDatabaseConfigured()) return []
 
   try {
-    const result = await sql`
-      SELECT
-        id,
-        edition,
-        date,
-        summary,
-        content,
-        data_snapshot as "dataSnapshot",
-        generation_time_ms as "generationTimeMs",
-        created_at as "createdAt"
-      FROM digests
-      ORDER BY date DESC,
-        CASE edition
-          WHEN 'evening' THEN 1
-          WHEN 'midday' THEN 2
-          WHEN 'morning' THEN 3
-        END
-      LIMIT ${limit}
-    `
+    const result = activeOnly
+      ? await sql`
+          SELECT
+            id,
+            edition,
+            date,
+            summary,
+            content,
+            data_snapshot as "dataSnapshot",
+            generation_time_ms as "generationTimeMs",
+            created_at as "createdAt",
+            is_active as "isActive",
+            version
+          FROM digests
+          WHERE is_active = true
+          ORDER BY date DESC,
+            CASE edition
+              WHEN 'evening' THEN 1
+              WHEN 'midday' THEN 2
+              WHEN 'morning' THEN 3
+            END
+          LIMIT ${limit}
+        `
+      : await sql`
+          SELECT
+            id,
+            edition,
+            date,
+            summary,
+            content,
+            data_snapshot as "dataSnapshot",
+            generation_time_ms as "generationTimeMs",
+            created_at as "createdAt",
+            is_active as "isActive",
+            version
+          FROM digests
+          ORDER BY date DESC,
+            CASE edition
+              WHEN 'evening' THEN 1
+              WHEN 'midday' THEN 2
+              WHEN 'morning' THEN 3
+            END,
+            is_active DESC,
+            version DESC
+          LIMIT ${limit}
+        `
 
-    return result.map(row => ({ ...row, summary: row.summary || '' })) as Digest[]
+    return result.map(row => ({
+      ...row,
+      summary: row.summary || '',
+      isActive: row.isActive ?? true,
+      version: row.version ?? 1
+    })) as Digest[]
   } catch (error) {
     console.error('[Digest DB] Failed to get recent digests:', error)
     return []
@@ -193,7 +302,9 @@ export async function getDigestById(
         content,
         data_snapshot as "dataSnapshot",
         generation_time_ms as "generationTimeMs",
-        created_at as "createdAt"
+        created_at as "createdAt",
+        is_active as "isActive",
+        version
       FROM digests
       WHERE id = ${digestId}::uuid
     `
@@ -201,10 +312,51 @@ export async function getDigestById(
     if (result.length === 0) return null
 
     const row = result[0]
-    return { ...row, summary: row.summary || '' } as Digest
+    return {
+      ...row,
+      summary: row.summary || '',
+      isActive: row.isActive ?? true,
+      version: row.version ?? 1
+    } as Digest
   } catch (error) {
     console.error('[Digest DB] Failed to get digest by ID:', error)
     return null
+  }
+}
+
+/**
+ * Set a specific digest as the active one for its edition/date
+ * Deactivates all other versions for that edition/date
+ */
+export async function setActiveDigest(
+  digestId: string
+): Promise<boolean> {
+  if (!isDatabaseConfigured()) return false
+
+  try {
+    // First, get the digest to know its edition and date
+    const digest = await getDigestById(digestId)
+    if (!digest) return false
+
+    // Deactivate all digests for this edition/date
+    await sql`
+      UPDATE digests
+      SET is_active = false
+      WHERE edition = ${digest.edition}
+        AND date = ${digest.date}
+    `
+
+    // Activate the specified digest
+    await sql`
+      UPDATE digests
+      SET is_active = true
+      WHERE id = ${digestId}::uuid
+    `
+
+    return true
+  } catch (error) {
+    console.error('[Digest DB] Failed to set active digest:', error)
+    return false
   }
 }
 
@@ -231,7 +383,7 @@ export async function pruneOldDigests(
 }
 
 /**
- * Check if a digest exists for today's edition
+ * Check if an ACTIVE digest exists for today's edition
  */
 export async function digestExistsForToday(
   edition: DigestEdition
@@ -243,7 +395,9 @@ export async function digestExistsForToday(
   try {
     const result = await sql`
       SELECT 1 FROM digests
-      WHERE edition = ${edition} AND date = ${date}
+      WHERE edition = ${edition}
+        AND date = ${date}
+        AND is_active = true
       LIMIT 1
     `
 
@@ -251,5 +405,49 @@ export async function digestExistsForToday(
   } catch (error) {
     console.error('[Digest DB] Failed to check digest existence:', error)
     return false
+  }
+}
+
+/**
+ * Get all versions for a specific date (for admin history view)
+ */
+export async function getDigestsByDate(
+  date: string
+): Promise<Digest[]> {
+  if (!isDatabaseConfigured()) return []
+
+  try {
+    const result = await sql`
+      SELECT
+        id,
+        edition,
+        date,
+        summary,
+        content,
+        data_snapshot as "dataSnapshot",
+        generation_time_ms as "generationTimeMs",
+        created_at as "createdAt",
+        is_active as "isActive",
+        version
+      FROM digests
+      WHERE date = ${date}
+      ORDER BY
+        CASE edition
+          WHEN 'morning' THEN 1
+          WHEN 'midday' THEN 2
+          WHEN 'evening' THEN 3
+        END,
+        version DESC
+    `
+
+    return result.map(row => ({
+      ...row,
+      summary: row.summary || '',
+      isActive: row.isActive ?? true,
+      version: row.version ?? 1
+    })) as Digest[]
+  } catch (error) {
+    console.error('[Digest DB] Failed to get digests by date:', error)
+    return []
   }
 }

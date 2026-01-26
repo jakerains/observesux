@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo, Suspense } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { format, formatDistanceToNow } from 'date-fns'
 import {
   MessageSquare,
@@ -532,6 +533,8 @@ function DigestPanel() {
   const [generatedDigest, setGeneratedDigest] = useState<Digest | null>(null)
   const [showPreview, setShowPreview] = useState(false)
   const [forceRegenerate, setForceRegenerate] = useState(false)
+  const [editionFilter, setEditionFilter] = useState<DigestEdition | 'all'>('all')
+  const [showAllVersions, setShowAllVersions] = useState(false)
   const [lastResult, setLastResult] = useState<{
     success: boolean
     edition?: DigestEdition
@@ -554,7 +557,8 @@ function DigestPanel() {
   const fetchDigests = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/user/digest?history=1&limit=20')
+      const activeParam = showAllVersions ? '&activeOnly=0' : ''
+      const res = await fetch(`/api/user/digest?history=1&limit=30${activeParam}`)
       const data = await res.json()
       setDigests(data.digests || [])
     } catch (error) {
@@ -562,7 +566,7 @@ function DigestPanel() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [showAllVersions])
 
   useEffect(() => {
     fetchDigests()
@@ -637,9 +641,37 @@ function DigestPanel() {
     return stats
   }
 
-  // Check if an edition exists for today
+  // Check if an ACTIVE edition exists for today
   const hasEditionToday = (edition: DigestEdition): boolean => {
-    return digests.some(d => d.edition === edition && d.date === todayDate)
+    return digests.some(d => {
+      // Normalize date - always convert to YYYY-MM-DD format for comparison
+      const digestDate = new Date(d.date).toLocaleDateString('en-CA', { timeZone: 'America/Chicago' })
+      return d.edition === edition && digestDate === todayDate && d.isActive
+    })
+  }
+
+  // Count versions for an edition today
+  const getVersionCount = (edition: DigestEdition): number => {
+    return digests.filter(d => {
+      const digestDate = new Date(d.date).toLocaleDateString('en-CA', { timeZone: 'America/Chicago' })
+      return d.edition === edition && digestDate === todayDate
+    }).length
+  }
+
+  // Set a digest as active
+  const setActiveDigest = async (digestId: string) => {
+    try {
+      const res = await fetch('/api/user/digest', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ digestId })
+      })
+      if (res.ok) {
+        fetchDigests() // Refresh list
+      }
+    } catch (error) {
+      console.error('Failed to set active digest:', error)
+    }
   }
 
   return (
@@ -723,10 +755,15 @@ function DigestPanel() {
                         {hasToday ? (
                           <Badge variant="secondary" className="gap-1 text-xs">
                             <CheckCircle2 className="h-3 w-3 text-green-500" />
-                            Generated
+                            Active
                           </Badge>
                         ) : (
-                          <Badge variant="outline" className="text-xs">Not generated</Badge>
+                          <Badge variant="outline" className="text-xs">Not active</Badge>
+                        )}
+                        {getVersionCount(edition) > 0 && (
+                          <Badge variant="outline" className="text-xs">
+                            v{getVersionCount(edition)}
+                          </Badge>
                         )}
                       </div>
                       <Button
@@ -869,7 +906,9 @@ function DigestPanel() {
               {generatedDigest.summary && (
                 <div className="p-3 border-b bg-primary/5">
                   <p className="text-xs font-medium text-muted-foreground mb-1">Summary:</p>
-                  <p className="text-sm">{generatedDigest.summary}</p>
+                  <div className="prose prose-sm dark:prose-invert prose-p:text-foreground prose-p:leading-relaxed prose-strong:text-foreground prose-strong:font-semibold max-w-none">
+                    <ChatMarkdown content={generatedDigest.summary} />
+                  </div>
                 </div>
               )}
 
@@ -961,7 +1000,46 @@ function DigestPanel() {
             </Button>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {/* Filters */}
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <Button
+                variant={editionFilter === 'all' ? 'default' : 'outline'}
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => setEditionFilter('all')}
+              >
+                All
+              </Button>
+              {editions.map((ed) => {
+                const Icon = editionIcons[ed]
+                return (
+                  <Button
+                    key={ed}
+                    variant={editionFilter === ed ? 'default' : 'outline'}
+                    size="sm"
+                    className="h-7 text-xs gap-1"
+                    onClick={() => setEditionFilter(ed)}
+                  >
+                    <Icon className="h-3 w-3" />
+                    {editionLabels[ed].split(' ')[0]}
+                  </Button>
+                )
+              })}
+            </div>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="show-versions" className="text-xs text-muted-foreground cursor-pointer">
+                Show all versions
+              </Label>
+              <Switch
+                id="show-versions"
+                checked={showAllVersions}
+                onCheckedChange={setShowAllVersions}
+              />
+            </div>
+          </div>
+
           {loading ? (
             <div className="space-y-3">
               {[...Array(3)].map((_, i) => (
@@ -975,10 +1053,18 @@ function DigestPanel() {
             </div>
           ) : (
             <div className="border rounded-lg divide-y max-h-96 overflow-y-auto">
-              {digests.map((digest) => {
+              {digests
+                .filter(d => editionFilter === 'all' || d.edition === editionFilter)
+                .map((digest) => {
                 const Icon = editionIcons[digest.edition]
+                // Normalize date - handle both ISO strings and Date objects
+                const digestDate = new Date(digest.date).toLocaleDateString('en-CA', { timeZone: 'America/Chicago' })
+                const isToday = digestDate === todayDate
                 return (
-                  <div key={digest.id} className="p-3 flex items-center gap-3">
+                  <div key={digest.id} className={cn(
+                    "p-3 flex items-center gap-3",
+                    digest.isActive && "bg-green-500/5"
+                  )}>
                     <Icon className={cn(
                       'h-4 w-4',
                       digest.edition === 'morning' && 'text-amber-500',
@@ -986,18 +1072,48 @@ function DigestPanel() {
                       digest.edition === 'evening' && 'text-indigo-500'
                     )} />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium">
-                        {editionLabels[digest.edition]}
-                      </p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {digest.summary || 'No summary'}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium">
+                          {editionLabels[digest.edition]}
+                        </p>
+                        {digest.isActive && (
+                          <Badge variant="secondary" className="text-xs gap-1">
+                            <CheckCircle2 className="h-3 w-3 text-green-500" />
+                            Active
+                          </Badge>
+                        )}
+                        {digest.version > 1 && (
+                          <Badge variant="outline" className="text-xs">
+                            v{digest.version}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="text-xs text-muted-foreground truncate prose prose-xs dark:prose-invert prose-p:m-0 prose-p:inline max-w-none">
+                        {digest.summary ? (
+                          <ChatMarkdown content={digest.summary} />
+                        ) : (
+                          <span>No summary</span>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-xs font-medium">{digest.date}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {format(new Date(digest.createdAt), 'h:mm a')}
-                      </p>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <div className="text-right">
+                        <p className="text-xs font-medium">{digestDate}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(digest.createdAt), 'h:mm a')}
+                        </p>
+                      </div>
+                      {!digest.isActive && isToday && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs h-7 border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                          onClick={() => setActiveDigest(digest.id)}
+                          title="Set as active version"
+                        >
+                          Set Active
+                        </Button>
+                      )}
                     </div>
                   </div>
                 )
@@ -1608,10 +1724,41 @@ function SuggestionsPanel() {
   )
 }
 
-// Main Admin Page
+// Valid admin tab values
+const ADMIN_TABS = ['chat-logs', 'users', 'knowledge-base', 'suggestions', 'digest', 'tools'] as const
+type AdminTab = typeof ADMIN_TABS[number]
+
+// Main Admin Page (wrapped with Suspense for useSearchParams)
 export default function AdminPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    }>
+      <AdminPageContent />
+    </Suspense>
+  )
+}
+
+// Admin Page Content (uses useSearchParams)
+function AdminPageContent() {
   const { data: session, isPending } = useSession()
-  const [activeTab, setActiveTab] = useState('chat-logs')
+  const searchParams = useSearchParams()
+  const router = useRouter()
+
+  // Get tab from URL or default to chat-logs
+  const tabParam = searchParams.get('tab')
+  const activeTab: AdminTab = tabParam && ADMIN_TABS.includes(tabParam as AdminTab)
+    ? (tabParam as AdminTab)
+    : 'chat-logs'
+
+  // Handle tab change - update URL
+  const handleTabChange = useCallback((newTab: string) => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('tab', newTab)
+    router.push(`/admin?${params.toString()}`)
+  }, [searchParams, router])
 
   // Loading state
   if (isPending) {
@@ -1655,7 +1802,7 @@ export default function AdminPage() {
         </div>
 
         {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
           <TabsList className="mb-6">
             <TabsTrigger value="chat-logs" className="flex items-center gap-2">
               <MessageSquare className="h-4 w-4" />

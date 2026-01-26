@@ -16,6 +16,26 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.6.6',
+    date: '2026-01-26',
+    added: [
+      'Digest version control: generate multiple versions, select active one',
+      'Deep linking in digest with clickable news/event URLs',
+      'School closings priority for morning edition',
+      'Admin URL routing (/admin?tab=digest)',
+      'Cheapest gas station name and address in digest',
+    ],
+    changed: [
+      'Digest route moved to /digest (was /account/digest)',
+      'System prompt redesigned with edition-specific priorities',
+    ],
+    fixed: [
+      'Summary markdown renders properly in admin panel',
+      'Admin digest status pills check isActive flag correctly',
+      'Workflow error handling for local dev state loss',
+    ],
+  },
+  {
     version: '0.6.5',
     date: '2026-01-25',
     fixed: [

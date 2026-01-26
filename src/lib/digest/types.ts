@@ -59,6 +59,8 @@ export interface Digest {
   dataSnapshot: DigestData | null
   generationTimeMs: number
   createdAt: string
+  isActive: boolean // Whether this is the active version for display
+  version: number // Version number (1, 2, 3...) within same edition/date
 }
 
 /**
@@ -101,6 +103,8 @@ export interface GasPriceSummary {
   lowestRegular: number
   highestRegular: number
   stationCount: number
+  cheapestStation: string | null // Name of station with lowest price
+  cheapestAddress: string | null // Address of cheapest station
 }
 
 /**

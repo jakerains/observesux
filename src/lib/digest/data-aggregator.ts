@@ -116,7 +116,7 @@ async function fetchNews(): Promise<NewsArticle[]> {
     isBreaking?: boolean
   }> }>('/api/news', {})
 
-  return (data.data || []).slice(0, 5).map(item => ({
+  return (data.data || []).slice(0, 8).map(item => ({
     id: item.id,
     title: item.title,
     link: item.link,
@@ -160,16 +160,34 @@ async function fetchGasPrices(): Promise<GasPriceSummary | null> {
     lowestRegular: number
     highestRegular: number
     stationCount: number
-  } } }>('/api/gas-prices', {})
+    cheapestStation: string | null
+  }, stations?: Array<{
+    brandName: string
+    streetAddress: string
+    prices: Array<{ fuelType: string, price: number }>
+  }> } }>('/api/gas-prices', {})
 
   const stats = data.data?.stats
   if (!stats) return null
+
+  // Find the cheapest station address if not already in stats
+  let cheapestAddress: string | null = null
+  if (data.data?.stations && stats.lowestRegular) {
+    const cheapest = data.data.stations.find(s =>
+      s.prices.find(p => p.fuelType === 'Regular')?.price === stats.lowestRegular
+    )
+    if (cheapest) {
+      cheapestAddress = cheapest.streetAddress || null
+    }
+  }
 
   return {
     averageRegular: stats.averageRegular,
     lowestRegular: stats.lowestRegular,
     highestRegular: stats.highestRegular,
-    stationCount: stats.stationCount
+    stationCount: stats.stationCount,
+    cheapestStation: stats.cheapestStation || null,
+    cheapestAddress
   }
 }
 

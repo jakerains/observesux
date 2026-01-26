@@ -385,7 +385,9 @@ export async function fetchGasPricesStep(): Promise<GasPriceSummary | null> {
       averageRegular: Math.round((prices.reduce((a, b) => a + b, 0) / prices.length) * 1000) / 1000,
       lowestRegular: Math.min(...prices),
       highestRegular: Math.max(...prices),
-      stationCount: prices.length
+      stationCount: prices.length,
+      cheapestStation: null as string | null, // Will be filled by data-aggregator
+      cheapestAddress: null as string | null
     }
 
     console.log(`[fetchGasPricesStep] Average: $${result.averageRegular}, Low: $${result.lowestRegular}, High: $${result.highestRegular}`)
