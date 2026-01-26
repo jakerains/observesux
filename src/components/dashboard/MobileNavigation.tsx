@@ -8,7 +8,7 @@ import {
   FileText
 } from 'lucide-react'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { useChatSheet } from '@/lib/contexts/ChatContext'
 
@@ -23,8 +23,8 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { id: 'map', icon: Map, label: 'Map', widgetId: 'map' },
   { id: 'weather', icon: Cloud, label: 'Weather', widgetId: 'weather' },
+  { id: 'map', icon: Map, label: 'Map', widgetId: 'map' },
   { id: 'chat', customImage: '/sux.png', label: 'SUX', action: 'chat' },
   { id: 'cameras', icon: Camera, label: 'Cameras', widgetId: 'cameras' },
   { id: 'digest', icon: FileText, label: 'Digest', href: '/digest' },
@@ -34,8 +34,18 @@ export function MobileNavigation() {
   const [activeSection, setActiveSection] = useState('weather')
   const { openChat } = useChatSheet()
   const router = useRouter()
+  const pathname = usePathname()
+
+  // Check if we're on the digest page
+  const isOnDigestPage = pathname === '/digest'
 
   useEffect(() => {
+    // If on digest page, always show digest as active
+    if (isOnDigestPage) {
+      setActiveSection('digest')
+      return
+    }
+
     const handleScroll = () => {
       const scrollableItems = NAV_ITEMS.filter(item => item.widgetId)
       const sections = scrollableItems.map(item => {
@@ -63,7 +73,7 @@ export function MobileNavigation() {
     window.addEventListener('scroll', handleScroll, { passive: true })
     handleScroll()
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
+  }, [isOnDigestPage])
 
   const handleNavClick = (item: NavItem) => {
     if (item.action === 'chat') {
@@ -71,10 +81,18 @@ export function MobileNavigation() {
       return
     }
     if (item.href) {
+      // If already on the href page, don't navigate
+      if (pathname === item.href) return
       router.push(item.href)
       return
     }
     if (item.widgetId) {
+      // If on a different page (like /digest), navigate to home with hash
+      if (pathname !== '/') {
+        router.push(`/#${item.widgetId}`)
+        return
+      }
+      // On home page, scroll to the widget
       const element = document.querySelector(`[data-widget-id="${item.widgetId}"]`)
       if (element) {
         const headerOffset = 70

@@ -78,6 +78,25 @@ function DashboardContent() {
     }
   }, [])
 
+  // Handle hash navigation (e.g., from /digest clicking on Map)
+  useEffect(() => {
+    const hash = window.location.hash.slice(1) // Remove the #
+    if (hash) {
+      // Small delay to ensure elements are rendered
+      setTimeout(() => {
+        const element = document.querySelector(`[data-widget-id="${hash}"]`)
+        if (element) {
+          const headerOffset = 70
+          const elementPosition = element.getBoundingClientRect().top
+          const offsetPosition = elementPosition + window.pageYOffset - headerOffset
+          window.scrollTo({ top: offsetPosition, behavior: 'smooth' })
+          // Clear the hash after scrolling
+          window.history.replaceState(null, '', window.location.pathname)
+        }
+      }, 100)
+    }
+  }, [])
+
   // Refresh all data
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true)
