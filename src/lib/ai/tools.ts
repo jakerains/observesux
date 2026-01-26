@@ -148,7 +148,7 @@ export const chatTools = {
   }),
 
   getNews: tool({
-    description: 'Get local news headlines from Sioux City area news sources.',
+    description: 'Get local news headlines from Sioux City area news sources. NOT for sports schedules, scores, or team info - use perplexity_search for those.',
     inputSchema: z.object({}),
     execute: async () => {
       const data = await fetchApi('/api/news');
@@ -244,7 +244,7 @@ export const chatTools = {
   }),
 
   getEvents: tool({
-    description: 'Get upcoming community events in Sioux City from multiple sources including Explore Siouxland and Hard Rock Casino. Use this when users ask about events, things to do, activities, festivals, concerts, shows, or what\'s happening in the area. Each event includes a source field showing where it came from and a URL link to the full event page - always share the link so users can get more info.',
+    description: 'Get upcoming community events in Sioux City from Explore Siouxland and Hard Rock Casino. Use for festivals, concerts, shows, or "what\'s happening" questions. NOT for sports schedules (Musketeers, Explorers) - use perplexity_search for those.',
     inputSchema: z.object({}),
     execute: async () => {
       const data = await fetchApi('/api/events');
