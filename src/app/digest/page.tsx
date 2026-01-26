@@ -18,6 +18,7 @@ import {
   Moon,
   Clock
 } from 'lucide-react'
+import { MobileNavigation } from '@/components/dashboard/MobileNavigation'
 import { getCurrentEdition, editionLabels, type Digest, type DigestEdition } from '@/lib/digest/types'
 
 // Edition icons map
@@ -71,7 +72,7 @@ export default function DigestPage() {
   }
 
   return (
-    <main className="min-h-screen bg-background">
+    <main className="min-h-screen bg-background pb-24 md:pb-8">
       <div className="container mx-auto py-6 px-4 max-w-5xl">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
@@ -148,6 +149,9 @@ export default function DigestPage() {
           </div>
         </div>
       </div>
+
+      {/* Mobile Navigation */}
+      <MobileNavigation />
     </main>
   )
 }
