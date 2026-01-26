@@ -42,6 +42,40 @@ function matchesCategory(item: NewsItem, categoryId: NewsCategory): boolean {
   return category.keywords.some(keyword => textToCheck.includes(keyword.toLowerCase()))
 }
 
+// Filter out ordinary obituaries (keep notable/celebrity obits)
+function isObituary(item: NewsItem): boolean {
+  const text = `${item.title} ${item.description || ''}`.toLowerCase()
+
+  // Obituary indicators
+  const obitKeywords = [
+    'obituary', 'obituaries', 'obit:',
+    'dies at', 'died at', 'has died', 'have died',
+    'passed away', 'passes away',
+    'funeral service', 'memorial service',
+    'in loving memory', 'rest in peace',
+    'survived by', 'preceded in death'
+  ]
+
+  const isObit = obitKeywords.some(keyword => text.includes(keyword))
+
+  if (!isObit) return false
+
+  // Notable person indicators - keep these obituaries
+  const notableKeywords = [
+    'former president', 'former governor', 'senator', 'congressman',
+    'celebrity', 'star', 'famous', 'legendary', 'icon', 'renowned',
+    'hall of fame', 'grammy', 'oscar', 'emmy', 'tony award',
+    'nfl', 'nba', 'mlb', 'nhl', 'olympic',
+    'billionaire', 'ceo of', 'founder of',
+    'pulitzer', 'nobel'
+  ]
+
+  const isNotable = notableKeywords.some(keyword => text.includes(keyword))
+
+  // Return true if it's an ordinary obit (not notable) - these get filtered out
+  return !isNotable
+}
+
 function getSourceColor(source: string): string {
   const lowerSource = source.toLowerCase()
 
@@ -139,10 +173,15 @@ export function NewsWidget() {
 
   const allNews = newsData?.data || []
 
-  // Filter news by selected category
+  // Filter out ordinary obituaries first
+  const filteredNews = useMemo(() => {
+    return allNews.filter(item => !isObituary(item))
+  }, [allNews])
+
+  // Then apply category filter
   const news = useMemo(() => {
-    return allNews.filter(item => matchesCategory(item, selectedCategory))
-  }, [allNews, selectedCategory])
+    return filteredNews.filter(item => matchesCategory(item, selectedCategory))
+  }, [filteredNews, selectedCategory])
 
   const status = error ? 'error' : isLoading ? 'loading' : 'live'
 
@@ -184,7 +223,7 @@ export function NewsWidget() {
       lastUpdated={newsData?.timestamp ? new Date(newsData.timestamp) : undefined}
       action={refreshAction}
     >
-      <div className="flex flex-col h-full min-h-0">
+      <div>
         {/* Category Filter Pills */}
         <div className="mb-3 -mx-2">
           <ScrollArea className="w-full whitespace-nowrap">
@@ -192,8 +231,8 @@ export function NewsWidget() {
               {NEWS_CATEGORIES.map((category) => {
                 const isActive = selectedCategory === category.id
                 const matchCount = category.id === 'all'
-                  ? allNews.length
-                  : allNews.filter(item => matchesCategory(item, category.id)).length
+                  ? filteredNews.length
+                  : filteredNews.filter(item => matchesCategory(item, category.id)).length
 
                 return (
                   <button
@@ -221,15 +260,13 @@ export function NewsWidget() {
           </ScrollArea>
         </div>
 
-        {/* News List - fills available space */}
+        {/* News List - scrollable area */}
         {news.length > 0 ? (
-          <ScrollArea className="flex-1 min-h-[100px] max-h-[280px] -mx-2">
-            <div className="px-2">
-              {news.map((item) => (
-                <NewsItemRow key={item.id} item={item} />
-              ))}
-            </div>
-          </ScrollArea>
+          <div className="max-h-[240px] overflow-y-auto -mx-2 px-2">
+            {news.map((item) => (
+              <NewsItemRow key={item.id} item={item} />
+            ))}
+          </div>
         ) : (
           <div className="flex-1 flex items-center justify-center text-center text-muted-foreground py-8">
             <div>
@@ -241,7 +278,7 @@ export function NewsWidget() {
         )}
 
         {/* Source Attribution */}
-        <div className="mt-3 pt-2 border-t flex flex-wrap gap-1.5 text-[10px] text-muted-foreground shrink-0">
+        <div className="mt-3 pt-2 border-t flex flex-wrap gap-1.5 text-[10px] text-muted-foreground">
           <span className="self-center">Sources:</span>
           <Badge variant="outline" className="text-[10px] bg-purple-500/10">Siouxland Proud</Badge>
           <Badge variant="outline" className="text-[10px] bg-green-600/10">SC Journal</Badge>

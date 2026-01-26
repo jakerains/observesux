@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { Geist, Geist_Mono } from "next/font/google"
+import { Inter, Source_Serif_4, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "@/components/theme-provider"
 import { ChatProvider } from "@/lib/contexts/ChatContext"
@@ -8,11 +8,22 @@ import { authClient } from "@/lib/auth/client"
 import { InstallPrompt } from "@/components/pwa/InstallPrompt"
 import "./globals.css"
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Inter - clean, highly readable for body text and UI
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
+  display: "swap",
 })
 
+// Source Serif 4 - sturdy, trustworthy serif for headings
+const sourceSerif = Source_Serif_4({
+  variable: "--font-serif",
+  subsets: ["latin"],
+  weight: ["400", "600", "700"],
+  display: "swap",
+})
+
+// Keep Geist Mono for code/technical content
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
@@ -155,7 +166,7 @@ export default function RootLayout({
         <JsonLdSchema />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-background`}
+        className={`${inter.variable} ${sourceSerif.variable} ${geistMono.variable} antialiased min-h-screen bg-background`}
       >
         <NeonAuthUIProvider authClient={authClient}>
           <ThemeProvider

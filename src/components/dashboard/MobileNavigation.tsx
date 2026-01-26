@@ -5,19 +5,21 @@ import {
   Map,
   Cloud,
   Camera,
-  Newspaper
+  FileText
 } from 'lucide-react'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { useChatSheet } from '@/lib/contexts/ChatContext'
 
 interface NavItem {
   id: string
   icon?: React.ElementType
-  customImage?: string // Path to custom image
+  customImage?: string
   label: string
-  widgetId?: string // Optional - chat doesn't scroll to a widget
-  action?: 'chat' // Special action type
+  widgetId?: string
+  action?: 'chat'
+  href?: string
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -25,19 +27,17 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'weather', icon: Cloud, label: 'Weather', widgetId: 'weather' },
   { id: 'chat', customImage: '/sux.png', label: 'SUX', action: 'chat' },
   { id: 'cameras', icon: Camera, label: 'Cameras', widgetId: 'cameras' },
-  { id: 'news', icon: Newspaper, label: 'News', widgetId: 'news' },
+  { id: 'digest', icon: FileText, label: 'Digest', href: '/digest' },
 ]
 
 export function MobileNavigation() {
-  const [activeSection, setActiveSection] = useState('map')
+  const [activeSection, setActiveSection] = useState('weather')
   const { openChat } = useChatSheet()
+  const router = useRouter()
 
-  const visibleNavItems = NAV_ITEMS
-
-  // Detect which section is currently visible (only for scroll-based items)
   useEffect(() => {
     const handleScroll = () => {
-      const scrollableItems = visibleNavItems.filter(item => item.widgetId)
+      const scrollableItems = NAV_ITEMS.filter(item => item.widgetId)
       const sections = scrollableItems.map(item => {
         const element = document.querySelector(`[data-widget-id="${item.widgetId}"]`)
         if (element) {
@@ -47,7 +47,6 @@ export function MobileNavigation() {
         return null
       }).filter(Boolean)
 
-      // Find the section closest to the top of the viewport
       const visible = sections.reduce((closest, section) => {
         if (!section) return closest
         if (!closest) return section
@@ -62,52 +61,42 @@ export function MobileNavigation() {
     }
 
     window.addEventListener('scroll', handleScroll, { passive: true })
-    handleScroll() // Initial check
+    handleScroll()
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [visibleNavItems])
+  }, [])
 
   const handleNavClick = (item: NavItem) => {
     if (item.action === 'chat') {
       openChat()
       return
     }
-    if (item.widgetId) {
-      scrollToSection(item.widgetId)
+    if (item.href) {
+      router.push(item.href)
+      return
     }
-  }
-
-  const scrollToSection = (widgetId: string) => {
-    const element = document.querySelector(`[data-widget-id="${widgetId}"]`)
-    if (element) {
-      const headerOffset = 70 // Account for fixed header
-      const elementPosition = element.getBoundingClientRect().top
-      const offsetPosition = elementPosition + window.pageYOffset - headerOffset
-
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: 'smooth'
-      })
+    if (item.widgetId) {
+      const element = document.querySelector(`[data-widget-id="${item.widgetId}"]`)
+      if (element) {
+        const headerOffset = 70
+        const elementPosition = element.getBoundingClientRect().top
+        const offsetPosition = elementPosition + window.pageYOffset - headerOffset
+        window.scrollTo({ top: offsetPosition, behavior: 'smooth' })
+      }
     }
   }
 
   return (
-    <nav
-      className={cn(
-        // Only show on mobile (hidden on md and up)
-        "md:hidden fixed bottom-0 left-0 right-0 z-50",
-        // iOS-style glass effect
-        "bg-background/80 backdrop-blur-xl border-t border-border/50",
-        // Safe area padding for notched devices
-        "pb-safe"
-      )}
-    >
-      {/* Home indicator bar (iOS style) */}
-      <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-32 h-1 bg-foreground/20 rounded-full" />
+    <nav className={cn(
+      "md:hidden fixed bottom-0 left-0 right-0 z-50",
+      "header-glass",
+      "pb-safe"
+    )}>
+      {/* Home indicator */}
+      <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-32 h-1 bg-foreground/10 rounded-full" />
 
       <div className="flex items-center justify-around px-2 pt-2 pb-4">
-        {visibleNavItems.map((item) => {
+        {NAV_ITEMS.map((item) => {
           const { id, icon: Icon, customImage, label, action } = item
-          // Chat button is never "active" in the scroll sense
           const isActive = action !== 'chat' && activeSection === id
 
           return (
@@ -115,29 +104,26 @@ export function MobileNavigation() {
               key={id}
               onClick={() => handleNavClick(item)}
               className={cn(
-                "flex flex-col items-center justify-center gap-0.5 p-2 min-w-[60px] rounded-xl transition-all",
-                "active:scale-95 active:bg-accent/50",
+                "flex flex-col items-center justify-center gap-0.5 p-2 min-w-[60px] rounded-2xl",
+                "smooth press-effect",
                 isActive
-                  ? "text-primary"
-                  : "text-muted-foreground"
+                  ? "text-primary bg-primary/10"
+                  : "text-muted-foreground hover:text-foreground"
               )}
             >
-              <div className={cn(
-                "p-1.5 rounded-xl transition-colors",
-                isActive && "bg-primary/10"
-              )}>
+              <div className="p-1">
                 {customImage ? (
                   <Image
                     src={customImage}
                     alt={label}
-                    width={36}
-                    height={36}
-                    className="transition-all"
+                    width={32}
+                    height={32}
+                    className="smooth"
                   />
                 ) : Icon ? (
                   <Icon
                     className={cn(
-                      "h-5 w-5 transition-all",
+                      "h-5 w-5 smooth",
                       isActive && "scale-110"
                     )}
                     strokeWidth={isActive ? 2.5 : 2}
@@ -145,7 +131,7 @@ export function MobileNavigation() {
                 ) : null}
               </div>
               <span className={cn(
-                "text-[10px] font-medium transition-colors",
+                "text-[10px] font-medium",
                 isActive ? "text-primary" : "text-muted-foreground"
               )}>
                 {label}

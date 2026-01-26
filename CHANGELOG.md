@@ -5,6 +5,38 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-01-26
+
+### Added
+- **CurrentConditionsHero**: New Apple Weather-inspired hero section
+  - Weather-aware gradient backgrounds (clear, cloudy, rainy, snowy, stormy, night)
+  - Time-of-day bridge images (morning, noon, evening, night photos)
+  - Expandable 7-day forecast with detailed weather info
+  - AQI and river level badges with live status
+  - Feels-like temperature and extended weather details
+- **AlertBanner**: Unified alert system at top of dashboard
+  - Combines weather alerts, flood warnings, and traffic incidents
+  - Severity-based styling (critical/warning/info)
+  - Dismissible alerts with expand for additional alerts
+  - Animated pulse indicator for critical alerts
+- **Time-of-day imagery**: Four new Sioux City bridge photos for hero backgrounds
+
+### Changed
+- **Complete UI redesign** with "Midwest Warm" theme
+  - Warm amber, wheat, and cream tones replace cold grays
+  - Deep brown/umber dark mode instead of slate
+  - Rounded corners and modern card styling throughout
+- Dashboard layout streamlined with hero section at top
+- DashboardCard component redesigned with warm backgrounds
+- DashboardHeader simplified with new theme integration
+- MobileNavigation updated with warm accent colors
+- StatusBar redesigned with amber indicators
+- NewsWidget refreshed with new card styling
+- DigestHistory updated with theme-consistent styling
+
+### Removed
+- Old Remotion promo video files (remotion/ directory)
+
 ## [0.6.6] - 2026-01-26
 
 ### Added

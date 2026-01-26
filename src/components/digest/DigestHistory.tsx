@@ -16,6 +16,7 @@ import {
   Moon
 } from 'lucide-react'
 import { editionLabels, type Digest, type DigestEdition } from '@/lib/digest/types'
+import ReactMarkdown from 'react-markdown'
 
 interface DigestHistoryProps {
   selectedDigestId?: string
@@ -97,7 +98,7 @@ export function DigestHistory({
     const lines = content.split('\n').filter(line => line.trim())
     for (const line of lines) {
       if (!line.startsWith('#') && !line.startsWith('-') && line.length > 10) {
-        return line.slice(0, 80) + (line.length > 80 ? '...' : '')
+        return line.slice(0, 100) + (line.length > 100 ? '...' : '')
       }
     }
     return 'No preview available'
@@ -190,9 +191,11 @@ export function DigestHistory({
                         </div>
                         <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                        {getPreview(digest.content)}
-                      </p>
+                      <div className="text-xs text-muted-foreground mt-1 line-clamp-2 prose prose-xs prose-neutral dark:prose-invert prose-strong:text-muted-foreground prose-strong:font-semibold">
+                        <ReactMarkdown>
+                          {getPreview(digest.content)}
+                        </ReactMarkdown>
+                      </div>
                     </div>
                   </button>
                 )

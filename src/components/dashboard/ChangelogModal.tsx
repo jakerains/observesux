@@ -16,6 +16,25 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.7.0',
+    date: '2026-01-26',
+    added: [
+      'CurrentConditionsHero: Apple Weather-inspired hero with weather gradients',
+      'Time-of-day bridge images (morning, noon, evening, night)',
+      'Expandable 7-day forecast in hero with detailed weather info',
+      'AlertBanner: unified alerts for weather, floods, and traffic',
+      'Severity-based alert styling with dismissible alerts',
+    ],
+    changed: [
+      'Complete UI redesign with "Midwest Warm" theme',
+      'Warm amber/wheat tones replace cold grays',
+      'Dashboard layout with hero section at top',
+      'All cards redesigned with modern styling',
+      'Mobile navigation updated with warm accents',
+    ],
+    fixed: [],
+  },
+  {
     version: '0.6.6',
     date: '2026-01-26',
     added: [

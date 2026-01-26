@@ -580,7 +580,7 @@ export function InteractiveMap() {
       icon={<Map className="h-4 w-4" />}
       status="live"
     >
-      <div className="relative h-[400px] rounded-lg overflow-hidden">
+      <div className="relative h-[400px] rounded-lg overflow-hidden isolate">
         <MapContainer
           center={SIOUX_CITY_CENTER}
           zoom={DEFAULT_ZOOM}

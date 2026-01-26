@@ -1,23 +1,11 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import { Suspense, useState, useCallback, useMemo, useEffect } from 'react'
+import { Suspense, useState, useCallback, useEffect } from 'react'
 import { useSWRConfig } from 'swr'
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from '@dnd-kit/core'
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  rectSortingStrategy,
-} from '@dnd-kit/sortable'
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader'
+import { AlertBanner } from '@/components/dashboard/AlertBanner'
+import { CurrentConditionsHero } from '@/components/dashboard/CurrentConditionsHero'
 import { WeatherWidget } from '@/components/dashboard/WeatherWidget'
 import { RiverGauge } from '@/components/dashboard/RiverGauge'
 import { AirQualityCard } from '@/components/dashboard/AirQualityCard'
@@ -34,81 +22,53 @@ import { GasPricesWidget } from '@/components/dashboard/GasPricesWidget'
 import { DigestWidget } from '@/components/dashboard/DigestWidget'
 import { StatusBar } from '@/components/dashboard/StatusBar'
 import { MobileNavigation } from '@/components/dashboard/MobileNavigation'
-import { DraggableWidget } from '@/components/dashboard/DraggableWidget'
 import { VoiceAgentWidget } from '@/components/dashboard/VoiceAgentWidget'
 import { ChatWidget } from '@/components/dashboard/ChatWidget'
 import { ChangelogModal } from '@/components/dashboard/ChangelogModal'
-import { DashboardLayoutProvider, useDashboardLayout, LOCKED_WIDGETS } from '@/lib/contexts/DashboardLayoutContext'
+import { DashboardLayoutProvider } from '@/lib/contexts/DashboardLayoutContext'
 import { TransitProvider } from '@/lib/contexts/TransitContext'
 import { MapFocusProvider } from '@/lib/contexts/MapFocusContext'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Card, CardContent } from '@/components/ui/card'
 import { SplashScreen } from '@/components/splash/SplashScreen'
 import packageJson from '../../package.json'
 
-// Dynamic import for the map component (requires client-side rendering)
+// Dynamic import for the map component
 const InteractiveMap = dynamic(
   () => import('@/components/dashboard/InteractiveMap'),
   {
     ssr: false,
     loading: () => (
-      <Card className="col-span-full">
-        <CardContent className="p-6">
-          <Skeleton className="h-[400px] w-full rounded-lg" />
-        </CardContent>
-      </Card>
+      <div className="card-primary bg-card h-[400px] flex items-center justify-center">
+        <Skeleton className="h-full w-full rounded-xl" />
+      </div>
     )
   }
 )
 
-// Widget loading skeleton
-function WidgetSkeleton() {
+// Section header component
+function SectionHeader({ title }: { title: string }) {
   return (
-    <Card>
-      <CardContent className="p-6">
-        <Skeleton className="h-4 w-32 mb-4" />
-        <Skeleton className="h-32 w-full" />
-      </CardContent>
-    </Card>
+    <div className="flex items-center gap-4 mb-4">
+      <h2 className="text-section-header">{title}</h2>
+      <div className="section-divider flex-1" />
+    </div>
   )
 }
 
-// Widget component mapping
-const WIDGET_COMPONENTS: Record<string, React.ComponentType> = {
-  'digest': DigestWidget,
-  'weather': WeatherWidget,
-  'aviation-weather': AviationWeatherWidget,
-  'river': RiverGauge,
-  'air-quality': AirQualityCard,
-  'transit': TransitWidget,
-  'cameras': CameraGrid,
-  'traffic-events': TrafficEventsWidget,
-  'scanner': ScannerPlayer,
-  'outages': OutageMap,
-  'flights': FlightBoard,
-  'news': NewsWidget,
-  'earthquakes': EarthquakeWidget,
-  'map': InteractiveMap,
-  'gas-prices': GasPricesWidget,
-}
-
-// Widget size to CSS class mapping
-function getWidgetClassName(widgetId: string, size: string): string {
-  if (widgetId === 'map') return 'col-span-full'
-  if (widgetId === 'cameras') return 'sm:col-span-2 lg:col-span-2'
-
-  switch (size) {
-    case 'large': return 'sm:col-span-2 lg:col-span-2'
-    case 'full': return 'col-span-full'
-    default: return ''
-  }
+// Widget loading skeleton
+function WidgetSkeleton({ className }: { className?: string }) {
+  return (
+    <div className={`card-secondary bg-card ${className}`}>
+      <Skeleton className="h-4 w-32 mb-4" />
+      <Skeleton className="h-32 w-full" />
+    </div>
+  )
 }
 
 function DashboardContent() {
   const { mutate } = useSWRConfig()
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [showSplash, setShowSplash] = useState(true)
-  const { widgets, widgetOrder, setWidgetOrder, isWidgetEnabled, getWidgetConfig } = useDashboardLayout()
 
   // Check if we've shown splash recently (within session)
   useEffect(() => {
@@ -118,61 +78,14 @@ function DashboardContent() {
     }
   }, [])
 
-  // Sensors for drag and drop
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  )
-
-  // Get enabled widgets in order, separating locked from sortable
-  const enabledWidgetIds = useMemo(() => {
-    return widgetOrder.filter(id => isWidgetEnabled(id))
-  }, [widgetOrder, isWidgetEnabled])
-
-  // Locked widgets (always at top, not draggable)
-  const lockedWidgetIds = useMemo(() => {
-    return enabledWidgetIds.filter(id => LOCKED_WIDGETS.includes(id))
-  }, [enabledWidgetIds])
-
-  // Sortable widgets (can be reordered)
-  const sortableWidgetIds = useMemo(() => {
-    return enabledWidgetIds.filter(id => !LOCKED_WIDGETS.includes(id))
-  }, [enabledWidgetIds])
-
-  // Handle drag end
-  const handleDragEnd = useCallback((event: DragEndEvent) => {
-    const { active, over } = event
-
-    if (over && active.id !== over.id) {
-      const oldIndex = widgetOrder.indexOf(active.id as string)
-      const newIndex = widgetOrder.indexOf(over.id as string)
-
-      const newOrder = [...widgetOrder]
-      newOrder.splice(oldIndex, 1)
-      newOrder.splice(newIndex, 0, active.id as string)
-
-      setWidgetOrder(newOrder)
-    }
-  }, [widgetOrder, setWidgetOrder])
-
   // Refresh all data
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true)
-
-    // Revalidate all SWR caches
     await mutate(
       key => typeof key === 'string' && key.startsWith('/api/'),
       undefined,
       { revalidate: true }
     )
-
-    // Short delay to show loading state
     setTimeout(() => setIsRefreshing(false), 500)
   }, [mutate])
 
@@ -186,78 +99,148 @@ function DashboardContent() {
       {/* Splash Screen */}
       {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
 
+      {/* Alert Banner - Top priority, always visible */}
+      <AlertBanner />
+
       {/* Header */}
       <DashboardHeader onRefresh={handleRefresh} isRefreshing={isRefreshing} />
 
-      {/* Main Dashboard Grid */}
-      <main className="w-full max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 items-stretch [grid-auto-flow:dense]">
-          {/* Locked widgets - always at top, not draggable */}
-          {lockedWidgetIds.map((widgetId) => {
-            const WidgetComponent = WIDGET_COMPONENTS[widgetId]
-            const config = getWidgetConfig(widgetId)
+      {/* Main Content */}
+      <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8 sm:space-y-12">
 
-            if (!WidgetComponent || !config) return null
+        {/* ============================================
+            HERO SECTION - Current Conditions
+            Apple Weather-style prominent display
+           ============================================ */}
+        <section data-widget-id="weather">
+          <CurrentConditionsHero />
+        </section>
 
-            return (
-              <div
-                key={widgetId}
-                className={`h-full isolate ${getWidgetClassName(widgetId, config.size)}`}
-                data-widget-id={widgetId}
-              >
-                <Suspense fallback={<WidgetSkeleton />}>
-                  <WidgetComponent />
-                </Suspense>
-              </div>
-            )
-          })}
+        {/* ============================================
+            DIGEST - Daily summary right after hero
+           ============================================ */}
+        <section>
+          <Suspense fallback={null}>
+            <DigestWidget />
+          </Suspense>
+        </section>
 
-          {/* Sortable widgets - can be reordered by user */}
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext items={sortableWidgetIds} strategy={rectSortingStrategy}>
-              {sortableWidgetIds.map((widgetId) => {
-                const WidgetComponent = WIDGET_COMPONENTS[widgetId]
-                const config = getWidgetConfig(widgetId)
-
-                if (!WidgetComponent || !config) return null
-
-                return (
-                  <DraggableWidget
-                    key={widgetId}
-                    id={widgetId}
-                    className={getWidgetClassName(widgetId, config.size)}
-                  >
-                    <Suspense fallback={<WidgetSkeleton />}>
-                      <WidgetComponent />
-                    </Suspense>
-                  </DraggableWidget>
-                )
-              })}
-            </SortableContext>
-          </DndContext>
-        </div>
-
-        {/* Empty state when all widgets are hidden */}
-        {enabledWidgetIds.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="text-6xl mb-4">📊</div>
-            <h2 className="text-xl font-semibold mb-2">No Widgets Enabled</h2>
-            <p className="text-muted-foreground mb-4">
-              Click the settings button to enable widgets for your dashboard.
-            </p>
+        {/* ============================================
+            MAP SECTION - Interactive overview
+           ============================================ */}
+        <section data-widget-id="map">
+          <SectionHeader title="Area Map" />
+          <div className="rounded-2xl overflow-hidden">
+            <Suspense fallback={<WidgetSkeleton className="h-[450px]" />}>
+              <InteractiveMap />
+            </Suspense>
           </div>
-        )}
+        </section>
 
-        {/* Data Sources Attribution */}
-        <footer className="mt-6 sm:mt-8 pt-4 border-t text-center text-xs text-muted-foreground px-2">
+        {/* ============================================
+            PRIMARY TIER - Most important real-time info
+            Large cards, critical for daily use
+           ============================================ */}
+        <section>
+          <SectionHeader title="Live Updates" />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+            {/* Traffic Cameras - Full width on mobile, half on desktop */}
+            <div className="lg:col-span-2" data-widget-id="cameras">
+              <Suspense fallback={<WidgetSkeleton className="h-[400px]" />}>
+                <CameraGrid />
+              </Suspense>
+            </div>
+
+            {/* Weather Forecast */}
+            <Suspense fallback={<WidgetSkeleton />}>
+              <WeatherWidget />
+            </Suspense>
+
+            {/* News */}
+            <div data-widget-id="news">
+              <Suspense fallback={<WidgetSkeleton />}>
+                <NewsWidget />
+              </Suspense>
+            </div>
+          </div>
+        </section>
+
+        {/* ============================================
+            SECONDARY TIER - Important but less urgent
+            Medium cards, 2-3 column layout
+           ============================================ */}
+        <section>
+          <SectionHeader title="Conditions & Services" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+            {/* Traffic Events */}
+            <Suspense fallback={<WidgetSkeleton />}>
+              <TrafficEventsWidget />
+            </Suspense>
+
+            {/* River Gauge */}
+            <Suspense fallback={<WidgetSkeleton />}>
+              <RiverGauge />
+            </Suspense>
+
+            {/* Air Quality */}
+            <Suspense fallback={<WidgetSkeleton />}>
+              <AirQualityCard />
+            </Suspense>
+
+            {/* Transit */}
+            <Suspense fallback={<WidgetSkeleton />}>
+              <TransitWidget />
+            </Suspense>
+
+            {/* Outages */}
+            <Suspense fallback={<WidgetSkeleton />}>
+              <OutageMap />
+            </Suspense>
+
+            {/* Gas Prices */}
+            <Suspense fallback={<WidgetSkeleton />}>
+              <GasPricesWidget />
+            </Suspense>
+          </div>
+        </section>
+
+        {/* ============================================
+            TERTIARY TIER - Specialized info
+            Compact cards, less prominent
+           ============================================ */}
+        <section>
+          <SectionHeader title="More Info" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Flights */}
+            <Suspense fallback={<WidgetSkeleton />}>
+              <FlightBoard />
+            </Suspense>
+
+            {/* Aviation Weather */}
+            <Suspense fallback={<WidgetSkeleton />}>
+              <AviationWeatherWidget />
+            </Suspense>
+
+            {/* Scanner */}
+            <Suspense fallback={<WidgetSkeleton />}>
+              <ScannerPlayer />
+            </Suspense>
+
+            {/* Earthquakes */}
+            <Suspense fallback={<WidgetSkeleton />}>
+              <EarthquakeWidget />
+            </Suspense>
+          </div>
+        </section>
+
+        {/* ============================================
+            FOOTER
+           ============================================ */}
+        <footer className="pt-8 border-t border-border/50 text-center text-xs text-muted-foreground/70">
           <p className="mb-2 leading-relaxed">
-            Data sourced from: Iowa DOT, National Weather Service, AviationWeather.gov, USGS, AirNow, Broadcastify, Iowa 511, RainViewer, Passio GO, KTIV, Siouxland Proud
+            Data: Iowa DOT, National Weather Service, AviationWeather.gov, USGS, AirNow, Broadcastify, Iowa 511, RainViewer, Passio GO, KTIV, Siouxland Proud
           </p>
-          <p className="mb-2">
+          <p className="mb-3">
             Built with Next.js, shadcn/ui, and public APIs.
             <a
               href="https://github.com/jakerains/siouxland-online"
@@ -269,23 +252,23 @@ function DashboardContent() {
             </a>
           </p>
           <ChangelogModal>
-            <button className="text-muted-foreground/60 md:hidden hover:text-foreground transition-colors cursor-pointer">
+            <button className="text-muted-foreground/50 hover:text-foreground transition-colors cursor-pointer">
               v{packageJson.version}
             </button>
           </ChangelogModal>
         </footer>
       </main>
 
-      {/* Status Bar - hidden on mobile */}
+      {/* Status Bar - Desktop only */}
       <StatusBar />
 
-      {/* Mobile Navigation - iOS-style bottom tabs */}
+      {/* Mobile Navigation */}
       <MobileNavigation />
 
-      {/* Chat Assistant - Floating button (left of Voice Agent) */}
+      {/* Chat Widget */}
       <ChatWidget />
 
-      {/* Voice Agent - Floating button */}
+      {/* Voice Agent */}
       <VoiceAgentWidget />
     </div>
   )
