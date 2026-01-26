@@ -290,6 +290,6 @@ export const chatTools = {
       searchLanguageFilter: ['en'],
       country: 'US',
     }),
-    description: 'Search the web for realtime information about Siouxland topics. Use this FIRST for: sports schedules/scores (Musketeers, Explorers), specific event dates, business info not in knowledge base, regional news. Do NOT use for general/non-local queries.',
+    description: 'Search the web for realtime Siouxland information. USE IMMEDIATELY (no clarifying questions) for: Sioux City Musketeers schedules/scores, Sioux City Explorers, local sports, specific event dates, business info. "Sioux City hockey" means Musketeers - just search, don\'t ask.',
   },
 };
