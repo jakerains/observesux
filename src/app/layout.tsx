@@ -57,11 +57,20 @@ export const metadata: Metadata = {
     siteName: "Siouxland.Online",
     locale: "en_US",
     type: "website",
+    images: [
+      {
+        url: "/og-screenshot.png",
+        width: 1200,
+        height: 630,
+        alt: "Siouxland.Online Dashboard - Live weather and community updates for Sioux City",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Siouxland.Online - Your Community Dashboard",
     description: "Stay connected to Sioux City with live weather, traffic cameras, local news, and AI-powered daily digests. Free real-time updates for the Siouxland region.",
+    images: ["/og-screenshot.png"],
   },
   icons: {
     icon: [
