@@ -1,4 +1,4 @@
-import { tool } from 'ai';
+import { tool, gateway } from 'ai';
 import { z } from 'zod';
 
 // Get the base URL for API calls (works on server side)
@@ -280,5 +280,12 @@ export const chatTools = {
         })),
       };
     },
+  }),
+
+  // Web search via Vercel AI Gateway (uses OIDC authentication)
+  perplexity_search: gateway.tools.perplexitySearch({
+    maxResults: 5,
+    searchLanguageFilter: ['en'],
+    country: 'US',
   }),
 };

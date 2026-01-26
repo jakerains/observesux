@@ -594,6 +594,7 @@ function formatToolName(toolName: string): string {
     getSystemStatus: 'system status',
     searchKnowledgeBase: 'local info',
     getEvents: 'events',
+    perplexity_search: 'realtime info',
   }
   return names[toolName] || toolName
 }
