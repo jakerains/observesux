@@ -1,5 +1,6 @@
-import { tool, gateway } from 'ai';
+import { tool } from 'ai';
 import { z } from 'zod';
+import Firecrawl from '@mendable/firecrawl-js';
 
 // Get the base URL for API calls (works on server side)
 function getBaseUrl(): string {
@@ -282,14 +283,53 @@ export const chatTools = {
     },
   }),
 
-  // Web search via Vercel AI Gateway (uses OIDC authentication)
-  // Wrap gateway tool to add description since gateway.tools don't include one
-  perplexity_search: {
-    ...gateway.tools.perplexitySearch({
-      maxResults: 5,
-      searchLanguageFilter: ['en'],
-      country: 'US',
-    }),
+  // Web search via Firecrawl
+  webSearch: tool({
     description: 'Search the web for realtime Siouxland information. USE IMMEDIATELY (no clarifying questions) for: Sioux City Musketeers schedules/scores, Sioux City Explorers, local sports, specific event dates, business info. "Sioux City hockey" means Musketeers - just search, don\'t ask.',
-  },
+    inputSchema: z.object({
+      query: z.string().describe('The search query - be specific, include "Sioux City" or team names'),
+    }),
+    execute: async ({ query }) => {
+      const apiKey = process.env.FIRECRAWL_API_KEY;
+      if (!apiKey) {
+        return { error: 'Web search is not configured' };
+      }
+
+      try {
+        const firecrawl = new Firecrawl({ apiKey });
+        const data = await firecrawl.search(query, {
+          limit: 5,
+          location: 'Iowa, United States',
+        });
+
+        // SDK returns SearchData directly with web/news/images arrays
+        const webResults = data.web || [];
+        if (webResults.length === 0) {
+          return { error: 'Search returned no results' };
+        }
+
+        // Return web results in a clean format
+        // Results can be SearchResultWeb or Document types
+        return {
+          results: webResults.map((r) => {
+            // Handle both SearchResultWeb and Document types
+            const result = r as {
+              title?: string;
+              url?: string;
+              description?: string;
+              metadata?: { title?: string; url?: string; description?: string };
+            };
+            return {
+              title: result.title || result.metadata?.title || '',
+              url: result.url || result.metadata?.url || '',
+              snippet: result.description || result.metadata?.description || '',
+            };
+          }),
+        };
+      } catch (error) {
+        console.error('[Web Search] Error:', error);
+        return { error: 'Failed to search the web' };
+      }
+    },
+  }),
 };

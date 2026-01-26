@@ -18,7 +18,6 @@ import { TransitCard } from './TransitCard'
 import { NewsCard } from './NewsCard'
 import { OutagesCard } from './OutagesCard'
 import { AviationWeatherCard } from './AviationWeatherCard'
-import { PerplexitySearchCard } from './PerplexitySearchCard'
 
 // Export types
 export type { ToolCardProps, ToolCardComponent, StatusLevel } from './types'
@@ -37,7 +36,6 @@ export { TransitCard } from './TransitCard'
 export { NewsCard } from './NewsCard'
 export { OutagesCard } from './OutagesCard'
 export { AviationWeatherCard } from './AviationWeatherCard'
-export { PerplexitySearchCard } from './PerplexitySearchCard'
 export { ToolCardWrapper } from './ToolCardWrapper'
 
 /**
@@ -63,8 +61,7 @@ export const TOOL_CARD_REGISTRY: Record<string, ComponentType<ToolCardProps<unkn
   getOutages: OutagesCard as ComponentType<ToolCardProps<unknown>>,
   getAviationWeather: AviationWeatherCard as ComponentType<ToolCardProps<unknown>>,
 
-  // Web search
-  perplexity_search: PerplexitySearchCard as ComponentType<ToolCardProps<unknown>>,
+  // webSearch intentionally NOT registered - agent uses results to respond, no widget shown
 
   // Future cards (TODO)
   // getFlights: FlightsCard,
