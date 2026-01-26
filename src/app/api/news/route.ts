@@ -62,8 +62,19 @@ function isRecentEnough(date: Date | null): boolean {
   return ageInHours <= MAX_AGE_HOURS && ageInHours >= 0 // Also filter out future dates
 }
 
+// Maximum age for breaking news (24 hours)
+const BREAKING_NEWS_MAX_AGE_HOURS = 24
+
 // Check if a news item should be marked as breaking news
-function isBreakingNews(title: string, description?: string): boolean {
+// Only marks as breaking if it matches patterns AND is less than 24 hours old
+function isBreakingNews(title: string, pubDate: Date, description?: string): boolean {
+  // Check if the article is recent enough to be "breaking"
+  const now = new Date()
+  const ageInHours = (now.getTime() - pubDate.getTime()) / (1000 * 60 * 60)
+  if (ageInHours > BREAKING_NEWS_MAX_AGE_HOURS) {
+    return false
+  }
+
   const textToCheck = `${title} ${description || ''}`.toLowerCase()
   return BREAKING_NEWS_PATTERNS.some(pattern => pattern.test(textToCheck))
 }
@@ -182,7 +193,7 @@ function parseRSSItem(item: string, defaultSource: string, isGoogleNews: boolean
       pubDate: pubDate!, // We know it's valid because isRecentEnough passed
       source,
       category,
-      isBreaking: isBreakingNews(cleanedTitle, cleanedDescription)
+      isBreaking: isBreakingNews(cleanedTitle, pubDate!, cleanedDescription)
     }
   } catch {
     return null

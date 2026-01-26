@@ -5,6 +5,13 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.5] - 2026-01-25
+
+### Fixed
+- Breaking news now respects article age (24-hour max)
+  - Stories older than 24 hours no longer flagged as "breaking"
+  - Prevents stale news from appearing in Digest as breaking
+
 ## [0.6.4] - 2026-01-25
 
 ### Added

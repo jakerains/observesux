@@ -16,6 +16,14 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.6.5',
+    date: '2026-01-25',
+    fixed: [
+      'Breaking news now respects 24-hour age limit',
+      'Stale stories no longer flagged as breaking in Digest',
+    ],
+  },
+  {
     version: '0.6.4',
     date: '2026-01-25',
     added: [
