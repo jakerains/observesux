@@ -3,7 +3,7 @@
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
 import { useRef, useEffect, useMemo, FormEvent, useState, useCallback } from 'react'
-import { Send, Loader2, RotateCcw } from 'lucide-react'
+import { Send, Loader2, RotateCcw, Maximize2, Minimize2 } from 'lucide-react'
 import { track } from '@vercel/analytics'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
@@ -74,6 +74,7 @@ const QUESTION_BANK = [
   "Best tacos in town?",
   "Good coffee shops?",
   "Any local events coming up?",
+  "Upcoming events?",
 
   // General
   "Tell me about Sioux City",
@@ -121,7 +122,7 @@ function generateUUID(): string {
 }
 
 function ChatWidgetInner() {
-  const { isOpen, openChat, closeChat } = useChatSheet()
+  const { isOpen, isFullscreen, openChat, closeChat, toggleFullscreen } = useChatSheet()
   const [input, setInput] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -338,10 +339,12 @@ function ChatWidgetInner() {
         <SheetContent
           side={isMobile ? 'bottom' : 'right'}
           className={cn(
-            'flex flex-col p-0 overflow-hidden',
+            'flex flex-col p-0 overflow-hidden transition-all duration-300',
             isMobile
               ? 'h-[calc(85vh-80px)] rounded-t-2xl !bottom-[80px]'
-              : 'w-full sm:max-w-md h-full'
+              : isFullscreen
+                ? '!w-full !max-w-none !inset-0 !border-l-0'
+                : 'w-full sm:max-w-md h-full'
           )}
         >
           {/* Drag handle for mobile - swipe down to close */}
@@ -357,9 +360,13 @@ function ChatWidgetInner() {
           )}
           <SheetHeader className={cn(
             "px-4 pb-2 border-b shrink-0",
-            isMobile ? "pt-1" : "pt-4"
+            isMobile ? "pt-1" : "pt-4",
+            isFullscreen && !isMobile && "px-6"
           )}>
-            <div className="flex items-center justify-between pr-8">
+            <div className={cn(
+              "flex items-center justify-between pr-8",
+              isFullscreen && !isMobile && "max-w-3xl mx-auto w-full"
+            )}>
               <div className="flex items-center gap-2">
                 <Image
                   src="/sux.png"
@@ -372,26 +379,52 @@ function ChatWidgetInner() {
                 <SheetTitle>SUX</SheetTitle>
                 <span className="text-xs text-muted-foreground font-normal">Siouxland Assistant</span>
               </div>
-              {messages.length > 0 && (
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={handleClearChat}
-                  className="h-8 w-8"
-                  aria-label="Clear chat"
-                >
-                  <RotateCcw className="h-4 w-4" />
-                </Button>
-              )}
+              <div className="flex items-center gap-1">
+                {/* Fullscreen toggle - desktop only */}
+                {!isMobile && (
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={toggleFullscreen}
+                    className="h-8 w-8"
+                    aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+                  >
+                    {isFullscreen ? (
+                      <Minimize2 className="h-4 w-4" />
+                    ) : (
+                      <Maximize2 className="h-4 w-4" />
+                    )}
+                  </Button>
+                )}
+                {messages.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={handleClearChat}
+                    className="h-8 w-8"
+                    aria-label="Clear chat"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
             </div>
-            <SheetDescription>
+            <SheetDescription className={cn(
+              isFullscreen && !isMobile && "max-w-3xl mx-auto w-full"
+            )}>
               Weather, traffic, city services, restaurants & more
             </SheetDescription>
           </SheetHeader>
 
           {/* Messages Area - min-h-0 allows flex item to shrink for scrolling */}
-          <ScrollArea className="flex-1 min-h-0 px-4">
-            <div className="py-4 space-y-4">
+          <ScrollArea className={cn(
+            "flex-1 min-h-0",
+            isFullscreen && !isMobile ? "px-0" : "px-4"
+          )}>
+            <div className={cn(
+              "py-4 space-y-4",
+              isFullscreen && !isMobile && "max-w-3xl mx-auto px-6"
+            )}>
               {/* Welcome message when empty */}
               {messages.length === 0 && (
                 <div className="text-center py-8">
@@ -547,10 +580,16 @@ function ChatWidgetInner() {
           </ScrollArea>
 
           {/* Input Area - shrink-0 keeps it fixed at bottom */}
-          <div className="border-t p-4 shrink-0 bg-background">
+          <div className={cn(
+            "border-t p-4 shrink-0 bg-background",
+            isFullscreen && !isMobile && "px-6"
+          )}>
             <form
               onSubmit={handleSubmit}
-              className="flex items-center gap-2"
+              className={cn(
+                "flex items-center gap-2",
+                isFullscreen && !isMobile && "max-w-3xl mx-auto"
+              )}
             >
               <input
                 ref={inputRef}
