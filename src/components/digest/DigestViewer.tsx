@@ -16,7 +16,8 @@ import {
   Sun,
   Sunset,
   Moon,
-  ExternalLink
+  ExternalLink,
+  Bot
 } from 'lucide-react'
 import { editionLabels, type Digest, type DigestEdition } from '@/lib/digest/types'
 
@@ -180,6 +181,17 @@ export function DigestViewer({
             >
               {digest.content}
             </ReactMarkdown>
+          </div>
+
+          {/* AI Disclaimer */}
+          <div className="mt-6 pt-4 border-t border-border">
+            <p className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Bot className="h-3.5 w-3.5 flex-shrink-0" />
+              <span>
+                This digest is AI-generated from local data sources. While we strive for accuracy,
+                please verify important information before acting on it.
+              </span>
+            </p>
           </div>
         </CardContent>
       )}
