@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label"
 import { Lightbulb, Loader2, CheckCircle2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { SUGGESTION_CATEGORIES, type SuggestionCategory } from '@/types'
+import { track } from '@vercel/analytics'
 
 interface SuggestionModalProps {
   trigger?: React.ReactNode
@@ -88,6 +89,7 @@ export function SuggestionModal({ trigger }: SuggestionModalProps) {
       }
 
       setSuccess(true)
+      track('suggestion_submitted', { category })
       // Close after showing success message
       setTimeout(() => {
         setOpen(false)

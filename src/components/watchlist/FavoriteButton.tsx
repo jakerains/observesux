@@ -6,6 +6,7 @@ import { Star, Loader2 } from 'lucide-react'
 import { useWatchlistItem } from '@/lib/hooks/useWatchlist'
 import { cn } from '@/lib/utils'
 import type { WatchlistItemType } from '@/lib/db/watchlist'
+import { track } from '@vercel/analytics'
 
 interface FavoriteButtonProps {
   itemType: WatchlistItemType
@@ -40,6 +41,8 @@ export function FavoriteButton({
 
     setIsPending(true)
     try {
+      const action = inWatchlist ? 'removed' : 'added'
+      track('watchlist_item_toggled', { itemType, itemId, action })
       await toggle(itemName, itemMetadata)
     } finally {
       setIsPending(false)

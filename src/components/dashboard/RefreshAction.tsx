@@ -4,12 +4,14 @@ import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { track } from '@vercel/analytics'
 
 interface RefreshActionProps {
   onRefresh: () => void
   isLoading?: boolean
   isValidating?: boolean
   label?: string
+  widgetName?: string
 }
 
 export function RefreshAction({
@@ -17,9 +19,15 @@ export function RefreshAction({
   isLoading = false,
   isValidating = false,
   label = 'Refresh',
+  widgetName,
 }: RefreshActionProps) {
   const isDisabled = isLoading || isValidating
   const tooltipLabel = isValidating ? 'Refreshing…' : label
+
+  const handleRefresh = () => {
+    track('widget_refreshed', { widget: widgetName || label })
+    onRefresh()
+  }
 
   return (
     <Tooltip>
@@ -29,7 +37,7 @@ export function RefreshAction({
           variant="ghost"
           size="icon"
           className="h-7 w-7"
-          onClick={onRefresh}
+          onClick={handleRefresh}
           disabled={isDisabled}
           aria-label={label}
         >

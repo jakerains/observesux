@@ -11,6 +11,7 @@ import Image from 'next/image'
 import { useRouter, usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { useChatSheet } from '@/lib/contexts/ChatContext'
+import { track } from '@vercel/analytics'
 
 interface NavItem {
   id: string
@@ -76,7 +77,9 @@ export function MobileNavigation() {
   }, [isOnDigestPage])
 
   const handleNavClick = (item: NavItem) => {
+    track('mobile_nav_clicked', { item: item.id, label: item.label })
     if (item.action === 'chat') {
+      track('chat_opened', { source: 'mobile_nav' })
       openChat()
       return
     }
