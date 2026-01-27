@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
-import { RefreshCw, Moon, Sun, Lightbulb, X, Sparkles } from "lucide-react"
-import { useTheme } from "next-themes"
+import { RefreshCw, Lightbulb, X, Sparkles } from "lucide-react"
+import { track } from '@vercel/analytics'
 import { SuggestionModal } from './SuggestionModal'
 import { UserMenu } from '@/components/auth/UserMenu'
 import { useSession } from '@/lib/auth/client'
@@ -16,14 +16,8 @@ interface DashboardHeaderProps {
 }
 
 export function DashboardHeader({ onRefresh, isRefreshing }: DashboardHeaderProps) {
-  const { resolvedTheme, setTheme } = useTheme()
   const { data: session, isPending: sessionPending } = useSession()
-  const [mounted, setMounted] = useState(false)
   const [showTooltip, setShowTooltip] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
 
   useEffect(() => {
     if (sessionPending) return
@@ -62,30 +56,15 @@ export function DashboardHeader({ onRefresh, isRefreshing }: DashboardHeaderProp
           <Button
             variant="ghost"
             size="icon"
-            onClick={onRefresh}
+            onClick={() => {
+              track('refresh_all_clicked')
+              onRefresh?.()
+            }}
             disabled={isRefreshing}
             className="h-9 w-9 rounded-full hover:bg-accent press-effect"
           >
             <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
             <span className="sr-only">Refresh all data</span>
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
-            className="h-9 w-9 rounded-full hover:bg-accent press-effect"
-          >
-            {mounted ? (
-              resolvedTheme === 'dark' ? (
-                <Moon className="h-4 w-4" />
-              ) : (
-                <Sun className="h-4 w-4" />
-              )
-            ) : (
-              <Sun className="h-4 w-4" />
-            )}
-            <span className="sr-only">Toggle theme</span>
           </Button>
 
           <SuggestionModal

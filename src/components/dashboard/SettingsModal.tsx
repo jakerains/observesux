@@ -17,6 +17,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
 import { Settings, RotateCcw, GripVertical, Eye, EyeOff } from 'lucide-react'
 import { useDashboardLayout, WidgetConfig } from '@/lib/contexts/DashboardLayoutContext'
+import { track } from '@vercel/analytics'
 
 interface SettingsModalProps {
   trigger?: React.ReactNode | null
@@ -83,11 +84,13 @@ export function SettingsModal({ trigger, open: openProp, onOpenChange }: Setting
 
   const handleReset = () => {
     if (confirm('Reset all dashboard settings to defaults? This will restore all widgets and their positions.')) {
+      track('dashboard_reset')
       resetToDefault()
     }
   }
 
   const handleEnableAll = () => {
+    track('widgets_show_all')
     orderedWidgets.forEach(widget => {
       if (!widget.enabled) {
         setWidgetEnabled(widget.id, true)
@@ -96,6 +99,7 @@ export function SettingsModal({ trigger, open: openProp, onOpenChange }: Setting
   }
 
   const handleDisableAll = () => {
+    track('widgets_hide_all')
     orderedWidgets.forEach(widget => {
       if (widget.enabled) {
         setWidgetEnabled(widget.id, false)
@@ -153,7 +157,10 @@ export function SettingsModal({ trigger, open: openProp, onOpenChange }: Setting
               <WidgetToggle
                 key={widget.id}
                 widget={widget}
-                onToggle={(enabled) => setWidgetEnabled(widget.id, enabled)}
+                onToggle={(enabled) => {
+                  track('widget_toggled', { widget: widget.id, enabled })
+                  setWidgetEnabled(widget.id, enabled)
+                }}
               />
             ))}
           </div>

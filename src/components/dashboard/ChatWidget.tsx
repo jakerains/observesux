@@ -4,6 +4,7 @@ import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
 import { useRef, useEffect, useMemo, FormEvent, useState, useCallback } from 'react'
 import { Send, Loader2, RotateCcw } from 'lucide-react'
+import { track } from '@vercel/analytics'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -273,17 +274,20 @@ function ChatWidgetInner() {
 
     const message = input.trim()
     setInput('')
+    track('chat_message_sent', { messageLength: message.length })
     await sendMessage({ text: message })
   }
 
   // Handle suggested question click
   const handleSuggestedQuestion = async (question: string) => {
     if (isLoading) return
+    track('chat_suggested_question', { question })
     await sendMessage({ text: question })
   }
 
   // Clear chat history and start a new session
   const handleClearChat = () => {
+    track('chat_cleared', { messageCount: messages.length })
     setMessages([])
     // Clear session to start fresh
     sessionIdRef.current = null
@@ -300,7 +304,10 @@ function ChatWidgetInner() {
       {/* Floating chat button - hidden on mobile, shown on desktop */}
       <div className="hidden md:block fixed bottom-20 right-20 z-50 group">
         <button
-          onClick={openChat}
+          onClick={() => {
+            track('chat_opened', { source: 'floating_button' })
+            openChat()
+          }}
           className={cn(
             'w-16 h-16 rounded-full shadow-2xl hover:shadow-[0_20px_50px_rgba(0,0,0,0.4)] transition-all duration-200',
             'bg-white hover:scale-105',

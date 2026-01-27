@@ -5,6 +5,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline, CircleMarker 
 import { DashboardCard } from './DashboardCard'
 import { Badge } from "@/components/ui/badge"
 import { useCameras, useRivers, useTrafficEvents, useSnowplows, useTransit, useAircraft, useGasPrices } from '@/lib/hooks/useDataFetching'
+import { track } from '@vercel/analytics'
 import { useBusInterpolation } from '@/lib/hooks/useBusInterpolation'
 import { useAircraftInterpolation } from '@/lib/hooks/useAircraftInterpolation'
 import { useTransitSelection } from '@/lib/contexts/TransitContext'
@@ -565,6 +566,8 @@ export function InteractiveMap() {
   }, [layers.radar, radarSource, radarFrames.length])
 
   const toggleLayer = (layer: keyof typeof layers) => {
+    const newValue = !layers[layer]
+    track('map_layer_toggled', { layer, enabled: newValue })
     setLayers(prev => ({ ...prev, [layer]: !prev[layer] }))
   }
 
