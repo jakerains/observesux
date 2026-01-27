@@ -1,4 +1,4 @@
-import { streamText, stepCountIs, convertToModelMessages, safeValidateUIMessages } from 'ai';
+import { streamText, stepCountIs, convertToModelMessages, safeValidateUIMessages, pruneMessages } from 'ai';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { chatTools } from '@/lib/ai/tools';
 import { getSystemPrompt, type UserContext } from '@/lib/ai/system-prompt';
@@ -112,14 +112,64 @@ export async function POST(req: Request) {
       return { ...message, parts: [] };
     });
 
+    // Validate UI messages - pass tool schemas for validation
+    // Runtime only needs inputSchema property, so we extract that for each tool
+    const toolSchemas = Object.fromEntries(
+      Object.entries(chatTools).map(([name, t]) => [name, { inputSchema: t.inputSchema }])
+    );
+    const validToolNames = new Set(Object.keys(chatTools));
+
+    // Sanitize tool parts - sometimes they get corrupted with extra characters
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for (const msg of normalizedMessages as any[]) {
+      if (msg.parts && Array.isArray(msg.parts)) {
+        for (const part of msg.parts) {
+          if (part.type?.startsWith('tool-')) {
+            const rawToolName = part.type.slice(5);
+            // Check if the tool name is valid, if not try to extract it
+            if (!validToolNames.has(rawToolName)) {
+              // Try to find a valid tool name at the start
+              for (const validName of validToolNames) {
+                if (rawToolName.startsWith(validName)) {
+                  console.log(`[Chat] Fixing corrupted tool type: "${part.type}" -> "tool-${validName}"`);
+                  part.type = `tool-${validName}`;
+                  break;
+                }
+              }
+            }
+
+            // Also check and fix toolCallId if corrupted
+            if (part.toolCallId && typeof part.toolCallId === 'string') {
+              // toolCallId should be alphanumeric, clean it if corrupted
+              const cleanId = part.toolCallId.replace(/[^a-zA-Z0-9_-]/g, '');
+              if (cleanId !== part.toolCallId) {
+                console.log(`[Chat] Fixing corrupted toolCallId: "${part.toolCallId}" -> "${cleanId}"`);
+                part.toolCallId = cleanId;
+              }
+            }
+
+            // Log tool output size to detect large payloads
+            if (part.output) {
+              const outputStr = JSON.stringify(part.output);
+              if (outputStr.length > 50000) {
+                console.warn(`[Chat] Large tool output detected for ${rawToolName}: ${outputStr.length} chars`);
+              }
+            }
+          }
+        }
+      }
+    }
+
     const validation = await safeValidateUIMessages({
       messages: normalizedMessages,
-      // Cast to satisfy TypeScript's strict variance checking
-      // The tools have compatible runtime behavior, but Record<string, never> vs unknown doesn't unify
-      tools: chatTools as Parameters<typeof safeValidateUIMessages>[0]['tools'],
+      // Type assertion: runtime only accesses inputSchema/outputSchema, not execute
+      tools: toolSchemas as Parameters<typeof safeValidateUIMessages>[0]['tools'],
     });
 
     if (!validation.success) {
+      console.error('[Chat] Message validation failed:', validation.error);
+      // Log the actual message structure for debugging
+      console.error('[Chat] Messages that failed validation:', JSON.stringify(normalizedMessages, null, 2).slice(0, 2000));
       return new Response(JSON.stringify({ error: validation.error.message }), {
         status: 400,
         headers: {
@@ -229,10 +279,33 @@ export async function POST(req: Request) {
       apiKey: process.env.OPENROUTER_API_KEY,
     });
     console.log(`[Chat] Using model: ${MODEL_ID}`);
+
+    // Convert messages and log for debugging
+    const modelMessages = await convertToModelMessages(messages);
+    const prunedMessages = pruneMessages({
+      messages: modelMessages,
+      toolCalls: 'before-last-message',
+      emptyMessages: 'remove',
+    });
+    if (prunedMessages.length !== modelMessages.length) {
+      console.log(`[Chat] Pruned messages: ${modelMessages.length} -> ${prunedMessages.length}`);
+    }
+    console.log('[Chat] Model messages count:', prunedMessages.length);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    console.log('[Chat] Model messages structure:', JSON.stringify(prunedMessages.map((m: any) => ({
+      role: m.role,
+      contentType: Array.isArray(m.content) ? m.content.map((c: { type?: string }) => c.type) : typeof m.content,
+      // Log tool call IDs to check for corruption
+      toolCalls: Array.isArray(m.content) ? m.content
+        .filter((c: { type?: string }) => c.type === 'tool-call')
+        .map((c: { toolCallId?: string; toolName?: string }) => ({ id: c.toolCallId, name: c.toolName }))
+        : undefined,
+    })), null, 2));
+
     const result = streamText({
       model: openrouter(MODEL_ID),
       system: getSystemPrompt(userContext),
-      messages: await convertToModelMessages(messages),
+      messages: prunedMessages,
       tools: chatTools,
       stopWhen: stepCountIs(5),
       onStepFinish: ({ toolCalls }) => {

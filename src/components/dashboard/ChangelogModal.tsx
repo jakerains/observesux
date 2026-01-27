@@ -16,6 +16,15 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.7.4',
+    date: '2026-01-27',
+    added: [],
+    changed: [],
+    fixed: [
+      'Pruned chat tool-call history to prevent follow-up message failures',
+    ],
+  },
+  {
     version: '0.7.3',
     date: '2026-01-27',
     added: [
