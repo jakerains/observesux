@@ -1,11 +1,11 @@
 import type { Metadata } from "next"
 import { Inter, Source_Serif_4, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
-import { ThemeProvider } from "@/components/theme-provider"
 import { ChatProvider } from "@/lib/contexts/ChatContext"
 import { NeonAuthUIProvider } from "@neondatabase/auth/react/ui"
 import { authClient } from "@/lib/auth/client"
 import { InstallPrompt } from "@/components/pwa/InstallPrompt"
+import { ForceDarkMode } from "@/components/ForceDarkMode"
 import "./globals.css"
 
 // Inter - clean, highly readable for body text and UI
@@ -170,7 +170,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className="dark" style={{ colorScheme: 'dark' }}>
       <head>
         <JsonLdSchema />
       </head>
@@ -178,17 +178,11 @@ export default function RootLayout({
         className={`${inter.variable} ${sourceSerif.variable} ${geistMono.variable} antialiased min-h-screen bg-background`}
       >
         <NeonAuthUIProvider authClient={authClient}>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="dark"
-            forcedTheme="dark"
-            disableTransitionOnChange
-          >
-            <ChatProvider>
-              {children}
-              <InstallPrompt />
-            </ChatProvider>
-          </ThemeProvider>
+          <ForceDarkMode />
+          <ChatProvider>
+            {children}
+            <InstallPrompt />
+          </ChatProvider>
         </NeonAuthUIProvider>
         <Analytics />
       </body>
