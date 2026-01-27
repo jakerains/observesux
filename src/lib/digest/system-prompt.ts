@@ -15,7 +15,7 @@ export function getDigestSystemPrompt(edition: DigestEdition): string {
       description: 'a morning briefing to help Siouxlanders start their day informed',
       tone: 'bright and helpful, like a friendly neighbor with coffee in hand',
       priorities: [
-        'CRITICAL: School closings, delays, or late starts - always highlight these first if weather conditions could affect schools',
+        'School closings, delays, or late starts - only if explicitly confirmed in news data',
         'Weather alerts that affect morning commutes or outdoor activities',
         'Traffic conditions for the morning commute',
         'What to wear/prepare for based on conditions',
@@ -77,11 +77,9 @@ Your response MUST start with a summary line, then the full digest.
 Then write the full digest in Markdown format. Include these sections as relevant:
 
 ${edition === 'morning' ? `### ⚠️ School & Community Alerts
-ALWAYS include this section if:
-- Weather conditions (extreme cold, snow, ice) could affect schools
-- Any news mentions school closings, delays, or late starts
-- There are weather advisories/warnings in effect
-If no alerts, you may omit this section.
+Only include this section if there are CONFIRMED school closings or delays in the provided data.
+Do NOT assume or speculate about closings based on weather conditions alone.
+If there are no school announcements, OMIT THIS SECTION ENTIRELY - do not mention schools at all.
 
 ` : ''}### Right Now
 Current weather conditions and what it feels like outside. Include AQI only if Moderate or worse. Include river levels only if above normal.
@@ -117,7 +115,7 @@ Top community events and notable news stories. Prioritize:
   - USGS Water Data: https://waterdata.usgs.gov
 - End with a brief, friendly sign-off (${ctx.signOffStyle})
 - Do NOT include fake or placeholder data - only use what's provided
-- IMPORTANT: If news items mention "school", "closing", "delay", "late start", "canceled", "cancelled" - ALWAYS highlight this prominently`
+- IMPORTANT: Do NOT mention schools AT ALL unless there is a CONFIRMED closing or delay in the data. If no school announcements exist, simply omit any school-related content entirely.`
 }
 
 /**
@@ -175,26 +173,6 @@ export function buildDigestPrompt(
       prompt += `- ${alert.severity}: ${alert.event} - ${alert.headline}\n`
     }
 
-    // Check for weather conditions that typically cause school closings/delays
-    const schoolImpactKeywords = ['blizzard', 'ice storm', 'winter storm', 'extreme cold', 'wind chill', 'freezing rain', 'heavy snow']
-    const schoolImpactAlerts = data.weather.alerts.filter(alert =>
-      schoolImpactKeywords.some(keyword =>
-        alert.event.toLowerCase().includes(keyword) ||
-        alert.headline.toLowerCase().includes(keyword)
-      )
-    )
-    if (schoolImpactAlerts.length > 0) {
-      prompt += `\n⚠️ NOTE: These weather conditions often lead to school closings/delays in the Siouxland area. Check with local school districts.\n`
-    }
-  }
-
-  // Check for extreme cold that could affect schools (wind chill below -20 or temp below -10)
-  if (data.weather.current) {
-    const temp = data.weather.current.temperature
-    const windChill = data.weather.current.windChill ?? null
-    if ((temp !== null && temp <= -10) || (windChill !== null && windChill <= -20)) {
-      prompt += `\n⚠️ EXTREME COLD: Current conditions (${temp}°F${windChill !== null ? `, feels like ${windChill}°F` : ''}) are severe enough that school closings/delays are common in the area.\n`
-    }
   }
 
   // Rivers
@@ -231,7 +209,8 @@ export function buildDigestPrompt(
 
   // School updates from Firecrawl (dedicated search for closings/delays)
   if (data.schools && data.schools.length > 0) {
-    prompt += `\n### 🏫 SCHOOL UPDATES (From Live Search - PRIORITIZE THESE!)\n`
+    prompt += `\n### 🏫 SCHOOL UPDATES (From Live Search)\n`
+    prompt += `Note: Only include these if they explicitly confirm a closing or delay. Do not speculate.\n`
     for (const update of data.schools) {
       const type = update.isClosing ? '[CLOSING]' : update.isDelay ? '[DELAY]' : '[UPDATE]'
       prompt += `- ${type} ${update.title}`

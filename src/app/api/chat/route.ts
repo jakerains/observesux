@@ -224,7 +224,7 @@ export async function POST(req: Request) {
     // Track tool calls during the stream
     const toolCallsUsed: string[] = [];
 
-    const MODEL_ID = 'anthropic/claude-haiku-4.5';
+    const MODEL_ID = 'anthropic/claude-sonnet-4.5';
     const openrouter = createOpenRouter({
       apiKey: process.env.OPENROUTER_API_KEY,
     });

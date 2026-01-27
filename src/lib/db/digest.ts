@@ -11,6 +11,7 @@ function getTodayDate(): string {
 /**
  * Save a new digest to the database
  * Creates a new version and sets it as active (deactivating previous versions)
+ * If draft=true, saves as inactive for review before publishing
  */
 export async function saveDigest(data: {
   edition: DigestEdition
@@ -18,6 +19,7 @@ export async function saveDigest(data: {
   content: string
   dataSnapshot?: DigestData
   generationTimeMs: number
+  draft?: boolean
 }): Promise<Digest | null> {
   if (!isDatabaseConfigured()) {
     console.warn('[Digest DB] Database not configured, skipping save')
@@ -25,6 +27,7 @@ export async function saveDigest(data: {
   }
 
   const date = getTodayDate()
+  const isDraft = data.draft ?? false
 
   try {
     // Get the next version number for this edition/date
@@ -35,16 +38,18 @@ export async function saveDigest(data: {
     `
     const nextVersion = versionResult[0]?.next_version || 1
 
-    // Deactivate any currently active digest for this edition/date
-    await sql`
-      UPDATE digests
-      SET is_active = false
-      WHERE edition = ${data.edition}
-        AND date = ${date}
-        AND is_active = true
-    `
+    // Only deactivate previous versions if NOT a draft
+    if (!isDraft) {
+      await sql`
+        UPDATE digests
+        SET is_active = false
+        WHERE edition = ${data.edition}
+          AND date = ${date}
+          AND is_active = true
+      `
+    }
 
-    // Insert the new digest as active
+    // Insert the new digest (active if not draft, inactive if draft)
     const result = await sql`
       INSERT INTO digests (edition, date, summary, content, data_snapshot, generation_time_ms, is_active, version)
       VALUES (
@@ -54,7 +59,7 @@ export async function saveDigest(data: {
         ${data.content},
         ${data.dataSnapshot ? JSON.stringify(data.dataSnapshot) : null},
         ${data.generationTimeMs},
-        true,
+        ${!isDraft},
         ${nextVersion}
       )
       RETURNING
@@ -449,5 +454,38 @@ export async function getDigestsByDate(
   } catch (error) {
     console.error('[Digest DB] Failed to get digests by date:', error)
     return []
+  }
+}
+
+/**
+ * Delete a digest by ID (for rejecting drafts)
+ * Only allows deleting inactive (draft) digests for safety
+ */
+export async function deleteDigest(
+  digestId: string,
+  forceDelete: boolean = false
+): Promise<boolean> {
+  if (!isDatabaseConfigured()) return false
+
+  try {
+    // By default, only delete inactive drafts
+    // forceDelete allows deleting any digest (use with caution)
+    const result = forceDelete
+      ? await sql`
+          DELETE FROM digests
+          WHERE id = ${digestId}::uuid
+          RETURNING id
+        `
+      : await sql`
+          DELETE FROM digests
+          WHERE id = ${digestId}::uuid
+            AND is_active = false
+          RETURNING id
+        `
+
+    return result.length > 0
+  } catch (error) {
+    console.error('[Digest DB] Failed to delete digest:', error)
+    return false
   }
 }

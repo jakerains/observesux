@@ -16,6 +16,20 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.7.2',
+    date: '2026-01-27',
+    added: [
+      'Digest draft/approve workflow in admin panel',
+    ],
+    changed: [
+      'AI model pairing: Opus 4.5 for digest, Sonnet 4.5 for chat',
+    ],
+    fixed: [
+      'School closing hallucinations - requires explicit confirmation now',
+      'Switched to official Sioux City Schools feed (direct source, no more stale results)',
+    ],
+  },
+  {
     version: '0.7.1',
     date: '2026-01-26',
     added: [

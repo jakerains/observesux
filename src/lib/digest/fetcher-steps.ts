@@ -443,18 +443,56 @@ export async function fetchFlightsStep(): Promise<FlightDelaySummary | null> {
   }
 }
 
-// Keywords that indicate school closings or delays
-const SCHOOL_CLOSING_KEYWORDS = ['closing', 'closed', 'closure', 'cancel', 'cancelled', 'canceled']
-const SCHOOL_DELAY_KEYWORDS = ['delay', 'delayed', 'late start', '2 hour', '2-hour', 'two hour']
+// Sioux City Schools official feed URL (Weather Alerts filter)
+const SIOUX_CITY_SCHOOLS_FEED_URL = 'https://www.siouxcityschools.org/live-feed?filter_id=250364'
 
 /**
- * Fetch school updates via Firecrawl search
- * Searches for school closings, delays, and announcements in the Siouxland area
+ * Parse relative time like "1 day ago", "6 days ago", "10 months ago" to hours
+ */
+function parseRelativeTime(timeStr: string): number | null {
+  const match = timeStr.match(/(\d+)\s*(minute|hour|day|week|month|year)s?\s*ago/i)
+  if (!match) {
+    // Handle "about X years ago" format
+    const aboutMatch = timeStr.match(/about\s*(\d+)\s*(year|month)s?\s*ago/i)
+    if (aboutMatch) {
+      const num = parseInt(aboutMatch[1], 10)
+      const unit = aboutMatch[2].toLowerCase()
+      if (unit === 'year') return num * 365 * 24
+      if (unit === 'month') return num * 30 * 24
+    }
+    // Handle "almost X years ago"
+    const almostMatch = timeStr.match(/almost\s*(\d+)\s*(year|month)s?\s*ago/i)
+    if (almostMatch) {
+      const num = parseInt(almostMatch[1], 10)
+      const unit = almostMatch[2].toLowerCase()
+      if (unit === 'year') return num * 365 * 24
+      if (unit === 'month') return num * 30 * 24
+    }
+    return null
+  }
+
+  const num = parseInt(match[1], 10)
+  const unit = match[2].toLowerCase()
+
+  switch (unit) {
+    case 'minute': return num / 60
+    case 'hour': return num
+    case 'day': return num * 24
+    case 'week': return num * 7 * 24
+    case 'month': return num * 30 * 24
+    case 'year': return num * 365 * 24
+    default: return null
+  }
+}
+
+/**
+ * Fetch school updates from Sioux City Schools official feed
+ * Scrapes their weather alerts feed for closings, delays, and announcements
  */
 export async function fetchSchoolUpdatesStep(): Promise<SchoolUpdate[]> {
   "use step"
 
-  console.log('[fetchSchoolUpdatesStep] Starting Firecrawl school search...')
+  console.log('[fetchSchoolUpdatesStep] Scraping Sioux City Schools official feed...')
   const startTime = Date.now()
 
   const apiKey = process.env.FIRECRAWL_API_KEY
@@ -466,80 +504,81 @@ export async function fetchSchoolUpdatesStep(): Promise<SchoolUpdate[]> {
   try {
     const firecrawl = new Firecrawl({ apiKey })
 
-    // Search for school closings and delays in Siouxland
-    // Use news sources for time-sensitive information
-    const searchQuery = 'Sioux City school closing OR delay OR late start OR canceled'
-
-    console.log(`[fetchSchoolUpdatesStep] Searching: "${searchQuery}"`)
-
-    const data = await firecrawl.search(searchQuery, {
-      limit: 5,
-      location: 'Iowa, United States',
-      tbs: 'qdr:d', // Past 24 hours - school announcements are time-sensitive
-      scrapeOptions: {
-        formats: ['markdown'],
-        onlyMainContent: true,
-      },
+    const data = await firecrawl.scrape(SIOUX_CITY_SCHOOLS_FEED_URL, {
+      formats: ['markdown'],
+      onlyMainContent: true,
     })
 
     const duration = Date.now() - startTime
+    const markdown = data.markdown || ''
 
-    // Extract web results
-    const webResults = data.web || []
-    console.log(`[fetchSchoolUpdatesStep] Completed in ${duration}ms, got ${webResults.length} results`)
+    console.log(`[fetchSchoolUpdatesStep] Scraped in ${duration}ms, got ${markdown.length} chars`)
 
-    if (webResults.length === 0) {
-      console.log('[fetchSchoolUpdatesStep] No school updates found')
+    if (!markdown) {
+      console.log('[fetchSchoolUpdatesStep] No content from feed')
       return []
     }
 
-    // Process and filter results
-    const updates: SchoolUpdate[] = webResults
-      .map((r): SchoolUpdate | null => {
-        const result = r as {
-          title?: string
-          url?: string
-          description?: string
-          markdown?: string
-          metadata?: { title?: string; url?: string; description?: string }
-        }
+    // Parse the feed - each post follows the pattern:
+    // ![avatar image]
+    // Post content text
+    // X days ago, Sioux City Community Schools
+    // (optional image)
 
-        const title = result.title || result.metadata?.title || ''
-        const url = result.url || result.metadata?.url || ''
-        const snippet = result.description || result.metadata?.description || ''
-        const content = result.markdown || ''
+    // Split by the timestamp pattern to separate posts
+    const postPattern = /([^]*?)(\d+\s+(?:minute|hour|day|week|month|year)s?\s+ago|about\s+\d+\s+(?:year|month)s?\s+ago|almost\s+\d+\s+(?:year|month)s?\s+ago),\s*Sioux City Community School/gi
 
-        // Extract source from URL
-        let source = 'Web'
-        try {
-          const urlObj = new URL(url)
-          source = urlObj.hostname.replace('www.', '')
-        } catch {
-          // Keep default source
-        }
+    const updates: SchoolUpdate[] = []
+    let match: RegExpExecArray | null
 
-        // Check for closing/delay keywords in title and content
-        const textToCheck = `${title} ${snippet} ${content}`.toLowerCase()
-        const isClosing = SCHOOL_CLOSING_KEYWORDS.some(kw => textToCheck.includes(kw))
-        const isDelay = SCHOOL_DELAY_KEYWORDS.some(kw => textToCheck.includes(kw))
+    while ((match = postPattern.exec(markdown)) !== null) {
+      const content = match[1].trim()
+      const timeAgo = match[2]
 
-        // Only include results that are actually about school closings/delays
-        if (!isClosing && !isDelay) {
-          return null
-        }
+      // Parse how old this post is
+      const hoursAgo = parseRelativeTime(timeAgo)
 
-        return {
-          title,
-          snippet: snippet.slice(0, 300), // Limit snippet length
-          url,
-          source,
-          isClosing,
-          isDelay,
-        }
+      // Only include posts from the last 36 hours (covers evening announcements for next day)
+      if (hoursAgo === null || hoursAgo > 36) {
+        continue
+      }
+
+      // Clean up the content - remove image markdown and extra whitespace
+      const cleanContent = content
+        .replace(/!\[.*?\]\(.*?\)/g, '') // Remove image markdown
+        .replace(/\n+/g, ' ')
+        .trim()
+
+      if (!cleanContent) continue
+
+      // Detect type of announcement
+      const contentLower = cleanContent.toLowerCase()
+      const isClosing = contentLower.includes('no school') ||
+                        contentLower.includes('canceled') ||
+                        contentLower.includes('cancelled')
+      const isDelay = contentLower.includes('late start') ||
+                      contentLower.includes('two-hour') ||
+                      contentLower.includes('two hour') ||
+                      contentLower.includes('2-hour') ||
+                      contentLower.includes('early out') ||
+                      contentLower.includes('early dismissal')
+
+      // Only include actual closings/delays, not general announcements
+      if (!isClosing && !isDelay) {
+        continue
+      }
+
+      updates.push({
+        title: cleanContent.slice(0, 100) + (cleanContent.length > 100 ? '...' : ''),
+        snippet: cleanContent,
+        url: SIOUX_CITY_SCHOOLS_FEED_URL,
+        source: 'Sioux City Schools (Official)',
+        isClosing,
+        isDelay,
       })
-      .filter((u): u is SchoolUpdate => u !== null)
+    }
 
-    console.log(`[fetchSchoolUpdatesStep] Filtered to ${updates.length} relevant school updates`)
+    console.log(`[fetchSchoolUpdatesStep] Found ${updates.length} recent school updates`)
     if (updates.length > 0) {
       console.log('[fetchSchoolUpdatesStep] Updates:', updates.map(u =>
         `${u.isClosing ? '🚫' : '⏰'} ${u.title.slice(0, 60)}`

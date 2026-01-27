@@ -5,6 +5,27 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.2] - 2026-01-27
+
+### Added
+- **Digest draft/approve workflow**: Admin can preview generated digests before publishing
+  - Digests are created as drafts (inactive) for review
+  - Approve to publish or reject to discard
+  - Prevents bad generations from going live automatically
+
+### Changed
+- **AI model pairing**: Digest uses Claude Opus 4.5 (higher quality), Chat uses Claude Sonnet 4.5 (faster)
+
+### Fixed
+- **School closing hallucinations**: AI no longer assumes schools are closed based on weather
+  - Removed weather-triggered "school closings are common" prompts
+  - System prompt now requires explicit confirmation before reporting closings
+  - Added anti-hallucination instructions at multiple points
+- **Switched to official school feed**: Now scrapes Sioux City Schools official weather alerts feed
+  - Direct source instead of web search (no more stale/irrelevant results)
+  - Only includes posts from the last 36 hours
+  - Parses actual announcement content and dates
+
 ## [0.7.1] - 2026-01-26
 
 ### Added

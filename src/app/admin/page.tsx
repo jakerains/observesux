@@ -58,6 +58,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { ChatMarkdown } from '@/components/dashboard/ChatMarkdown'
 import { RagAdmin } from '@/components/rag/RagAdmin'
 import { UsersPanel } from '@/components/admin/UsersPanel'
@@ -535,6 +542,8 @@ function DigestPanel() {
   const [forceRegenerate, setForceRegenerate] = useState(false)
   const [editionFilter, setEditionFilter] = useState<DigestEdition | 'all'>('all')
   const [showAllVersions, setShowAllVersions] = useState(false)
+  const [approving, setApproving] = useState(false)
+  const [rejecting, setRejecting] = useState(false)
   const [lastResult, setLastResult] = useState<{
     success: boolean
     edition?: DigestEdition
@@ -578,21 +587,21 @@ function DigestPanel() {
     setGeneratedDigest(null)
     setShowPreview(false)
     try {
+      // Always generate as draft for admin preview/approval flow
       const res = await fetch('/api/user/digest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ edition, force })
+        body: JSON.stringify({ edition, force, draft: true })
       })
       const data = await res.json()
 
       if (res.ok && data.success) {
-        const action = force ? 'regenerated' : 'generated'
         setLastResult({
           success: true,
           edition,
           message: data.skipped
             ? `${editionLabels[edition]} already exists for today`
-            : `${editionLabels[edition]} ${action} successfully!`,
+            : `${editionLabels[edition]} draft generated - review and approve below`,
           workflowRunId: data.workflowRunId,
           generationTimeMs: data.generationTimeMs
         })
@@ -617,6 +626,72 @@ function DigestPanel() {
       })
     } finally {
       setGenerating(null)
+    }
+  }
+
+  // Approve draft - make it active
+  const approveDraft = async (digestId: string) => {
+    setApproving(true)
+    try {
+      const res = await fetch('/api/user/digest', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ digestId })
+      })
+      if (res.ok) {
+        setLastResult({
+          success: true,
+          message: 'Digest approved and published!'
+        })
+        setShowPreview(false)
+        setGeneratedDigest(null)
+        fetchDigests()
+      } else {
+        const data = await res.json()
+        setLastResult({
+          success: false,
+          message: data.error || 'Failed to approve digest'
+        })
+      }
+    } catch (error) {
+      setLastResult({
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to approve'
+      })
+    } finally {
+      setApproving(false)
+    }
+  }
+
+  // Reject draft - delete it
+  const rejectDraft = async (digestId: string) => {
+    setRejecting(true)
+    try {
+      const res = await fetch(`/api/user/digest?id=${digestId}`, {
+        method: 'DELETE'
+      })
+      if (res.ok) {
+        setLastResult({
+          success: true,
+          message: 'Draft rejected and discarded'
+        })
+        setShowPreview(false)
+        setGeneratedDigest(null)
+        fetchDigests()
+      } else {
+        const data = await res.json()
+        setLastResult({
+          success: false,
+          message: data.error || 'Failed to reject digest'
+        })
+      }
+    } catch (error) {
+      setLastResult({
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to reject'
+      })
+    } finally {
+      setRejecting(false)
     }
   }
 
@@ -845,81 +920,128 @@ function DigestPanel() {
             </div>
           )}
 
-          {/* Generated Digest Preview */}
-          {showPreview && generatedDigest && (
-            <div className="border rounded-lg overflow-hidden">
-              <div className="p-3 bg-muted/50 border-b flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-primary" />
-                  <span className="font-medium text-sm">Generated Digest Preview</span>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowPreview(false)}
-                >
-                  Hide
-                </Button>
-              </div>
+          {/* Draft Review Modal */}
+          <Dialog open={showPreview && !!generatedDigest} onOpenChange={(open) => !open && setShowPreview(false)}>
+            <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-amber-500" />
+                  Review Draft - {generatedDigest?.edition ? editionLabels[generatedDigest.edition] : 'Digest'}
+                  <Badge variant="outline" className="text-amber-600 border-amber-500 ml-2">
+                    Draft
+                  </Badge>
+                </DialogTitle>
+                <DialogDescription>
+                  Review the generated content below. Approve to publish or reject to discard.
+                </DialogDescription>
+              </DialogHeader>
 
-              {/* Data Source Stats */}
-              {(() => {
-                const stats = getDataSourceStats(generatedDigest)
-                if (!stats) return null
-                return (
-                  <div className="p-3 bg-muted/30 border-b">
-                    <p className="text-xs font-medium text-muted-foreground mb-2">Data Sources Used:</p>
-                    <div className="flex flex-wrap gap-2">
-                      <Badge variant={stats.hasWeather ? 'default' : 'destructive'} className="text-xs">
-                        Weather {stats.hasWeather ? '✓' : '✗'}
-                      </Badge>
-                      <Badge variant={stats.hasForecast ? 'default' : 'destructive'} className="text-xs">
-                        Forecast {stats.hasForecast ? '✓' : '✗'}
-                      </Badge>
-                      <Badge variant={stats.alertCount > 0 ? 'secondary' : 'outline'} className="text-xs">
-                        {stats.alertCount} Alerts
-                      </Badge>
-                      <Badge variant={stats.riverCount > 0 ? 'default' : 'destructive'} className="text-xs">
-                        {stats.riverCount} Rivers
-                      </Badge>
-                      <Badge variant={stats.hasAirQuality ? 'default' : 'destructive'} className="text-xs">
-                        AQI {stats.hasAirQuality ? '✓' : '✗'}
-                      </Badge>
-                      <Badge variant={stats.trafficCount > 0 ? 'secondary' : 'outline'} className="text-xs">
-                        {stats.trafficCount} Traffic
-                      </Badge>
-                      <Badge variant={stats.newsCount > 0 ? 'default' : 'destructive'} className="text-xs">
-                        {stats.newsCount} News
-                      </Badge>
-                      <Badge variant={stats.eventCount > 0 ? 'default' : 'destructive'} className="text-xs">
-                        {stats.eventCount} Events
-                      </Badge>
-                      <Badge variant={stats.hasGasPrices ? 'default' : 'destructive'} className="text-xs">
-                        Gas {stats.hasGasPrices ? '✓' : '✗'}
-                      </Badge>
+              {generatedDigest && (
+                <div className="flex-1 overflow-hidden flex flex-col gap-4">
+                  {/* Data Source Stats */}
+                  {(() => {
+                    const stats = getDataSourceStats(generatedDigest)
+                    if (!stats) return null
+                    return (
+                      <div className="p-3 bg-muted/30 rounded-lg">
+                        <p className="text-xs font-medium text-muted-foreground mb-2">Data Sources:</p>
+                        <div className="flex flex-wrap gap-2">
+                          <Badge variant={stats.hasWeather ? 'default' : 'destructive'} className="text-xs">
+                            Weather {stats.hasWeather ? '✓' : '✗'}
+                          </Badge>
+                          <Badge variant={stats.hasForecast ? 'default' : 'destructive'} className="text-xs">
+                            Forecast {stats.hasForecast ? '✓' : '✗'}
+                          </Badge>
+                          <Badge variant={stats.alertCount > 0 ? 'secondary' : 'outline'} className="text-xs">
+                            {stats.alertCount} Alerts
+                          </Badge>
+                          <Badge variant={stats.riverCount > 0 ? 'default' : 'destructive'} className="text-xs">
+                            {stats.riverCount} Rivers
+                          </Badge>
+                          <Badge variant={stats.hasAirQuality ? 'default' : 'destructive'} className="text-xs">
+                            AQI {stats.hasAirQuality ? '✓' : '✗'}
+                          </Badge>
+                          <Badge variant={stats.trafficCount > 0 ? 'secondary' : 'outline'} className="text-xs">
+                            {stats.trafficCount} Traffic
+                          </Badge>
+                          <Badge variant={stats.newsCount > 0 ? 'default' : 'destructive'} className="text-xs">
+                            {stats.newsCount} News
+                          </Badge>
+                          <Badge variant={stats.eventCount > 0 ? 'default' : 'destructive'} className="text-xs">
+                            {stats.eventCount} Events
+                          </Badge>
+                          <Badge variant={stats.hasGasPrices ? 'default' : 'destructive'} className="text-xs">
+                            Gas {stats.hasGasPrices ? '✓' : '✗'}
+                          </Badge>
+                        </div>
+                      </div>
+                    )
+                  })()}
+
+                  {/* Summary */}
+                  {generatedDigest.summary && (
+                    <div className="p-3 rounded-lg bg-primary/5 border">
+                      <p className="text-xs font-medium text-muted-foreground mb-1">Summary (shown on dashboard):</p>
+                      <div className="prose prose-sm dark:prose-invert prose-p:text-foreground prose-p:leading-relaxed prose-strong:text-foreground prose-strong:font-semibold max-w-none">
+                        <ChatMarkdown content={generatedDigest.summary} />
+                      </div>
                     </div>
-                  </div>
-                )
-              })()}
+                  )}
 
-              {/* Summary */}
-              {generatedDigest.summary && (
-                <div className="p-3 border-b bg-primary/5">
-                  <p className="text-xs font-medium text-muted-foreground mb-1">Summary:</p>
-                  <div className="prose prose-sm dark:prose-invert prose-p:text-foreground prose-p:leading-relaxed prose-strong:text-foreground prose-strong:font-semibold max-w-none">
-                    <ChatMarkdown content={generatedDigest.summary} />
+                  {/* Content Preview */}
+                  <div className="flex-1 min-h-0 border rounded-lg overflow-hidden">
+                    <div className="p-2 bg-muted/50 border-b">
+                      <p className="text-xs font-medium text-muted-foreground">Full Content:</p>
+                    </div>
+                    <ScrollArea className="h-[300px]">
+                      <div className="p-4 prose prose-sm max-w-none dark:prose-invert">
+                        <ChatMarkdown content={generatedDigest.content || ''} />
+                      </div>
+                    </ScrollArea>
+                  </div>
+
+                  {/* Approve/Reject Actions */}
+                  <div className="flex items-center justify-end gap-3 pt-2 border-t">
+                    <Button
+                      variant="outline"
+                      className="gap-2 border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950"
+                      onClick={() => rejectDraft(generatedDigest.id)}
+                      disabled={rejecting || approving}
+                    >
+                      {rejecting ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Rejecting...
+                        </>
+                      ) : (
+                        <>
+                          <XCircle className="h-4 w-4" />
+                          Reject & Discard
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      className="gap-2 bg-green-600 hover:bg-green-700"
+                      onClick={() => approveDraft(generatedDigest.id)}
+                      disabled={approving || rejecting}
+                    >
+                      {approving ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Publishing...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="h-4 w-4" />
+                          Approve & Publish
+                        </>
+                      )}
+                    </Button>
                   </div>
                 </div>
               )}
-
-              {/* Content Preview */}
-              <ScrollArea className="h-[300px]">
-                <div className="p-4 prose prose-sm max-w-none dark:prose-invert">
-                  <ChatMarkdown content={generatedDigest.content || ''} />
-                </div>
-              </ScrollArea>
-            </div>
-          )}
+            </DialogContent>
+          </Dialog>
 
           <div className="text-xs text-muted-foreground space-y-1">
             <p>• Digests are auto-generated at 6:15 AM, 12:00 PM, and 6:00 PM CST</p>

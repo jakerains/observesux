@@ -10,6 +10,7 @@ import {
   getDigestById,
   setActiveDigest,
   getDigestsByDate,
+  deleteDigest,
 } from '@/lib/db/digest'
 import { digestWorkflow } from '@/../workflows/digest-workflow'
 import { getCurrentEdition, type DigestEdition } from '@/lib/digest/types'
@@ -34,9 +35,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get edition and force flag from request body
+    // Get edition, force, and draft flags from request body
     let edition: DigestEdition = getCurrentEdition()
     let force = false
+    let draft = false
     try {
       const body = await request.json()
       if (body.edition && ['morning', 'midday', 'evening'].includes(body.edition)) {
@@ -45,14 +47,17 @@ export async function POST(request: NextRequest) {
       if (body.force === true) {
         force = true
       }
+      if (body.draft === true) {
+        draft = true
+      }
     } catch {
       // No body or invalid JSON - use auto-detected edition
     }
 
-    console.log(`[Digest API] Starting ${edition} edition workflow${force ? ' (forced)' : ''}`)
+    console.log(`[Digest API] Starting ${edition} edition workflow${force ? ' (forced)' : ''}${draft ? ' (draft)' : ''}`)
 
     // Start the durable workflow
-    const run = await start(digestWorkflow, [{ edition, force }])
+    const run = await start(digestWorkflow, [{ edition, force, draft }])
 
     console.log(`[Digest API] Workflow started with run ID: ${run.runId}`)
 
@@ -280,6 +285,67 @@ export async function PATCH(request: NextRequest) {
     console.error('[Digest API] Error setting active digest:', error)
     return NextResponse.json(
       { error: 'Failed to set active digest' },
+      { status: 500 }
+    )
+  }
+}
+
+/**
+ * DELETE /api/user/digest
+ * Delete/reject a draft digest (admin only)
+ * Only allows deleting inactive digests by default
+ */
+export async function DELETE(request: NextRequest) {
+  if (!isDatabaseConfigured()) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 })
+  }
+
+  try {
+    // Auth check - require admin
+    const user = await getCurrentUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Check for admin role
+    const userRole = (user as { role?: string }).role
+    if (userRole !== 'admin') {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const digestId = searchParams.get('id')
+
+    if (!digestId) {
+      return NextResponse.json({ error: 'id query parameter required' }, { status: 400 })
+    }
+
+    // First check if digest exists and is a draft (inactive)
+    const digest = await getDigestById(digestId)
+    if (!digest) {
+      return NextResponse.json({ error: 'Digest not found' }, { status: 404 })
+    }
+
+    if (digest.isActive) {
+      return NextResponse.json(
+        { error: 'Cannot delete active digest. Set another version as active first.' },
+        { status: 400 }
+      )
+    }
+
+    const success = await deleteDigest(digestId)
+    if (!success) {
+      return NextResponse.json({ error: 'Failed to delete digest' }, { status: 500 })
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Draft digest rejected and deleted'
+    })
+  } catch (error) {
+    console.error('[Digest API] Error deleting digest:', error)
+    return NextResponse.json(
+      { error: 'Failed to delete digest' },
       { status: 500 }
     )
   }

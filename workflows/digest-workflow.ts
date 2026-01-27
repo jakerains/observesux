@@ -22,6 +22,7 @@ import { getCurrentEdition, type DigestEdition, type DigestData } from '@/lib/di
 export interface DigestWorkflowInput {
   edition?: DigestEdition
   force?: boolean // Skip "already exists" check and regenerate
+  draft?: boolean // Save as inactive draft for review before publishing
 }
 
 export interface DigestWorkflowOutput {
@@ -57,7 +58,7 @@ async function generateDigestContent(
     model: openrouter('anthropic/claude-opus-4.5'),
     system: systemPrompt,
     prompt: userPrompt,
-    maxOutputTokens: 2000,
+    maxOutputTokens: 4000,
   })
 
   const aiDuration = Date.now() - aiStartTime
@@ -97,6 +98,7 @@ async function saveDigestStep(params: {
   content: string
   dataSnapshot: DigestData
   generationTimeMs: number
+  draft?: boolean
 }): Promise<{ id: string } | null> {
   "use step"
 
@@ -105,7 +107,8 @@ async function saveDigestStep(params: {
     summary: params.summary,
     content: params.content,
     dataSnapshot: params.dataSnapshot,
-    generationTimeMs: params.generationTimeMs
+    generationTimeMs: params.generationTimeMs,
+    draft: params.draft
   })
 
   if (!digest) {
@@ -157,7 +160,8 @@ export async function digestWorkflow(
 
   const edition = input?.edition ?? getCurrentEdition()
   const force = input?.force ?? false
-  console.log(`[Digest Workflow] Starting ${edition} edition generation${force ? ' (forced)' : ''}`)
+  const draft = input?.draft ?? false
+  console.log(`[Digest Workflow] Starting ${edition} edition generation${force ? ' (forced)' : ''}${draft ? ' (draft mode)' : ''}`)
 
   // Check database configuration
   if (!isDatabaseConfigured()) {
@@ -214,13 +218,14 @@ export async function digestWorkflow(
 
     const totalDuration = Date.now() - startTime
 
-    // Step 3: Save to database
+    // Step 3: Save to database (as draft if requested)
     const savedDigest = await saveDigestStep({
       edition,
       summary,
       content,
       dataSnapshot: digestData,
-      generationTimeMs: totalDuration
+      generationTimeMs: totalDuration,
+      draft
     })
 
     if (!savedDigest) {
