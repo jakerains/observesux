@@ -25,6 +25,11 @@ const EVENT_SOURCES: EventSource[] = [
     url: 'https://www.hardrockcasinosiouxcity.com/events-list/',
     parser: parseHardRockEvents,
   },
+  {
+    name: 'Tyson Events Center',
+    url: 'https://www.tysoncenter.com/events',
+    parser: parseTysonCenterEvents,
+  },
 ]
 
 const FIRECRAWL_API_KEY = process.env.FIRECRAWL_API_KEY
@@ -405,4 +410,91 @@ function formatEventTitle(title: string): string {
       .replace(/^./, c => c.toUpperCase())
   }
   return title
+}
+
+/**
+ * Parser for Tyson Events Center.
+ * Format (from Firecrawl markdown):
+ *   [![More Info for EVENT](img)](url)
+ *   Feb  6, 2026
+ *   Feb  6, 2026
+ *   ### [Event Title](url)
+ *   #### Optional Subtitle
+ */
+function parseTysonCenterEvents(markdown: string, sourceName: string): CommunityEvent[] {
+  const events: CommunityEvent[] = []
+  const lines = markdown.split('\n')
+
+  // Pattern for H3 event title: ### [Event Name](url)
+  const titlePattern = /^###\s+\[([^\]]+)\]\(([^)]+)\)/
+  // Pattern for date: "Feb  6, 2026" or "Feb 20 \- 21, 2026" (escaped hyphen for ranges)
+  const datePattern = /^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{1,2})(?:\s*\\?-\s*(\d{1,2}))?,?\s*\d{4}$/i
+  // Pattern for H4 subtitle: #### Subtitle text
+  const subtitlePattern = /^####\s+(.+)$/
+
+  let i = 0
+  while (i < lines.length) {
+    const line = lines[i].trim()
+
+    // Look for H3 event title
+    const titleMatch = line.match(titlePattern)
+    if (titleMatch) {
+      const title = titleMatch[1].trim()
+      const url = titleMatch[2]
+
+      // Skip navigation links
+      if (title.toLowerCase() === 'more info' ||
+          title.toLowerCase() === 'buy tickets' ||
+          title.length < 3) {
+        i++
+        continue
+      }
+
+      // Look backwards for the date (usually 2-3 lines before the title)
+      let date: string | undefined
+      for (let j = i - 1; j >= Math.max(0, i - 5); j--) {
+        const prevLine = lines[j].trim()
+        const dateMatch = prevLine.match(datePattern)
+        if (dateMatch) {
+          const month = dateMatch[1].charAt(0).toUpperCase() + dateMatch[1].slice(1).toLowerCase()
+          const day = dateMatch[2]
+          const endDay = dateMatch[3]
+          date = endDay ? `${month} ${day} - ${endDay}` : `${month} ${day}`
+          break
+        }
+      }
+
+      // Look for optional subtitle (H4) after the title
+      let subtitle: string | undefined
+      if (i + 1 < lines.length) {
+        const nextLine = lines[i + 1].trim()
+        const subtitleMatch = nextLine.match(subtitlePattern)
+        if (subtitleMatch) {
+          subtitle = subtitleMatch[1].trim()
+        }
+      }
+
+      if (title && date) {
+        events.push({
+          title: subtitle ? `${title} - ${subtitle}` : title,
+          date,
+          url: url.startsWith('http') ? url : `https://www.tysoncenter.com${url}`,
+          source: sourceName,
+        })
+      }
+    }
+    i++
+  }
+
+  // Deduplicate by URL (page has duplicate entries in list/calendar views)
+  const seen = new Set<string>()
+  return events.filter(event => {
+    if (event.url && seen.has(event.url)) {
+      return false
+    }
+    if (event.url) {
+      seen.add(event.url)
+    }
+    return true
+  })
 }

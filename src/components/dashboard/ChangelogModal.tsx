@@ -16,6 +16,15 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.7.3',
+    date: '2026-01-27',
+    added: [
+      'Tyson Events Center as new event source (concerts, Musketeers, rodeos)',
+    ],
+    changed: [],
+    fixed: [],
+  },
+  {
     version: '0.7.2',
     date: '2026-01-27',
     added: [
