@@ -160,16 +160,20 @@ async function fetchIowa511Events(): Promise<TrafficEvent[]> {
     const data = await response.json()
     const events: TrafficEvent[] = []
 
-    // Iowa 511 data format (as of 2026):
-    // Index 8: POINT geometry string like "POINT (-96.375895 42.489945)"
+    // Iowa 511 data format (data.iowa.gov rows.json):
+    // Index 8:  the_geom - POINT geometry string like "POINT (-96.375895 42.489945)"
+    // Index 12: CARS ID - deduplication key (same event for both directions)
     // Index 17: Priority (1-5, lower = more severe)
     // Index 18: Route (e.g., "IA 12", "I-29")
-    // Index 26: Event type (e.g., "restriction", "roadwork", "incident")
-    // Index 27: Short headline
-    // Index 28: Headline
-    // Index 30: Description
-    // Index 31: Full description
-    // Index 35: 511 URL
+    // Index 26: CARS Headline (e.g., "US 20: Road Construction")
+    // Index 27: Phrase (short type label, e.g., "Road Construction")
+    // Index 28: Cause (e.g., "due to road construction.")
+    // Index 30: Message (short description)
+    // Index 31: Message1 (extended description)
+    // Index 32: Description (full description with contact info)
+    // Index 33: Description1 (extended full description)
+    // Index 34: Link Text - 511 event URL (e.g., "https://511ia.org/event/...")
+    // Index 35: Date Record Edited - Unix timestamp (NOT a URL)
 
     if (data.data && Array.isArray(data.data)) {
       // Track seen CARS IDs to deduplicate (same event appears for both directions)
@@ -197,25 +201,64 @@ async function fetchIowa511Events(): Promise<TrafficEvent[]> {
               lat >= SIOUX_CITY_BOUNDS.minLat && lat <= SIOUX_CITY_BOUNDS.maxLat &&
               lon >= SIOUX_CITY_BOUNDS.minLon && lon <= SIOUX_CITY_BOUNDS.maxLon) {
 
+            // Filter out expired events using Event Expire Date (row[13], format YYYYMMDD)
+            const expireDate = row[13] || ''
+            if (expireDate) {
+              const expYear = parseInt(expireDate.slice(0, 4))
+              const expMonth = parseInt(expireDate.slice(4, 6)) - 1
+              const expDay = parseInt(expireDate.slice(6, 8))
+              if (!isNaN(expYear) && new Date(expYear, expMonth, expDay) < new Date()) {
+                continue // Event has expired
+              }
+            }
+
             const priority = parseInt(row[17]) || 3
-            const eventType = row[26] || ''
-            const headline = row[28] || row[27] || 'Traffic Event'
+            const phrase = row[27] || ''
+            const headline = row[26] || phrase || 'Traffic Event'
             const description = row[31] || row[30] || ''
             const roadway = row[18] || 'Unknown'
-            const url = row[35] || ''
+            const url = row[34] || '' // Link Text field (511 event URL)
+
+            // Parse issue date for startTime (row[15] format YYYYMMDD, row[16] format HHMMSS)
+            let startTime = new Date()
+            const issueDate = row[15] || ''
+            const issueTime = row[16] || ''
+            if (issueDate) {
+              const y = parseInt(issueDate.slice(0, 4))
+              const m = parseInt(issueDate.slice(4, 6)) - 1
+              const d = parseInt(issueDate.slice(6, 8))
+              const hh = issueTime ? parseInt(issueTime.slice(0, 2)) : 0
+              const mm = issueTime ? parseInt(issueTime.slice(2, 4)) : 0
+              const parsed = new Date(y, m, d, hh, mm)
+              if (!isNaN(parsed.getTime())) startTime = parsed
+            }
+
+            // Parse end time from expire date
+            let endTime: Date | undefined
+            if (expireDate) {
+              const y = parseInt(expireDate.slice(0, 4))
+              const m = parseInt(expireDate.slice(4, 6)) - 1
+              const d = parseInt(expireDate.slice(6, 8))
+              const expTime = row[14] || ''
+              const hh = expTime ? parseInt(expTime.slice(0, 2)) : 23
+              const mm = expTime ? parseInt(expTime.slice(2, 4)) : 59
+              const parsed = new Date(y, m, d, hh, mm)
+              if (!isNaN(parsed.getTime())) endTime = parsed
+            }
 
             events.push({
               id: `ia-${row[0] || `${Date.now()}-${Math.random()}`}`,
-              type: mapEventType(eventType),
+              type: mapEventType(phrase || row[26] || ''),
               severity: mapPriority(priority),
               headline,
-              description: description + (url ? ` More info: ${url}` : ''),
+              description,
               roadway,
               latitude: lat,
               longitude: lon,
-              startTime: new Date(),
-              endTime: undefined,
-              lastUpdated: new Date()
+              startTime,
+              endTime,
+              lastUpdated: new Date(),
+              url: url || undefined,
             })
           }
         } catch {

@@ -1,24 +1,31 @@
 'use client'
 
+import { useState } from 'react'
 import { DashboardCard } from './DashboardCard'
 import { RefreshAction } from './RefreshAction'
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { useTrafficEvents } from '@/lib/hooks/useDataFetching'
-import { AlertTriangle, Construction, Car, Cone, CheckCircle, MapPin } from 'lucide-react'
-import { formatDistanceToNow } from 'date-fns'
+import { AlertTriangle, Construction, Car, Cone, CheckCircle, MapPin, Clock, Navigation, ExternalLink } from 'lucide-react'
+import { formatDistanceToNow, format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import type { TrafficEvent } from '@/types'
 import { getDataFreshness } from '@/lib/utils/dataFreshness'
 import { useMapFocus } from '@/lib/contexts/MapFocusContext'
 
-function getEventIcon(type: TrafficEvent['type']) {
+function getEventIcon(type: TrafficEvent['type'], className = "h-4 w-4") {
   switch (type) {
-    case 'incident': return <AlertTriangle className="h-4 w-4" />
-    case 'construction': return <Construction className="h-4 w-4" />
-    case 'closure': return <Cone className="h-4 w-4" />
-    default: return <Car className="h-4 w-4" />
+    case 'incident': return <AlertTriangle className={className} />
+    case 'construction': return <Construction className={className} />
+    case 'closure': return <Cone className={className} />
+    default: return <Car className={className} />
   }
 }
 
@@ -37,6 +44,16 @@ function getSeverityBgColor(severity: TrafficEvent['severity']) {
     case 'major': return 'bg-orange-500/10 border-orange-500/20'
     case 'moderate': return 'bg-yellow-500/10 border-yellow-500/20'
     default: return 'bg-blue-500/10 border-blue-500/20'
+  }
+}
+
+function getEventTypeLabel(type: TrafficEvent['type']) {
+  switch (type) {
+    case 'incident': return 'Incident'
+    case 'construction': return 'Construction'
+    case 'closure': return 'Road Closure'
+    case 'road_condition': return 'Road Condition'
+    default: return type
   }
 }
 
@@ -90,10 +107,119 @@ function EventRow({ event, onClick }: EventRowProps) {
   )
 }
 
+interface EventDetailModalProps {
+  event: TrafficEvent | null
+  open: boolean
+  onClose: () => void
+  onFocusMap: (event: TrafficEvent) => void
+}
+
+function EventDetailModal({ event, open, onClose, onFocusMap }: EventDetailModalProps) {
+  if (!event) return null
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <div className="flex items-start gap-3">
+            <div className={cn(
+              "p-2 rounded-lg shrink-0",
+              getSeverityBgColor(event.severity)
+            )}>
+              {getEventIcon(event.type, "h-5 w-5")}
+            </div>
+            <div className="min-w-0">
+              <DialogTitle className="text-base leading-snug">
+                {event.headline}
+              </DialogTitle>
+              <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                <Badge variant={getSeverityColor(event.severity) as "default" | "secondary" | "destructive" | "outline"}>
+                  {event.severity}
+                </Badge>
+                <Badge variant="outline">{getEventTypeLabel(event.type)}</Badge>
+              </div>
+            </div>
+          </div>
+        </DialogHeader>
+
+        <div className="space-y-4 mt-2">
+          {/* Location */}
+          <div className="flex items-start gap-2 text-sm">
+            <MapPin className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" />
+            <div>
+              <span className="font-medium">{event.roadway}</span>
+              {event.direction && (
+                <span className="text-muted-foreground"> ({event.direction})</span>
+              )}
+            </div>
+          </div>
+
+          {/* Times */}
+          <div className="flex items-start gap-2 text-sm">
+            <Clock className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" />
+            <div className="space-y-1">
+              <div>
+                <span className="text-muted-foreground">Started: </span>
+                <span>{format(new Date(event.startTime), 'MMM d, yyyy h:mm a')}</span>
+                <span className="text-muted-foreground"> ({formatDistanceToNow(new Date(event.startTime), { addSuffix: true })})</span>
+              </div>
+              {event.endTime && (
+                <div>
+                  <span className="text-muted-foreground">Expected end: </span>
+                  <span>{format(new Date(event.endTime), 'MMM d, yyyy h:mm a')}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Full Description */}
+          {event.description && (
+            <div className="rounded-lg bg-muted/50 p-3">
+              <p className="text-sm leading-relaxed">{event.description}</p>
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                onFocusMap(event)
+                onClose()
+              }}
+              className={cn(
+                "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                "bg-primary text-primary-foreground hover:bg-primary/90"
+              )}
+            >
+              <Navigation className="h-4 w-4" />
+              Focus on Map
+            </button>
+            {event.url && (
+              <a
+                href={event.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={cn(
+                  "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                  "border border-input bg-background hover:bg-accent hover:text-accent-foreground"
+                )}
+              >
+                <ExternalLink className="h-4 w-4" />
+                View on 511
+              </a>
+            )}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 export function TrafficEventsWidget() {
   const refreshInterval = 300000
   const { data: eventsData, error, isLoading, isValidating, mutate: refreshEvents } = useTrafficEvents(refreshInterval)
   const { focusOnLocation } = useMapFocus()
+  const [selectedEvent, setSelectedEvent] = useState<TrafficEvent | null>(null)
 
   const events = eventsData?.data || []
   const lastUpdated = eventsData?.timestamp ? new Date(eventsData.timestamp) : undefined
@@ -114,6 +240,15 @@ export function TrafficEventsWidget() {
   const incidents = events.filter(e => e.type === 'incident').length
   const construction = events.filter(e => e.type === 'construction').length
   const closures = events.filter(e => e.type === 'closure').length
+
+  const handleFocusMap = (event: TrafficEvent) => {
+    focusOnLocation({
+      lat: event.latitude,
+      lon: event.longitude,
+      label: event.headline,
+      zoom: 14
+    })
+  }
 
   if (isLoading) {
     return (
@@ -180,12 +315,7 @@ export function TrafficEventsWidget() {
                 <EventRow
                   key={event.id}
                   event={event}
-                  onClick={() => focusOnLocation({
-                    lat: event.latitude,
-                    lon: event.longitude,
-                    label: event.headline,
-                    zoom: 14
-                  })}
+                  onClick={() => setSelectedEvent(event)}
                 />
               ))}
             </div>
@@ -196,8 +326,15 @@ export function TrafficEventsWidget() {
             </div>
           )}
         </ScrollArea>
-
       </div>
+
+      {/* Event Detail Modal */}
+      <EventDetailModal
+        event={selectedEvent}
+        open={selectedEvent !== null}
+        onClose={() => setSelectedEvent(null)}
+        onFocusMap={handleFocusMap}
+      />
     </DashboardCard>
   )
 }

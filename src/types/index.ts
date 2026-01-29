@@ -40,6 +40,7 @@ export interface TrafficEvent {
   startTime: Date
   endTime?: Date
   lastUpdated: Date
+  url?: string // Link to 511 event details page
 }
 
 // ============================================
