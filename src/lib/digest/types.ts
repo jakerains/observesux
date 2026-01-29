@@ -133,6 +133,7 @@ export interface SchoolUpdate {
   source: string
   isClosing?: boolean // Detected as a closing/delay announcement
   isDelay?: boolean
+  hoursAgo?: number // How many hours ago this was posted
 }
 
 /**

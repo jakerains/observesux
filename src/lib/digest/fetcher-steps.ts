@@ -575,6 +575,7 @@ export async function fetchSchoolUpdatesStep(): Promise<SchoolUpdate[]> {
         source: 'Sioux City Schools (Official)',
         isClosing,
         isDelay,
+        hoursAgo: Math.round(hoursAgo),
       })
     }
 

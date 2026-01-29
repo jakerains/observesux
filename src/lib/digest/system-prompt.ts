@@ -80,6 +80,7 @@ ${edition === 'morning' ? `### ⚠️ School & Community Alerts
 Only include this section if there are CONFIRMED school closings or delays in the provided data.
 Do NOT assume or speculate about closings based on weather conditions alone.
 If there are no school announcements, OMIT THIS SECTION ENTIRELY - do not mention schools at all.
+CRITICAL: School data includes timestamps showing how old each post/article is. Any school post or article older than 24 hours is STALE and must be completely ignored — do not reference it, summarize it, or mention that the school website has posted anything. Treat stale entries as if they do not exist.
 
 ` : ''}### Right Now
 Current weather conditions and what it feels like outside. Include AQI only if Moderate or worse. Include river levels only if above normal.
@@ -115,7 +116,7 @@ Top community events and notable news stories. Prioritize:
   - USGS Water Data: https://waterdata.usgs.gov
 - End with a brief, friendly sign-off (${ctx.signOffStyle})
 - Do NOT include fake or placeholder data - only use what's provided
-- IMPORTANT: Do NOT mention schools AT ALL unless there is a CONFIRMED closing or delay in the data. If no school announcements exist, simply omit any school-related content entirely.`
+- IMPORTANT: Do NOT mention schools AT ALL unless there is a CONFIRMED closing or delay in the data that is less than 24 hours old. If no fresh school announcements exist, simply omit any school-related content entirely. A post from days ago is not news — ignore it completely.`
 }
 
 /**
@@ -211,9 +212,11 @@ export function buildDigestPrompt(
   if (data.schools && data.schools.length > 0) {
     prompt += `\n### 🏫 SCHOOL UPDATES (From Live Search)\n`
     prompt += `Note: Only include these if they explicitly confirm a closing or delay. Do not speculate.\n`
+    prompt += `IMPORTANT: Each entry includes how many hours ago it was posted. IGNORE any entry older than 24 hours — it is stale and no longer relevant.\n`
     for (const update of data.schools) {
       const type = update.isClosing ? '[CLOSING]' : update.isDelay ? '[DELAY]' : '[UPDATE]'
-      prompt += `- ${type} ${update.title}`
+      const age = update.hoursAgo != null ? ` (Posted ${update.hoursAgo}h ago)` : ''
+      prompt += `- ${type} ${update.title}${age}`
       if (update.snippet) prompt += ` - ${update.snippet.slice(0, 150)}`
       if (update.url) prompt += ` [URL: ${update.url}]`
       prompt += ` (Source: ${update.source})\n`
@@ -232,10 +235,12 @@ export function buildDigestPrompt(
   // Highlight school-related news separately if found (in addition to Firecrawl results)
   if (schoolRelatedNews.length > 0) {
     prompt += `\n### ⚠️ SCHOOL-RELATED NEWS (From RSS Feeds)\n`
+    prompt += `IMPORTANT: Each entry includes its publish date. IGNORE any article older than 24 hours — it is stale and not relevant to today's digest.\n`
     for (const article of schoolRelatedNews) {
       const breaking = article.isBreaking ? '[BREAKING] ' : ''
       const url = article.link ? ` [URL: ${article.link}]` : ''
-      prompt += `- ${breaking}${article.title} (${article.source})${url}\n`
+      const pubDate = article.pubDate ? ` (Published: ${new Date(article.pubDate).toLocaleString('en-US', { timeZone: 'America/Chicago', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })})` : ''
+      prompt += `- ${breaking}${article.title}${pubDate} (${article.source})${url}\n`
     }
   }
 

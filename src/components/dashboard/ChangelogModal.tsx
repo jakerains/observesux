@@ -16,6 +16,16 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.7.5',
+    date: '2026-01-29',
+    added: [],
+    changed: [],
+    fixed: [
+      'Digest AI no longer references stale school alerts (older than 24h ignored)',
+      'School-related RSS news now includes publish dates for freshness checks',
+    ],
+  },
+  {
     version: '0.7.4',
     date: '2026-01-27',
     added: [],

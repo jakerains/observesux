@@ -5,6 +5,12 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.5] - 2026-01-29
+
+### Fixed
+- Digest AI no longer references stale school alerts — posts older than 24 hours are tagged with age metadata and the AI is instructed to ignore them
+- School-related RSS news now includes publish dates so the AI can assess freshness
+
 ## [0.7.4] - 2026-01-27
 
 ### Fixed
