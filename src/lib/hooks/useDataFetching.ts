@@ -19,6 +19,7 @@ import type {
   Aircraft,
   ApiResponse,
   GasPriceData,
+  CommunityEventsData,
 } from '@/types'
 
 // Generic fetcher with error handling
@@ -339,6 +340,21 @@ export function useGasPrices(refreshInterval = 3600000) {
   // Default: refresh every hour (data is updated daily)
   return useSWR<ApiResponse<GasPriceData>>(
     '/api/gas-prices',
+    fetcher,
+    {
+      refreshInterval,
+      dedupingInterval: 300000, // 5 minutes
+      revalidateOnFocus: false,
+    }
+  )
+}
+
+// ============================================
+// Community Events
+// ============================================
+export function useEvents(refreshInterval = 1800000) {
+  return useSWR<ApiResponse<CommunityEventsData>>(
+    '/api/events',
     fetcher,
     {
       refreshInterval,

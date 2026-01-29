@@ -19,7 +19,7 @@ export async function getCachedEvents(source?: string): Promise<CommunityEvent[]
     let events
     if (source) {
       events = await sql`
-        SELECT title, date, time, location, url, source
+        SELECT title, date, time, location, description, url, source
         FROM community_events
         WHERE source = ${source}
           AND expires_at > NOW()
@@ -27,7 +27,7 @@ export async function getCachedEvents(source?: string): Promise<CommunityEvent[]
       ` as CommunityEvent[]
     } else {
       events = await sql`
-        SELECT title, date, time, location, url, source
+        SELECT title, date, time, location, description, url, source
         FROM community_events
         WHERE expires_at > NOW()
         ORDER BY date ASC
@@ -92,8 +92,8 @@ export async function cacheEvents(events: CommunityEvent[], source: string): Pro
     // Insert new events
     for (const event of events) {
       await sql`
-        INSERT INTO community_events (title, date, time, location, url, source)
-        VALUES (${event.title}, ${event.date}, ${event.time || null}, ${event.location || null}, ${event.url || null}, ${source})
+        INSERT INTO community_events (title, date, time, location, description, url, source)
+        VALUES (${event.title}, ${event.date}, ${event.time || null}, ${event.location || null}, ${event.description || null}, ${event.url || null}, ${source})
       `
     }
 

@@ -16,6 +16,21 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.8.0',
+    date: '2026-01-29',
+    added: [
+      'Community Events page (/events) with search, filters, and calendar view',
+      'Event submissions with admin approval workflow',
+      'Events admin panel tab with stats and review actions',
+      'Events dashboard widget showing upcoming events',
+      'Event descriptions from Hard Rock and Tyson Center scrapers',
+    ],
+    changed: [],
+    fixed: [
+      'Hydration mismatch on events page from Radix UI ID generation',
+    ],
+  },
+  {
     version: '0.7.5',
     date: '2026-01-29',
     added: [],

@@ -320,9 +320,20 @@ function parseHardRockEvents(markdown: string, sourceName: string): CommunityEve
 
   // Pattern for event title: [**EVENT NAME**](url) - bold text link
   const titlePattern = /^\[\*\*(.+?)\*\*\]\(([^)]+)\)$/
+  // Pattern for image with alt text: [![Alt Text](imgUrl)](eventUrl)
+  const imageAltPattern = /^\[!\[([^\]]*)\]\([^)]+\)\]\(([^)]+)\)$/
   // Pattern for date/time: "JANUARY 24 | 8PM" or "MARCH 20 | 8:30PM" or "JANUARY 31 \| 6PM" (escaped pipe)
   // Also handle dates without time like "MARCH 14"
   const dateTimePattern = /^([A-Z]+)\s+(\d{1,2})(?:\s*\\?\|\s*(\d{1,2}(?::\d{2})?(?:AM|PM)?))?/i
+
+  // First pass: collect image alt text keyed by URL for description extraction
+  const imageAlts = new Map<string, string>()
+  for (const line of lines) {
+    const altMatch = line.trim().match(imageAltPattern)
+    if (altMatch && altMatch[1] && altMatch[1].length > 3) {
+      imageAlts.set(altMatch[2], altMatch[1])
+    }
+  }
 
   let i = 0
   while (i < lines.length) {
@@ -362,12 +373,25 @@ function parseHardRockEvents(markdown: string, sourceName: string): CommunityEve
         }
       }
 
+      // Extract description from image alt text if it differs from the title
+      let description: string | undefined
+      const altText = imageAlts.get(url)
+      if (altText) {
+        const normalizedAlt = altText.toLowerCase().replace(/[^a-z0-9]/g, '')
+        const normalizedTitle = title.toLowerCase().replace(/[^a-z0-9]/g, '')
+        // Only use alt text as description if it adds info beyond the title
+        if (normalizedAlt !== normalizedTitle && !normalizedTitle.includes(normalizedAlt)) {
+          description = altText
+        }
+      }
+
       if (title && date) {
         events.push({
           title: formatEventTitle(title),
           date,
           time,
           url,
+          description,
           source: sourceName,
         })
       }
@@ -476,8 +500,9 @@ function parseTysonCenterEvents(markdown: string, sourceName: string): Community
 
       if (title && date) {
         events.push({
-          title: subtitle ? `${title} - ${subtitle}` : title,
+          title,
           date,
+          description: subtitle || undefined,
           url: url.startsWith('http') ? url : `https://www.tysoncenter.com${url}`,
           source: sourceName,
         })

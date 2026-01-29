@@ -695,6 +695,56 @@ export interface CommunityEventsData {
 }
 
 // ============================================
+// User-Submitted Events
+// ============================================
+
+export type EventCategory = 'general' | 'music' | 'sports' | 'community' | 'food' | 'arts' | 'family' | 'education' | 'charity'
+export type EventSubmissionStatus = 'pending' | 'approved' | 'rejected'
+
+export interface UserEvent {
+  id: string
+  title: string
+  date: string
+  startTime?: string | null
+  endTime?: string | null
+  location?: string | null
+  description?: string | null
+  url?: string | null
+  category: EventCategory
+  status: EventSubmissionStatus
+  submittedBy: string
+  submittedByEmail?: string | null
+  adminNotes?: string | null
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface UserEventStats {
+  total: number
+  pending: number
+  approved: number
+  rejected: number
+}
+
+export const EVENT_CATEGORIES: { value: EventCategory; label: string }[] = [
+  { value: 'general', label: 'General' },
+  { value: 'music', label: 'Music' },
+  { value: 'sports', label: 'Sports' },
+  { value: 'community', label: 'Community' },
+  { value: 'food', label: 'Food & Drink' },
+  { value: 'arts', label: 'Arts & Culture' },
+  { value: 'family', label: 'Family' },
+  { value: 'education', label: 'Education' },
+  { value: 'charity', label: 'Charity' },
+]
+
+export const EVENT_SUBMISSION_STATUSES: { value: EventSubmissionStatus; label: string; color: string }[] = [
+  { value: 'pending', label: 'Pending', color: 'bg-yellow-500' },
+  { value: 'approved', label: 'Approved', color: 'bg-green-500' },
+  { value: 'rejected', label: 'Rejected', color: 'bg-red-500' },
+]
+
+// ============================================
 // Suggestions/Feedback
 // ============================================
 

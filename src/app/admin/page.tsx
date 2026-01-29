@@ -1846,8 +1846,290 @@ function SuggestionsPanel() {
   )
 }
 
+// Events Panel Component
+function EventsPanel() {
+  const [events, setEvents] = useState<Array<{
+    id: string
+    title: string
+    date: string
+    startTime?: string | null
+    endTime?: string | null
+    location?: string | null
+    description?: string | null
+    url?: string | null
+    category: string
+    status: string
+    submittedBy: string
+    submittedByEmail?: string | null
+    adminNotes?: string | null
+    createdAt: string
+    updatedAt: string
+  }>>([])
+  const [stats, setStats] = useState<{ total: number; pending: number; approved: number; rejected: number } | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [adminNotes, setAdminNotes] = useState<Record<string, string>>({})
+
+  const fetchEvents = useCallback(async () => {
+    setLoading(true)
+    try {
+      const url = statusFilter === 'all'
+        ? '/api/events/submissions?limit=100'
+        : `/api/events/submissions?status=${statusFilter}&limit=100`
+      const res = await fetch(url)
+      if (res.ok) {
+        const data = await res.json()
+        setEvents(data.events || [])
+        setStats(data.stats || null)
+      }
+    } catch (error) {
+      console.error('Failed to fetch event submissions:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [statusFilter])
+
+  useEffect(() => {
+    fetchEvents()
+  }, [fetchEvents])
+
+  const handleStatusChange = async (id: string, newStatus: string) => {
+    setActionLoading(id)
+    try {
+      const res = await fetch(`/api/events/submissions/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus, adminNotes: adminNotes[id] }),
+      })
+      if (res.ok) {
+        setEvents(prev => prev.map(e => e.id === id ? { ...e, status: newStatus } : e))
+        fetchEvents() // refresh stats
+      }
+    } catch (error) {
+      console.error('Failed to update event status:', error)
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    setActionLoading(id)
+    try {
+      const res = await fetch(`/api/events/submissions/${id}`, { method: 'DELETE' })
+      if (res.ok) {
+        setEvents(prev => prev.filter(e => e.id !== id))
+        fetchEvents() // refresh stats
+      }
+    } catch (error) {
+      console.error('Failed to delete event:', error)
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending': return <Badge className="bg-yellow-500 text-white">Pending</Badge>
+      case 'approved': return <Badge className="bg-green-500 text-white">Approved</Badge>
+      case 'rejected': return <Badge className="bg-red-500 text-white">Rejected</Badge>
+      default: return <Badge variant="secondary">{status}</Badge>
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Stats */}
+      {stats && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <Card>
+            <CardContent className="pt-4">
+              <div className="text-2xl font-bold">{stats.total}</div>
+              <p className="text-xs text-muted-foreground">Total</p>
+            </CardContent>
+          </Card>
+          <Card className={cn(statusFilter === 'pending' && 'ring-2 ring-primary')}>
+            <CardContent className="pt-4 cursor-pointer" onClick={() => setStatusFilter(statusFilter === 'pending' ? 'all' : 'pending')}>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                <div className="text-2xl font-bold">{stats.pending}</div>
+              </div>
+              <p className="text-xs text-muted-foreground">Pending</p>
+            </CardContent>
+          </Card>
+          <Card className={cn(statusFilter === 'approved' && 'ring-2 ring-primary')}>
+            <CardContent className="pt-4 cursor-pointer" onClick={() => setStatusFilter(statusFilter === 'approved' ? 'all' : 'approved')}>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-green-500" />
+                <div className="text-2xl font-bold">{stats.approved}</div>
+              </div>
+              <p className="text-xs text-muted-foreground">Approved</p>
+            </CardContent>
+          </Card>
+          <Card className={cn(statusFilter === 'rejected' && 'ring-2 ring-primary')}>
+            <CardContent className="pt-4 cursor-pointer" onClick={() => setStatusFilter(statusFilter === 'rejected' ? 'all' : 'rejected')}>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-red-500" />
+                <div className="text-2xl font-bold">{stats.rejected}</div>
+              </div>
+              <p className="text-xs text-muted-foreground">Rejected</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <h2 className="font-semibold">
+            {statusFilter === 'all' ? 'All Submissions' : `${statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)} Submissions`}
+          </h2>
+          <Badge variant="secondary">{events.length}</Badge>
+        </div>
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={fetchEvents}>
+          <RefreshCw className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {/* Submissions List */}
+      <div className="border rounded-lg overflow-hidden">
+        {loading ? (
+          <div className="p-4 space-y-3">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="space-y-2">
+                <Skeleton className="h-4 w-48" />
+                <Skeleton className="h-3 w-full" />
+              </div>
+            ))}
+          </div>
+        ) : events.length === 0 ? (
+          <div className="p-8 text-center text-muted-foreground">
+            <CalendarDays className="h-10 w-10 mx-auto mb-3 opacity-50" />
+            <p className="text-sm">No event submissions found</p>
+          </div>
+        ) : (
+          <div className="divide-y">
+            {events.map((event) => {
+              const isExpanded = expandedId === event.id
+              const isActioning = actionLoading === event.id
+
+              return (
+                <div key={event.id} className="bg-background">
+                  {/* Summary Row */}
+                  <div
+                    className="p-4 flex items-center gap-4 cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => setExpandedId(isExpanded ? null : event.id)}
+                  >
+                    <CalendarDays className="h-5 w-5 text-muted-foreground shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-medium truncate">{event.title}</span>
+                        <Badge variant="outline" className="shrink-0 text-xs">{event.category}</Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {event.date}
+                        {event.submittedByEmail && ` • ${event.submittedByEmail}`}
+                        {event.createdAt && ` • ${formatDistanceToNow(new Date(event.createdAt), { addSuffix: true })}`}
+                      </p>
+                    </div>
+                    {getStatusBadge(event.status)}
+                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                      {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </Button>
+                  </div>
+
+                  {/* Expanded Details */}
+                  {isExpanded && (
+                    <div className="px-4 pb-4 pt-0 pl-14">
+                      <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          {event.location && (
+                            <div><span className="text-muted-foreground">Location:</span> {event.location}</div>
+                          )}
+                          {event.startTime && (
+                            <div><span className="text-muted-foreground">Time:</span> {event.startTime}{event.endTime ? ` - ${event.endTime}` : ''}</div>
+                          )}
+                          {event.url && (
+                            <div>
+                              <span className="text-muted-foreground">URL:</span>{' '}
+                              <a href={event.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                                {event.url}
+                              </a>
+                            </div>
+                          )}
+                        </div>
+
+                        {event.description && (
+                          <p className="text-sm whitespace-pre-wrap">{event.description}</p>
+                        )}
+
+                        {/* Admin Notes Input */}
+                        <div className="space-y-2 pt-2 border-t">
+                          <label className="text-xs font-medium text-muted-foreground">Admin Notes</label>
+                          <Input
+                            value={adminNotes[event.id] ?? (event.adminNotes || '')}
+                            onChange={e => setAdminNotes(prev => ({ ...prev, [event.id]: e.target.value }))}
+                            placeholder="Optional notes..."
+                            className="h-8 text-sm"
+                          />
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-2 pt-2 border-t">
+                          {event.status !== 'approved' && (
+                            <Button
+                              size="sm"
+                              className="gap-1 bg-green-600 hover:bg-green-700"
+                              onClick={() => handleStatusChange(event.id, 'approved')}
+                              disabled={isActioning}
+                            >
+                              {isActioning ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle2 className="h-3 w-3" />}
+                              Approve
+                            </Button>
+                          )}
+                          {event.status !== 'rejected' && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="gap-1 border-red-500 text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+                              onClick={() => handleStatusChange(event.id, 'rejected')}
+                              disabled={isActioning}
+                            >
+                              {isActioning ? <Loader2 className="h-3 w-3 animate-spin" /> : <XCircle className="h-3 w-3" />}
+                              Reject
+                            </Button>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="gap-1 text-destructive hover:text-destructive ml-auto"
+                            onClick={() => handleDelete(event.id)}
+                            disabled={isActioning}
+                          >
+                            Delete
+                          </Button>
+                        </div>
+
+                        <div className="text-xs text-muted-foreground pt-1">
+                          <span className="font-mono">{event.id.slice(0, 8)}...</span>
+                          {' • Submitted by: '}{event.submittedByEmail || event.submittedBy}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // Valid admin tab values
-const ADMIN_TABS = ['chat-logs', 'users', 'knowledge-base', 'suggestions', 'digest', 'tools'] as const
+const ADMIN_TABS = ['chat-logs', 'users', 'knowledge-base', 'suggestions', 'events', 'digest', 'tools'] as const
 type AdminTab = typeof ADMIN_TABS[number]
 
 // Main Admin Page (wrapped with Suspense for useSearchParams)
@@ -1942,6 +2224,10 @@ function AdminPageContent() {
               <Lightbulb className="h-4 w-4" />
               Suggestions
             </TabsTrigger>
+            <TabsTrigger value="events" className="flex items-center gap-2">
+              <CalendarDays className="h-4 w-4" />
+              Events
+            </TabsTrigger>
             <TabsTrigger value="digest" className="flex items-center gap-2">
               <Newspaper className="h-4 w-4" />
               Digest
@@ -1966,6 +2252,10 @@ function AdminPageContent() {
 
           <TabsContent value="suggestions">
             <SuggestionsPanel />
+          </TabsContent>
+
+          <TabsContent value="events">
+            <EventsPanel />
           </TabsContent>
 
           <TabsContent value="digest">

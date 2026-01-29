@@ -19,6 +19,7 @@ import { EarthquakeWidget } from '@/components/dashboard/EarthquakeWidget'
 import { TrafficEventsWidget } from '@/components/dashboard/TrafficEventsWidget'
 import { NewsWidget } from '@/components/dashboard/NewsWidget'
 import { GasPricesWidget } from '@/components/dashboard/GasPricesWidget'
+import { EventsWidget } from '@/components/dashboard/EventsWidget'
 import { DigestWidget } from '@/components/dashboard/DigestWidget'
 import { StatusBar } from '@/components/dashboard/StatusBar'
 import { MobileNavigation } from '@/components/dashboard/MobileNavigation'
@@ -219,6 +220,11 @@ function DashboardContent() {
             {/* Gas Prices */}
             <Suspense fallback={<WidgetSkeleton />}>
               <GasPricesWidget />
+            </Suspense>
+
+            {/* Community Events */}
+            <Suspense fallback={<WidgetSkeleton />}>
+              <EventsWidget />
             </Suspense>
           </div>
         </section>

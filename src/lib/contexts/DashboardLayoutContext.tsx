@@ -29,6 +29,7 @@ export const DEFAULT_WIDGETS: WidgetConfig[] = [
   { id: 'scanner', name: 'Emergency Scanner', description: 'Police, Fire, EMS audio feeds', enabled: true, size: 'small' },
   { id: 'outages', name: 'Power Outages', description: 'MidAmerican & Woodbury REC status', enabled: true, size: 'small' },
   { id: 'flights', name: 'Airport Flights', description: 'SUX arrivals and departures', enabled: true, size: 'small' },
+  { id: 'community-events', name: 'Community Events', description: 'Upcoming local events from multiple sources', enabled: true, size: 'small' },
   { id: 'news', name: 'Local News', description: 'KTIV, Siouxland Proud, SC Journal', enabled: true, size: 'large' },
   { id: 'earthquakes', name: 'Seismic Activity', description: 'Recent earthquakes within 500km', enabled: true, size: 'small' },
 ]

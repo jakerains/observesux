@@ -5,6 +5,18 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-01-29
+
+### Added
+- **Community Events page** (`/events`): Full-page events view with search, source and date filters, list/calendar view toggle
+- **Event submissions**: Authenticated users can submit community events for admin review
+- **Events admin panel**: New "Events" tab in admin with approval/rejection workflow, stats, and admin notes
+- **Events dashboard widget**: Compact upcoming events list on the main dashboard with source-colored badges
+- **Event descriptions**: Hard Rock Casino and Tyson Events Center scrapers now extract description text (image alt text and subtitles)
+
+### Fixed
+- Hydration mismatch on events page caused by Radix UI ID generation (deferred rendering until after mount)
+
 ## [0.7.5] - 2026-01-29
 
 ### Fixed
