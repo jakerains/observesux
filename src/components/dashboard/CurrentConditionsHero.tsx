@@ -29,6 +29,20 @@ function getWeatherGradient(conditions: string, isDaytime: boolean): string {
   return 'gradient-clear-day'
 }
 
+function getWeatherEffects(conditions: string) {
+  const lowerConditions = conditions.toLowerCase()
+  if (lowerConditions.includes('thunder') || lowerConditions.includes('storm')) {
+    return { rain: true, snow: false, lightning: true }
+  }
+  if (lowerConditions.includes('rain') || lowerConditions.includes('drizzle') || lowerConditions.includes('shower')) {
+    return { rain: true, snow: false, lightning: false }
+  }
+  if (lowerConditions.includes('snow') || lowerConditions.includes('flurr') || lowerConditions.includes('sleet')) {
+    return { rain: false, snow: true, lightning: false }
+  }
+  return { rain: false, snow: false, lightning: false }
+}
+
 // Get time-of-day background image
 function getTimeOfDayImage(hour: number): string {
   if (hour >= 5 && hour < 11) {
@@ -124,6 +138,8 @@ export function CurrentConditionsHero() {
   }
 
   const gradientClass = getWeatherGradient(weather.conditions, isDaytime)
+  const heroForecast = forecast[0]?.shortForecast || weather.conditions
+  const weatherEffects = getWeatherEffects(heroForecast)
   const textColorClass = gradientClass === 'gradient-snowy' && !document.documentElement.classList.contains('dark')
     ? 'text-slate-800'
     : 'text-white'
@@ -148,6 +164,17 @@ export function CurrentConditionsHero() {
         gradientClass,
         "opacity-75"
       )} />
+
+      {/* Weather animation layers */}
+      {weatherEffects.rain && (
+        <div className="weather-effect weather-effect-rain" />
+      )}
+      {weatherEffects.snow && (
+        <div className="weather-effect weather-effect-snow" />
+      )}
+      {weatherEffects.lightning && (
+        <div className="weather-effect weather-effect-lightning" />
+      )}
 
       {/* Dots pattern - on top of everything */}
       <div className="absolute inset-0 opacity-20" style={{
