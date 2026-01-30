@@ -58,6 +58,21 @@ function getForecastIcon(forecast: string, isDaytime: boolean) {
   return isDaytime ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />
 }
 
+function getWeatherAnimationType(conditions: string): 'snow' | 'rain' | 'storm' | 'clear' {
+  const lowerConditions = conditions.toLowerCase()
+
+  if (lowerConditions.includes('thunder') || lowerConditions.includes('storm')) {
+    return 'storm'
+  }
+  if (lowerConditions.includes('rain') || lowerConditions.includes('drizzle') || lowerConditions.includes('shower')) {
+    return 'rain'
+  }
+  if (lowerConditions.includes('snow') || lowerConditions.includes('flurr') || lowerConditions.includes('sleet')) {
+    return 'snow'
+  }
+  return 'clear'
+}
+
 function getAQIClass(aqi: number): string {
   if (aqi <= 50) return 'aqi-good'
   if (aqi <= 100) return 'aqi-moderate'
@@ -123,7 +138,9 @@ export function CurrentConditionsHero() {
     return null
   }
 
+  const forecastCondition = forecast[0]?.shortForecast || weather.conditions
   const gradientClass = getWeatherGradient(weather.conditions, isDaytime)
+  const weatherAnimation = getWeatherAnimationType(forecastCondition)
   const textColorClass = gradientClass === 'gradient-snowy' && !document.documentElement.classList.contains('dark')
     ? 'text-slate-800'
     : 'text-white'
@@ -150,10 +167,19 @@ export function CurrentConditionsHero() {
       )} />
 
       {/* Dots pattern - on top of everything */}
-      <div className="absolute inset-0 opacity-20" style={{
+      <div className="absolute inset-0 opacity-20 z-[4]" style={{
         backgroundImage: 'radial-gradient(circle at 50% 50%, white 1px, transparent 1px)',
         backgroundSize: '24px 24px'
       }} />
+
+      {/* Weather animation layer */}
+      {weatherAnimation !== 'clear' && (
+        <div className={cn('absolute inset-0 pointer-events-none z-[5]', {
+          'hero-weather-snow': weatherAnimation === 'snow',
+          'hero-weather-rain': weatherAnimation === 'rain',
+          'hero-weather-storm': weatherAnimation === 'storm'
+        })} />
+      )}
 
       <div className={cn("relative z-10 flex flex-col items-center text-center", textColorClass)}>
         {/* Location */}

@@ -334,6 +334,65 @@
 }
 
 /* ============================================
+   HERO WEATHER ANIMATIONS
+   ============================================ */
+@layer utilities {
+  .hero-weather-snow {
+    background-image:
+      radial-gradient(circle, oklch(1 0 0 / 80%) 0 1px, transparent 2px),
+      radial-gradient(circle, oklch(1 0 0 / 70%) 0 1px, transparent 2px),
+      radial-gradient(circle, oklch(1 0 0 / 60%) 0 1px, transparent 2px);
+    background-size: 14px 14px, 18px 18px, 22px 22px;
+    background-position: 0 0, 10px -10px, -10px 10px;
+    animation: hero-snowfall 14s linear infinite;
+    opacity: 0.8;
+  }
+
+  .hero-weather-rain {
+    background-image: linear-gradient(120deg,
+      oklch(0.9 0.02 220 / 50%) 0%,
+      oklch(0.9 0.02 220 / 50%) 10%,
+      transparent 10%,
+      transparent 100%);
+    background-size: 12px 28px;
+    animation: hero-rainfall 0.6s linear infinite;
+    opacity: 0.6;
+  }
+
+  .hero-weather-storm {
+    background-image:
+      linear-gradient(120deg,
+        oklch(0.9 0.02 220 / 60%) 0%,
+        oklch(0.9 0.02 220 / 60%) 12%,
+        transparent 12%,
+        transparent 100%),
+      radial-gradient(circle at 20% 20%, oklch(1 0.1 90 / 40%) 0 40%, transparent 60%),
+      radial-gradient(circle at 70% 30%, oklch(1 0.1 90 / 35%) 0 35%, transparent 60%);
+    background-size: 14px 30px, 100% 100%, 100% 100%;
+    animation: hero-rainfall 0.5s linear infinite, hero-lightning 6s ease-in-out infinite;
+    opacity: 0.7;
+  }
+
+  @keyframes hero-snowfall {
+    0% { transform: translateY(-20%); }
+    100% { transform: translateY(20%); }
+  }
+
+  @keyframes hero-rainfall {
+    0% { background-position: 0 -40px; }
+    100% { background-position: 0 40px; }
+  }
+
+  @keyframes hero-lightning {
+    0%, 90%, 100% { opacity: 0.6; }
+    92% { opacity: 0.9; }
+    94% { opacity: 0.4; }
+    96% { opacity: 0.85; }
+    98% { opacity: 0.5; }
+  }
+}
+
+/* ============================================
    ALERT STYLES - Midwest warm tones
    Barn red, warm amber, earthy
    ============================================ */
