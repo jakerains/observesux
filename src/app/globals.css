@@ -358,15 +358,6 @@
     transform: rotate(15deg) scale(1.2);
   }
 
-  .weather-effect-snow {
-    background-image:
-      radial-gradient(circle, rgba(255, 255, 255, 0.9) 0 1.5px, transparent 2px),
-      radial-gradient(circle, rgba(255, 255, 255, 0.6) 0 1px, transparent 2px);
-    background-size: 28px 28px, 42px 42px;
-    animation: snow-fall 12s linear infinite;
-    opacity: 0.35;
-  }
-
   .weather-effect-lightning {
     background: radial-gradient(circle at 70% 20%, rgba(255, 255, 255, 0.8), transparent 60%);
     animation: lightning-flash 6s ease-in-out infinite;
@@ -381,15 +372,6 @@
   }
   to {
     background-position: 0 80px;
-  }
-}
-
-@keyframes snow-fall {
-  from {
-    background-position: 0 -40px, 20px -60px;
-  }
-  to {
-    background-position: -20px 200px, 40px 180px;
   }
 }
 

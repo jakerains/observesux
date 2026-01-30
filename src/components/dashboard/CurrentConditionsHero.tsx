@@ -5,6 +5,7 @@ import { useWeather, useAirQuality, useRivers, useWeatherForecast } from '@/lib/
 import { Cloud, Droplets, Wind, Eye, Waves, ChevronDown, ChevronUp, Sun, Moon, CloudRain, Snowflake } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
+import { SnowfallBackground } from '@/components/ui/snow-flakes'
 import Image from 'next/image'
 import type { ForecastPeriod } from '@/types'
 
@@ -170,7 +171,19 @@ export function CurrentConditionsHero() {
         <div className="weather-effect weather-effect-rain" />
       )}
       {weatherEffects.snow && (
-        <div className="weather-effect weather-effect-snow" />
+        <div className="absolute inset-0 z-0">
+          <SnowfallBackground
+            count={70}
+            speed={0.2}
+            minSize={6}
+            maxSize={16}
+            minOpacity={0.15}
+            maxOpacity={0.5}
+            color="#ffffff"
+            wind
+            zIndex={0}
+          />
+        </div>
       )}
       {weatherEffects.lightning && (
         <div className="weather-effect weather-effect-lightning" />
