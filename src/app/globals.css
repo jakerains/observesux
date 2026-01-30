@@ -341,6 +341,7 @@
     position: absolute;
     inset: 0;
     pointer-events: none;
+    z-index: 0;
   }
 
   .weather-effect-rain {
@@ -353,7 +354,7 @@
     );
     background-size: 18px 70px;
     animation: rain-fall 0.6s linear infinite;
-    opacity: 0.35;
+    opacity: 0.2;
     transform: rotate(15deg) scale(1.2);
   }
 
@@ -363,13 +364,14 @@
       radial-gradient(circle, rgba(255, 255, 255, 0.6) 0 1px, transparent 2px);
     background-size: 28px 28px, 42px 42px;
     animation: snow-fall 12s linear infinite;
-    opacity: 0.6;
+    opacity: 0.35;
   }
 
   .weather-effect-lightning {
     background: radial-gradient(circle at 70% 20%, rgba(255, 255, 255, 0.8), transparent 60%);
     animation: lightning-flash 6s ease-in-out infinite;
     mix-blend-mode: screen;
+    opacity: 0.4;
   }
 }
 
