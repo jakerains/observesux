@@ -19,6 +19,7 @@ import {
   Newspaper,
   Navigation,
   Fuel,
+  CalendarDays,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ChangelogModal } from './ChangelogModal'
@@ -39,6 +40,7 @@ const STATUS_ITEMS = [
   { key: 'aviation', icon: Navigation, label: 'Aviation' },
   { key: 'aircraft', icon: PlaneTakeoff, label: 'Aircraft' },
   { key: 'gasPrices', icon: Fuel, label: 'Gas' },
+  { key: 'events', icon: CalendarDays, label: 'Events' },
 ] as const
 
 export function StatusBar() {
