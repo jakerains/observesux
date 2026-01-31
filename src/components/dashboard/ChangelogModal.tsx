@@ -16,6 +16,15 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.9.0',
+    date: '2026-01-30',
+    added: [
+      'Weather-aware hero animations for rain, snow, and lightning',
+    ],
+    changed: [],
+    fixed: [],
+  },
+  {
     version: '0.8.0',
     date: '2026-01-29',
     added: [

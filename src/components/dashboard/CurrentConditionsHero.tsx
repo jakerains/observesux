@@ -5,6 +5,8 @@ import { useWeather, useAirQuality, useRivers, useWeatherForecast } from '@/lib/
 import { Cloud, Droplets, Wind, Eye, Waves, ChevronDown, ChevronUp, Sun, Moon, CloudRain, Snowflake } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
+import { SnowfallBackground } from '@/components/ui/snow-flakes'
+import { WeatherEffect } from '@/components/ui/rain-and-lightening-hero-section'
 import Image from 'next/image'
 import type { ForecastPeriod } from '@/types'
 
@@ -27,6 +29,20 @@ function getWeatherGradient(conditions: string, isDaytime: boolean): string {
     return 'gradient-night'
   }
   return 'gradient-clear-day'
+}
+
+function getWeatherEffects(conditions: string) {
+  const lowerConditions = conditions.toLowerCase()
+  if (lowerConditions.includes('thunder') || lowerConditions.includes('storm')) {
+    return { rain: true, snow: false, lightning: true }
+  }
+  if (lowerConditions.includes('rain') || lowerConditions.includes('drizzle') || lowerConditions.includes('shower')) {
+    return { rain: true, snow: false, lightning: false }
+  }
+  if (lowerConditions.includes('snow') || lowerConditions.includes('flurr') || lowerConditions.includes('sleet')) {
+    return { rain: false, snow: true, lightning: false }
+  }
+  return { rain: false, snow: false, lightning: false }
 }
 
 // Get time-of-day background image
@@ -124,6 +140,8 @@ export function CurrentConditionsHero() {
   }
 
   const gradientClass = getWeatherGradient(weather.conditions, isDaytime)
+  const heroForecast = forecast[0]?.shortForecast || weather.conditions
+  const weatherEffects = getWeatherEffects(heroForecast)
   const textColorClass = gradientClass === 'gradient-snowy' && !document.documentElement.classList.contains('dark')
     ? 'text-slate-800'
     : 'text-white'
@@ -148,6 +166,40 @@ export function CurrentConditionsHero() {
         gradientClass,
         "opacity-75"
       )} />
+
+      {/* Weather animation layers */}
+      {(weatherEffects.rain || weatherEffects.lightning) && (
+        <div className="absolute inset-0 z-0">
+          <WeatherEffect
+            className="h-full w-full"
+            rainIntensity={weatherEffects.lightning ? 120 : 80}
+            rainSpeed={0.2}
+            rainAngle={12}
+            rainColor="rgba(255, 255, 255, 0.4)"
+            lightningEnabled={weatherEffects.lightning}
+            lightningFrequency={4}
+            lightningSpeed={0.8}
+            lightningIntensity={1.1}
+            lightningSize={1.4}
+            thunderEnabled={false}
+          />
+        </div>
+      )}
+      {weatherEffects.snow && (
+        <div className="absolute inset-0 z-0">
+          <SnowfallBackground
+            count={70}
+            speed={0.2}
+            minSize={6}
+            maxSize={16}
+            minOpacity={0.15}
+            maxOpacity={0.5}
+            color="#ffffff"
+            wind
+            zIndex={0}
+          />
+        </div>
+      )}
 
       {/* Dots pattern - on top of everything */}
       <div className="absolute inset-0 opacity-20" style={{
