@@ -6,6 +6,7 @@ import { Cloud, Droplets, Wind, Eye, Waves, ChevronDown, ChevronUp, Sun, Moon, C
 import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
 import { SnowfallBackground } from '@/components/ui/snow-flakes'
+import { WeatherEffect } from '@/components/ui/rain-and-lightening-hero-section'
 import Image from 'next/image'
 import type { ForecastPeriod } from '@/types'
 
@@ -167,8 +168,22 @@ export function CurrentConditionsHero() {
       )} />
 
       {/* Weather animation layers */}
-      {weatherEffects.rain && (
-        <div className="weather-effect weather-effect-rain" />
+      {(weatherEffects.rain || weatherEffects.lightning) && (
+        <div className="absolute inset-0 z-0">
+          <WeatherEffect
+            className="h-full w-full"
+            rainIntensity={weatherEffects.lightning ? 120 : 80}
+            rainSpeed={0.2}
+            rainAngle={12}
+            rainColor="rgba(255, 255, 255, 0.4)"
+            lightningEnabled={weatherEffects.lightning}
+            lightningFrequency={4}
+            lightningSpeed={0.8}
+            lightningIntensity={1.1}
+            lightningSize={1.4}
+            thunderEnabled={false}
+          />
+        </div>
       )}
       {weatherEffects.snow && (
         <div className="absolute inset-0 z-0">
@@ -184,9 +199,6 @@ export function CurrentConditionsHero() {
             zIndex={0}
           />
         </div>
-      )}
-      {weatherEffects.lightning && (
-        <div className="weather-effect weather-effect-lightning" />
       )}
 
       {/* Dots pattern - on top of everything */}
