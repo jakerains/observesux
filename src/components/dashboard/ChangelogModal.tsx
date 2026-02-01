@@ -16,6 +16,18 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.9.0',
+    date: '2026-02-01',
+    added: [
+      'City Council meeting transcript ingestion with AI recaps and vector search',
+      'searchCouncilMeetings chat tool with YouTube timestamp deep links',
+      'Council admin panel with stats, manual ingestion, and meeting recap viewer',
+      'Scheduled ingestion via Vercel Cron (Mon night + Tue morning)',
+    ],
+    changed: [],
+    fixed: [],
+  },
+  {
     version: '0.8.0',
     date: '2026-01-29',
     added: [

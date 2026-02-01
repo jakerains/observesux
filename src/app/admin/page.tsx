@@ -39,6 +39,7 @@ import {
   Moon,
   Sparkles,
   CalendarDays,
+  Landmark,
 } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
@@ -68,6 +69,7 @@ import {
 import { ChatMarkdown } from '@/components/dashboard/ChatMarkdown'
 import { RagAdmin } from '@/components/rag/RagAdmin'
 import { UsersPanel } from '@/components/admin/UsersPanel'
+import { CouncilIngestPanel } from '@/components/admin/CouncilIngestPanel'
 import {
   SUGGESTION_CATEGORIES,
   SUGGESTION_STATUSES,
@@ -2129,7 +2131,7 @@ function EventsPanel() {
 }
 
 // Valid admin tab values
-const ADMIN_TABS = ['chat-logs', 'users', 'knowledge-base', 'suggestions', 'events', 'digest', 'tools'] as const
+const ADMIN_TABS = ['chat-logs', 'users', 'knowledge-base', 'suggestions', 'events', 'digest', 'council', 'tools'] as const
 type AdminTab = typeof ADMIN_TABS[number]
 
 // Main Admin Page (wrapped with Suspense for useSearchParams)
@@ -2232,6 +2234,10 @@ function AdminPageContent() {
               <Newspaper className="h-4 w-4" />
               Digest
             </TabsTrigger>
+            <TabsTrigger value="council" className="flex items-center gap-2">
+              <Landmark className="h-4 w-4" />
+              Council
+            </TabsTrigger>
             <TabsTrigger value="tools" className="flex items-center gap-2">
               <Wrench className="h-4 w-4" />
               Tools
@@ -2260,6 +2266,10 @@ function AdminPageContent() {
 
           <TabsContent value="digest">
             <DigestPanel />
+          </TabsContent>
+
+          <TabsContent value="council">
+            <CouncilIngestPanel />
           </TabsContent>
 
           <TabsContent value="tools">

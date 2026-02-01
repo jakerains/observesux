@@ -24,6 +24,14 @@
     {
       "path": "/api/cron/events",
       "schedule": "0 6 * * 0"
+    },
+    {
+      "path": "/api/cron/ingest-meetings",
+      "schedule": "0 5 * * 2"
+    },
+    {
+      "path": "/api/cron/ingest-meetings",
+      "schedule": "0 16 * * 2"
     }
   ]
 }

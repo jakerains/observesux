@@ -5,6 +5,16 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-02-01
+
+### Added
+- **City Council meeting transcript ingestion pipeline**: Automated YouTube caption fetching, AI-generated recaps (via Claude Sonnet 4.5), and vector-searchable transcript chunks with YouTube timestamp deep links
+- **Council meeting search API** (`/api/council-meetings/search`): Semantic search across council meeting transcripts with date filtering
+- **`searchCouncilMeetings` chat tool**: AI agent can now answer questions about council decisions, votes, ordinances, and public hearings with direct links to the relevant moment in the meeting video
+- **Council admin panel tab**: Stats dashboard, manual ingestion trigger with progress indicator, and expandable meeting list with recaps
+- **Vercel Workflow for council ingestion**: Durable multi-step pipeline (RSS → transcript → chunking → recap → embeddings → storage) with automatic retries
+- **Scheduled ingestion**: Cron runs Monday 11PM and Tuesday 10AM Central to catch new meeting uploads
+
 ## [0.8.0] - 2026-01-29
 
 ### Added

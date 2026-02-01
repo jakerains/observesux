@@ -283,6 +283,45 @@ export const chatTools = {
     },
   }),
 
+  searchCouncilMeetings: tool({
+    description: 'Search Sioux City Council meeting transcripts for discussions, decisions, votes, ordinances, public hearings, and zoning issues. Returns relevant excerpts with YouTube timestamp links to the exact moment in the meeting video. Use for questions about what the city council discussed, voted on, or decided.',
+    inputSchema: z.object({
+      query: z.string().describe('The search query about council meeting content'),
+      dateFrom: z.string().optional().describe('Optional start date filter (YYYY-MM-DD)'),
+      dateTo: z.string().optional().describe('Optional end date filter (YYYY-MM-DD)'),
+    }),
+    execute: async ({ query, dateFrom, dateTo }) => {
+      const data = await fetchApi<{
+        results: Array<{
+          content: string
+          meetingTitle: string
+          meetingDate: string | null
+          youtubeLink: string
+          similarity: number
+        }>
+      }>(
+        '/api/council-meetings/search',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query, dateFrom, dateTo, limit: 5 }),
+        }
+      );
+      if (!data || !data.results || data.results.length === 0) {
+        return { message: 'No relevant council meeting discussions found for this query.' };
+      }
+      return {
+        results: data.results.map(r => ({
+          meetingTitle: r.meetingTitle,
+          meetingDate: r.meetingDate,
+          excerpt: r.content,
+          youtubeLink: r.youtubeLink,
+          relevance: `${Math.round(r.similarity * 100)}%`,
+        })),
+      };
+    },
+  }),
+
   // Web search via Firecrawl
   webSearch: tool({
     description: 'Search the web for realtime Siouxland information. USE IMMEDIATELY (no clarifying questions) for: Sioux City Musketeers schedules/scores, Sioux City Explorers, local sports, specific event dates, business info. "Sioux City hockey" means Musketeers - just search, don\'t ask. When searching for schedules or upcoming events, include the current year/season context.',
