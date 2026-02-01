@@ -1,6 +1,5 @@
 import { generateText } from 'ai'
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
-import { getSubtitles } from 'youtube-caption-extractor'
 import { SUX_PERSONALITY } from '@/lib/ai/sux-personality'
 import type { TranscriptSegment, CouncilMeetingRecap } from '@/types/council-meetings'
 
@@ -92,26 +91,127 @@ export async function fetchCouncilRSS(): Promise<RSSVideoEntry[]> {
  * Fetch transcript segments for a YouTube video.
  * Throws NoCaptionsError if no captions are available.
  *
- * Uses youtube-caption-extractor which scrapes the engagement panel
- * transcript (the sidebar transcript UI) rather than the Innertube
- * player API. This approach works from datacenter IPs where the
- * Innertube API is blocked by YouTube.
+ * Scrapes the YouTube watch page HTML to extract the embedded
+ * ytInitialPlayerResponse JSON, finds the timedtext caption URL,
+ * and fetches the XML transcript directly. This avoids the InnerTube
+ * API which YouTube blocks from datacenter IPs.
  */
 export async function fetchTranscript(videoId: string): Promise<TranscriptSegment[]> {
-  try {
-    const subtitles = await getSubtitles({ videoID: videoId, lang: 'en' })
+  const BROWSER_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
+  const CONSENT_COOKIES = 'SOCS=CAESEwgDEgk2ODE4MTAyNjQaAmVuIAEaBgiA_JO7Bg; CONSENT=YES+'
 
-    if (!subtitles || subtitles.length === 0) {
+  try {
+    // Step 1: Fetch the YouTube watch page HTML
+    console.log(`[Transcript] Fetching watch page for ${videoId}`)
+    const pageResponse = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
+      headers: {
+        'User-Agent': BROWSER_UA,
+        'Accept-Language': 'en-US,en;q=0.9',
+        Cookie: CONSENT_COOKIES,
+      },
+    })
+
+    if (!pageResponse.ok) {
+      throw new Error(`Watch page fetch failed: ${pageResponse.status}`)
+    }
+
+    const html = await pageResponse.text()
+    console.log(`[Transcript] Watch page HTML length: ${html.length}`)
+
+    // Step 2: Extract ytInitialPlayerResponse from the page
+    const playerMatch = html.match(/ytInitialPlayerResponse\s*=\s*(\{.+?\});/)
+    if (!playerMatch) {
+      console.error(`[Transcript] No ytInitialPlayerResponse found in page for ${videoId}`)
       throw new NoCaptionsError(videoId)
     }
 
-    // Library returns start/dur as string seconds; convert to milliseconds
-    // to match TranscriptSegment contract used by chunking logic
-    return subtitles.map(item => ({
-      text: item.text,
-      offset: parseFloat(item.start) * 1000,
-      duration: parseFloat(item.dur) * 1000,
-    }))
+    let playerData: Record<string, unknown>
+    try {
+      playerData = JSON.parse(playerMatch[1])
+    } catch {
+      console.error(`[Transcript] Failed to parse ytInitialPlayerResponse for ${videoId}`)
+      throw new NoCaptionsError(videoId)
+    }
+
+    // Step 3: Find caption tracks
+    const captions = playerData.captions as Record<string, unknown> | undefined
+    const tracklistRenderer = captions?.playerCaptionsTracklistRenderer as Record<string, unknown> | undefined
+    const captionTracks = tracklistRenderer?.captionTracks as Array<Record<string, string>> | undefined
+
+    if (!captionTracks || captionTracks.length === 0) {
+      console.log(`[Transcript] No caption tracks found for ${videoId}`)
+      throw new NoCaptionsError(videoId)
+    }
+
+    console.log(`[Transcript] Found ${captionTracks.length} caption track(s) for ${videoId}`)
+
+    // Find English track, or auto-generated English, or first available
+    const track =
+      captionTracks.find(t => t.vssId === '.en') ||
+      captionTracks.find(t => t.vssId === 'a.en') ||
+      captionTracks.find(t => t.languageCode === 'en') ||
+      captionTracks[0]
+
+    if (!track?.baseUrl) {
+      console.error(`[Transcript] No usable caption track URL for ${videoId}`)
+      throw new NoCaptionsError(videoId)
+    }
+
+    console.log(`[Transcript] Using caption track: ${track.vssId || track.languageCode} for ${videoId}`)
+
+    // Step 4: Fetch the timedtext XML
+    const captionUrl = track.baseUrl
+    const captionResponse = await fetch(captionUrl, {
+      headers: {
+        'User-Agent': BROWSER_UA,
+        'Accept-Language': 'en-US,en;q=0.9',
+        Cookie: CONSENT_COOKIES,
+      },
+    })
+
+    if (!captionResponse.ok) {
+      throw new Error(`Caption XML fetch failed: ${captionResponse.status}`)
+    }
+
+    const xml = await captionResponse.text()
+    if (!xml.includes('<text')) {
+      console.error(`[Transcript] Caption XML has no <text> elements for ${videoId}`)
+      throw new NoCaptionsError(videoId)
+    }
+
+    // Step 5: Parse the timedtext XML into segments
+    const segments: TranscriptSegment[] = []
+    const textRegex = /<text start="([\d.]+)" dur="([\d.]+)"[^>]*>([\s\S]*?)<\/text>/g
+    let match
+
+    while ((match = textRegex.exec(xml)) !== null) {
+      const startSec = parseFloat(match[1])
+      const durSec = parseFloat(match[2])
+      const rawText = match[3]
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&nbsp;/g, ' ')
+        .replace(/<[^>]+>/g, '') // strip any inline tags
+
+      if (rawText.trim()) {
+        segments.push({
+          text: rawText.trim(),
+          offset: startSec * 1000,
+          duration: durSec * 1000,
+        })
+      }
+    }
+
+    if (segments.length === 0) {
+      console.error(`[Transcript] Parsed 0 segments from XML for ${videoId}`)
+      throw new NoCaptionsError(videoId)
+    }
+
+    console.log(`[Transcript] Successfully parsed ${segments.length} segments for ${videoId}`)
+    return segments
   } catch (error) {
     if (error instanceof NoCaptionsError) throw error
 
@@ -119,13 +219,11 @@ export async function fetchTranscript(videoId: string): Promise<TranscriptSegmen
     const errorMsg = error instanceof Error ? error.message : String(error)
     console.error(`[Transcript] Failed for ${videoId}: [${errorName}] ${errorMsg}`)
 
-    // Map common error messages to NoCaptionsError
     if (
       errorMsg.includes('captions') ||
       errorMsg.includes('transcript') ||
       errorMsg.includes('disabled') ||
-      errorMsg.includes('not available') ||
-      errorMsg.includes('Could not get')
+      errorMsg.includes('not available')
     ) {
       throw new NoCaptionsError(videoId)
     }

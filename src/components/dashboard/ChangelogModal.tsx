@@ -16,6 +16,13 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.9.7',
+    date: '2026-02-01',
+    changed: [
+      'YouTube transcript fetching rewritten as zero-dependency HTML scraper — extracts captions directly from watch page',
+    ],
+  },
+  {
     version: '0.9.6',
     date: '2026-02-01',
     changed: [

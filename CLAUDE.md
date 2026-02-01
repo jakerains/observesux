@@ -316,8 +316,8 @@ The POST endpoint streams events:
 
 ### Transcript Fetching — Known Issues
 
-- **Library**: Uses `youtube-caption-extractor` which scrapes the engagement panel transcript (sidebar UI) instead of the Innertube player API. Previous libraries (`youtube-transcript`, `youtube-transcript-plus`) failed from datacenter IPs due to YouTube anti-bot blocking of the Innertube API.
-- **Offset units**: The library returns `start`/`dur` as **string seconds**. Our `TranscriptSegment` type uses **milliseconds**. The `fetchTranscript()` function parses and converts with `parseFloat(x) * 1000`.
+- **Transcript fetching**: Zero-dependency HTML scraper. Fetches the YouTube watch page, extracts `ytInitialPlayerResponse` JSON embedded in the HTML, finds the timedtext caption track URL, and fetches the XML directly. Previous libraries (`youtube-transcript`, `youtube-transcript-plus`, `youtube-caption-extractor`) all used the InnerTube API which YouTube blocks from datacenter IPs.
+- **Offset units**: The timedtext XML has `start`/`dur` in **seconds**. Our `TranscriptSegment` type uses **milliseconds**. The `fetchTranscript()` function converts with `parseFloat(x) * 1000`.
 - **Retry logic**: Videos marked `no_captions` are retried within 48 hours. Failed videos are always retried on next run.
 
 ### AI Models Used
