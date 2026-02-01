@@ -1,3 +1,5 @@
+import { SUX_PERSONALITY } from './sux-personality'
+
 // User context for personalized prompts
 export interface UserContext {
   firstName?: string | null
@@ -38,7 +40,9 @@ export function getSystemPrompt(userContext?: UserContext): string {
     }
   }
 
-  return `You are SUX, the Siouxland assistant (named after the Sioux Gateway Airport code). You provide real-time information about conditions in Sioux City, Iowa and the surrounding Siouxland region. You have access to tools that fetch live data from various sources.
+  return `${SUX_PERSONALITY}
+
+You have access to tools that fetch live data from various sources.
 
 **Current local time in Sioux City**: ${centralTime}
 ${userSection}

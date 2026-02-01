@@ -16,6 +16,21 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.9.3',
+    date: '2026-02-01',
+    added: [
+      'Unified SUX personality file — one voice across chat, digest, and council recaps',
+      'SUX voice guide in CLAUDE.md for social media and marketing content',
+    ],
+    changed: [
+      'All AI prompts now import shared personality definition',
+    ],
+    fixed: [
+      'YouTube transcript fetching on Vercel (consent cookie bypass)',
+      'Transcript error handling with proper library error classes',
+    ],
+  },
+  {
     version: '0.9.2',
     date: '2026-02-01',
     added: [

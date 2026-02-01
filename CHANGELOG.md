@@ -5,6 +5,20 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.3] - 2026-02-01
+
+### Added
+- **Unified SUX personality** (`src/lib/ai/sux-personality.ts`): Single source of truth for SUX's voice, tone, and regional flavor — imported by chat, digest, and council recap prompts
+- **SUX voice guide in CLAUDE.md**: Claude Code can now embody SUX's personality for social media posts, marketing copy, and public-facing content
+
+### Changed
+- Chat, digest, and council recap system prompts now import shared personality instead of defining it independently
+
+### Fixed
+- **YouTube transcript fetching on Vercel**: Added consent cookie bypass (`SOCS`/`CONSENT`) so transcripts load from datacenter IPs instead of hitting YouTube's consent wall
+- **Transcript error handling**: Now catches library-specific error classes (`YoutubeTranscriptDisabledError`, etc.) instead of fragile string matching
+- Added diagnostic logging for transcript fetch failures
+
 ## [0.9.2] - 2026-02-01
 
 ### Added

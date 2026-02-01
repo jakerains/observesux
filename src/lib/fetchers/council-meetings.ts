@@ -1,6 +1,14 @@
 import { generateText } from 'ai'
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
-import { YoutubeTranscript } from 'youtube-transcript-plus'
+import {
+  YoutubeTranscript,
+  YoutubeTranscriptDisabledError,
+  YoutubeTranscriptNotAvailableError,
+  YoutubeTranscriptNotAvailableLanguageError,
+  YoutubeTranscriptVideoUnavailableError,
+  YoutubeTranscriptTooManyRequestError,
+} from 'youtube-transcript-plus'
+import { SUX_PERSONALITY } from '@/lib/ai/sux-personality'
 import type { TranscriptSegment, CouncilMeetingRecap } from '@/types/council-meetings'
 
 // Sioux City Council YouTube channel
@@ -90,10 +98,28 @@ export async function fetchCouncilRSS(): Promise<RSSVideoEntry[]> {
 /**
  * Fetch transcript segments for a YouTube video.
  * Throws NoCaptionsError if no captions are available.
+ *
+ * Passes a YouTube consent cookie (SOCS) so that requests from
+ * Vercel/cloud IPs don't get blocked by YouTube's consent page.
  */
 export async function fetchTranscript(videoId: string): Promise<TranscriptSegment[]> {
   try {
-    const transcript = await YoutubeTranscript.fetchTranscript(videoId)
+    const transcript = await YoutubeTranscript.fetchTranscript(videoId, {
+      // Bypass YouTube consent screen on datacenter IPs
+      videoFetch: async (params) => {
+        const res = await fetch(params.url, {
+          method: params.method || 'GET',
+          headers: {
+            'User-Agent': params.userAgent || 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+            'Accept-Language': params.lang || 'en-US,en;q=0.9',
+            Cookie: 'SOCS=CAESEwgDEgk2ODE4MTAyNjQaAmVuIAEaBgiA_JO7Bg; CONSENT=YES+',
+            ...(params.headers || {}),
+          },
+          body: params.body,
+        })
+        return res
+      },
+    })
 
     if (!transcript || transcript.length === 0) {
       throw new NoCaptionsError(videoId)
@@ -109,12 +135,34 @@ export async function fetchTranscript(videoId: string): Promise<TranscriptSegmen
   } catch (error) {
     if (error instanceof NoCaptionsError) throw error
 
-    // youtube-transcript throws generic errors when captions aren't available
-    const message = error instanceof Error ? error.message : String(error)
+    const errorName = error instanceof Error ? error.constructor.name : 'Unknown'
+    const errorMsg = error instanceof Error ? error.message : String(error)
+    console.error(`[Transcript] Failed for ${videoId}: [${errorName}] ${errorMsg}`)
+
+    // Catch the library's specific error classes
     if (
-      message.includes('Could not find captions') ||
-      message.includes('Transcript is disabled') ||
-      message.includes('No transcript')
+      error instanceof YoutubeTranscriptDisabledError ||
+      error instanceof YoutubeTranscriptNotAvailableError ||
+      error instanceof YoutubeTranscriptNotAvailableLanguageError
+    ) {
+      throw new NoCaptionsError(videoId)
+    }
+
+    // Rate limiting — let it bubble up so the caller can retry
+    if (error instanceof YoutubeTranscriptTooManyRequestError) {
+      throw error
+    }
+
+    // Video unavailable (deleted, private, etc.)
+    if (error instanceof YoutubeTranscriptVideoUnavailableError) {
+      throw new NoCaptionsError(videoId)
+    }
+
+    // Fallback: check message strings for any other error variants
+    if (
+      errorMsg.includes('captions') ||
+      errorMsg.includes('transcript') ||
+      errorMsg.includes('disabled')
     ) {
       throw new NoCaptionsError(videoId)
     }
@@ -203,9 +251,9 @@ export async function generateMeetingRecap(rawTranscript: string): Promise<Counc
     apiKey: process.env.OPENROUTER_API_KEY,
   })
 
-  const RECAP_SYSTEM_PROMPT = `You are SUX, the Siouxland Assistant — a friendly, knowledgeable AI that helps residents of Sioux City, Iowa and the surrounding Siouxland area stay informed about their local government. Your job is to make city council meetings transparent and accessible to everyday people.
+  const RECAP_SYSTEM_PROMPT = `${SUX_PERSONALITY}
 
-You write blog-post style recaps addressed directly to Siouxland residents. Your tone is warm, conversational, and community-minded — like a well-informed neighbor explaining what happened at the meeting and why it matters. You care about this community and it shows in your writing.
+Your job right now is to make a city council meeting transparent and accessible to everyday people. You write blog-post style recaps addressed directly to Siouxland residents.
 
 Given a transcript (or summary of sections), produce a structured JSON recap with these fields:
 
@@ -246,7 +294,7 @@ If a section has no entries, use an empty array []. Focus on substance over proc
       console.log(`[Council Recap] Summarizing section ${i + 1}/${sections.length}`)
       const result = await generateText({
         model: openrouter('anthropic/claude-sonnet-4.5'),
-        system: 'You are SUX, the Siouxland Assistant, covering a Sioux City council meeting for local residents. Summarize the key points, decisions, discussions, and any public comments from this portion of the transcript. Be thorough — include specifics like vote counts, dollar amounts, names of projects, and what things mean for residents.',
+        system: `${SUX_PERSONALITY}\n\nYou're covering a Sioux City council meeting for local residents. Summarize the key points, decisions, discussions, and any public comments from this portion of the transcript. Be thorough — include specifics like vote counts, dollar amounts, names of projects, and what things mean for residents.`,
         prompt: sections[i],
         maxOutputTokens: 8000,
       })
