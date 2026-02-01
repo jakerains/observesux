@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
-    version: '0.9.3',
+    version: '0.9.4',
     date: '2026-02-01',
     added: [
       'Unified SUX personality file — one voice across chat, digest, and council recaps',
@@ -26,7 +26,7 @@ const CHANGELOG = [
       'All AI prompts now import shared personality definition',
     ],
     fixed: [
-      'YouTube transcript fetching on Vercel (consent cookie bypass)',
+      'YouTube transcript fetching on Vercel (consent cookie on all fetch hooks)',
       'Transcript error handling with proper library error classes',
     ],
   },

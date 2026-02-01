@@ -104,21 +104,33 @@ export async function fetchCouncilRSS(): Promise<RSSVideoEntry[]> {
  */
 export async function fetchTranscript(videoId: string): Promise<TranscriptSegment[]> {
   try {
+    // Shared fetch that adds consent cookies and browser-like headers
+    // to bypass YouTube's consent wall and datacenter IP blocking
+    const ytFetch = async (params: {
+      url: string
+      lang?: string
+      userAgent?: string
+      method?: string
+      body?: string
+      headers?: Record<string, string>
+    }) => {
+      const res = await fetch(params.url, {
+        method: params.method || 'GET',
+        headers: {
+          'User-Agent': params.userAgent || 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+          'Accept-Language': params.lang || 'en-US,en;q=0.9',
+          Cookie: 'SOCS=CAESEwgDEgk2ODE4MTAyNjQaAmVuIAEaBgiA_JO7Bg; CONSENT=YES+',
+          ...(params.headers || {}),
+        },
+        body: params.body,
+      })
+      return res
+    }
+
     const transcript = await YoutubeTranscript.fetchTranscript(videoId, {
-      // Bypass YouTube consent screen on datacenter IPs
-      videoFetch: async (params) => {
-        const res = await fetch(params.url, {
-          method: params.method || 'GET',
-          headers: {
-            'User-Agent': params.userAgent || 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-            'Accept-Language': params.lang || 'en-US,en;q=0.9',
-            Cookie: 'SOCS=CAESEwgDEgk2ODE4MTAyNjQaAmVuIAEaBgiA_JO7Bg; CONSENT=YES+',
-            ...(params.headers || {}),
-          },
-          body: params.body,
-        })
-        return res
-      },
+      videoFetch: ytFetch,
+      playerFetch: ytFetch,
+      transcriptFetch: ytFetch,
     })
 
     if (!transcript || transcript.length === 0) {
