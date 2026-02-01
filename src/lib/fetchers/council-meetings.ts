@@ -104,8 +104,10 @@ export async function fetchCouncilRSS(): Promise<RSSVideoEntry[]> {
  */
 export async function fetchTranscript(videoId: string): Promise<TranscriptSegment[]> {
   try {
-    // Shared fetch that adds consent cookies and browser-like headers
-    // to bypass YouTube's consent wall and datacenter IP blocking
+    const BROWSER_UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
+    const CONSENT_COOKIES = 'SOCS=CAESEwgDEgk2ODE4MTAyNjQaAmVuIAEaBgiA_JO7Bg; CONSENT=YES+'
+
+    // Base fetch with consent cookies and browser headers
     const ytFetch = async (params: {
       url: string
       lang?: string
@@ -114,22 +116,59 @@ export async function fetchTranscript(videoId: string): Promise<TranscriptSegmen
       body?: string
       headers?: Record<string, string>
     }) => {
-      const res = await fetch(params.url, {
+      return fetch(params.url, {
         method: params.method || 'GET',
         headers: {
-          'User-Agent': params.userAgent || 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+          'User-Agent': params.userAgent || BROWSER_UA,
           'Accept-Language': params.lang || 'en-US,en;q=0.9',
-          Cookie: 'SOCS=CAESEwgDEgk2ODE4MTAyNjQaAmVuIAEaBgiA_JO7Bg; CONSENT=YES+',
+          Cookie: CONSENT_COOKIES,
           ...(params.headers || {}),
         },
         body: params.body,
       })
-      return res
+    }
+
+    // Player fetch: rewrite the ANDROID client to WEB client.
+    // YouTube blocks ANDROID client requests from datacenter IPs
+    // but allows WEB client with proper browser headers.
+    const playerFetch = async (params: {
+      url: string
+      lang?: string
+      userAgent?: string
+      method?: string
+      body?: string
+      headers?: Record<string, string>
+    }) => {
+      let body = params.body
+      if (body) {
+        try {
+          const parsed = JSON.parse(body)
+          if (parsed.context?.client?.clientName === 'ANDROID') {
+            parsed.context.client = {
+              clientName: 'WEB',
+              clientVersion: '2.20240101.00.00',
+            }
+            body = JSON.stringify(parsed)
+          }
+        } catch {
+          // If JSON parse fails, send as-is
+        }
+      }
+      return fetch(params.url, {
+        method: params.method || 'POST',
+        headers: {
+          'User-Agent': BROWSER_UA,
+          'Accept-Language': params.lang || 'en-US,en;q=0.9',
+          Cookie: CONSENT_COOKIES,
+          ...(params.headers || {}),
+        },
+        body,
+      })
     }
 
     const transcript = await YoutubeTranscript.fetchTranscript(videoId, {
       videoFetch: ytFetch,
-      playerFetch: ytFetch,
+      playerFetch,
       transcriptFetch: ytFetch,
     })
 

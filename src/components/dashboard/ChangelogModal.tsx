@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
-    version: '0.9.4',
+    version: '0.9.5',
     date: '2026-02-01',
     added: [
       'Unified SUX personality file — one voice across chat, digest, and council recaps',
