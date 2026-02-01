@@ -171,6 +171,53 @@ async function generateEmbeddingsStep(
 }
 
 /**
+ * Upsert a meeting record in the database
+ */
+async function upsertMeetingStep(
+  video: RSSVideoEntry
+): Promise<{ id: string; meetingDate: string | null } | null> {
+  "use step"
+
+  const meeting = await upsertMeeting({
+    videoId: video.videoId,
+    title: video.title,
+    publishedAt: video.publishedAt,
+    meetingDate: video.publishedAt ? video.publishedAt.split('T')[0] : null,
+    videoUrl: video.videoUrl,
+    channelId: video.channelId,
+  })
+
+  if (!meeting) return null
+  return { id: meeting.id, meetingDate: meeting.meetingDate }
+}
+
+/**
+ * Update meeting status in the database
+ */
+async function updateMeetingStatusStep(
+  meetingId: string,
+  status: 'no_captions' | 'failed' | 'completed' | 'processing',
+  errorMessage?: string
+): Promise<void> {
+  "use step"
+
+  await updateMeetingStatus(meetingId, status, errorMessage)
+}
+
+/**
+ * Look up a meeting by video ID (for error recovery)
+ */
+async function getMeetingByVideoIdStep(
+  videoId: string
+): Promise<{ id: string } | null> {
+  "use step"
+
+  const meeting = await getMeetingByVideoId(videoId)
+  if (!meeting) return null
+  return { id: meeting.id }
+}
+
+/**
  * Store everything in the database
  */
 async function storeResultsStep(
@@ -256,14 +303,7 @@ export async function councilIngestWorkflow(
     for (const video of newVideos) {
       try {
         // Upsert meeting record
-        const meeting = await upsertMeeting({
-          videoId: video.videoId,
-          title: video.title,
-          publishedAt: video.publishedAt,
-          meetingDate: video.publishedAt ? video.publishedAt.split('T')[0] : null,
-          videoUrl: video.videoUrl,
-          channelId: video.channelId,
-        })
+        const meeting = await upsertMeetingStep(video)
 
         if (!meeting) {
           console.error(`[Council Workflow] Failed to upsert meeting for ${video.videoId}`)
@@ -276,7 +316,7 @@ export async function councilIngestWorkflow(
 
         if (!segments) {
           // No captions available
-          await updateMeetingStatus(meeting.id, 'no_captions')
+          await updateMeetingStatusStep(meeting.id, 'no_captions')
           noCaptions++
           continue
         }
@@ -307,9 +347,9 @@ export async function councilIngestWorkflow(
       } catch (error) {
         console.error(`[Council Workflow] Failed to process ${video.videoId}:`, error)
         // Try to mark as failed in DB
-        const existingMeeting = await getMeetingByVideoId(video.videoId)
+        const existingMeeting = await getMeetingByVideoIdStep(video.videoId)
         if (existingMeeting) {
-          await updateMeetingStatus(
+          await updateMeetingStatusStep(
             existingMeeting.id,
             'failed',
             error instanceof Error ? error.message : 'Unknown error'
