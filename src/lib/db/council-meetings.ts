@@ -5,6 +5,7 @@ import type {
   CouncilMeetingStatus,
   CouncilMeetingChunkWithSimilarity,
   CouncilIngestStats,
+  MeetingVersion,
 } from '@/types/council-meetings'
 
 /**
@@ -16,7 +17,11 @@ function mapRowToMeeting(row: Record<string, unknown>): CouncilMeeting {
     videoId: row.video_id as string,
     title: row.title as string,
     publishedAt: row.published_at ? (row.published_at as Date).toISOString() : null,
-    meetingDate: row.meeting_date ? String(row.meeting_date) : null,
+    meetingDate: row.meeting_date
+      ? (row.meeting_date instanceof Date
+          ? row.meeting_date.toISOString().split('T')[0]
+          : String(row.meeting_date))
+      : null,
     videoUrl: row.video_url as string | null,
     channelId: row.channel_id as string | null,
     transcriptRaw: row.transcript_raw as string | null,
@@ -24,6 +29,7 @@ function mapRowToMeeting(row: Record<string, unknown>): CouncilMeeting {
     status: row.status as CouncilMeetingStatus,
     errorMessage: row.error_message as string | null,
     chunkCount: (row.chunk_count as number) || 0,
+    version: (row.version as number) || 1,
     createdAt: (row.created_at as Date).toISOString(),
     updatedAt: (row.updated_at as Date).toISOString(),
   }
@@ -118,7 +124,8 @@ export async function updateMeetingStatus(
 }
 
 /**
- * Store meeting results (recap, transcript, chunk count)
+ * Store meeting results (recap, transcript, chunk count).
+ * If the meeting already has a completed recap, snapshot it as a version first.
  */
 export async function storeMeetingResults(
   id: string,
@@ -129,11 +136,35 @@ export async function storeMeetingResults(
   if (!isDatabaseConfigured()) return false
 
   try {
+    // Check if this meeting already has a recap worth snapshotting (reprocessing case).
+    // Note: we don't filter on status='completed' because the caller sets status
+    // to 'processing' before calling this function, so it would never match.
+    const existing = await sql`
+      SELECT version, recap, transcript_raw, chunk_count
+      FROM council_meetings
+      WHERE id = ${id} AND recap IS NOT NULL
+    `
+
+    let nextVersion = 1
+
+    if (existing.length > 0) {
+      const currentVersion = (existing[0].version as number) || 1
+      nextVersion = currentVersion + 1
+
+      // Snapshot the current state into versions table
+      await sql`
+        INSERT INTO council_meeting_versions (meeting_id, version, recap, transcript_raw, chunk_count)
+        VALUES (${id}, ${currentVersion}, ${JSON.stringify(existing[0].recap)}, ${existing[0].transcript_raw as string | null}, ${(existing[0].chunk_count as number) || 0})
+        ON CONFLICT (meeting_id, version) DO NOTHING
+      `
+    }
+
     const result = await sql`
       UPDATE council_meetings
       SET recap = ${JSON.stringify(recap)},
           transcript_raw = ${rawTranscript},
           chunk_count = ${chunkCount},
+          version = ${nextVersion},
           status = 'completed',
           error_message = NULL,
           updated_at = NOW()
@@ -293,7 +324,11 @@ export async function searchCouncilMeetingChunks(
       startSeconds: row.start_seconds as number,
       endSeconds: row.end_seconds as number,
       sourceCategory: row.source_category as string,
-      meetingDate: row.meeting_date ? String(row.meeting_date) : null,
+      meetingDate: row.meeting_date
+      ? (row.meeting_date instanceof Date
+          ? row.meeting_date.toISOString().split('T')[0]
+          : String(row.meeting_date))
+      : null,
       createdAt: (row.created_at as Date).toISOString(),
       similarity: row.similarity as number,
       meetingTitle: row.meeting_title as string,
@@ -302,6 +337,46 @@ export async function searchCouncilMeetingChunks(
   } catch (error) {
     console.error('Error searching council meeting chunks:', error)
     return []
+  }
+}
+
+/**
+ * Fetch a single completed meeting by its date slug (e.g. "2026-01-26")
+ */
+export async function getMeetingBySlug(dateSlug: string): Promise<CouncilMeeting | null> {
+  if (!isDatabaseConfigured()) return null
+
+  try {
+    const result = await sql`
+      SELECT * FROM council_meetings
+      WHERE meeting_date = ${dateSlug}::date
+        AND status = 'completed'
+        AND recap IS NOT NULL
+      LIMIT 1
+    `
+    if (result.length === 0) return null
+    return mapRowToMeeting(result[0])
+  } catch (error) {
+    console.error('Error getting meeting by slug:', error)
+    return null
+  }
+}
+
+/**
+ * Fetch a single meeting by its UUID
+ */
+export async function getMeetingById(id: string): Promise<CouncilMeeting | null> {
+  if (!isDatabaseConfigured()) return null
+
+  try {
+    const result = await sql`
+      SELECT * FROM council_meetings WHERE id = ${id}
+    `
+    if (result.length === 0) return null
+    return mapRowToMeeting(result[0])
+  } catch (error) {
+    console.error('Error getting meeting by ID:', error)
+    return null
   }
 }
 
@@ -390,5 +465,93 @@ export async function getRecentMeetings(limit: number = 20): Promise<CouncilMeet
   } catch (error) {
     console.error('Error getting recent meetings:', error)
     return []
+  }
+}
+
+/**
+ * Get version history for a meeting
+ */
+export async function getMeetingVersions(meetingId: string): Promise<MeetingVersion[]> {
+  if (!isDatabaseConfigured()) return []
+
+  try {
+    const result = await sql`
+      SELECT * FROM council_meeting_versions
+      WHERE meeting_id = ${meetingId}
+      ORDER BY version DESC
+    `
+    return result.map(row => ({
+      id: row.id as string,
+      meetingId: row.meeting_id as string,
+      version: row.version as number,
+      recap: row.recap as CouncilMeetingRecap | null,
+      transcriptRaw: row.transcript_raw as string | null,
+      chunkCount: (row.chunk_count as number) || 0,
+      createdAt: (row.created_at as Date).toISOString(),
+    }))
+  } catch (error) {
+    console.error('Error getting meeting versions:', error)
+    return []
+  }
+}
+
+/**
+ * Restore a previous version of a meeting's recap.
+ * Snapshots the current state first, then copies the old version's recap back,
+ * incrementing the version number.
+ */
+export async function restoreMeetingVersion(
+  meetingId: string,
+  targetVersion: number
+): Promise<{ success: boolean; newVersion?: number; error?: string }> {
+  if (!isDatabaseConfigured()) return { success: false, error: 'Database not configured' }
+
+  try {
+    // Get the current meeting state
+    const current = await sql`
+      SELECT version, recap, transcript_raw, chunk_count
+      FROM council_meetings
+      WHERE id = ${meetingId} AND status = 'completed'
+    `
+    if (current.length === 0) {
+      return { success: false, error: 'Meeting not found or not completed' }
+    }
+
+    const currentVersion = (current[0].version as number) || 1
+
+    // Get the target version to restore
+    const target = await sql`
+      SELECT recap, transcript_raw, chunk_count
+      FROM council_meeting_versions
+      WHERE meeting_id = ${meetingId} AND version = ${targetVersion}
+    `
+    if (target.length === 0) {
+      return { success: false, error: `Version ${targetVersion} not found` }
+    }
+
+    const newVersion = currentVersion + 1
+
+    // Snapshot current state
+    await sql`
+      INSERT INTO council_meeting_versions (meeting_id, version, recap, transcript_raw, chunk_count)
+      VALUES (${meetingId}, ${currentVersion}, ${JSON.stringify(current[0].recap)}, ${current[0].transcript_raw as string | null}, ${(current[0].chunk_count as number) || 0})
+      ON CONFLICT (meeting_id, version) DO NOTHING
+    `
+
+    // Restore the target version's content as the new current
+    await sql`
+      UPDATE council_meetings
+      SET recap = ${JSON.stringify(target[0].recap)},
+          transcript_raw = ${target[0].transcript_raw as string | null},
+          chunk_count = ${(target[0].chunk_count as number) || 0},
+          version = ${newVersion},
+          updated_at = NOW()
+      WHERE id = ${meetingId}
+    `
+
+    return { success: true, newVersion }
+  } catch (error) {
+    console.error('Error restoring meeting version:', error)
+    return { success: false, error: 'Database error' }
   }
 }

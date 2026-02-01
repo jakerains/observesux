@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { start } from 'workflow/api'
-import { councilIngestWorkflow } from '@/../workflows/council-ingest-workflow'
 import { isDatabaseConfigured } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 60
+export const maxDuration = 300
 
 /**
  * Verify the request is from Vercel Cron or authorized
@@ -21,7 +19,7 @@ function verifyCronRequest(request: NextRequest): boolean {
 
 /**
  * GET /api/cron/ingest-meetings
- * Triggers the council meeting ingestion workflow.
+ * Triggers council meeting ingestion by calling the SSE ingest endpoint.
  * Called by Vercel Cron on Monday night and Tuesday morning.
  */
 export async function GET(request: NextRequest) {
@@ -35,20 +33,58 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    console.log('[Council Cron] Triggering council meeting ingestion workflow')
+    console.log('[Council Cron] Triggering council meeting ingestion')
 
-    const run = await start(councilIngestWorkflow, [{}])
+    // Call our own SSE ingestion endpoint and consume the stream
+    const baseUrl = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : 'http://localhost:3000'
 
-    console.log(`[Council Cron] Workflow started with run ID: ${run.runId}`)
+    const res = await fetch(`${baseUrl}/api/workflow/council-ingest`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(process.env.CRON_SECRET && {
+          Authorization: `Bearer ${process.env.CRON_SECRET}`,
+        }),
+      },
+      body: JSON.stringify({}),
+    })
+
+    if (!res.ok) {
+      throw new Error(`Ingest endpoint returned ${res.status}`)
+    }
+
+    // Consume the SSE stream to get the final result
+    const reader = res.body?.getReader()
+    if (!reader) throw new Error('No response stream')
+
+    const decoder = new TextDecoder()
+    let buffer = ''
+    let finalResult = null
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      buffer += decoder.decode(value, { stream: true })
+
+      // Look for complete event
+      const completeMatch = buffer.match(/event: complete\ndata: (.+?)\n\n/)
+      if (completeMatch) {
+        finalResult = JSON.parse(completeMatch[1])
+        break
+      }
+    }
+
+    console.log('[Council Cron] Ingestion complete:', finalResult)
 
     return NextResponse.json({
       success: true,
-      workflowRunId: run.runId,
-      message: 'Council meeting ingestion workflow started',
+      result: finalResult,
       timestamp: new Date().toISOString(),
     })
   } catch (error) {
-    console.error('[Council Cron] Error starting workflow:', error)
+    console.error('[Council Cron] Error:', error)
     return NextResponse.json(
       {
         success: false,
@@ -60,7 +96,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST also supported for manual testing
 export async function POST(request: NextRequest) {
   return GET(request)
 }

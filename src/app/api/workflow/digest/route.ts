@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { start, getRun } from 'workflow/api'
 import { digestWorkflow, type DigestWorkflowInput } from '@/../workflows/digest-workflow'
 import type { DigestEdition } from '@/lib/digest/types'
+import { getCurrentUser } from '@/lib/auth/server'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 120 // Allow up to 2 minutes for workflow operations
@@ -9,14 +10,20 @@ export const maxDuration = 120 // Allow up to 2 minutes for workflow operations
 /**
  * Verify the request is from Vercel Cron or authorized
  */
-function verifyRequest(request: NextRequest): boolean {
+async function verifyRequest(request: NextRequest): Promise<boolean> {
   const isVercelCron = request.headers.get('x-vercel-cron') === '1'
   const authHeader = request.headers.get('authorization')
   const cronSecret = process.env.CRON_SECRET
   const hasValidSecret = cronSecret && authHeader === `Bearer ${cronSecret}`
   const isDev = process.env.NODE_ENV === 'development'
 
-  return isVercelCron || hasValidSecret || isDev
+  if (isVercelCron || hasValidSecret || isDev) return true
+
+  // Check for authenticated admin user (cookie-based session from admin panel)
+  const user = await getCurrentUser()
+  if (user && (user as { role?: string }).role === 'admin') return true
+
+  return false
 }
 
 /**
@@ -27,7 +34,7 @@ function verifyRequest(request: NextRequest): boolean {
  * - edition: 'morning' | 'midday' | 'evening' (auto-detects if not provided)
  */
 export async function POST(request: NextRequest) {
-  if (!verifyRequest(request)) {
+  if (!(await verifyRequest(request))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -73,7 +80,7 @@ export async function POST(request: NextRequest) {
  * Check the status of a workflow run
  */
 export async function GET(request: NextRequest) {
-  if (!verifyRequest(request)) {
+  if (!(await verifyRequest(request))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

@@ -13,14 +13,26 @@ export interface CouncilMeeting {
   status: CouncilMeetingStatus
   errorMessage: string | null
   chunkCount: number
+  version: number
   createdAt: string
   updatedAt: string
+}
+
+export interface MeetingVersion {
+  id: string
+  meetingId: string
+  version: number
+  recap: CouncilMeetingRecap | null
+  transcriptRaw: string | null
+  chunkCount: number
+  createdAt: string
 }
 
 export type CouncilMeetingStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'no_captions'
 
 export interface CouncilMeetingRecap {
   summary: string
+  article?: string
   decisions: string[]
   topics: string[]
   publicComments: string[]

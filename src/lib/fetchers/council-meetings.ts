@@ -195,24 +195,34 @@ function cleanTranscriptText(text: string): string {
 
 /**
  * Generate a structured meeting recap using Claude via OpenRouter.
- * For very long transcripts (>100K chars), uses staged summarization.
+ * Sonnet 4.5 supports ~200K tokens (~600K chars), so most transcripts fit in a single call.
+ * Only falls back to staged summarization for exceptionally long transcripts.
  */
 export async function generateMeetingRecap(rawTranscript: string): Promise<CouncilMeetingRecap> {
   const openrouter = createOpenRouter({
     apiKey: process.env.OPENROUTER_API_KEY,
   })
 
-  const RECAP_SYSTEM_PROMPT = `You are an expert at analyzing city council meeting transcripts.
-Given a transcript (or summary of sections), extract a structured recap with:
+  const RECAP_SYSTEM_PROMPT = `You are SUX, the Siouxland Assistant — a friendly, knowledgeable AI that helps residents of Sioux City, Iowa and the surrounding Siouxland area stay informed about their local government. Your job is to make city council meetings transparent and accessible to everyday people.
 
-1. **summary**: A concise 2-4 sentence overview of the meeting's key business.
-2. **decisions**: An array of specific decisions made, votes taken, or ordinances passed/discussed. Include vote counts if mentioned.
-3. **topics**: An array of major topics/agenda items discussed.
-4. **publicComments**: An array of notable public comments or citizen concerns raised.
+You write blog-post style recaps addressed directly to Siouxland residents. Your tone is warm, conversational, and community-minded — like a well-informed neighbor explaining what happened at the meeting and why it matters. You care about this community and it shows in your writing.
+
+Given a transcript (or summary of sections), produce a structured JSON recap with these fields:
+
+1. **summary**: A concise 2-4 sentence overview of the meeting's key business. This is used as a preview on the dashboard widget.
+
+2. **article**: A thorough, engaging blog-post style write-up of the meeting (800-2000 words). Write it as SUX speaking directly to Siouxland residents. Use plain English — no jargon, no legalese. Structure it with clear sections using markdown headings (##). Explain what decisions mean for residents: how will this affect their taxes, neighborhood, commute, utilities, etc.? Include context where helpful. Address readers directly when appropriate ("here's what this means for you," "if you live near..."). Lead with the most impactful items. End with any upcoming actions residents should know about (next votes, public comment opportunities, deadlines). Sign off briefly as SUX. IMPORTANT: Do NOT guess or state how long the meeting was (e.g. "a four-hour meeting") — you only have the transcript text, not the meeting duration. Stick to what you can see in the transcript.
+
+3. **decisions**: An array of specific decisions made, votes taken, or ordinances passed/discussed. Include vote counts if mentioned.
+
+4. **topics**: An array of major topics/agenda items discussed.
+
+5. **publicComments**: An array of notable public comments or citizen concerns raised.
 
 Respond ONLY with valid JSON in this exact format:
 {
   "summary": "...",
+  "article": "...",
   "decisions": ["...", "..."],
   "topics": ["...", "..."],
   "publicComments": ["...", "..."]
@@ -220,10 +230,10 @@ Respond ONLY with valid JSON in this exact format:
 
 If a section has no entries, use an empty array []. Focus on substance over procedure.`
 
-  // Staged summarization for very long transcripts
-  if (rawTranscript.length > 100000) {
-    console.log('[Council Recap] Transcript exceeds 100K chars, using staged summarization')
-    const sectionSize = 80000
+  // Staged summarization only for exceptionally long transcripts (>600K chars / ~150K tokens)
+  if (rawTranscript.length > 600000) {
+    console.log('[Council Recap] Transcript exceeds 600K chars, using staged summarization')
+    const sectionSize = 400000
     const sections: string[] = []
 
     for (let i = 0; i < rawTranscript.length; i += sectionSize) {
@@ -236,9 +246,9 @@ If a section has no entries, use an empty array []. Focus on substance over proc
       console.log(`[Council Recap] Summarizing section ${i + 1}/${sections.length}`)
       const result = await generateText({
         model: openrouter('anthropic/claude-sonnet-4.5'),
-        system: 'Summarize the key points, decisions, and discussions from this portion of a city council meeting transcript. Be thorough but concise.',
+        system: 'You are SUX, the Siouxland Assistant, covering a Sioux City council meeting for local residents. Summarize the key points, decisions, discussions, and any public comments from this portion of the transcript. Be thorough — include specifics like vote counts, dollar amounts, names of projects, and what things mean for residents.',
         prompt: sections[i],
-        maxOutputTokens: 4000,
+        maxOutputTokens: 8000,
       })
       sectionSummaries.push(result.text)
     }
@@ -248,19 +258,19 @@ If a section has no entries, use an empty array []. Focus on substance over proc
     const result = await generateText({
       model: openrouter('anthropic/claude-sonnet-4.5'),
       system: RECAP_SYSTEM_PROMPT,
-      prompt: `Here are summaries of different sections of a city council meeting:\n\n${combinedSummary}`,
-      maxOutputTokens: 4000,
+      prompt: `Here are detailed summaries of different sections of a city council meeting:\n\n${combinedSummary}`,
+      maxOutputTokens: 8000,
     })
 
     return parseRecapResponse(result.text)
   }
 
-  // Direct generation for shorter transcripts
+  // Direct generation — send full transcript in one call
   const result = await generateText({
     model: openrouter('anthropic/claude-sonnet-4.5'),
     system: RECAP_SYSTEM_PROMPT,
     prompt: rawTranscript,
-    maxOutputTokens: 4000,
+    maxOutputTokens: 8000,
   })
 
   return parseRecapResponse(result.text)
@@ -280,6 +290,7 @@ function parseRecapResponse(text: string): CouncilMeetingRecap {
     const parsed = JSON.parse(jsonMatch[0])
     return {
       summary: parsed.summary || 'Meeting recap generated but summary extraction failed.',
+      article: parsed.article || '',
       decisions: Array.isArray(parsed.decisions) ? parsed.decisions : [],
       topics: Array.isArray(parsed.topics) ? parsed.topics : [],
       publicComments: Array.isArray(parsed.publicComments) ? parsed.publicComments : [],
@@ -289,6 +300,7 @@ function parseRecapResponse(text: string): CouncilMeetingRecap {
     // Fallback: use the raw text as the summary
     return {
       summary: text.slice(0, 500),
+      article: '',
       decisions: [],
       topics: [],
       publicComments: [],

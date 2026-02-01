@@ -20,6 +20,7 @@ import { TrafficEventsWidget } from '@/components/dashboard/TrafficEventsWidget'
 import { NewsWidget } from '@/components/dashboard/NewsWidget'
 import { GasPricesWidget } from '@/components/dashboard/GasPricesWidget'
 import { EventsWidget } from '@/components/dashboard/EventsWidget'
+import { CouncilWidget } from '@/components/dashboard/CouncilWidget'
 import { DigestWidget } from '@/components/dashboard/DigestWidget'
 import { StatusBar } from '@/components/dashboard/StatusBar'
 import { MobileNavigation } from '@/components/dashboard/MobileNavigation'
@@ -163,9 +164,9 @@ function DashboardContent() {
            ============================================ */}
         <section>
           <SectionHeader title="Live Updates" />
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-            {/* Traffic Cameras - Full width on mobile, half on desktop */}
-            <div className="lg:col-span-2" data-widget-id="cameras">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+            {/* Traffic Cameras - Full width */}
+            <div className="lg:col-span-3" data-widget-id="cameras">
               <Suspense fallback={<WidgetSkeleton className="h-[400px]" />}>
                 <CameraGrid />
               </Suspense>
@@ -182,6 +183,11 @@ function DashboardContent() {
                 <NewsWidget />
               </Suspense>
             </div>
+
+            {/* City Council */}
+            <Suspense fallback={<WidgetSkeleton />}>
+              <CouncilWidget />
+            </Suspense>
           </div>
         </section>
 

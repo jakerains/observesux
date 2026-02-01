@@ -19,6 +19,7 @@ export const DEFAULT_WIDGETS: WidgetConfig[] = [
   { id: 'map', name: 'Interactive Map', description: 'Full map with all data layers', enabled: true, size: 'full' },
   { id: 'digest', name: 'Siouxland Digest', description: 'AI-generated daily community newsletter', enabled: true, size: 'small' },
   { id: 'weather', name: 'Weather', description: 'Current weather conditions and alerts', enabled: true, size: 'small' },
+  { id: 'council', name: 'City Council', description: 'Latest council meeting recaps', enabled: true, size: 'small' },
   { id: 'gas-prices', name: 'Gas Prices', description: 'Siouxland gas prices from GasBuddy', enabled: true, size: 'small' },
   { id: 'transit', name: 'Transit', description: 'Real-time Sioux City bus tracking', enabled: true, size: 'small' },
   { id: 'aviation-weather', name: 'Aviation Weather', description: 'METAR and TAF for KSUX airport', enabled: true, size: 'small' },

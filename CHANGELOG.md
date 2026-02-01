@@ -5,6 +5,29 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.2] - 2026-02-01
+
+### Added
+- **Council meeting blog posts** (`/council/[slug]`): Individual meeting pages with proper typography, topic badges, "At a Glance" sidebar, and AI disclaimer
+- **Tailwind Typography plugin**: Installed `@tailwindcss/typography` so `prose` classes render headings, lists, and paragraphs correctly
+- **Single meeting API** (`/api/council-meetings/[id]`): Accepts date slugs, UUIDs, or video IDs
+
+### Changed
+- Council listing page (`/council`) converted from expandable cards to a linked list — each meeting now links to its own blog post
+- Council dashboard widget now says "Read Latest Recap" and links directly to the latest meeting post
+- City Council widget promoted to Live Updates section (alongside Weather and Local News)
+
+### Fixed
+- Stale `processing` meetings are now retried after 15 minutes instead of being skipped forever
+- Embedding generation parallelized in batches of 5 for faster council meeting ingestion
+
+## [0.9.1] - 2026-02-01
+
+### Added
+- **City Council dashboard widget**: Shows latest meeting date, summary, and top decisions with link to full recaps page
+- **Council recaps page** (`/council`): Expandable meeting cards with decisions, topics, public comments, and YouTube links
+- **Council recaps API** (`/api/council-meetings/recaps`): Serves latest or all completed recaps for widget and page
+
 ## [0.9.0] - 2026-02-01
 
 ### Added

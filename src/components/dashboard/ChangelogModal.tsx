@@ -16,6 +16,34 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.9.2',
+    date: '2026-02-01',
+    added: [
+      'Council meeting blog posts (/council/2026-01-26) with full typography and AI disclaimer',
+      'Single meeting API supporting date slugs, UUIDs, and video IDs',
+      'Tailwind Typography plugin for proper prose rendering',
+    ],
+    changed: [
+      'Council listing page now links to individual blog posts instead of expandable cards',
+      'Council widget promoted to Live Updates section and links directly to latest post',
+    ],
+    fixed: [
+      'Stale processing meetings now retried after 15 minutes instead of stuck forever',
+      'Embedding generation parallelized (5x faster council ingestion)',
+    ],
+  },
+  {
+    version: '0.9.1',
+    date: '2026-02-01',
+    added: [
+      'City Council dashboard widget with latest meeting recap',
+      'Council recaps page (/council) with expandable meeting cards and YouTube links',
+      'Council recaps API endpoint for widget and page data',
+    ],
+    changed: [],
+    fixed: [],
+  },
+  {
     version: '0.9.0',
     date: '2026-02-01',
     added: [
