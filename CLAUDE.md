@@ -316,8 +316,8 @@ The POST endpoint streams events:
 
 ### Transcript Fetching — Known Issues
 
-- **Transcript fetching**: Zero-dependency HTML scraper. Fetches the YouTube watch page, extracts `ytInitialPlayerResponse` JSON embedded in the HTML, finds the timedtext caption track URL, and fetches the XML directly. Previous libraries (`youtube-transcript`, `youtube-transcript-plus`, `youtube-caption-extractor`) all used the InnerTube API which YouTube blocks from datacenter IPs.
-- **Offset units**: The timedtext XML has `start`/`dur` in **seconds**. Our `TranscriptSegment` type uses **milliseconds**. The `fetchTranscript()` function converts with `parseFloat(x) * 1000`.
+- **Transcript fetching**: Uses Firecrawl (`@mendable/firecrawl-js`) to scrape the YouTube watch page with a real browser. Firecrawl renders the page fully (including the transcript panel), returning the transcript text in the markdown output under `## Transcript`. Previous approaches (InnerTube API via `youtube-transcript`, `youtube-transcript-plus`, `youtube-caption-extractor`, and direct HTML scraping) all failed from Vercel's datacenter IPs. Firecrawl works because it uses its own browser infrastructure.
+- **Timestamps**: Firecrawl returns transcript text without per-segment timestamps. We create synthetic segments by splitting on sentence boundaries and estimating offsets at ~150 wpm. YouTube deep links from search results will be approximate rather than exact.
 - **Retry logic**: Videos marked `no_captions` are retried within 48 hours. Failed videos are always retried on next run.
 
 ### AI Models Used

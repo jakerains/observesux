@@ -16,6 +16,13 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.9.8',
+    date: '2026-02-01',
+    changed: [
+      'YouTube transcript fetching now uses Firecrawl browser rendering — bypasses datacenter IP blocking',
+    ],
+  },
+  {
     version: '0.9.7',
     date: '2026-02-01',
     changed: [
