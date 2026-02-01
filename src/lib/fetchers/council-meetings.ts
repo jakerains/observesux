@@ -99,10 +99,12 @@ export async function fetchTranscript(videoId: string): Promise<TranscriptSegmen
       throw new NoCaptionsError(videoId)
     }
 
+    // Library returns offset/duration in seconds; convert to milliseconds
+    // to match TranscriptSegment contract used by chunking logic
     return transcript.map(item => ({
       text: item.text,
-      offset: item.offset,
-      duration: item.duration,
+      offset: item.offset * 1000,
+      duration: item.duration * 1000,
     }))
   } catch (error) {
     if (error instanceof NoCaptionsError) throw error
