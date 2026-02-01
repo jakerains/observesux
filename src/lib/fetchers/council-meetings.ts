@@ -1,6 +1,6 @@
 import { generateText } from 'ai'
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
-import { YoutubeTranscript } from 'youtube-transcript'
+import { YoutubeTranscript } from 'youtube-transcript-plus'
 import type { TranscriptSegment, CouncilMeetingRecap } from '@/types/council-meetings'
 
 // Sioux City Council YouTube channel
