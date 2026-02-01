@@ -16,6 +16,13 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.9.6',
+    date: '2026-02-01',
+    changed: [
+      'YouTube transcript library swapped from youtube-transcript-plus to youtube-caption-extractor for Vercel compatibility',
+    ],
+  },
+  {
     version: '0.9.5',
     date: '2026-02-01',
     added: [

@@ -301,7 +301,7 @@ YouTube RSS → Transcript Fetch → 5-min Chunking → AI Recap → Embeddings 
 1. **RSS Fetch** — Fetch YouTube RSS feed for channel `UCrekGAbOEqDvdzn9w8FAcoQ`
 2. **Filter** — Check DB for already-ingested videos, skip completed, retry failed/no_captions within 48hrs
 3. **Upsert Meeting** — Create or update meeting record in DB (status → `processing`)
-4. **Fetch Transcript** — Fetch YouTube captions via `youtube-transcript-plus`
+4. **Fetch Transcript** — Fetch YouTube captions via `youtube-caption-extractor`
 5. **Chunk Transcript** — Split transcript into ~5-minute windows with start/end timestamps
 6. **Generate Recap** — AI recap via Claude Sonnet 4.5 (OpenRouter) with staged summarization for >100K char transcripts
 7. **Generate Embeddings** — Generate `text-embedding-3-small` vectors for each chunk (OpenAI direct)
@@ -316,8 +316,8 @@ The POST endpoint streams events:
 
 ### Transcript Fetching — Known Issues
 
-- **Library**: Uses `youtube-transcript-plus` (NOT `youtube-transcript` — that library is broken as of Feb 2026, returns empty responses due to YouTube anti-bot changes)
-- **Offset units**: The library returns `offset`/`duration` in **seconds**. Our `TranscriptSegment` type uses **milliseconds**. The `fetchTranscript()` function converts with `* 1000`.
+- **Library**: Uses `youtube-caption-extractor` which scrapes the engagement panel transcript (sidebar UI) instead of the Innertube player API. Previous libraries (`youtube-transcript`, `youtube-transcript-plus`) failed from datacenter IPs due to YouTube anti-bot blocking of the Innertube API.
+- **Offset units**: The library returns `start`/`dur` as **string seconds**. Our `TranscriptSegment` type uses **milliseconds**. The `fetchTranscript()` function parses and converts with `parseFloat(x) * 1000`.
 - **Retry logic**: Videos marked `no_captions` are retried within 48 hours. Failed videos are always retried on next run.
 
 ### AI Models Used

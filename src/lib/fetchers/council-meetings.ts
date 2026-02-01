@@ -1,13 +1,6 @@
 import { generateText } from 'ai'
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
-import {
-  YoutubeTranscript,
-  YoutubeTranscriptDisabledError,
-  YoutubeTranscriptNotAvailableError,
-  YoutubeTranscriptNotAvailableLanguageError,
-  YoutubeTranscriptVideoUnavailableError,
-  YoutubeTranscriptTooManyRequestError,
-} from 'youtube-transcript-plus'
+import { getSubtitles } from 'youtube-caption-extractor'
 import { SUX_PERSONALITY } from '@/lib/ai/sux-personality'
 import type { TranscriptSegment, CouncilMeetingRecap } from '@/types/council-meetings'
 
@@ -99,89 +92,25 @@ export async function fetchCouncilRSS(): Promise<RSSVideoEntry[]> {
  * Fetch transcript segments for a YouTube video.
  * Throws NoCaptionsError if no captions are available.
  *
- * Passes a YouTube consent cookie (SOCS) so that requests from
- * Vercel/cloud IPs don't get blocked by YouTube's consent page.
+ * Uses youtube-caption-extractor which scrapes the engagement panel
+ * transcript (the sidebar transcript UI) rather than the Innertube
+ * player API. This approach works from datacenter IPs where the
+ * Innertube API is blocked by YouTube.
  */
 export async function fetchTranscript(videoId: string): Promise<TranscriptSegment[]> {
   try {
-    const BROWSER_UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
-    const CONSENT_COOKIES = 'SOCS=CAESEwgDEgk2ODE4MTAyNjQaAmVuIAEaBgiA_JO7Bg; CONSENT=YES+'
+    const subtitles = await getSubtitles({ videoID: videoId, lang: 'en' })
 
-    // Base fetch with consent cookies and browser headers
-    const ytFetch = async (params: {
-      url: string
-      lang?: string
-      userAgent?: string
-      method?: string
-      body?: string
-      headers?: Record<string, string>
-    }) => {
-      return fetch(params.url, {
-        method: params.method || 'GET',
-        headers: {
-          'User-Agent': params.userAgent || BROWSER_UA,
-          'Accept-Language': params.lang || 'en-US,en;q=0.9',
-          Cookie: CONSENT_COOKIES,
-          ...(params.headers || {}),
-        },
-        body: params.body,
-      })
-    }
-
-    // Player fetch: rewrite the ANDROID client to WEB client.
-    // YouTube blocks ANDROID client requests from datacenter IPs
-    // but allows WEB client with proper browser headers.
-    const playerFetch = async (params: {
-      url: string
-      lang?: string
-      userAgent?: string
-      method?: string
-      body?: string
-      headers?: Record<string, string>
-    }) => {
-      let body = params.body
-      if (body) {
-        try {
-          const parsed = JSON.parse(body)
-          if (parsed.context?.client?.clientName === 'ANDROID') {
-            parsed.context.client = {
-              clientName: 'WEB',
-              clientVersion: '2.20240101.00.00',
-            }
-            body = JSON.stringify(parsed)
-          }
-        } catch {
-          // If JSON parse fails, send as-is
-        }
-      }
-      return fetch(params.url, {
-        method: params.method || 'POST',
-        headers: {
-          'User-Agent': BROWSER_UA,
-          'Accept-Language': params.lang || 'en-US,en;q=0.9',
-          Cookie: CONSENT_COOKIES,
-          ...(params.headers || {}),
-        },
-        body,
-      })
-    }
-
-    const transcript = await YoutubeTranscript.fetchTranscript(videoId, {
-      videoFetch: ytFetch,
-      playerFetch,
-      transcriptFetch: ytFetch,
-    })
-
-    if (!transcript || transcript.length === 0) {
+    if (!subtitles || subtitles.length === 0) {
       throw new NoCaptionsError(videoId)
     }
 
-    // Library returns offset/duration in seconds; convert to milliseconds
+    // Library returns start/dur as string seconds; convert to milliseconds
     // to match TranscriptSegment contract used by chunking logic
-    return transcript.map(item => ({
+    return subtitles.map(item => ({
       text: item.text,
-      offset: item.offset * 1000,
-      duration: item.duration * 1000,
+      offset: parseFloat(item.start) * 1000,
+      duration: parseFloat(item.dur) * 1000,
     }))
   } catch (error) {
     if (error instanceof NoCaptionsError) throw error
@@ -190,30 +119,13 @@ export async function fetchTranscript(videoId: string): Promise<TranscriptSegmen
     const errorMsg = error instanceof Error ? error.message : String(error)
     console.error(`[Transcript] Failed for ${videoId}: [${errorName}] ${errorMsg}`)
 
-    // Catch the library's specific error classes
-    if (
-      error instanceof YoutubeTranscriptDisabledError ||
-      error instanceof YoutubeTranscriptNotAvailableError ||
-      error instanceof YoutubeTranscriptNotAvailableLanguageError
-    ) {
-      throw new NoCaptionsError(videoId)
-    }
-
-    // Rate limiting — let it bubble up so the caller can retry
-    if (error instanceof YoutubeTranscriptTooManyRequestError) {
-      throw error
-    }
-
-    // Video unavailable (deleted, private, etc.)
-    if (error instanceof YoutubeTranscriptVideoUnavailableError) {
-      throw new NoCaptionsError(videoId)
-    }
-
-    // Fallback: check message strings for any other error variants
+    // Map common error messages to NoCaptionsError
     if (
       errorMsg.includes('captions') ||
       errorMsg.includes('transcript') ||
-      errorMsg.includes('disabled')
+      errorMsg.includes('disabled') ||
+      errorMsg.includes('not available') ||
+      errorMsg.includes('Could not get')
     ) {
       throw new NoCaptionsError(videoId)
     }
