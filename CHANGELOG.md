@@ -5,6 +5,11 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.12] - 2026-02-01
+
+### Changed
+- **Comprehensive README overhaul**: Updated README to document all features added since v0.7 — daily digest, council recaps, push notifications, user accounts, watchlist, voice agent, expanded tech stack table, and updated project structure
+
 ## [0.9.11] - 2026-02-01
 
 ### Added

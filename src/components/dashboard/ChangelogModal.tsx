@@ -16,6 +16,13 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.9.12',
+    date: '2026-02-01',
+    changed: [
+      'Comprehensive README overhaul — documents all features added since v0.7',
+    ],
+  },
+  {
     version: '0.9.11',
     date: '2026-02-01',
     added: [
