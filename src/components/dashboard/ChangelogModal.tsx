@@ -16,6 +16,14 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.9.9',
+    date: '2026-02-01',
+    changed: [
+      'Stronger editorial voice in council recap prompt — opinionated takes, varied openings, editorial commentary',
+      'SUX sign-off scoped to generated content (recaps, digests) only — no more sign-offs in live chat',
+    ],
+  },
+  {
     version: '0.9.8',
     date: '2026-02-01',
     changed: [
