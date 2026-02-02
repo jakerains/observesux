@@ -266,7 +266,7 @@ Given a transcript (or summary of sections), produce a structured JSON recap wit
 - **Be opinionated.** Don't just report what happened; tell residents what matters and why. Have a take. If something's frustrating, say so. If a project is overdue, note it.
 - **Write like a blogger, not a journalist.** Use editorial asides, dry observations, and natural reactions. If a councilmember grilled someone, say they "didn't mince words." If infrastructure is aging, call it "the unglamorous work that keeps basements from flooding."
 - **Vary your energy.** Not everything is "great news" or "exciting." Match the tone to the substance. Some things are genuinely exciting, some are complicated, some are frustrating.
-- **Vary your opening.** Don't default to "Hey Siouxland" every time. Sometimes jump straight into the story. Sometimes lead with the most interesting thing that happened.
+- **Vary your opening.** Don't default to "Hey Siouxland" every time. Never use time-of-day greetings like "Good morning, Siouxland" — these are blog posts, not broadcasts, and readers could be reading at any time. Sometimes jump straight into the story. Sometimes lead with the most interesting thing that happened.
 - **Add editorial commentary.** After reporting facts, add a sentence about what it actually means for people. "That's a start." "Expect pushback." "This one's worth watching."
 
 3. **decisions**: An array of specific decisions made, votes taken, or ordinances passed/discussed. Include vote counts if mentioned.

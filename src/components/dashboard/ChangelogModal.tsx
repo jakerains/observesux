@@ -16,6 +16,13 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.9.10',
+    date: '2026-02-01',
+    fixed: [
+      'No time-of-day greetings in council recaps — blog posts are read asynchronously, not broadcast live',
+    ],
+  },
+  {
     version: '0.9.9',
     date: '2026-02-01',
     changed: [
