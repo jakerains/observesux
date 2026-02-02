@@ -20,6 +20,7 @@ import type {
   NewsArticle,
   LocalEvent,
   SchoolUpdate,
+  CouncilRecapDigest,
 } from './types'
 import type {
   WeatherObservation,
@@ -605,9 +606,48 @@ export async function fetchSchoolUpdatesStep(): Promise<SchoolUpdate[]> {
 }
 
 /**
+ * Step: Fetch the most recent council meeting recap (for Tuesday morning digest)
+ */
+async function fetchCouncilRecapStep(): Promise<CouncilRecapDigest | null> {
+  'use step'
+
+  console.log('[fetchCouncilRecapStep] Fetching most recent council meeting recap...')
+  const startTime = Date.now()
+
+  try {
+    const { getRecentMeetingRecaps } = await import('@/lib/db/council-meetings')
+    const meetings = await getRecentMeetingRecaps(1)
+    const duration = Date.now() - startTime
+
+    if (meetings.length === 0 || !meetings[0].recap) {
+      console.log(`[fetchCouncilRecapStep] No completed recaps found (${duration}ms)`)
+      return null
+    }
+
+    const meeting = meetings[0]
+    const recap = meeting.recap!
+    console.log(`[fetchCouncilRecapStep] Got recap for "${meeting.title}" (${duration}ms)`)
+
+    return {
+      summary: recap.summary,
+      decisions: recap.decisions,
+      topics: recap.topics,
+      publicComments: recap.publicComments,
+      videoId: meeting.videoId,
+      title: meeting.title,
+      meetingDate: meeting.meetingDate,
+    }
+  } catch (error) {
+    const duration = Date.now() - startTime
+    console.error(`[fetchCouncilRecapStep] Failed after ${duration}ms:`, error)
+    return null
+  }
+}
+
+/**
  * Aggregates all data from direct fetcher calls
  * This is the main entry point for workflow data collection
- * @param edition - The digest edition (morning, midday, evening). School updates only fetched for morning.
+ * @param edition - The digest edition (morning, midday, evening). School updates only fetched for morning. Council recap only on Tuesday morning.
  */
 export async function aggregateAllData(edition?: DigestEdition): Promise<DigestData> {
   console.log('╔════════════════════════════════════════════════════════════╗')
@@ -622,6 +662,12 @@ export async function aggregateAllData(edition?: DigestEdition): Promise<DigestD
   // School updates only fetched for morning edition (most relevant for closings/delays)
   const shouldFetchSchools = edition === 'morning'
 
+  // Council recap only fetched for Tuesday morning (recaps Monday night meeting)
+  const now = new Date()
+  const centralDay = new Date(now.toLocaleString('en-US', { timeZone: 'America/Chicago' })).getDay()
+  const isTuesday = centralDay === 2
+  const shouldFetchCouncilRecap = edition === 'morning' && isTuesday
+
   const [
     weather,
     forecast,
@@ -633,7 +679,8 @@ export async function aggregateAllData(edition?: DigestEdition): Promise<DigestD
     events,
     gasPrices,
     flights,
-    schools
+    schools,
+    councilRecap
   ] = await Promise.all([
     fetchWeatherStep(),
     fetchForecastStep(),
@@ -645,7 +692,8 @@ export async function aggregateAllData(edition?: DigestEdition): Promise<DigestD
     fetchEventsStep(),
     fetchGasPricesStep(),
     fetchFlightsStep(),
-    shouldFetchSchools ? fetchSchoolUpdatesStep() : Promise.resolve([])
+    shouldFetchSchools ? fetchSchoolUpdatesStep() : Promise.resolve([]),
+    shouldFetchCouncilRecap ? fetchCouncilRecapStep() : Promise.resolve(null)
   ])
 
   const duration = Date.now() - startTime
@@ -665,6 +713,7 @@ export async function aggregateAllData(edition?: DigestEdition): Promise<DigestD
   console.log(`║ Gas Prices:  ${gasPrices ? `✓ $${gasPrices.averageRegular} avg` : '✗ NULL'}`)
   console.log(`║ Flights:     ${flights ? `✓ ${flights.totalDelays} delays` : '✗ NULL'}`)
   console.log(`║ Schools:     ${schools.length > 0 ? `✓ ${schools.length} updates` : '○ 0 updates'}`)
+  console.log(`║ Council:     ${councilRecap ? `✓ "${councilRecap.title}"` : shouldFetchCouncilRecap ? '✗ No recap found' : '○ Not Tuesday morning'}`)
   console.log('╠════════════════════════════════════════════════════════════╣')
   console.log(`║ Total time: ${duration}ms                                  `)
   console.log('╚════════════════════════════════════════════════════════════╝')
@@ -683,6 +732,7 @@ export async function aggregateAllData(edition?: DigestEdition): Promise<DigestD
     gasPrices,
     flights,
     schools,
+    councilRecap,
     timestamp: new Date().toISOString()
   }
 }

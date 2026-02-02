@@ -16,6 +16,7 @@ export function getDigestSystemPrompt(edition: DigestEdition): string {
       description: 'a morning briefing to help Siouxlanders start their day informed',
       tone: 'bright and helpful, like a friendly neighbor with coffee in hand',
       priorities: [
+        'Monday night council meeting recap (Tuesday mornings only) - if council data is provided, weave the highlights into the digest as a dedicated section',
         'School closings, delays, or late starts - only if explicitly confirmed in news data',
         'Weather alerts that affect morning commutes or outdoor activities',
         'Traffic conditions for the morning commute',
@@ -92,7 +93,10 @@ ${edition === 'evening' ? "Tomorrow's forecast and what to prepare for. Include 
 ### On the Roads
 Active traffic incidents affecting commutes. If roads are clear, say so briefly.
 
-### What's Happening
+${edition === 'morning' ? `### At City Hall (Tuesday mornings only)
+If council meeting data is provided, summarize the key decisions, notable discussions, and anything residents should watch for. Include the link to the full recap and the YouTube video. Write it in SUX's voice — opinionated, direct, and focused on what it means for people. If no council data is provided, omit this section entirely.
+
+` : ''}### What's Happening
 Top community events and notable news stories. Prioritize:
 - Breaking news
 - Stories that affect daily life (closings, openings, local government decisions)
@@ -243,6 +247,33 @@ export function buildDigestPrompt(
       const pubDate = article.pubDate ? ` (Published: ${new Date(article.pubDate).toLocaleString('en-US', { timeZone: 'America/Chicago', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })})` : ''
       prompt += `- ${breaking}${article.title}${pubDate} (${article.source})${url}\n`
     }
+  }
+
+  // Council meeting recap (Tuesday morning only)
+  if (data.councilRecap) {
+    const recap = data.councilRecap
+    prompt += `\n### 🏛️ MONDAY NIGHT COUNCIL MEETING\n`
+    prompt += `This is the recap from last night's city council meeting. Include a dedicated section in the digest covering the highlights — what was decided, what matters to residents, and any upcoming actions.\n`
+    prompt += `Meeting: ${recap.title}\n`
+    if (recap.meetingDate) prompt += `Date: ${recap.meetingDate}\n`
+    prompt += `Summary: ${recap.summary}\n`
+    if (recap.decisions.length > 0) {
+      prompt += `Key Decisions:\n`
+      for (const decision of recap.decisions) {
+        prompt += `- ${decision}\n`
+      }
+    }
+    if (recap.topics.length > 0) {
+      prompt += `Topics Discussed: ${recap.topics.join(', ')}\n`
+    }
+    if (recap.publicComments.length > 0) {
+      prompt += `Public Comments:\n`
+      for (const comment of recap.publicComments) {
+        prompt += `- ${comment}\n`
+      }
+    }
+    prompt += `Watch full meeting: https://www.youtube.com/watch?v=${recap.videoId}\n`
+    prompt += `Full recap: https://siouxlandonline.com/council/${recap.videoId}\n`
   }
 
   // News

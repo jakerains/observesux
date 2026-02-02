@@ -80,6 +80,7 @@ export interface DigestData {
   gasPrices: GasPriceSummary | null
   flights: FlightDelaySummary | null
   schools: SchoolUpdate[] // School closings, delays, and announcements from Firecrawl
+  councilRecap: CouncilRecapDigest | null // Monday night council meeting recap (Tuesday morning only)
   timestamp: string
 }
 
@@ -121,6 +122,19 @@ export interface FlightDelaySummary {
     scheduledTime: string
     status: string
   }>
+}
+
+/**
+ * Flattened council meeting recap for digest inclusion (Tuesday morning only)
+ */
+export interface CouncilRecapDigest {
+  summary: string
+  decisions: string[]
+  topics: string[]
+  publicComments: string[]
+  videoId: string
+  title: string
+  meetingDate: string | null
 }
 
 /**

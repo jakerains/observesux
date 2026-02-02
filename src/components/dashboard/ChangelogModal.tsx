@@ -16,6 +16,13 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.9.11',
+    date: '2026-02-01',
+    added: [
+      'Tuesday morning digest includes Monday night council meeting recap — key decisions, topics, and public comments',
+    ],
+  },
+  {
     version: '0.9.10',
     date: '2026-02-01',
     fixed: [
