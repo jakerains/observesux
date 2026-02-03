@@ -16,6 +16,14 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.9.14',
+    date: '2026-02-03',
+    added: [
+      'Manual transcript upload for council meetings — upload .md or .txt files when YouTube captions are unavailable',
+      'Meeting selector in upload modal — auto-fill details from existing meetings, prioritizes those needing transcripts',
+    ],
+  },
+  {
     version: '0.9.13',
     date: '2026-02-03',
     added: [

@@ -6,7 +6,9 @@ import {
   generateMeetingRecap,
   NoCaptionsError,
   parseMeetingDateFromTitle,
+  textToSegments,
 } from '@/lib/fetchers/council-meetings'
+import { nanoid } from 'nanoid'
 import {
   getMeetingByVideoId,
   upsertMeeting,
@@ -57,49 +59,62 @@ function sendEvent(
 /**
  * Process a single video: transcript → chunk → recap → embeddings → store.
  * Used by both bulk ingestion and single-meeting retry.
+ * If preloadedSegments is provided, skips transcript fetching (used for manual uploads).
  */
 async function processVideo(
   videoId: string,
   meeting: { id: string; meetingDate: string | null },
   controller: ReadableStreamDefaultController,
   encoder: TextEncoder,
-  label: string
+  label: string,
+  preloadedSegments?: TranscriptSegment[]
 ): Promise<'completed' | 'no_captions'> {
-  // Fetch transcript
-  sendEvent(controller, encoder, 'progress', {
-    step: 'transcript',
-    message: `${label} Fetching transcript...`,
-    videoId,
-  })
+  let segments: TranscriptSegment[] | null = preloadedSegments || null
 
-  let segments: TranscriptSegment[] | null = null
-  try {
-    segments = await fetchTranscript(videoId)
-  } catch (error) {
-    if (error instanceof NoCaptionsError) {
-      segments = null
-    } else {
-      throw error
-    }
-  }
-
-  if (!segments || segments.length === 0) {
-    await updateMeetingStatus(meeting.id, 'no_captions')
+  // Fetch transcript only if not preloaded (manual upload provides preloaded segments)
+  if (!segments) {
     sendEvent(controller, encoder, 'progress', {
       step: 'transcript',
-      message: `${label} No captions available`,
+      message: `${label} Fetching transcript...`,
       videoId,
-      status: 'no_captions',
     })
-    return 'no_captions'
-  }
 
-  sendEvent(controller, encoder, 'progress', {
-    step: 'transcript',
-    message: `${label} Got ${segments.length} transcript segments`,
-    videoId,
-    segmentCount: segments.length,
-  })
+    try {
+      segments = await fetchTranscript(videoId)
+    } catch (error) {
+      if (error instanceof NoCaptionsError) {
+        segments = null
+      } else {
+        throw error
+      }
+    }
+
+    if (!segments || segments.length === 0) {
+      await updateMeetingStatus(meeting.id, 'no_captions')
+      sendEvent(controller, encoder, 'progress', {
+        step: 'transcript',
+        message: `${label} No captions available`,
+        videoId,
+        status: 'no_captions',
+      })
+      return 'no_captions'
+    }
+
+    sendEvent(controller, encoder, 'progress', {
+      step: 'transcript',
+      message: `${label} Got ${segments.length} transcript segments`,
+      videoId,
+      segmentCount: segments.length,
+    })
+  } else {
+    // Preloaded segments (manual upload)
+    sendEvent(controller, encoder, 'progress', {
+      step: 'transcript',
+      message: `${label} Using uploaded transcript (${segments.length} segments)`,
+      videoId,
+      segmentCount: segments.length,
+    })
+  }
 
   // Chunk transcript
   sendEvent(controller, encoder, 'progress', {
@@ -191,6 +206,8 @@ async function processVideo(
  * Body options:
  *   { videoId: string, mode?: 'full' | 'recap_only' }  — reprocess a single meeting
  *   { force: boolean }   — reprocess all (including completed)
+ *   { mode: 'upload', transcript: string, title: string, meetingDate: string, videoId?: string }
+ *     — manual transcript upload
  *   {}                   — normal ingestion (new + failed + no_captions)
  */
 export async function POST(request: NextRequest) {
@@ -200,15 +217,26 @@ export async function POST(request: NextRequest) {
 
   let force = false
   let singleVideoId: string | null = null
-  let mode: 'full' | 'recap_only' = 'full'
+  let mode: 'full' | 'recap_only' | 'upload' = 'full'
   let videoMeta: { title?: string; publishedAt?: string } = {}
+  let uploadData: { transcript?: string; title?: string; meetingDate?: string; videoId?: string } = {}
   try {
     const body = await request.json()
     if (body.force) force = true
     if (body.videoId) singleVideoId = body.videoId
     if (body.mode === 'recap_only') mode = 'recap_only'
+    if (body.mode === 'upload') mode = 'upload'
     if (body.title) videoMeta.title = body.title
     if (body.publishedAt) videoMeta.publishedAt = body.publishedAt
+    // Upload-specific fields
+    if (mode === 'upload') {
+      uploadData = {
+        transcript: body.transcript,
+        title: body.title,
+        meetingDate: body.meetingDate,
+        videoId: body.videoId,
+      }
+    }
   } catch {
     // Empty body is fine
   }
@@ -218,6 +246,174 @@ export async function POST(request: NextRequest) {
   }
 
   const encoder = new TextEncoder()
+
+  // Manual transcript upload path
+  if (mode === 'upload') {
+    // Validate required fields
+    if (!uploadData.transcript || !uploadData.title || !uploadData.meetingDate) {
+      return NextResponse.json(
+        { error: 'Missing required fields: transcript, title, and meetingDate are required' },
+        { status: 400 }
+      )
+    }
+
+    if (uploadData.transcript.length < 500) {
+      return NextResponse.json(
+        { error: 'Transcript too short (minimum 500 characters)' },
+        { status: 400 }
+      )
+    }
+
+    // Validate meetingDate format (YYYY-MM-DD)
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(uploadData.meetingDate)) {
+      return NextResponse.json(
+        { error: 'Invalid meeting date format (expected YYYY-MM-DD)' },
+        { status: 400 }
+      )
+    }
+
+    // Validate videoId format if provided (11 alphanumeric chars for YouTube)
+    if (uploadData.videoId && !/^[a-zA-Z0-9_-]{11}$/.test(uploadData.videoId)) {
+      // Only validate format for YouTube-style IDs, allow manual- prefix
+      if (!uploadData.videoId.startsWith('manual-')) {
+        return NextResponse.json(
+          { error: 'Invalid video ID format (expected 11 alphanumeric characters for YouTube IDs)' },
+          { status: 400 }
+        )
+      }
+    }
+
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          // Generate videoId if not provided
+          const videoId = uploadData.videoId || `manual-${uploadData.meetingDate}-${nanoid(6)}`
+
+          sendEvent(controller, encoder, 'progress', {
+            step: 'upsert',
+            message: `Creating meeting record: ${uploadData.title}`,
+            videoId,
+          })
+
+          // Check if this is overriding an existing meeting
+          const existingMeeting = await getMeetingByVideoId(videoId)
+
+          // Upsert the meeting record
+          const meeting = await upsertMeeting({
+            videoId,
+            title: uploadData.title!,
+            publishedAt: null, // Manual uploads don't have a publish date
+            meetingDate: uploadData.meetingDate!,
+            videoUrl: uploadData.videoId
+              ? `https://www.youtube.com/watch?v=${uploadData.videoId}`
+              : null, // No video URL for purely manual uploads
+            channelId: null, // Manual uploads don't have a channel
+          })
+
+          if (!meeting) {
+            sendEvent(controller, encoder, 'complete', {
+              success: false,
+              processed: 0,
+              skipped: 0,
+              failed: 1,
+              noCaptions: 0,
+              error: `Failed to create meeting record for ${uploadData.title}`,
+            })
+            controller.close()
+            return
+          }
+
+          if (existingMeeting) {
+            sendEvent(controller, encoder, 'progress', {
+              step: 'upsert',
+              message: `Overriding existing meeting (previous status: ${existingMeeting.status})`,
+              videoId,
+            })
+          }
+
+          await updateMeetingStatus(meeting.id, 'processing')
+
+          // Convert transcript text to segments
+          sendEvent(controller, encoder, 'progress', {
+            step: 'transcript',
+            message: `Processing uploaded transcript (${uploadData.transcript!.length.toLocaleString()} chars)...`,
+            videoId,
+          })
+
+          const segments = textToSegments(uploadData.transcript!)
+
+          if (segments.length === 0) {
+            await updateMeetingStatus(meeting.id, 'failed', 'Transcript could not be parsed into segments')
+            sendEvent(controller, encoder, 'complete', {
+              success: false,
+              processed: 0,
+              skipped: 0,
+              failed: 1,
+              noCaptions: 0,
+              error: 'Transcript could not be parsed into segments',
+            })
+            controller.close()
+            return
+          }
+
+          sendEvent(controller, encoder, 'progress', {
+            step: 'transcript',
+            message: `Created ${segments.length} segments from uploaded transcript`,
+            videoId,
+            segmentCount: segments.length,
+          })
+
+          // Process using the standard pipeline with preloaded segments
+          const result = await processVideo(videoId, meeting, controller, encoder, '[Upload]', segments)
+
+          if (result === 'completed') {
+            sendEvent(controller, encoder, 'progress', {
+              step: 'done',
+              message: `Upload complete: ${uploadData.title}`,
+              videoId,
+              status: 'completed',
+            })
+            sendEvent(controller, encoder, 'complete', {
+              success: true,
+              processed: 1,
+              skipped: 0,
+              failed: 0,
+              noCaptions: 0,
+            })
+          } else {
+            // This shouldn't happen for uploads since we preload segments
+            sendEvent(controller, encoder, 'complete', {
+              success: false,
+              processed: 0,
+              skipped: 0,
+              failed: 1,
+              noCaptions: 0,
+              error: 'Unexpected result from transcript processing',
+            })
+          }
+        } catch (error) {
+          console.error('[Council Ingest] Upload failed:', error)
+          sendEvent(controller, encoder, 'complete', {
+            success: false,
+            processed: 0,
+            skipped: 0,
+            failed: 1,
+            noCaptions: 0,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          })
+        }
+        controller.close()
+      },
+    })
+
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        Connection: 'keep-alive',
+      },
+    })
+  }
 
   // Single-meeting retry path
   if (singleVideoId) {

@@ -5,6 +5,12 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.14] - 2026-02-03
+
+### Added
+- **Manual transcript upload for council meetings**: Upload `.md` or `.txt` transcripts directly in the admin panel — useful when YouTube auto-captions are unavailable or low quality
+- **Meeting selector in upload modal**: Select an existing meeting from a dropdown to auto-fill title, date, and video ID — prioritizes meetings with "no captions" or "failed" status
+
 ## [0.9.13] - 2026-02-03
 
 ### Added

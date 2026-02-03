@@ -21,6 +21,7 @@ import {
   History,
   Rss,
   Youtube,
+  Upload,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -31,6 +32,7 @@ import { Label } from '@/components/ui/label'
 import { cn, markdownToHtml } from '@/lib/utils'
 import { format, parseISO } from 'date-fns'
 import type { CouncilMeeting, CouncilIngestStats, MeetingVersion } from '@/types/council-meetings'
+import { TranscriptUploadModal, type TranscriptUploadData } from './TranscriptUploadModal'
 
 interface WorkflowOutput {
   success: boolean
@@ -93,6 +95,8 @@ export function CouncilIngestPanel() {
     dbStatus: string | null
   }> | null>(null)
   const [loadingFeed, setLoadingFeed] = useState(false)
+  const [uploadModalOpen, setUploadModalOpen] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
   const logEndRef = useRef<HTMLDivElement>(null)
 
   const fetchData = useCallback(async () => {
@@ -385,6 +389,115 @@ export function CouncilIngestPanel() {
     }
   }
 
+  const uploadTranscript = async (data: TranscriptUploadData) => {
+    setIsUploading(true)
+    setResult(null)
+    setProgressLog([])
+
+    try {
+      const res = await fetch('/api/workflow/council-ingest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'upload',
+          transcript: data.transcript,
+          title: data.title,
+          meetingDate: data.meetingDate,
+          videoId: data.videoId,
+        }),
+      })
+
+      if (!res.ok) {
+        const errorData = await res.json()
+        setIsUploading(false)
+        setResult({
+          success: false,
+          processed: 0,
+          skipped: 0,
+          failed: 1,
+          noCaptions: 0,
+          error: errorData.error || `HTTP ${res.status}`,
+        })
+        return
+      }
+
+      const reader = res.body?.getReader()
+      if (!reader) {
+        setIsUploading(false)
+        setResult({
+          success: false,
+          processed: 0,
+          skipped: 0,
+          failed: 1,
+          noCaptions: 0,
+          error: 'No response stream',
+        })
+        return
+      }
+
+      // Close the modal once we start receiving the stream
+      setUploadModalOpen(false)
+
+      const decoder = new TextDecoder()
+      let buffer = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+
+        let currentEvent = ''
+        let currentData = ''
+
+        for (const line of lines) {
+          if (line.startsWith('event: ')) {
+            currentEvent = line.slice(7)
+          } else if (line.startsWith('data: ')) {
+            currentData = line.slice(6)
+          } else if (line === '' && currentEvent && currentData) {
+            try {
+              const eventData = JSON.parse(currentData)
+              if (currentEvent === 'progress') {
+                setProgressLog(prev => [...prev, eventData as ProgressEvent])
+              } else if (currentEvent === 'error') {
+                setProgressLog(prev => [
+                  ...prev,
+                  { step: 'error', message: `Error: ${eventData.message}`, videoId: eventData.videoId },
+                ])
+              } else if (currentEvent === 'complete') {
+                setResult(eventData as WorkflowOutput)
+                setIsUploading(false)
+                fetchData()
+                if (feedVideos) fetchFeed()
+              }
+            } catch {
+              // Skip malformed JSON
+            }
+            currentEvent = ''
+            currentData = ''
+          }
+        }
+      }
+
+      if (isUploading) {
+        setIsUploading(false)
+      }
+    } catch (error) {
+      setIsUploading(false)
+      setResult({
+        success: false,
+        processed: 0,
+        skipped: 0,
+        failed: 1,
+        noCaptions: 0,
+        error: error instanceof Error ? error.message : 'Request failed',
+      })
+    }
+  }
+
   const latestProgress = progressLog[progressLog.length - 1]
 
   const formatDate = (dateStr: string | null | undefined): string => {
@@ -481,35 +594,56 @@ export function CouncilIngestPanel() {
             />
           </div>
 
-          <Button
-            onClick={startIngestion}
-            disabled={ingesting || retryingVideoId !== null}
-            className="gap-2"
-          >
-            {ingesting ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Ingesting...
-              </>
-            ) : (
-              <>
-                <Play className="h-4 w-4" />
-                Run Ingestion
-              </>
-            )}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={startIngestion}
+              disabled={ingesting || retryingVideoId !== null || isUploading}
+              className="gap-2"
+            >
+              {ingesting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Ingesting...
+                </>
+              ) : (
+                <>
+                  <Play className="h-4 w-4" />
+                  Run Ingestion
+                </>
+              )}
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={() => setUploadModalOpen(true)}
+              disabled={ingesting || retryingVideoId !== null || isUploading}
+              className="gap-2"
+            >
+              {isUploading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <Upload className="h-4 w-4" />
+                  Upload Transcript
+                </>
+              )}
+            </Button>
+          </div>
 
           {/* Live progress log */}
-          {(ingesting || retryingVideoId) && progressLog.length > 0 && (
-            <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
+          {(ingesting || retryingVideoId || isUploading) && progressLog.length > 0 && (
+            <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20 overflow-hidden">
               <div className="flex items-center gap-3 mb-3">
-                <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
-                <span className="font-medium text-blue-700">
+                <Loader2 className="h-5 w-5 animate-spin text-blue-500 shrink-0" />
+                <span className="font-medium text-blue-700 dark:text-blue-400 truncate">
                   {latestProgress?.message || 'Processing...'}
                 </span>
               </div>
-              <ScrollArea className="max-h-[200px]">
-                <div className="text-xs text-blue-600 space-y-1 font-mono">
+              <div className="max-h-[200px] overflow-y-auto">
+                <div className="text-xs text-blue-600 dark:text-blue-400 space-y-1 font-mono">
                   {progressLog.map((event, i) => {
                     const Icon = stepIcons[event.step] || FileText
                     return (
@@ -522,18 +656,18 @@ export function CouncilIngestPanel() {
                           'h-3 w-3 shrink-0',
                           event.step === 'embeddings' && i === progressLog.length - 1 && 'animate-spin'
                         )} />
-                        {event.message}
+                        <span className="break-all">{event.message}</span>
                       </p>
                     )
                   })}
                   <div ref={logEndRef} />
                 </div>
-              </ScrollArea>
+              </div>
             </div>
           )}
 
           {/* Result */}
-          {result && !ingesting && (
+          {result && !ingesting && !isUploading && (
             <div className={cn(
               'p-4 rounded-lg text-sm',
               result.success ? 'bg-green-500/10 border border-green-500/20' : 'bg-red-500/10 border border-red-500/20'
@@ -974,6 +1108,15 @@ export function CouncilIngestPanel() {
           )}
         </CardContent>
       </Card>
+
+      {/* Upload Transcript Modal */}
+      <TranscriptUploadModal
+        open={uploadModalOpen}
+        onOpenChange={setUploadModalOpen}
+        onSubmit={uploadTranscript}
+        isSubmitting={isUploading}
+        meetings={meetings}
+      />
     </div>
   )
 }

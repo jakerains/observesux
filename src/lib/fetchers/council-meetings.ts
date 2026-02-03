@@ -58,6 +58,44 @@ export class NoCaptionsError extends Error {
 }
 
 /**
+ * Convert raw transcript text into synthetic segments with estimated timestamps.
+ * Splits by sentence boundaries and estimates timing at ~150 words per minute.
+ * Used by both fetchTranscript (for YouTube captions) and manual transcript uploads.
+ */
+export function textToSegments(rawText: string): TranscriptSegment[] {
+  if (!rawText || rawText.trim().length === 0) {
+    return []
+  }
+
+  // Split into sentences by sentence boundaries
+  const sentences = rawText.match(/[^.!?]+[.!?]+/g) || [rawText]
+  const totalWords = rawText.split(/\s+/).length
+  // Estimate duration at ~150 words per minute
+  const estimatedDurationMs = (totalWords / 150) * 60 * 1000
+
+  let offsetMs = 0
+  const segments: TranscriptSegment[] = []
+
+  for (const sentence of sentences) {
+    const trimmed = sentence.trim()
+    if (!trimmed) continue
+
+    const wordCount = trimmed.split(/\s+/).length
+    const durationMs = (wordCount / totalWords) * estimatedDurationMs
+
+    segments.push({
+      text: trimmed,
+      offset: Math.round(offsetMs),
+      duration: Math.round(durationMs),
+    })
+
+    offsetMs += durationMs
+  }
+
+  return segments
+}
+
+/**
  * Parse YouTube RSS feed XML to extract video entries.
  * Uses regex-based parsing since the RSS format is simple and consistent.
  */
@@ -160,33 +198,8 @@ export async function fetchTranscript(videoId: string): Promise<TranscriptSegmen
 
     console.log(`[Transcript] Got ${transcriptText.length} chars of transcript for ${videoId}`)
 
-    // Split into synthetic segments by sentence boundaries.
-    // We don't have real timestamps, so we estimate offsets by
-    // distributing evenly across an assumed duration based on
-    // ~150 words per minute of speech.
-    const sentences = transcriptText.match(/[^.!?]+[.!?]+/g) || [transcriptText]
-    const totalWords = transcriptText.split(/\s+/).length
-    const estimatedDurationMs = (totalWords / 150) * 60 * 1000 // ~150 wpm
-
-    let offsetMs = 0
-    const segments: TranscriptSegment[] = []
-
-    for (const sentence of sentences) {
-      const trimmed = sentence.trim()
-      if (!trimmed) continue
-
-      const wordCount = trimmed.split(/\s+/).length
-      const durationMs = (wordCount / totalWords) * estimatedDurationMs
-
-      segments.push({
-        text: trimmed,
-        offset: Math.round(offsetMs),
-        duration: Math.round(durationMs),
-      })
-
-      offsetMs += durationMs
-    }
-
+    // Convert raw text to segments with synthetic timestamps
+    const segments = textToSegments(transcriptText)
     console.log(`[Transcript] Created ${segments.length} segments for ${videoId}`)
     return segments
   } catch (error) {
