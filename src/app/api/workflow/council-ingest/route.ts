@@ -5,6 +5,7 @@ import {
   chunkTranscript,
   generateMeetingRecap,
   NoCaptionsError,
+  parseMeetingDateFromTitle,
 } from '@/lib/fetchers/council-meetings'
 import {
   getMeetingByVideoId,
@@ -200,11 +201,14 @@ export async function POST(request: NextRequest) {
   let force = false
   let singleVideoId: string | null = null
   let mode: 'full' | 'recap_only' = 'full'
+  let videoMeta: { title?: string; publishedAt?: string } = {}
   try {
     const body = await request.json()
     if (body.force) force = true
     if (body.videoId) singleVideoId = body.videoId
     if (body.mode === 'recap_only') mode = 'recap_only'
+    if (body.title) videoMeta.title = body.title
+    if (body.publishedAt) videoMeta.publishedAt = body.publishedAt
   } catch {
     // Empty body is fine
   }
@@ -230,18 +234,39 @@ export async function POST(request: NextRequest) {
             videoId,
           })
 
-          const meeting = await getMeetingByVideoId(videoId)
+          let meeting = await getMeetingByVideoId(videoId)
           if (!meeting) {
-            sendEvent(controller, encoder, 'complete', {
-              success: false,
-              processed: 0,
-              skipped: 0,
-              failed: 1,
-              noCaptions: 0,
-              error: `Meeting not found for video ${videoId}`,
-            })
-            controller.close()
-            return
+            // New video not yet in DB — upsert it if we have metadata
+            if (videoMeta.title) {
+              const publishedAt = videoMeta.publishedAt || null
+              // Parse meeting date from title, fall back to publishedAt date
+              const meetingDate = parseMeetingDateFromTitle(videoMeta.title)
+                || (publishedAt ? publishedAt.split('T')[0] : null)
+              sendEvent(controller, encoder, 'progress', {
+                step: 'upsert',
+                message: `Creating record for: ${videoMeta.title}`,
+                videoId,
+              })
+              meeting = await upsertMeeting({
+                videoId,
+                title: videoMeta.title,
+                publishedAt,
+                meetingDate,
+                videoUrl: `https://www.youtube.com/watch?v=${videoId}`,
+              })
+            }
+            if (!meeting) {
+              sendEvent(controller, encoder, 'complete', {
+                success: false,
+                processed: 0,
+                skipped: 0,
+                failed: 1,
+                noCaptions: 0,
+                error: `Meeting not found for video ${videoId}`,
+              })
+              controller.close()
+              return
+            }
           }
 
           // Recap-only mode: regenerate recap from existing transcript
@@ -463,11 +488,15 @@ export async function POST(request: NextRequest) {
               total: newVideos.length,
             })
 
+            // Parse meeting date from title, fall back to publishedAt date
+            const meetingDate = parseMeetingDateFromTitle(video.title)
+              || (video.publishedAt ? video.publishedAt.split('T')[0] : null)
+
             const meeting = await upsertMeeting({
               videoId: video.videoId,
               title: video.title,
               publishedAt: video.publishedAt,
-              meetingDate: video.publishedAt ? video.publishedAt.split('T')[0] : null,
+              meetingDate,
               videoUrl: video.videoUrl,
               channelId: video.channelId,
             })
@@ -546,7 +575,8 @@ export async function POST(request: NextRequest) {
 
 /**
  * GET /api/workflow/council-ingest
- * Returns stats and recent meetings
+ * Returns stats and recent meetings.
+ * Add ?feed=true to also fetch the YouTube RSS feed and cross-reference with DB.
  */
 export async function GET(request: NextRequest) {
   if (!(await verifyRequest(request))) {
@@ -554,14 +584,43 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const includeFeed = request.nextUrl.searchParams.get('feed') === 'true'
+
     const [stats, recentMeetings] = await Promise.all([
       getCouncilIngestStats(),
       getRecentMeetings(20),
     ])
 
+    let feedVideos: Array<{
+      videoId: string
+      title: string
+      publishedAt: string
+      videoUrl: string
+      dbStatus: string | null
+    }> | undefined
+
+    if (includeFeed) {
+      const rssEntries = await fetchCouncilRSS()
+      // Cross-reference each RSS entry with what's in the DB
+      const statusChecks = await Promise.all(
+        rssEntries.map(async (entry) => {
+          const existing = await getMeetingByVideoId(entry.videoId)
+          return {
+            videoId: entry.videoId,
+            title: entry.title,
+            publishedAt: entry.publishedAt,
+            videoUrl: entry.videoUrl,
+            dbStatus: existing?.status ?? null,
+          }
+        })
+      )
+      feedVideos = statusChecks
+    }
+
     return NextResponse.json({
       stats,
       recentMeetings,
+      ...(feedVideos !== undefined && { feedVideos }),
       timestamp: new Date().toISOString(),
     })
   } catch (error) {

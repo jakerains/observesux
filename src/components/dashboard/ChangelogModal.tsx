@@ -16,6 +16,17 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.9.13',
+    date: '2026-02-03',
+    added: [
+      'OpenGraph metadata for council meeting pages — rich social previews when sharing links',
+      'YouTube RSS feed panel in admin — view and process videos directly from the feed',
+    ],
+    fixed: [
+      'Parse meeting date from video title instead of YouTube publish date',
+    ],
+  },
+  {
     version: '0.9.12',
     date: '2026-02-01',
     changed: [

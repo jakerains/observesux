@@ -19,6 +19,8 @@ import {
   ArrowUpDown,
   RotateCcw,
   History,
+  Rss,
+  Youtube,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -83,6 +85,14 @@ export function CouncilIngestPanel() {
   const [loadingVersions, setLoadingVersions] = useState<string | null>(null)
   const [showVersions, setShowVersions] = useState<string | null>(null)
   const [restoringVersion, setRestoringVersion] = useState<{ meetingId: string; version: number } | null>(null)
+  const [feedVideos, setFeedVideos] = useState<Array<{
+    videoId: string
+    title: string
+    publishedAt: string
+    videoUrl: string
+    dbStatus: string | null
+  }> | null>(null)
+  const [loadingFeed, setLoadingFeed] = useState(false)
   const logEndRef = useRef<HTMLDivElement>(null)
 
   const fetchData = useCallback(async () => {
@@ -95,6 +105,21 @@ export function CouncilIngestPanel() {
       console.error('Failed to fetch council data:', error)
     } finally {
       setLoading(false)
+    }
+  }, [])
+
+  const fetchFeed = useCallback(async () => {
+    setLoadingFeed(true)
+    try {
+      const res = await fetch('/api/workflow/council-ingest?feed=true')
+      const data = await res.json()
+      if (data.feedVideos) setFeedVideos(data.feedVideos)
+      if (data.stats) setStats(data.stats)
+      if (data.recentMeetings) setMeetings(data.recentMeetings)
+    } catch (error) {
+      console.error('Failed to fetch feed:', error)
+    } finally {
+      setLoadingFeed(false)
     }
   }, [])
 
@@ -192,6 +217,7 @@ export function CouncilIngestPanel() {
                 setResult(data as WorkflowOutput)
                 setIngesting(false)
                 fetchData() // Refresh stats
+                if (feedVideos) fetchFeed() // Refresh feed statuses
               }
             } catch {
               // Skip malformed JSON
@@ -219,7 +245,11 @@ export function CouncilIngestPanel() {
     }
   }
 
-  const retryMeeting = async (videoId: string, mode: 'full' | 'recap_only' = 'full') => {
+  const retryMeeting = async (
+    videoId: string,
+    mode: 'full' | 'recap_only' = 'full',
+    meta?: { title?: string; publishedAt?: string }
+  ) => {
     setRetryingVideoId(videoId)
     setResult(null)
     setProgressLog([])
@@ -228,7 +258,7 @@ export function CouncilIngestPanel() {
       const res = await fetch('/api/workflow/council-ingest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ videoId, mode }),
+        body: JSON.stringify({ videoId, mode, ...meta }),
       })
 
       if (!res.ok) {
@@ -284,6 +314,7 @@ export function CouncilIngestPanel() {
                 setResult(data as WorkflowOutput)
                 setRetryingVideoId(null)
                 fetchData()
+                if (feedVideos) fetchFeed() // Refresh feed statuses
               }
             } catch {
               // Skip malformed JSON
@@ -526,6 +557,132 @@ export function CouncilIngestPanel() {
                   {result.noCaptions > 0 && <p className="text-yellow-500">{result.noCaptions} without captions</p>}
                 </div>
               )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* YouTube Feed */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-red-500/10">
+                <Youtube className="h-5 w-5 text-red-500" />
+              </div>
+              <div>
+                <CardTitle className="text-lg">YouTube Feed</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Videos from the Sioux City Council channel
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={fetchFeed}
+              disabled={loadingFeed}
+            >
+              {loadingFeed ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Checking...
+                </>
+              ) : (
+                <>
+                  <Rss className="h-4 w-4" />
+                  Check Feed
+                </>
+              )}
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {feedVideos === null ? (
+            <div className="text-center py-6 text-muted-foreground">
+              <Rss className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">Click &quot;Check Feed&quot; to load the latest videos from YouTube</p>
+            </div>
+          ) : feedVideos.length === 0 ? (
+            <div className="text-center py-6 text-muted-foreground">
+              <p className="text-sm">No videos found in the RSS feed</p>
+            </div>
+          ) : (
+            <div className="max-h-[400px] overflow-y-auto space-y-2 pr-1">
+              {feedVideos.map((video) => {
+                const isNew = video.dbStatus === null
+                const isProcessable = isNew || video.dbStatus === 'failed' || video.dbStatus === 'no_captions'
+                const isProcessing = video.dbStatus === 'processing' || retryingVideoId === video.videoId
+
+                return (
+                  <div
+                    key={video.videoId}
+                    className={cn(
+                      'flex items-center gap-3 p-3 rounded-lg border',
+                      isNew && 'bg-blue-500/5 border-blue-500/20',
+                    )}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{video.title}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs text-muted-foreground">
+                          {formatDate(video.publishedAt)}
+                        </span>
+                        {isNew ? (
+                          <Badge variant="outline" className="text-xs text-blue-600 border-blue-500/30 bg-blue-500/10">
+                            New
+                          </Badge>
+                        ) : (
+                          <Badge variant={statusBadgeVariant[video.dbStatus!] || 'outline'} className="text-xs">
+                            {video.dbStatus === 'processing' && (
+                              <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                            )}
+                            {video.dbStatus}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <a
+                        href={video.videoUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-muted-foreground hover:text-foreground transition-colors"
+                        title="Watch on YouTube"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                      {isProcessable && !isProcessing && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 gap-1.5 text-xs"
+                          disabled={ingesting || retryingVideoId !== null}
+                          onClick={() => retryMeeting(video.videoId, 'full', {
+                            title: video.title,
+                            publishedAt: video.publishedAt,
+                          })}
+                        >
+                          <Play className="h-3 w-3" />
+                          Process
+                        </Button>
+                      )}
+                      {isProcessing && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 gap-1.5 text-xs"
+                          disabled
+                        >
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          Processing...
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           )}
         </CardContent>

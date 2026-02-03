@@ -5,6 +5,15 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.13] - 2026-02-03
+
+### Added
+- **OpenGraph metadata for council meeting pages**: Share links like `siouxland.online/council/2026-02-02` on Facebook/Twitter and see rich previews with meeting title and summary
+- **YouTube RSS feed panel in admin**: View all videos from the council channel, see their ingest status, and process new videos directly from the feed
+
+### Fixed
+- **Parse meeting date from video title**: Previously used YouTube publish date which was wrong when videos are pre-scheduled — now extracts the actual meeting date from the title (e.g., "February 2 2026")
+
 ## [0.9.12] - 2026-02-01
 
 ### Changed

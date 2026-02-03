@@ -11,6 +11,34 @@ const RSS_URL = `https://www.youtube.com/feeds/videos.xml?channel_id=${COUNCIL_C
 // 5-minute chunking window in milliseconds
 const CHUNK_WINDOW_MS = 300000
 
+/**
+ * Parse meeting date from video title.
+ * Handles formats like:
+ *   - "City of Sioux City Council Meeting - February 2 2026"
+ *   - "City of Sioux City Council Meeting - January 26, 2026"
+ *   - "City of Sioux City Council Budget Review - January 17, 2026"
+ * Returns ISO date string (YYYY-MM-DD) or null if parsing fails.
+ */
+export function parseMeetingDateFromTitle(title: string): string | null {
+  // Match "Month Day, Year" or "Month Day Year" at the end of the title
+  const dateRegex = /(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{1,2}),?\s+(\d{4})/i
+  const match = title.match(dateRegex)
+
+  if (!match) return null
+
+  const monthNames: Record<string, string> = {
+    january: '01', february: '02', march: '03', april: '04',
+    may: '05', june: '06', july: '07', august: '08',
+    september: '09', october: '10', november: '11', december: '12'
+  }
+
+  const month = monthNames[match[1].toLowerCase()]
+  const day = match[2].padStart(2, '0')
+  const year = match[3]
+
+  return `${year}-${month}-${day}`
+}
+
 export interface RSSVideoEntry {
   videoId: string
   title: string
