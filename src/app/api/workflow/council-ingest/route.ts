@@ -8,7 +8,6 @@ import {
   parseMeetingDateFromTitle,
   textToSegments,
 } from '@/lib/fetchers/council-meetings'
-import { nanoid } from 'nanoid'
 import {
   getMeetingByVideoId,
   upsertMeeting,
@@ -287,7 +286,7 @@ export async function POST(request: NextRequest) {
       async start(controller) {
         try {
           // Generate videoId if not provided
-          const videoId = uploadData.videoId || `manual-${uploadData.meetingDate}-${nanoid(6)}`
+          const videoId = uploadData.videoId || `manual-${uploadData.meetingDate}-${crypto.randomUUID().slice(0, 6)}`
 
           sendEvent(controller, encoder, 'progress', {
             step: 'upsert',
