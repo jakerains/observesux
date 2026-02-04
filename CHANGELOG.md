@@ -5,6 +5,20 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.15] - 2026-02-03
+
+### Added
+- **Restaurant cards in SUX chat**: Rich interactive cards with menu buttons, call/directions/website actions, price indicators, and expandable hours when asking about local restaurants
+- **Reusable ActionButton component**: Consistent button styling across all structured chat blocks with primary/secondary/ghost variants
+- **Analytics tracking for council meetings**: Track when users click to read recaps (from widget or list) and watch full YouTube meetings
+- **Analytics tracking for restaurant actions**: Track menu views, calls, directions, and website clicks from chat
+
+### Fixed
+- **Structured block rendering**: Added markdown normalization to properly render code blocks that were output inline by the AI
+
+### Changed
+- **Improved AI restaurant data extraction**: Stronger prompt instructions to extract ALL available fields (phone, address, menu link, hours) from knowledge base results
+
 ## [0.9.14] - 2026-02-03
 
 ### Added

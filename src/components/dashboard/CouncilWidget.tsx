@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Landmark, ArrowRight } from 'lucide-react'
+import { track } from '@vercel/analytics'
 import useSWR from 'swr'
 import type { CouncilMeeting } from '@/types/council-meetings'
 
@@ -125,7 +126,14 @@ export function CouncilWidget() {
         {/* View all link */}
         <div className="mt-auto pt-3">
           <Button asChild variant="outline" size="sm" className="gap-2">
-            <Link href={meeting.meetingDate ? `/council/${meeting.meetingDate}` : '/council'}>
+            <Link
+              href={meeting.meetingDate ? `/council/${meeting.meetingDate}` : '/council'}
+              onClick={() => track('council_recap_clicked', {
+                source: 'widget',
+                meetingDate: meeting.meetingDate,
+                videoId: meeting.videoId
+              })}
+            >
               Read Latest Recap
               <ArrowRight className="h-3 w-3" />
             </Link>

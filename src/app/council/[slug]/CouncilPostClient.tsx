@@ -10,6 +10,7 @@ import {
   ExternalLink,
   MessageSquare,
 } from 'lucide-react'
+import { track } from '@vercel/analytics'
 import { MobileNavigation } from '@/components/dashboard/MobileNavigation'
 import { markdownToHtml } from '@/lib/utils'
 import type { CouncilMeeting } from '@/types/council-meetings'
@@ -159,7 +160,15 @@ export function CouncilPostClient({ meeting }: CouncilPostClientProps) {
         {/* Footer: YouTube link + attribution */}
         <footer className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-6 border-t">
           <Button asChild variant="outline" size="sm" className="gap-2">
-            <a href={youtubeUrl} target="_blank" rel="noopener noreferrer">
+            <a
+              href={youtubeUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => track('council_youtube_clicked', {
+                meetingDate: meeting.meetingDate,
+                videoId: meeting.videoId
+              })}
+            >
               Watch the full meeting
               <ExternalLink className="h-3 w-3" />
             </a>

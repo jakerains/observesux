@@ -10,6 +10,7 @@ import {
   Loader2,
   ChevronRight,
 } from 'lucide-react'
+import { track } from '@vercel/analytics'
 import { MobileNavigation } from '@/components/dashboard/MobileNavigation'
 import useSWR from 'swr'
 import type { CouncilMeeting } from '@/types/council-meetings'
@@ -39,7 +40,15 @@ function MeetingListItem({ meeting }: { meeting: CouncilMeeting }) {
   const slug = meeting.meetingDate || meeting.id
 
   return (
-    <Link href={`/council/${slug}`} className="block group">
+    <Link
+      href={`/council/${slug}`}
+      className="block group"
+      onClick={() => track('council_recap_clicked', {
+        source: 'list',
+        meetingDate: meeting.meetingDate,
+        videoId: meeting.videoId
+      })}
+    >
       <Card className="overflow-hidden transition-colors group-hover:border-primary/30">
         <CardContent className="pt-6">
           <div className="flex items-start justify-between gap-4">

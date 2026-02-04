@@ -41,11 +41,20 @@ function truncateUrlText(text: string, maxLength: number = 40): string {
  * Normalize markdown content to fix common LLM output issues
  */
 function normalizeMarkdown(content: string): string {
+  // List of structured block types that need special handling
+  const blockTypes = STRUCTURED_BLOCK_TYPES.join('|')
+
   return content
     // Fix headings stuck to previous text (e.g., "text.## Heading" → "text.\n\n## Heading")
     .replace(/([^\n])(\n?)(#{1,6}\s)/g, '$1\n\n$3')
     // Fix bold/headers stuck together (e.g., "text.**Bold**" → "text. **Bold**")
     .replace(/([.!?])(\*\*[A-Z])/g, '$1 $2')
+    // Fix structured code blocks stuck to text (e.g., "text:```restaurant" → "text:\n\n```restaurant")
+    .replace(new RegExp(`([^\\n])\`\`\`(${blockTypes})`, 'g'), '$1\n\n```$2')
+    // Fix structured code blocks without newline after language (e.g., "```restaurant {" → "```restaurant\n{")
+    .replace(new RegExp(`\`\`\`(${blockTypes})\\s*\\{`, 'g'), '```$1\n{')
+    // Ensure closing ``` for structured blocks is on its own line
+    .replace(new RegExp(`\\}\\s*\`\`\`(?!\\w)`, 'g'), '}\n```')
 }
 
 const toneStyles = {

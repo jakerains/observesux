@@ -16,6 +16,20 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.9.15',
+    date: '2026-02-03',
+    added: [
+      'Restaurant cards in SUX chat — rich cards with menu buttons, call/directions actions, price indicators, and expandable hours',
+      'Analytics tracking for council meetings and restaurant interactions',
+    ],
+    fixed: [
+      'Structured block rendering — code blocks now render correctly even when AI outputs them inline',
+    ],
+    changed: [
+      'Improved AI restaurant data extraction from knowledge base',
+    ],
+  },
+  {
     version: '0.9.14',
     date: '2026-02-03',
     added: [
