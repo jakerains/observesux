@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import { fetchAviationWeather } from '@/lib/fetchers/aviation'
 import type { AviationWeather, ApiResponse } from '@/types'
 
-export const dynamic = 'force-dynamic'
 export const revalidate = 120 // 2 minutes
 
 export async function GET() {
@@ -16,7 +15,9 @@ export async function GET() {
       cached: false
     }
 
-    return NextResponse.json(response)
+    return NextResponse.json(response, {
+      headers: { 'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=240' }
+    })
   } catch (error) {
     console.error('Aviation weather API error:', error)
     return NextResponse.json(

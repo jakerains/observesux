@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import { fetchIowaDOTCameras, getKTIVCameras } from '@/lib/fetchers/iowa-dot'
 import type { TrafficCamera, ApiResponse } from '@/types'
 
-export const dynamic = 'force-dynamic'
 export const revalidate = 60 // Revalidate every 60 seconds
 
 export async function GET() {
@@ -28,7 +27,9 @@ export async function GET() {
       source: 'iowa_dot,ktiv'
     }
 
-    return NextResponse.json(response)
+    return NextResponse.json(response, {
+      headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120' }
+    })
   } catch (error) {
     console.error('Cameras API error:', error)
     return NextResponse.json(

@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import { fetch511Events } from '@/lib/fetchers/iowa-dot'
 import type { TrafficEvent, ApiResponse } from '@/types'
 
-export const dynamic = 'force-dynamic'
 export const revalidate = 300 // Revalidate every 5 minutes
 
 export async function GET() {
@@ -23,7 +22,9 @@ export async function GET() {
       source: 'iowa_511'
     }
 
-    return NextResponse.json(response)
+    return NextResponse.json(response, {
+      headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' }
+    })
   } catch (error) {
     console.error('Traffic events API error:', error)
     return NextResponse.json(

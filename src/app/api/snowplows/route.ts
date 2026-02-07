@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { Snowplow, ApiResponse } from '@/types'
 
-export const dynamic = 'force-dynamic'
 export const revalidate = 60 // Revalidate every minute during winter operations
 
 // Iowa DOT Snow Plow AVL API - updates every 2 minutes
@@ -95,7 +94,9 @@ export async function GET() {
       source: 'iowa_dot_avl'
     }
 
-    return NextResponse.json(apiResponse)
+    return NextResponse.json(apiResponse, {
+      headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120' }
+    })
   } catch (error) {
     console.error('Snowplows API error:', error)
 

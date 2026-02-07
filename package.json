@@ -1,6 +1,6 @@
 {
   "name": "siouxland-online",
-  "version": "0.9.15",
+  "version": "0.9.16",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -69,6 +69,7 @@
     "zod": "^4.3.5"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^16.1.6",
     "@remotion/cli": "^4.0.410",
     "@remotion/google-fonts": "^4.0.410",
     "@remotion/transitions": "^4.0.410",

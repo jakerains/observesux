@@ -16,6 +16,19 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.9.16',
+    date: '2026-02-07',
+    changed: [
+      'ISR caching on 18 API routes — edge-cached responses instead of per-request serverless execution',
+      'Status API rewrite — direct upstream health checks instead of 15 self-referencing fetch calls',
+      'Dynamic imports for ChatWidget, CameraGrid, ScannerPlayer, VoiceAgent, and ChangelogModal',
+      'Bundle optimization — framer-motion and react-markdown tree-shaking, font swap fix',
+    ],
+    added: [
+      'Bundle analyzer — run ANALYZE=true pnpm build to visualize bundle',
+    ],
+  },
+  {
     version: '0.9.15',
     date: '2026-02-03',
     added: [

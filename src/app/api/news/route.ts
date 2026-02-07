@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 
-export const dynamic = 'force-dynamic'
 export const revalidate = 120 // Revalidate every 2 minutes
 
 // Only show news from the last 3 days (72 hours)
@@ -309,7 +308,9 @@ export async function GET() {
       source: 'local_news_rss'
     }
 
-    return NextResponse.json(response)
+    return NextResponse.json(response, {
+      headers: { 'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=240' }
+    })
   } catch (error) {
     console.error('News API error:', error)
     return NextResponse.json({

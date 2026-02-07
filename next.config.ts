@@ -1,6 +1,11 @@
 import type { NextConfig } from "next"
+import withBundleAnalyzerInit from "@next/bundle-analyzer"
 import withSerwistInit from "@serwist/next"
 import { withWorkflow } from "workflow/next"
+
+const withBundleAnalyzer = withBundleAnalyzerInit({
+  enabled: process.env.ANALYZE === 'true',
+})
 
 const withSerwist = withSerwistInit({
   swSrc: "src/app/sw.ts",
@@ -17,6 +22,8 @@ const nextConfig: NextConfig = {
       'recharts',
       '@radix-ui/react-icons',
       'date-fns',
+      'framer-motion',
+      'react-markdown',
     ],
   },
 
@@ -80,4 +87,4 @@ const nextConfig: NextConfig = {
   },
 }
 
-export default withWorkflow(withSerwist(nextConfig))
+export default withWorkflow(withBundleAnalyzer(withSerwist(nextConfig)))

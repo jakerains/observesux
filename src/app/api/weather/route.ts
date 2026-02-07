@@ -3,7 +3,6 @@ import { fetchNWSObservations } from '@/lib/fetchers/nws'
 import { storeWeatherObservation } from '@/lib/db/historical'
 import type { WeatherObservation, ApiResponse } from '@/types'
 
-export const dynamic = 'force-dynamic'
 export const revalidate = 60 // Revalidate every minute
 
 export async function GET() {
@@ -32,7 +31,9 @@ export async function GET() {
       source: 'nws'
     }
 
-    return NextResponse.json(response)
+    return NextResponse.json(response, {
+      headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120' }
+    })
   } catch (error) {
     console.error('Weather API error:', error)
     return NextResponse.json(

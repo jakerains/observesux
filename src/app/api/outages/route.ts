@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { OutageSummary, ApiResponse } from '@/types'
 
-export const dynamic = 'force-dynamic'
 export const revalidate = 300 // Revalidate every 5 minutes
 
 // Note: MidAmerican Energy and Woodbury REC don't have public APIs
@@ -37,7 +36,9 @@ export async function GET() {
       source: 'utility_portals'
     }
 
-    return NextResponse.json(response)
+    return NextResponse.json(response, {
+      headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' }
+    })
   } catch (error) {
     console.error('Outages API error:', error)
     return NextResponse.json(

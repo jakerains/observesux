@@ -10,8 +10,6 @@ import { WeatherWidget } from '@/components/dashboard/WeatherWidget'
 import { RiverGauge } from '@/components/dashboard/RiverGauge'
 import { AirQualityCard } from '@/components/dashboard/AirQualityCard'
 import { TransitWidget } from '@/components/dashboard/TransitWidget'
-import { CameraGrid } from '@/components/dashboard/CameraGrid'
-import { ScannerPlayer } from '@/components/dashboard/ScannerPlayer'
 import { FlightBoard } from '@/components/dashboard/FlightBoard'
 import { AviationWeatherWidget } from '@/components/dashboard/AviationWeatherWidget'
 import { OutageMap } from '@/components/dashboard/OutageMap'
@@ -24,9 +22,6 @@ import { CouncilWidget } from '@/components/dashboard/CouncilWidget'
 import { DigestWidget } from '@/components/dashboard/DigestWidget'
 import { StatusBar } from '@/components/dashboard/StatusBar'
 import { MobileNavigation } from '@/components/dashboard/MobileNavigation'
-import { VoiceAgentWidget } from '@/components/dashboard/VoiceAgentWidget'
-import { ChatWidget } from '@/components/dashboard/ChatWidget'
-import { ChangelogModal } from '@/components/dashboard/ChangelogModal'
 import { DashboardLayoutProvider } from '@/lib/contexts/DashboardLayoutContext'
 import { TransitProvider } from '@/lib/contexts/TransitContext'
 import { MapFocusProvider } from '@/lib/contexts/MapFocusContext'
@@ -66,6 +61,32 @@ function WidgetSkeleton({ className }: { className?: string }) {
     </div>
   )
 }
+
+// Dynamic imports for heavy/below-fold components
+const ChatWidget = dynamic(
+  () => import('@/components/dashboard/ChatWidget').then(mod => ({ default: mod.ChatWidget })),
+  { ssr: false, loading: () => null }
+)
+
+const ChangelogModal = dynamic(
+  () => import('@/components/dashboard/ChangelogModal').then(mod => ({ default: mod.ChangelogModal })),
+  { ssr: false, loading: () => null }
+)
+
+const VoiceAgentWidget = dynamic(
+  () => import('@/components/dashboard/VoiceAgentWidget').then(mod => ({ default: mod.VoiceAgentWidget })),
+  { ssr: false, loading: () => null }
+)
+
+const ScannerPlayer = dynamic(
+  () => import('@/components/dashboard/ScannerPlayer').then(mod => ({ default: mod.ScannerPlayer })),
+  { ssr: false, loading: () => <WidgetSkeleton /> }
+)
+
+const CameraGrid = dynamic(
+  () => import('@/components/dashboard/CameraGrid').then(mod => ({ default: mod.CameraGrid })),
+  { ssr: false, loading: () => <WidgetSkeleton className="h-[400px]" /> }
+)
 
 function DashboardContent() {
   const { mutate } = useSWRConfig()

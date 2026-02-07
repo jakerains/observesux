@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import type { BusPosition, TransitRoute, TransitStop, OccupancyStatus, ScheduleAdherence, GtfsStop, GtfsStopTime } from '@/types'
 import { getOccupancyFromRaw } from '@/types'
 
-export const dynamic = 'force-dynamic'
 export const revalidate = 30 // Revalidate every 30 seconds
 
 // Sioux City Transit uses Passio GO
@@ -445,7 +444,9 @@ export async function GET() {
       source: 'passio'
     }
 
-    return NextResponse.json(apiResponse)
+    return NextResponse.json(apiResponse, {
+      headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' }
+    })
   } catch (error) {
     console.error('Transit API error:', error)
     return NextResponse.json(

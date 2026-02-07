@@ -5,6 +5,19 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.16] - 2026-02-07
+
+### Changed
+- **ISR caching on 18 API routes**: Removed `force-dynamic` from all public data routes so `revalidate` actually works — edge-cached responses instead of per-request serverless execution
+- **Cache-Control headers**: Added `s-maxage` + `stale-while-revalidate` headers to all public data API responses
+- **Status API rewrite**: Replaced 15 self-referencing fetch calls with direct upstream health checks, eliminating serverless fan-out
+- **Dynamic imports**: ChatWidget, CameraGrid, ScannerPlayer, VoiceAgentWidget, and ChangelogModal now lazy-load to reduce initial bundle size
+- **Bundle optimization**: Added framer-motion and react-markdown to `optimizePackageImports` for better tree-shaking
+- **Font loading**: Added `display: swap` to Geist Mono font to prevent invisible text during load
+
+### Added
+- **Bundle analyzer**: `@next/bundle-analyzer` available via `ANALYZE=true pnpm build`
+
 ## [0.9.15] - 2026-02-03
 
 ### Added

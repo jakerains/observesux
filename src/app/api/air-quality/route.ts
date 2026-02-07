@@ -3,7 +3,6 @@ import { fetchAirQuality } from '@/lib/fetchers/airnow'
 import { storeAirQualityReading } from '@/lib/db/historical'
 import type { AirQualityReading, ApiResponse } from '@/types'
 
-export const dynamic = 'force-dynamic'
 export const revalidate = 3600 // Revalidate every hour (AirNow updates hourly)
 
 export async function GET() {
@@ -26,7 +25,9 @@ export async function GET() {
       source: reading.source
     }
 
-    return NextResponse.json(response)
+    return NextResponse.json(response, {
+      headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200' }
+    })
   } catch (error) {
     console.error('Air quality API error:', error)
     return NextResponse.json(

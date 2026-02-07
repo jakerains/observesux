@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import type { GtfsStop, TransitRoute, RouteShape, GtfsStopTime } from '@/types'
 
-export const dynamic = 'force-dynamic'
 export const revalidate = 3600 // 1 hour
 
 const PASSIO_API = 'https://passio3.com/siouxcity/passioTransit/gtfs/'
@@ -264,11 +263,15 @@ export async function GET(request: NextRequest) {
             stops: routeStops,
             routeId,
             timestamp: new Date().toISOString()
+          }, {
+            headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200' }
           })
         }
         return NextResponse.json({
           stops: Array.from(data.stops.values()),
           timestamp: new Date().toISOString()
+        }, {
+          headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200' }
         })
       }
 
@@ -276,6 +279,8 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({
           routes: data.routes,
           timestamp: new Date().toISOString()
+        }, {
+          headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200' }
         })
       }
 
@@ -289,12 +294,16 @@ export async function GET(request: NextRequest) {
             shapes: matchingShapes,
             routeId,
             timestamp: new Date().toISOString()
+          }, {
+            headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200' }
           })
         }
         // Return all shapes with route associations
         return NextResponse.json({
           shapes: Array.from(data.shapes.values()),
           timestamp: new Date().toISOString()
+        }, {
+          headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200' }
         })
       }
 
@@ -314,6 +323,8 @@ export async function GET(request: NextRequest) {
             stopTimes: enrichedTimes,
             tripId,
             timestamp: new Date().toISOString()
+          }, {
+            headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200' }
           })
         }
         return NextResponse.json({ error: 'tripId required for schedule' }, { status: 400 })
@@ -329,6 +340,8 @@ export async function GET(request: NextRequest) {
           return NextResponse.json({
             stop: stop || null,
             timestamp: new Date().toISOString()
+          }, {
+            headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200' }
           })
         }
 
@@ -340,6 +353,8 @@ export async function GET(request: NextRequest) {
           return NextResponse.json({
             stops: foundStops,
             timestamp: new Date().toISOString()
+          }, {
+            headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200' }
           })
         }
 
@@ -355,6 +370,8 @@ export async function GET(request: NextRequest) {
           tripCount: data.tripToRoute.size,
           cacheAge: Date.now() - data.lastFetched,
           timestamp: new Date().toISOString()
+        }, {
+          headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200' }
         })
       }
 
@@ -366,6 +383,8 @@ export async function GET(request: NextRequest) {
           shapes: Array.from(data.shapes.values()),
           routeStops: Object.fromEntries(data.routeStops),
           timestamp: new Date().toISOString()
+        }, {
+          headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200' }
         })
       }
     }
