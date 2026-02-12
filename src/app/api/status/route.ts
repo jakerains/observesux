@@ -32,8 +32,7 @@ const UPSTREAM_CHECKS: Record<string, { url: string; method?: string; headers?: 
     url: 'https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&latitude=42.5&longitude=-96.4&maxradiuskm=500&minmagnitude=2&limit=1',
   },
   trafficEvents: {
-    url: 'https://data.iowa.gov/api/views/yata-4k7n/rows.json?accessType=DOWNLOAD',
-    method: 'HEAD',
+    url: 'https://data.iowa.gov/resource/yata-4k7n.json?$limit=1',
   },
   snowplows: {
     url: 'https://services.arcgis.com/8lRhdTsQyJpO52F1/arcgis/rest/services/AVL_Trucks_Iowa_DOT/FeatureServer/0/query?f=json&where=1%3D1&resultRecordCount=1&returnGeometry=false',

@@ -5,6 +5,11 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.17] - 2026-02-12
+
+### Fixed
+- **Traffic events health check**: Switched from HEAD request (returns 404 on Socrata) to lightweight SODA `$limit=1` GET query, fixing false "Partial Outage" in status bar
+
 ## [0.9.16] - 2026-02-07
 
 ### Changed

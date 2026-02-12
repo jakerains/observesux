@@ -16,6 +16,13 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.9.17',
+    date: '2026-02-12',
+    fixed: [
+      'Traffic events health check — switched from HEAD (404 on Socrata) to lightweight SODA query, fixing false outage in status bar',
+    ],
+  },
+  {
     version: '0.9.16',
     date: '2026-02-07',
     changed: [
