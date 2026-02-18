@@ -3,413 +3,983 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 54;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXBuildFile section */
-		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
-		373A95DF6947C70687AC3F2C /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B7478D1DA1D6A99EDFD97D4 /* ExpoModulesProvider.swift */; };
-		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
-		82947EF89E0EE55AA3DC4405 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = EF9C10D5E9C1A367D12EA8EB /* PrivacyInfo.xcprivacy */; };
-		8F0340BE3C02DE68F7377329 /* libPods-siouxlandonline.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A055F583D6535BD61ADA9AC7 /* libPods-siouxlandonline.a */; };
-		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
-		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
+		013264BBEEFAE256A8E4372A /* ToolOutputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69E7B01E17FDDA93204CAEB2 /* ToolOutputView.swift */; };
+		04691AA60FC6A62183E93B04 /* DigestViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5780C524523E5F3710C36416 /* DigestViewModel.swift */; };
+		048E7F047712B02CB232E013 /* String+Weather.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE768DA42F48081049A83112 /* String+Weather.swift */; };
+		04C9FE4E405B889D449E5B5D /* ChatBubble.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30C9BD64B77DCD8ECC46D104 /* ChatBubble.swift */; };
+		0684E34281A86D6F6282C57C /* Council.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0BDCDF2CB9FF960F643F46D /* Council.swift */; };
+		0B0FE7508DFC616F7CD51F42 /* CameraDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9B8BD5F043FDF165266A97C /* CameraDetailView.swift */; };
+		0D55A108311B429D1D2A3A7D /* UnitsSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AF58F43A7CE7C92C60950E6 /* UnitsSettings.swift */; };
+		113BFF9D6ECD74B395091B48 /* WeatherGradients.swift in Sources */ = {isa = PBXBuildFile; fileRef = C80B76E8CFE84935125187B7 /* WeatherGradients.swift */; };
+		12397D866DE93350953F2DAD /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C2A44894764B24FEF4B5641 /* SettingsViewModel.swift */; };
+		125D5C0E4F8EB1C0779760FD /* MoreTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = D52EFB13D535EC729B91A81A /* MoreTab.swift */; };
+		168E620D58C54FFCBAB3ABCA /* StatusViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 455E9192C312D8951B7135CF /* StatusViewModel.swift */; };
+		1C8FF941A7BD0B1EB9498F16 /* CouncilCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 523B763B6AA2B03CFF3F9BFC /* CouncilCard.swift */; };
+		1C9C65E51B54FC44C180E951 /* SeverityBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD79DD9E7D8CF482E26D8FA6 /* SeverityBadge.swift */; };
+		20AA730452A46CD9F8126D1E /* BusAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD533810680800D8247C633D /* BusAnnotation.swift */; };
+		229BBC59E8851651BF933C41 /* Snowplow.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE4206C229BF9EC30446A3F8 /* Snowplow.swift */; };
+		2309C87C548530B5EB463F96 /* AirQualityCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CFBC0E590B51710CC126111 /* AirQualityCard.swift */; };
+		26AC90F807E9FADBA1CD2881 /* WeatherForecastCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C207CE556C15A1D577995FBB /* WeatherForecastCard.swift */; };
+		2766C480CE7A6A8EA6F557A8 /* TransitCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2B9A2669BA190740B10021D /* TransitCard.swift */; };
+		29ACA09D4B39019A165132D5 /* GasStationAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51462FBD8A6659B96FFF6957 /* GasStationAnnotation.swift */; };
+		2AF97F88E1B55FE4474CF22A /* ErrorStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C4DEC8DAE5B997EEA814662 /* ErrorStateView.swift */; };
+		2E9275FA1D73007D23297F2A /* HomeTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61556BA7748B350B948F17AA /* HomeTab.swift */; };
+		2F844E89633A10CA1E5BE937 /* AirQuality.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E344078FD0398D03ACD1733 /* AirQuality.swift */; };
+		3856026E92F6956C3C3A0960 /* SiouxlandLiveActivity.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 0902B4338C0FAB482B4C0B0F /* SiouxlandLiveActivity.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		3D36302DA809E12448C9DC90 /* Status.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C63BD56DDA9E133660C3B9A /* Status.swift */; };
+		40D42026D0A7225A7D3EA8B6 /* Scanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AA3AF9F0193CD5828B0C0EC /* Scanner.swift */; };
+		40EBDED2A3DBA5ED5E30E3D7 /* HLSPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8A430BB86E25118AB4B894A /* HLSPlayerView.swift */; };
+		40F756820BFA6BFF3623863B /* EventsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3438E1AC9BC40582E0F834A4 /* EventsViewModel.swift */; };
+		45A78E5C7192605712B23A29 /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = D322CB5B42C768B650839266 /* Typography.swift */; };
+		476C5ED35C47DE966FF83296 /* AlertLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BBFCB58BFA1D78D7BC29B8A /* AlertLiveActivity.swift */; };
+		4EF0E0E47E4BCEA072F5CE20 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1B086565DDD5FB7AB7F5F9E /* ContentView.swift */; };
+		4F1D02BEA1F6D8312BCAF4B0 /* Endpoints.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8C4BD1538A8C57EF3C10E06 /* Endpoints.swift */; };
+		4F3CCBE8E04FC3D89E5590DC /* Earthquake.swift in Sources */ = {isa = PBXBuildFile; fileRef = D45722247DD4232CC1C43C38 /* Earthquake.swift */; };
+		4FC4611E9889FE056658B9F5 /* AuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 894568612FFBDA07E908D189 /* AuthViewModel.swift */; };
+		515E21E542EA10B7786BB23B /* WeatherHeroCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 391FFD2489E881A13E50CCB4 /* WeatherHeroCard.swift */; };
+		5383B3DD68E96C36D083D2A3 /* ChatTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 912275E4EB0951A82DF95407 /* ChatTab.swift */; };
+		547DC25B36F14E8EEFA1989D /* WeatherAlertBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D77FD19CCBBC6E3963314A9 /* WeatherAlertBanner.swift */; };
+		577EE835525D6DC50C6126FE /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = C17CCBE3A3ACE919D03A8AAC /* AppState.swift */; };
+		57A28F974AE961267738BBAB /* Chat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FF17D10AD33E3805067079A /* Chat.swift */; };
+		5DC912ACC28D5037D5CD15E1 /* GasPricesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7DB8CB1A79F6798BEEFB3CC /* GasPricesViewModel.swift */; };
+		5DD6DCC577214256B8BF4F4D /* SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA09D6C4BBAFCAC1D12768EC /* SignInView.swift */; };
+		637A739E2B061AFD5E30AC41 /* CamerasTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6D3F8C426451CD8E33D95CA /* CamerasTab.swift */; };
+		66468581DE1A96376DF56394 /* Traffic.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAA0A95EEB14FC4D09747A66 /* Traffic.swift */; };
+		686676261E03E54C4A099958 /* News.swift in Sources */ = {isa = PBXBuildFile; fileRef = 953AAB4083C3708462D5DF6F /* News.swift */; };
+		6A04D81B74F845F23622D659 /* MapTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C16ECE3E532BD57F7FB43DD /* MapTab.swift */; };
+		6CC50B92C73D69F8FD54CB12 /* GasPrice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BF2CED00ABE2F9AC7D29225 /* GasPrice.swift */; };
+		6CF45B46F2743FE9C5F665BB /* Color+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 785C875652DD6D8DF449BF0E /* Color+Hex.swift */; };
+		707353AE9E3493E5F7B150E6 /* Event.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E62D1AB8EC09458515BA2B0 /* Event.swift */; };
+		7174FBF47763F1EAF21ECA90 /* NewsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC7D2AF1DA08660635AEC281 /* NewsCard.swift */; };
+		7307FD261EF7052CF5963A66 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FAFD094EFCC37BD2242200DD /* Assets.xcassets */; };
+		75753DAB6EB7CF411DDB5627 /* TrafficAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A264CDBDC11BDA64A743CE18 /* TrafficAnnotation.swift */; };
+		757972E4C6E4533A7AFBDB77 /* GlassStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5098461A9B9955D58583FFDA /* GlassStyles.swift */; };
+		7D00F3616F373BDE5ADA9F1A /* NewsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 191C25F18BFCB7FC414E0B2D /* NewsViewModel.swift */; };
+		7D96ABE15D427E96D84667D5 /* SuggestedQuestions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F4C6376ADB18474C362A1D2 /* SuggestedQuestions.swift */; };
+		851884D0EEDC8068228E3BC6 /* APIResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D35920B90A4D05012BE9722 /* APIResponse.swift */; };
+		86A4ABDA1F3761396F835CF3 /* TrafficEventsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 007870D7C762198FDCCD3B97 /* TrafficEventsCard.swift */; };
+		884F1081074E4CCB7BF08EF7 /* NotificationSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2CE90F764F669B3AF617FB5 /* NotificationSettings.swift */; };
+		88D192289C2147913994A8C7 /* SiouxlandWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 547A22FFC933E29CF1BD6532 /* SiouxlandWidgets.swift */; };
+		8ABEB1C9CC083449CFB0D47C /* View+Glass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17A71E7FCD52E57F7321FB3A /* View+Glass.swift */; };
+		8B1614FEA9671D1F73ED366D /* DigestCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC53321C23C93DE9B9195B61 /* DigestCard.swift */; };
+		8F1F5B94F72DBFFEC1945A1E /* AccountSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77E93DD3E473A71101E104E8 /* AccountSection.swift */; };
+		905C4CC03AAF7EC7B29BDE6F /* Weather.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36412CF465527B7B1AF60C13 /* Weather.swift */; };
+		9285F89463DD3004ACEF4E17 /* StatusBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9AED4076F6D40FD61276BD7 /* StatusBadge.swift */; };
+		935C8B70F2F534924019772D /* FlightBoardCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88DB9F4309C51CB93200F1A5 /* FlightBoardCard.swift */; };
+		93E57DAD55B46ECC7D8AEEDF /* TransitViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A742DCA087968D684D25EF6C /* TransitViewModel.swift */; };
+		93F190F61E4042FD8CC4EB24 /* MapLayerToggle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A6B2B8AEDC49BBBE1C08CE6 /* MapLayerToggle.swift */; };
+		95EF13CE2B0A528037DE76AE /* GasPricesCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8E347152F8F4293B8CAA9EB /* GasPricesCard.swift */; };
+		980AAE3A627E913231E0E5C8 /* EarthquakeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD9AFF10EA92861103BB10F1 /* EarthquakeViewModel.swift */; };
+		98F3C4D86A57B46F6F9BC0AF /* SectionHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 667F13D3D7DB894AA78468F9 /* SectionHeader.swift */; };
+		994ED314C11F7DB232032747 /* SiouxlandOnlineApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371CE34E70DE8129B8CCFBF7 /* SiouxlandOnlineApp.swift */; };
+		9ABC71AFC2EB1EA78B920BD0 /* AviationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 505440EC3E02FFC7A1AD99D8 /* AviationViewModel.swift */; };
+		9C2B462DF50EB381458F7233 /* AppearanceSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E4231A87959AA26ABEABD90 /* AppearanceSettings.swift */; };
+		9DDDBD3C72A584523DA9DCF0 /* Aviation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3600F49713A5AF60EB2F5EFC /* Aviation.swift */; };
+		9F892D69C7D47A5DDF3A1A43 /* WeatherViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80008E4AED500C73C2D5EF12 /* WeatherViewModel.swift */; };
+		A13C54312B51F6A656F155E6 /* SiouxlandWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 18D88FB1EF0D140F8C925A5F /* SiouxlandWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		A237F90D4CD2C5138C4D8258 /* CouncilViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9E7C9BA88EEF9AE71AE5207 /* CouncilViewModel.swift */; };
+		A947C35DB1B3AF1C01751906 /* WidgetModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CECA5B64D5F4DC544DB1B52 /* WidgetModels.swift */; };
+		AA9BAD4B0B047878EC3E7A5C /* TrafficCameraCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE9DA069FBC4C48F586DF8AB /* TrafficCameraCard.swift */; };
+		ADCBC055E18801CA669CB645 /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72121D24F64CBB552AA87F3C /* Colors.swift */; };
+		ADF2008A123C1BCF41CE293D /* SignUpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A39CCB112621E97181485B38 /* SignUpView.swift */; };
+		AF119929E4289156BDA6A71D /* Date+Formatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1973725FA763F6A716CEB9F4 /* Date+Formatting.swift */; };
+		B139999A6CDDC7329BC88C70 /* ChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED043EFDB9812C71B0244FE9 /* ChatViewModel.swift */; };
+		B19D10F1A4EDF60FD16871EA /* WidgetAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8736B156F45CC9DEF738309A /* WidgetAPIClient.swift */; };
+		B3C6948481A03FB062D82318 /* TrafficEventsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 213314068753216577121E65 /* TrafficEventsViewModel.swift */; };
+		B476C382ADF16AFCBBCEFFF3 /* DashboardCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9593C8AD3FA0F2EB5B827E75 /* DashboardCard.swift */; };
+		BD806018C178271E6364A134 /* EventsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17FF62CA6BDA98F864FC741E /* EventsCard.swift */; };
+		BDE714AAFD659F8D760C8AEA /* AircraftAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3928215137E85FD980140DB4 /* AircraftAnnotation.swift */; };
+		C143355F61BF7D0432A7D69C /* WeatherWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = A565E4F8BA9D8BEA4D1F0227 /* WeatherWidget.swift */; };
+		C4DC08FCCBDC87792A4A88CA /* RiverLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBAF8BACDCF51BDC08498A05 /* RiverLiveActivity.swift */; };
+		C5A9536770A1A56A56C697F8 /* DataFreshness.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38EC668A9D9D4B2AEC433CCF /* DataFreshness.swift */; };
+		C68090D2ABEEADEBCE97DEC9 /* EarthquakeCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE18F6943B0CE81E24AAC0F4 /* EarthquakeCard.swift */; };
+		C73E303F0B93B0002C8F6772 /* AQIWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56F7349E9C366B00F617D477 /* AQIWidget.swift */; };
+		CBB9B7A5B2BD0BC4C83F7948 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD00976DBD2E52F5112C471D /* EmptyStateView.swift */; };
+		CE16523EAA82EBF9D9CEF58F /* OutagesCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B73DAEFAA921BED1069523F /* OutagesCard.swift */; };
+		CF0853FCB6BD0DDCD3373570 /* River.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A412D46CAA63040879647CF /* River.swift */; };
+		CFCA248489F38FD9679A9229 /* Outage.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC7424DEA73DB60C5290D74A /* Outage.swift */; };
+		D0BDD9A9F745544EF0F548AB /* RiverWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEA410CE4B208C5C0C2F927B /* RiverWidget.swift */; };
+		D218CF21FC28A6987AE8E684 /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1985837837FDEE737E42AAA /* AboutView.swift */; };
+		D7EE73FF9B3D578C42D6D92C /* CamerasViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35EBFAF3F15EE9A477F8DBEE /* CamerasViewModel.swift */; };
+		D89C72FFCE18D16D73E1E33E /* SSEClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD524048A4AAADA9471B3235 /* SSEClient.swift */; };
+		DAE1B6D687E583F6DEF13449 /* SnowplowAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BC4C0F4F359AAEF9F741725 /* SnowplowAnnotation.swift */; };
+		DBBB184C68374CEA4BFFF9C8 /* RiversViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF8825BEF0246BE25D8A6FF8 /* RiversViewModel.swift */; };
+		DC48FC0E438042C96D8AC134 /* RiverGaugeCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1BC7AA7F9E9F5901A0FBAC /* RiverGaugeCard.swift */; };
+		DC4BD8D4F1D830149E330981 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63FC6C66F37814E04CD5BF60 /* APIClient.swift */; };
+		E1893CAE4B9E4CC69FF7B768 /* ScannerCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D03F42EF89333F765430408 /* ScannerCard.swift */; };
+		E45BBE833366137CE5CF437F /* FlightsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0BDEA5A3CAE7C4DA2C70192 /* FlightsViewModel.swift */; };
+		E46A62BA128FCDCEBC150FC2 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEA7F30AE7965ACBC84FBD14 /* User.swift */; };
+		E5D29A53EBE6690C87B8187D /* ThinkingIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3600221D89EDB8463E7ABCE /* ThinkingIndicator.swift */; };
+		E7D7A711BE0C3DAD3A9A67F4 /* Transit.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEB5F9DE1FB82AEDB02114B8 /* Transit.swift */; };
+		E861FB8C9D34A4B5A33867D9 /* KeychainManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60817D37EE918DC0589FBD04 /* KeychainManager.swift */; };
+		E86A48692BA205826F2B8280 /* RefreshButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00865544A977DBC953310EA8 /* RefreshButton.swift */; };
+		EB709D866FA8D5D09FB06195 /* CameraAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24BBCA86115AD2F193AEEF0A /* CameraAnnotation.swift */; };
+		F123760871C9C60A97FA0671 /* WeatherLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C2273A0BA961805F6BC6F4 /* WeatherLiveActivity.swift */; };
+		F17F0043A4961E46AED618D4 /* HapticManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AE476BE21DF1FA7E205A7B4 /* HapticManager.swift */; };
+		F40B7F28E49FDEB8D572A343 /* SkeletonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B58AFCB38B40615C8B64F492 /* SkeletonView.swift */; };
+		F45C3F39086E8F54BB9114B7 /* AirQualityViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08A86BA97FF2CA209E89EA51 /* AirQualityViewModel.swift */; };
+		F46DACE108462B488819ACB0 /* OutagesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E2D485898745024CA383C4B /* OutagesViewModel.swift */; };
+		F897A56BA62EF34BD670150E /* MapViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B655A7E1C2AB7922B6A9198 /* MapViewModel.swift */; };
+		FB8A664F7BE9FB2B0D7F5112 /* RiverAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 880767E4595247B791F7BAF8 /* RiverAnnotation.swift */; };
+		FC349364ED29B93AC83B5F24 /* AQIRing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CB22E8AB07B5E6F31209649 /* AQIRing.swift */; };
+		FEF02B97C243203D87E38526 /* AviationWeatherCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B8B47F474B0CF615972116E /* AviationWeatherCard.swift */; };
 /* End PBXBuildFile section */
 
-/* Begin PBXFileReference section */
-		09979A0B8DEC287C43F1B2C1 /* Pods-siouxlandonline.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-siouxlandonline.debug.xcconfig"; path = "Target Support Files/Pods-siouxlandonline/Pods-siouxlandonline.debug.xcconfig"; sourceTree = "<group>"; };
-		13B07F961A680F5B00A75B9A /* siouxlandonline.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = siouxlandonline.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = siouxlandonline/Images.xcassets; sourceTree = "<group>"; };
-		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = siouxlandonline/Info.plist; sourceTree = "<group>"; };
-		2B7478D1DA1D6A99EDFD97D4 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-siouxlandonline/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
-		A055F583D6535BD61ADA9AC7 /* libPods-siouxlandonline.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-siouxlandonline.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = siouxlandonline/SplashScreen.storyboard; sourceTree = "<group>"; };
-		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
-		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
-		EF9C10D5E9C1A367D12EA8EB /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = siouxlandonline/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = siouxlandonline/AppDelegate.swift; sourceTree = "<group>"; };
-		F11748442D0722820044C1D9 /* siouxlandonline-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "siouxlandonline-Bridging-Header.h"; path = "siouxlandonline/siouxlandonline-Bridging-Header.h"; sourceTree = "<group>"; };
-		F8355DAAF4A764009FEA5B97 /* Pods-siouxlandonline.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-siouxlandonline.release.xcconfig"; path = "Target Support Files/Pods-siouxlandonline/Pods-siouxlandonline.release.xcconfig"; sourceTree = "<group>"; };
-/* End PBXFileReference section */
+/* Begin PBXContainerItemProxy section */
+		1601D04357DC62AF3566312C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 38FC34367E7D2D705A2DDE9C /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F9A6B0D98CC9F51081F257E7;
+			remoteInfo = SiouxlandOnline;
+		};
+		169D81A4271B4929E87D2EF5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 38FC34367E7D2D705A2DDE9C /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 98669CA6A2412A8BEA7B6BA3;
+			remoteInfo = SiouxlandWidgets;
+		};
+		2EB23001FA5CE5443E94E89A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 38FC34367E7D2D705A2DDE9C /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = EBD82996F9DEF7BDE17C67DE;
+			remoteInfo = SiouxlandLiveActivity;
+		};
+/* End PBXContainerItemProxy section */
 
-/* Begin PBXFrameworksBuildPhase section */
-		13B07F8C1A680F5B00A75B9A /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
+/* Begin PBXCopyFilesBuildPhase section */
+		32C2F6F2F004C33065228403 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
 			files = (
-				8F0340BE3C02DE68F7377329 /* libPods-siouxlandonline.a in Frameworks */,
+				A13C54312B51F6A656F155E6 /* SiouxlandWidgets.appex in Embed Foundation Extensions */,
+				3856026E92F6956C3C3A0960 /* SiouxlandLiveActivity.appex in Embed Foundation Extensions */,
 			);
+			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-/* End PBXFrameworksBuildPhase section */
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		007870D7C762198FDCCD3B97 /* TrafficEventsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrafficEventsCard.swift; sourceTree = "<group>"; };
+		00865544A977DBC953310EA8 /* RefreshButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RefreshButton.swift; sourceTree = "<group>"; };
+		08A86BA97FF2CA209E89EA51 /* AirQualityViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirQualityViewModel.swift; sourceTree = "<group>"; };
+		0902B4338C0FAB482B4C0B0F /* SiouxlandLiveActivity.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = SiouxlandLiveActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		0A6B2B8AEDC49BBBE1C08CE6 /* MapLayerToggle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapLayerToggle.swift; sourceTree = "<group>"; };
+		0C16ECE3E532BD57F7FB43DD /* MapTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapTab.swift; sourceTree = "<group>"; };
+		0FF17D10AD33E3805067079A /* Chat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Chat.swift; sourceTree = "<group>"; };
+		10C0D4F676BF0BBDABE62CED /* SiouxlandOnlineTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SiouxlandOnlineTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		17A71E7FCD52E57F7321FB3A /* View+Glass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "View+Glass.swift"; sourceTree = "<group>"; };
+		17FF62CA6BDA98F864FC741E /* EventsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventsCard.swift; sourceTree = "<group>"; };
+		18D88FB1EF0D140F8C925A5F /* SiouxlandWidgets.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = SiouxlandWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		191C25F18BFCB7FC414E0B2D /* NewsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewsViewModel.swift; sourceTree = "<group>"; };
+		1973725FA763F6A716CEB9F4 /* Date+Formatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Date+Formatting.swift"; sourceTree = "<group>"; };
+		1A412D46CAA63040879647CF /* River.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = River.swift; sourceTree = "<group>"; };
+		1B655A7E1C2AB7922B6A9198 /* MapViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapViewModel.swift; sourceTree = "<group>"; };
+		1BBFCB58BFA1D78D7BC29B8A /* AlertLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertLiveActivity.swift; sourceTree = "<group>"; };
+		1CECA5B64D5F4DC544DB1B52 /* WidgetModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetModels.swift; sourceTree = "<group>"; };
+		213314068753216577121E65 /* TrafficEventsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrafficEventsViewModel.swift; sourceTree = "<group>"; };
+		229F488614CEB6D7363A7731 /* SiouxlandWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SiouxlandWidgets.entitlements; sourceTree = "<group>"; };
+		24BBCA86115AD2F193AEEF0A /* CameraAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraAnnotation.swift; sourceTree = "<group>"; };
+		2C2A44894764B24FEF4B5641 /* SettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewModel.swift; sourceTree = "<group>"; };
+		2CB22E8AB07B5E6F31209649 /* AQIRing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AQIRing.swift; sourceTree = "<group>"; };
+		2E2D485898745024CA383C4B /* OutagesViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutagesViewModel.swift; sourceTree = "<group>"; };
+		2E4231A87959AA26ABEABD90 /* AppearanceSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceSettings.swift; sourceTree = "<group>"; };
+		30C9BD64B77DCD8ECC46D104 /* ChatBubble.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatBubble.swift; sourceTree = "<group>"; };
+		31C2273A0BA961805F6BC6F4 /* WeatherLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherLiveActivity.swift; sourceTree = "<group>"; };
+		3438E1AC9BC40582E0F834A4 /* EventsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventsViewModel.swift; sourceTree = "<group>"; };
+		35EBFAF3F15EE9A477F8DBEE /* CamerasViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CamerasViewModel.swift; sourceTree = "<group>"; };
+		3600F49713A5AF60EB2F5EFC /* Aviation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Aviation.swift; sourceTree = "<group>"; };
+		36412CF465527B7B1AF60C13 /* Weather.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Weather.swift; sourceTree = "<group>"; };
+		371CE34E70DE8129B8CCFBF7 /* SiouxlandOnlineApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SiouxlandOnlineApp.swift; sourceTree = "<group>"; };
+		38EC668A9D9D4B2AEC433CCF /* DataFreshness.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataFreshness.swift; sourceTree = "<group>"; };
+		391FFD2489E881A13E50CCB4 /* WeatherHeroCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherHeroCard.swift; sourceTree = "<group>"; };
+		3928215137E85FD980140DB4 /* AircraftAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AircraftAnnotation.swift; sourceTree = "<group>"; };
+		3AF58F43A7CE7C92C60950E6 /* UnitsSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnitsSettings.swift; sourceTree = "<group>"; };
+		3B73DAEFAA921BED1069523F /* OutagesCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutagesCard.swift; sourceTree = "<group>"; };
+		3D35920B90A4D05012BE9722 /* APIResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIResponse.swift; sourceTree = "<group>"; };
+		3F4C6376ADB18474C362A1D2 /* SuggestedQuestions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuggestedQuestions.swift; sourceTree = "<group>"; };
+		455E9192C312D8951B7135CF /* StatusViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusViewModel.swift; sourceTree = "<group>"; };
+		4AE476BE21DF1FA7E205A7B4 /* HapticManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticManager.swift; sourceTree = "<group>"; };
+		505440EC3E02FFC7A1AD99D8 /* AviationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AviationViewModel.swift; sourceTree = "<group>"; };
+		5098461A9B9955D58583FFDA /* GlassStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassStyles.swift; sourceTree = "<group>"; };
+		51462FBD8A6659B96FFF6957 /* GasStationAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GasStationAnnotation.swift; sourceTree = "<group>"; };
+		523B763B6AA2B03CFF3F9BFC /* CouncilCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CouncilCard.swift; sourceTree = "<group>"; };
+		547A22FFC933E29CF1BD6532 /* SiouxlandWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SiouxlandWidgets.swift; sourceTree = "<group>"; };
+		56F7349E9C366B00F617D477 /* AQIWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AQIWidget.swift; sourceTree = "<group>"; };
+		5780C524523E5F3710C36416 /* DigestViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DigestViewModel.swift; sourceTree = "<group>"; };
+		60817D37EE918DC0589FBD04 /* KeychainManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainManager.swift; sourceTree = "<group>"; };
+		61556BA7748B350B948F17AA /* HomeTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeTab.swift; sourceTree = "<group>"; };
+		63FC6C66F37814E04CD5BF60 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
+		667F13D3D7DB894AA78468F9 /* SectionHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SectionHeader.swift; sourceTree = "<group>"; };
+		69E7B01E17FDDA93204CAEB2 /* ToolOutputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolOutputView.swift; sourceTree = "<group>"; };
+		6D77FD19CCBBC6E3963314A9 /* WeatherAlertBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherAlertBanner.swift; sourceTree = "<group>"; };
+		6E344078FD0398D03ACD1733 /* AirQuality.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirQuality.swift; sourceTree = "<group>"; };
+		72121D24F64CBB552AA87F3C /* Colors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Colors.swift; sourceTree = "<group>"; };
+		77E93DD3E473A71101E104E8 /* AccountSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountSection.swift; sourceTree = "<group>"; };
+		785C875652DD6D8DF449BF0E /* Color+Hex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Hex.swift"; sourceTree = "<group>"; };
+		7A1BC7AA7F9E9F5901A0FBAC /* RiverGaugeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RiverGaugeCard.swift; sourceTree = "<group>"; };
+		7BF2CED00ABE2F9AC7D29225 /* GasPrice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GasPrice.swift; sourceTree = "<group>"; };
+		7C4DEC8DAE5B997EEA814662 /* ErrorStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorStateView.swift; sourceTree = "<group>"; };
+		7C63BD56DDA9E133660C3B9A /* Status.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Status.swift; sourceTree = "<group>"; };
+		80008E4AED500C73C2D5EF12 /* WeatherViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherViewModel.swift; sourceTree = "<group>"; };
+		8736B156F45CC9DEF738309A /* WidgetAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetAPIClient.swift; sourceTree = "<group>"; };
+		880767E4595247B791F7BAF8 /* RiverAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RiverAnnotation.swift; sourceTree = "<group>"; };
+		88DB9F4309C51CB93200F1A5 /* FlightBoardCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightBoardCard.swift; sourceTree = "<group>"; };
+		894568612FFBDA07E908D189 /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
+		8AA3AF9F0193CD5828B0C0EC /* Scanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Scanner.swift; sourceTree = "<group>"; };
+		8B8B47F474B0CF615972116E /* AviationWeatherCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AviationWeatherCard.swift; sourceTree = "<group>"; };
+		8D03F42EF89333F765430408 /* ScannerCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScannerCard.swift; sourceTree = "<group>"; };
+		912275E4EB0951A82DF95407 /* ChatTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatTab.swift; sourceTree = "<group>"; };
+		953AAB4083C3708462D5DF6F /* News.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = News.swift; sourceTree = "<group>"; };
+		9593C8AD3FA0F2EB5B827E75 /* DashboardCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardCard.swift; sourceTree = "<group>"; };
+		9BC4C0F4F359AAEF9F741725 /* SnowplowAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnowplowAnnotation.swift; sourceTree = "<group>"; };
+		9CFBC0E590B51710CC126111 /* AirQualityCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirQualityCard.swift; sourceTree = "<group>"; };
+		9E62D1AB8EC09458515BA2B0 /* Event.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Event.swift; sourceTree = "<group>"; };
+		A264CDBDC11BDA64A743CE18 /* TrafficAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrafficAnnotation.swift; sourceTree = "<group>"; };
+		A39CCB112621E97181485B38 /* SignUpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignUpView.swift; sourceTree = "<group>"; };
+		A565E4F8BA9D8BEA4D1F0227 /* WeatherWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherWidget.swift; sourceTree = "<group>"; };
+		A742DCA087968D684D25EF6C /* TransitViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransitViewModel.swift; sourceTree = "<group>"; };
+		A8E347152F8F4293B8CAA9EB /* GasPricesCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GasPricesCard.swift; sourceTree = "<group>"; };
+		A9B8BD5F043FDF165266A97C /* CameraDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraDetailView.swift; sourceTree = "<group>"; };
+		A9E7C9BA88EEF9AE71AE5207 /* CouncilViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CouncilViewModel.swift; sourceTree = "<group>"; };
+		AC7D2AF1DA08660635AEC281 /* NewsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewsCard.swift; sourceTree = "<group>"; };
+		AEA7F30AE7965ACBC84FBD14 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
+		B2B9A2669BA190740B10021D /* TransitCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransitCard.swift; sourceTree = "<group>"; };
+		B58AFCB38B40615C8B64F492 /* SkeletonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkeletonView.swift; sourceTree = "<group>"; };
+		B6D3F8C426451CD8E33D95CA /* CamerasTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CamerasTab.swift; sourceTree = "<group>"; };
+		B8A430BB86E25118AB4B894A /* HLSPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HLSPlayerView.swift; sourceTree = "<group>"; };
+		B8C4BD1538A8C57EF3C10E06 /* Endpoints.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Endpoints.swift; sourceTree = "<group>"; };
+		BC53321C23C93DE9B9195B61 /* DigestCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DigestCard.swift; sourceTree = "<group>"; };
+		BD00976DBD2E52F5112C471D /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
+		BD9AFF10EA92861103BB10F1 /* EarthquakeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EarthquakeViewModel.swift; sourceTree = "<group>"; };
+		BEA410CE4B208C5C0C2F927B /* RiverWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RiverWidget.swift; sourceTree = "<group>"; };
+		C17CCBE3A3ACE919D03A8AAC /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		C1985837837FDEE737E42AAA /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
+		C207CE556C15A1D577995FBB /* WeatherForecastCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherForecastCard.swift; sourceTree = "<group>"; };
+		C2700F5C93ECA5EA32672717 /* SiouxlandOnline.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = SiouxlandOnline.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C7DB8CB1A79F6798BEEFB3CC /* GasPricesViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GasPricesViewModel.swift; sourceTree = "<group>"; };
+		C80B76E8CFE84935125187B7 /* WeatherGradients.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherGradients.swift; sourceTree = "<group>"; };
+		CA09D6C4BBAFCAC1D12768EC /* SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInView.swift; sourceTree = "<group>"; };
+		CD524048A4AAADA9471B3235 /* SSEClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSEClient.swift; sourceTree = "<group>"; };
+		CE768DA42F48081049A83112 /* String+Weather.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Weather.swift"; sourceTree = "<group>"; };
+		CE9DA069FBC4C48F586DF8AB /* TrafficCameraCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrafficCameraCard.swift; sourceTree = "<group>"; };
+		D0BDCDF2CB9FF960F643F46D /* Council.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Council.swift; sourceTree = "<group>"; };
+		D2CE90F764F669B3AF617FB5 /* NotificationSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettings.swift; sourceTree = "<group>"; };
+		D322CB5B42C768B650839266 /* Typography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Typography.swift; sourceTree = "<group>"; };
+		D45722247DD4232CC1C43C38 /* Earthquake.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Earthquake.swift; sourceTree = "<group>"; };
+		D52EFB13D535EC729B91A81A /* MoreTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoreTab.swift; sourceTree = "<group>"; };
+		DC7424DEA73DB60C5290D74A /* Outage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Outage.swift; sourceTree = "<group>"; };
+		DE4206C229BF9EC30446A3F8 /* Snowplow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Snowplow.swift; sourceTree = "<group>"; };
+		DEB5F9DE1FB82AEDB02114B8 /* Transit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Transit.swift; sourceTree = "<group>"; };
+		EAA0A95EEB14FC4D09747A66 /* Traffic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Traffic.swift; sourceTree = "<group>"; };
+		ED043EFDB9812C71B0244FE9 /* ChatViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewModel.swift; sourceTree = "<group>"; };
+		EE18F6943B0CE81E24AAC0F4 /* EarthquakeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EarthquakeCard.swift; sourceTree = "<group>"; };
+		EF8825BEF0246BE25D8A6FF8 /* RiversViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RiversViewModel.swift; sourceTree = "<group>"; };
+		F0BDEA5A3CAE7C4DA2C70192 /* FlightsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightsViewModel.swift; sourceTree = "<group>"; };
+		F1B086565DDD5FB7AB7F5F9E /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		F3600221D89EDB8463E7ABCE /* ThinkingIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThinkingIndicator.swift; sourceTree = "<group>"; };
+		F9AED4076F6D40FD61276BD7 /* StatusBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBadge.swift; sourceTree = "<group>"; };
+		FAFD094EFCC37BD2242200DD /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		FBAF8BACDCF51BDC08498A05 /* RiverLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RiverLiveActivity.swift; sourceTree = "<group>"; };
+		FD533810680800D8247C633D /* BusAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BusAnnotation.swift; sourceTree = "<group>"; };
+		FD79DD9E7D8CF482E26D8FA6 /* SeverityBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeverityBadge.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
 
 /* Begin PBXGroup section */
-		13B07FAE1A68108700A75B9A /* siouxlandonline */ = {
-			isa = PBXGroup;
-			children = (
-				F11748412D0307B40044C1D9 /* AppDelegate.swift */,
-				F11748442D0722820044C1D9 /* siouxlandonline-Bridging-Header.h */,
-				BB2F792B24A3F905000567C9 /* Supporting */,
-				13B07FB51A68108700A75B9A /* Images.xcassets */,
-				13B07FB61A68108700A75B9A /* Info.plist */,
-				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
-				EF9C10D5E9C1A367D12EA8EB /* PrivacyInfo.xcprivacy */,
-			);
-			name = siouxlandonline;
-			sourceTree = "<group>";
-		};
-		28C8B674D5E40652F61FA03F /* Pods */ = {
-			isa = PBXGroup;
-			children = (
-				09979A0B8DEC287C43F1B2C1 /* Pods-siouxlandonline.debug.xcconfig */,
-				F8355DAAF4A764009FEA5B97 /* Pods-siouxlandonline.release.xcconfig */,
-			);
-			name = Pods;
-			path = Pods;
-			sourceTree = "<group>";
-		};
-		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				A055F583D6535BD61ADA9AC7 /* libPods-siouxlandonline.a */,
-			);
-			name = Frameworks;
-			sourceTree = "<group>";
-		};
-		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
+		04684C67465E4D59854F5F7B /* ModelTests */ = {
 			isa = PBXGroup;
 			children = (
 			);
-			name = Libraries;
+			path = ModelTests;
 			sourceTree = "<group>";
 		};
-		83CBB9F61A601CBA00E9B192 = {
+		109A29152FCAAD2892A1477E /* Extensions */ = {
 			isa = PBXGroup;
 			children = (
-				13B07FAE1A68108700A75B9A /* siouxlandonline */,
-				832341AE1AAA6A7D00B99B32 /* Libraries */,
-				83CBBA001A601CBA00E9B192 /* Products */,
-				2D16E6871FA4F8E400B85C8A /* Frameworks */,
-				28C8B674D5E40652F61FA03F /* Pods */,
-				8DE54864D7FB2D19813CF5DF /* ExpoModulesProviders */,
+				785C875652DD6D8DF449BF0E /* Color+Hex.swift */,
+				1973725FA763F6A716CEB9F4 /* Date+Formatting.swift */,
+				CE768DA42F48081049A83112 /* String+Weather.swift */,
+				17A71E7FCD52E57F7321FB3A /* View+Glass.swift */,
 			);
-			indentWidth = 2;
+			path = Extensions;
 			sourceTree = "<group>";
-			tabWidth = 2;
-			usesTabs = 0;
 		};
-		83CBBA001A601CBA00E9B192 /* Products */ = {
+		137EE38F1585C94F9326982D /* Networking */ = {
 			isa = PBXGroup;
 			children = (
-				13B07F961A680F5B00A75B9A /* siouxlandonline.app */,
+				63FC6C66F37814E04CD5BF60 /* APIClient.swift */,
+				B8C4BD1538A8C57EF3C10E06 /* Endpoints.swift */,
+				60817D37EE918DC0589FBD04 /* KeychainManager.swift */,
+				CD524048A4AAADA9471B3235 /* SSEClient.swift */,
+			);
+			path = Networking;
+			sourceTree = "<group>";
+		};
+		2057AC212AC6A8362F995E51 /* ToolCards */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = ToolCards;
+			sourceTree = "<group>";
+		};
+		353402D2A0DA2DA034779F07 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				0902B4338C0FAB482B4C0B0F /* SiouxlandLiveActivity.appex */,
+				C2700F5C93ECA5EA32672717 /* SiouxlandOnline.app */,
+				10C0D4F676BF0BBDABE62CED /* SiouxlandOnlineTests.xctest */,
+				18D88FB1EF0D140F8C925A5F /* SiouxlandWidgets.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		8DE54864D7FB2D19813CF5DF /* ExpoModulesProviders */ = {
+		3600D0E14238B06761826330 /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				C39EE7E5DD1E51F7D0CD0A65 /* siouxlandonline */,
+				9197E42BDA8562DC4D950AB8 /* Auth */,
+				AE099E49D771776AD1AE84D0 /* Chat */,
+				F9CF1AFE1C3223BE0CE9C926 /* Detail */,
+				985C070FE5BB15CCB5FD5591 /* Map */,
+				9C78CFEDDDD53B2E53B8999E /* Settings */,
+				445346C3451702910BEFB8A7 /* Tabs */,
+				B8DD2DFC8EF9A22ED438AA05 /* Widgets */,
 			);
-			name = ExpoModulesProviders;
+			path = Views;
 			sourceTree = "<group>";
 		};
-		BB2F792B24A3F905000567C9 /* Supporting */ = {
+		3BA6E4C2B334D6A6CC48D34E /* Theme */ = {
 			isa = PBXGroup;
 			children = (
-				BB2F792C24A3F905000567C9 /* Expo.plist */,
+				72121D24F64CBB552AA87F3C /* Colors.swift */,
+				5098461A9B9955D58583FFDA /* GlassStyles.swift */,
+				D322CB5B42C768B650839266 /* Typography.swift */,
+				C80B76E8CFE84935125187B7 /* WeatherGradients.swift */,
 			);
-			name = Supporting;
-			path = siouxlandonline/Supporting;
+			path = Theme;
 			sourceTree = "<group>";
 		};
-		C39EE7E5DD1E51F7D0CD0A65 /* siouxlandonline */ = {
+		445346C3451702910BEFB8A7 /* Tabs */ = {
 			isa = PBXGroup;
 			children = (
-				2B7478D1DA1D6A99EDFD97D4 /* ExpoModulesProvider.swift */,
+				B6D3F8C426451CD8E33D95CA /* CamerasTab.swift */,
+				912275E4EB0951A82DF95407 /* ChatTab.swift */,
+				61556BA7748B350B948F17AA /* HomeTab.swift */,
+				0C16ECE3E532BD57F7FB43DD /* MapTab.swift */,
+				D52EFB13D535EC729B91A81A /* MoreTab.swift */,
 			);
-			name = siouxlandonline;
+			path = Tabs;
+			sourceTree = "<group>";
+		};
+		49186559E5962D66BB6BF432 /* ViewModelTests */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = ViewModelTests;
+			sourceTree = "<group>";
+		};
+		59E9A426902CC7ED41EA836B /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				2CB22E8AB07B5E6F31209649 /* AQIRing.swift */,
+				9593C8AD3FA0F2EB5B827E75 /* DashboardCard.swift */,
+				BD00976DBD2E52F5112C471D /* EmptyStateView.swift */,
+				7C4DEC8DAE5B997EEA814662 /* ErrorStateView.swift */,
+				B8A430BB86E25118AB4B894A /* HLSPlayerView.swift */,
+				00865544A977DBC953310EA8 /* RefreshButton.swift */,
+				667F13D3D7DB894AA78468F9 /* SectionHeader.swift */,
+				FD79DD9E7D8CF482E26D8FA6 /* SeverityBadge.swift */,
+				B58AFCB38B40615C8B64F492 /* SkeletonView.swift */,
+				F9AED4076F6D40FD61276BD7 /* StatusBadge.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		7F77A8608AF1EA9EDFE8762B /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				38EC668A9D9D4B2AEC433CCF /* DataFreshness.swift */,
+				4AE476BE21DF1FA7E205A7B4 /* HapticManager.swift */,
+			);
+			path = Utilities;
+			sourceTree = "<group>";
+		};
+		8B57ECB3A3188C35849DDC71 /* SiouxlandWidgets */ = {
+			isa = PBXGroup;
+			children = (
+				56F7349E9C366B00F617D477 /* AQIWidget.swift */,
+				BEA410CE4B208C5C0C2F927B /* RiverWidget.swift */,
+				229F488614CEB6D7363A7731 /* SiouxlandWidgets.entitlements */,
+				547A22FFC933E29CF1BD6532 /* SiouxlandWidgets.swift */,
+				A565E4F8BA9D8BEA4D1F0227 /* WeatherWidget.swift */,
+				8CF79490C298D03E24FC915C /* Shared */,
+			);
+			path = SiouxlandWidgets;
+			sourceTree = "<group>";
+		};
+		8CF79490C298D03E24FC915C /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				8736B156F45CC9DEF738309A /* WidgetAPIClient.swift */,
+				1CECA5B64D5F4DC544DB1B52 /* WidgetModels.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		9197E42BDA8562DC4D950AB8 /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				CA09D6C4BBAFCAC1D12768EC /* SignInView.swift */,
+				A39CCB112621E97181485B38 /* SignUpView.swift */,
+			);
+			path = Auth;
+			sourceTree = "<group>";
+		};
+		931B6AF0C2A17517EF74827D /* SiouxlandOnline */ = {
+			isa = PBXGroup;
+			children = (
+				FAFD094EFCC37BD2242200DD /* Assets.xcassets */,
+				C42E0CD9745BE7D6B130CB11 /* App */,
+				59E9A426902CC7ED41EA836B /* Components */,
+				109A29152FCAAD2892A1477E /* Extensions */,
+				AB2181F69A93708938C600CD /* Models */,
+				137EE38F1585C94F9326982D /* Networking */,
+				3BA6E4C2B334D6A6CC48D34E /* Theme */,
+				7F77A8608AF1EA9EDFE8762B /* Utilities */,
+				CCA8E7C586CF5009679295D1 /* ViewModels */,
+				3600D0E14238B06761826330 /* Views */,
+			);
+			path = SiouxlandOnline;
+			sourceTree = "<group>";
+		};
+		985C070FE5BB15CCB5FD5591 /* Map */ = {
+			isa = PBXGroup;
+			children = (
+				3928215137E85FD980140DB4 /* AircraftAnnotation.swift */,
+				FD533810680800D8247C633D /* BusAnnotation.swift */,
+				24BBCA86115AD2F193AEEF0A /* CameraAnnotation.swift */,
+				51462FBD8A6659B96FFF6957 /* GasStationAnnotation.swift */,
+				0A6B2B8AEDC49BBBE1C08CE6 /* MapLayerToggle.swift */,
+				880767E4595247B791F7BAF8 /* RiverAnnotation.swift */,
+				9BC4C0F4F359AAEF9F741725 /* SnowplowAnnotation.swift */,
+				A264CDBDC11BDA64A743CE18 /* TrafficAnnotation.swift */,
+			);
+			path = Map;
+			sourceTree = "<group>";
+		};
+		9C78CFEDDDD53B2E53B8999E /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				C1985837837FDEE737E42AAA /* AboutView.swift */,
+				77E93DD3E473A71101E104E8 /* AccountSection.swift */,
+				2E4231A87959AA26ABEABD90 /* AppearanceSettings.swift */,
+				D2CE90F764F669B3AF617FB5 /* NotificationSettings.swift */,
+				3AF58F43A7CE7C92C60950E6 /* UnitsSettings.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		9DD64FC1918213538DC23024 /* SiouxlandLiveActivity */ = {
+			isa = PBXGroup;
+			children = (
+				1BBFCB58BFA1D78D7BC29B8A /* AlertLiveActivity.swift */,
+				FBAF8BACDCF51BDC08498A05 /* RiverLiveActivity.swift */,
+				31C2273A0BA961805F6BC6F4 /* WeatherLiveActivity.swift */,
+			);
+			path = SiouxlandLiveActivity;
+			sourceTree = "<group>";
+		};
+		AB2181F69A93708938C600CD /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				6E344078FD0398D03ACD1733 /* AirQuality.swift */,
+				3D35920B90A4D05012BE9722 /* APIResponse.swift */,
+				3600F49713A5AF60EB2F5EFC /* Aviation.swift */,
+				0FF17D10AD33E3805067079A /* Chat.swift */,
+				D0BDCDF2CB9FF960F643F46D /* Council.swift */,
+				D45722247DD4232CC1C43C38 /* Earthquake.swift */,
+				9E62D1AB8EC09458515BA2B0 /* Event.swift */,
+				7BF2CED00ABE2F9AC7D29225 /* GasPrice.swift */,
+				953AAB4083C3708462D5DF6F /* News.swift */,
+				DC7424DEA73DB60C5290D74A /* Outage.swift */,
+				1A412D46CAA63040879647CF /* River.swift */,
+				8AA3AF9F0193CD5828B0C0EC /* Scanner.swift */,
+				DE4206C229BF9EC30446A3F8 /* Snowplow.swift */,
+				7C63BD56DDA9E133660C3B9A /* Status.swift */,
+				EAA0A95EEB14FC4D09747A66 /* Traffic.swift */,
+				DEB5F9DE1FB82AEDB02114B8 /* Transit.swift */,
+				AEA7F30AE7965ACBC84FBD14 /* User.swift */,
+				36412CF465527B7B1AF60C13 /* Weather.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		AE099E49D771776AD1AE84D0 /* Chat */ = {
+			isa = PBXGroup;
+			children = (
+				30C9BD64B77DCD8ECC46D104 /* ChatBubble.swift */,
+				3F4C6376ADB18474C362A1D2 /* SuggestedQuestions.swift */,
+				F3600221D89EDB8463E7ABCE /* ThinkingIndicator.swift */,
+				69E7B01E17FDDA93204CAEB2 /* ToolOutputView.swift */,
+				2057AC212AC6A8362F995E51 /* ToolCards */,
+			);
+			path = Chat;
+			sourceTree = "<group>";
+		};
+		B8DD2DFC8EF9A22ED438AA05 /* Widgets */ = {
+			isa = PBXGroup;
+			children = (
+				9CFBC0E590B51710CC126111 /* AirQualityCard.swift */,
+				8B8B47F474B0CF615972116E /* AviationWeatherCard.swift */,
+				523B763B6AA2B03CFF3F9BFC /* CouncilCard.swift */,
+				BC53321C23C93DE9B9195B61 /* DigestCard.swift */,
+				EE18F6943B0CE81E24AAC0F4 /* EarthquakeCard.swift */,
+				17FF62CA6BDA98F864FC741E /* EventsCard.swift */,
+				88DB9F4309C51CB93200F1A5 /* FlightBoardCard.swift */,
+				A8E347152F8F4293B8CAA9EB /* GasPricesCard.swift */,
+				AC7D2AF1DA08660635AEC281 /* NewsCard.swift */,
+				3B73DAEFAA921BED1069523F /* OutagesCard.swift */,
+				7A1BC7AA7F9E9F5901A0FBAC /* RiverGaugeCard.swift */,
+				8D03F42EF89333F765430408 /* ScannerCard.swift */,
+				CE9DA069FBC4C48F586DF8AB /* TrafficCameraCard.swift */,
+				007870D7C762198FDCCD3B97 /* TrafficEventsCard.swift */,
+				B2B9A2669BA190740B10021D /* TransitCard.swift */,
+				6D77FD19CCBBC6E3963314A9 /* WeatherAlertBanner.swift */,
+				C207CE556C15A1D577995FBB /* WeatherForecastCard.swift */,
+				391FFD2489E881A13E50CCB4 /* WeatherHeroCard.swift */,
+			);
+			path = Widgets;
+			sourceTree = "<group>";
+		};
+		BC4827477FC38E3D8AE0A17D = {
+			isa = PBXGroup;
+			children = (
+				9DD64FC1918213538DC23024 /* SiouxlandLiveActivity */,
+				931B6AF0C2A17517EF74827D /* SiouxlandOnline */,
+				D7AA2D277CEDEEA6B4583DED /* SiouxlandOnlineTests */,
+				8B57ECB3A3188C35849DDC71 /* SiouxlandWidgets */,
+				353402D2A0DA2DA034779F07 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		C42E0CD9745BE7D6B130CB11 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				C17CCBE3A3ACE919D03A8AAC /* AppState.swift */,
+				F1B086565DDD5FB7AB7F5F9E /* ContentView.swift */,
+				371CE34E70DE8129B8CCFBF7 /* SiouxlandOnlineApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		CCA8E7C586CF5009679295D1 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				08A86BA97FF2CA209E89EA51 /* AirQualityViewModel.swift */,
+				894568612FFBDA07E908D189 /* AuthViewModel.swift */,
+				505440EC3E02FFC7A1AD99D8 /* AviationViewModel.swift */,
+				35EBFAF3F15EE9A477F8DBEE /* CamerasViewModel.swift */,
+				ED043EFDB9812C71B0244FE9 /* ChatViewModel.swift */,
+				A9E7C9BA88EEF9AE71AE5207 /* CouncilViewModel.swift */,
+				5780C524523E5F3710C36416 /* DigestViewModel.swift */,
+				BD9AFF10EA92861103BB10F1 /* EarthquakeViewModel.swift */,
+				3438E1AC9BC40582E0F834A4 /* EventsViewModel.swift */,
+				F0BDEA5A3CAE7C4DA2C70192 /* FlightsViewModel.swift */,
+				C7DB8CB1A79F6798BEEFB3CC /* GasPricesViewModel.swift */,
+				1B655A7E1C2AB7922B6A9198 /* MapViewModel.swift */,
+				191C25F18BFCB7FC414E0B2D /* NewsViewModel.swift */,
+				2E2D485898745024CA383C4B /* OutagesViewModel.swift */,
+				EF8825BEF0246BE25D8A6FF8 /* RiversViewModel.swift */,
+				2C2A44894764B24FEF4B5641 /* SettingsViewModel.swift */,
+				455E9192C312D8951B7135CF /* StatusViewModel.swift */,
+				213314068753216577121E65 /* TrafficEventsViewModel.swift */,
+				A742DCA087968D684D25EF6C /* TransitViewModel.swift */,
+				80008E4AED500C73C2D5EF12 /* WeatherViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		D5A6CE6497B36E31C50FFFD7 /* NetworkingTests */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = NetworkingTests;
+			sourceTree = "<group>";
+		};
+		D7AA2D277CEDEEA6B4583DED /* SiouxlandOnlineTests */ = {
+			isa = PBXGroup;
+			children = (
+				04684C67465E4D59854F5F7B /* ModelTests */,
+				D5A6CE6497B36E31C50FFFD7 /* NetworkingTests */,
+				49186559E5962D66BB6BF432 /* ViewModelTests */,
+			);
+			path = SiouxlandOnlineTests;
+			sourceTree = "<group>";
+		};
+		F9CF1AFE1C3223BE0CE9C926 /* Detail */ = {
+			isa = PBXGroup;
+			children = (
+				A9B8BD5F043FDF165266A97C /* CameraDetailView.swift */,
+			);
+			path = Detail;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		13B07F861A680F5B00A75B9A /* siouxlandonline */ = {
+		98669CA6A2412A8BEA7B6BA3 /* SiouxlandWidgets */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "siouxlandonline" */;
+			buildConfigurationList = B3C40DB5227154EFF8EFD3D2 /* Build configuration list for PBXNativeTarget "SiouxlandWidgets" */;
 			buildPhases = (
-				08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */,
-				FD94A7058A39636899A58DAC /* [Expo] Configure project */,
-				13B07F871A680F5B00A75B9A /* Sources */,
-				13B07F8C1A680F5B00A75B9A /* Frameworks */,
-				13B07F8E1A680F5B00A75B9A /* Resources */,
-				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
-				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
-				6B7FBACE38AD6CDC0A3E6804 /* [CP] Embed Pods Frameworks */,
+				59A7F91E10F4528D28959598 /* Sources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
-			name = siouxlandonline;
-			productName = siouxlandonline;
-			productReference = 13B07F961A680F5B00A75B9A /* siouxlandonline.app */;
+			name = SiouxlandWidgets;
+			packageProductDependencies = (
+			);
+			productName = SiouxlandWidgets;
+			productReference = 18D88FB1EF0D140F8C925A5F /* SiouxlandWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		D4FD75D645CDAF2263788C56 /* SiouxlandOnlineTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 935748FE4F3EE08FB429C002 /* Build configuration list for PBXNativeTarget "SiouxlandOnlineTests" */;
+			buildPhases = (
+				94C69F73F320A188D2389379 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				7E5A17B9E12936CA5B546153 /* PBXTargetDependency */,
+			);
+			name = SiouxlandOnlineTests;
+			packageProductDependencies = (
+			);
+			productName = SiouxlandOnlineTests;
+			productReference = 10C0D4F676BF0BBDABE62CED /* SiouxlandOnlineTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		EBD82996F9DEF7BDE17C67DE /* SiouxlandLiveActivity */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6A1FDAC9D3C712557F36FD23 /* Build configuration list for PBXNativeTarget "SiouxlandLiveActivity" */;
+			buildPhases = (
+				6E067B5B3269F89833AF2645 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SiouxlandLiveActivity;
+			packageProductDependencies = (
+			);
+			productName = SiouxlandLiveActivity;
+			productReference = 0902B4338C0FAB482B4C0B0F /* SiouxlandLiveActivity.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		F9A6B0D98CC9F51081F257E7 /* SiouxlandOnline */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B3EFB05B4F38416527D77328 /* Build configuration list for PBXNativeTarget "SiouxlandOnline" */;
+			buildPhases = (
+				20C48ACF18607DD4828A0CB2 /* Sources */,
+				1F6B5548BEDA6C618A0D0CB5 /* Resources */,
+				32C2F6F2F004C33065228403 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				FC499C26832E5B853E07243A /* PBXTargetDependency */,
+				E3E43E40D5DEE06B00D8D519 /* PBXTargetDependency */,
+			);
+			name = SiouxlandOnline;
+			packageProductDependencies = (
+			);
+			productName = SiouxlandOnline;
+			productReference = C2700F5C93ECA5EA32672717 /* SiouxlandOnline.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		83CBB9F71A601CBA00E9B192 /* Project object */ = {
+		38FC34367E7D2D705A2DDE9C /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 1130;
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1600;
 				TargetAttributes = {
-					13B07F861A680F5B00A75B9A = {
-						LastSwiftMigration = 1250;
+					98669CA6A2412A8BEA7B6BA3 = {
+						ProvisioningStyle = Automatic;
+					};
+					EBD82996F9DEF7BDE17C67DE = {
+						ProvisioningStyle = Automatic;
+					};
+					F9A6B0D98CC9F51081F257E7 = {
+						ProvisioningStyle = Automatic;
 					};
 				};
 			};
-			buildConfigurationList = 83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "siouxlandonline" */;
-			compatibilityVersion = "Xcode 3.2";
+			buildConfigurationList = D8A167FCD088E7492A86399C /* Build configuration list for PBXProject "SiouxlandOnline" */;
+			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
-				en,
 				Base,
+				en,
 			);
-			mainGroup = 83CBB9F61A601CBA00E9B192;
-			productRefGroup = 83CBBA001A601CBA00E9B192 /* Products */;
+			mainGroup = BC4827477FC38E3D8AE0A17D;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				13B07F861A680F5B00A75B9A /* siouxlandonline */,
+				EBD82996F9DEF7BDE17C67DE /* SiouxlandLiveActivity */,
+				F9A6B0D98CC9F51081F257E7 /* SiouxlandOnline */,
+				D4FD75D645CDAF2263788C56 /* SiouxlandOnlineTests */,
+				98669CA6A2412A8BEA7B6BA3 /* SiouxlandWidgets */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		13B07F8E1A680F5B00A75B9A /* Resources */ = {
+		1F6B5548BEDA6C618A0D0CB5 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
-				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
-				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				82947EF89E0EE55AA3DC4405 /* PrivacyInfo.xcprivacy in Resources */,
+				7307FD261EF7052CF5963A66 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
-/* Begin PBXShellScriptBuildPhase section */
-		00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"$(SRCROOT)/.xcode.env",
-				"$(SRCROOT)/.xcode.env.local",
-			);
-			name = "Bundle React Native code and images";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "if [[ -f \"$PODS_ROOT/../.xcode.env\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env\"\nfi\nif [[ -f \"$PODS_ROOT/../.xcode.env.local\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.local\"\nfi\n\n# The project root by default is one level up from the ios directory\nexport PROJECT_ROOT=\"$PROJECT_DIR\"/..\n\nif [[ \"$CONFIGURATION\" = *Debug* ]]; then\n  export SKIP_BUNDLING=1\nfi\nif [[ -z \"$ENTRY_FILE\" ]]; then\n  # Set the entry JS file using the bundler's entry resolution.\n  export ENTRY_FILE=\"$(\"$NODE_BINARY\" -e \"require('expo/scripts/resolveAppEntry')\" \"$PROJECT_ROOT\" ios absolute | tail -n 1)\"\nfi\n\nif [[ -z \"$CLI_PATH\" ]]; then\n  # Use Expo CLI\n  export CLI_PATH=\"$(\"$NODE_BINARY\" --print \"require.resolve('@expo/cli', { paths: [require.resolve('expo/package.json')] })\")\"\nfi\nif [[ -z \"$BUNDLE_COMMAND\" ]]; then\n  # Default Expo CLI command for bundling\n  export BUNDLE_COMMAND=\"export:embed\"\nfi\n\n# Source .xcode.env.updates if it exists to allow\n# SKIP_BUNDLING to be unset if needed\nif [[ -f \"$PODS_ROOT/../.xcode.env.updates\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.updates\"\nfi\n# Source local changes to allow overrides\n# if needed\nif [[ -f \"$PODS_ROOT/../.xcode.env.local\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.local\"\nfi\n\n`\"$NODE_BINARY\" --print \"require('path').dirname(require.resolve('react-native/package.json')) + '/scripts/react-native-xcode.sh'\"`\n\n";
-		};
-		08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-siouxlandonline-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-		6B7FBACE38AD6CDC0A3E6804 /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-siouxlandonline/Pods-siouxlandonline-frameworks.sh",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/React-Core-prebuilt/React.framework/React",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ReactNativeDependencies/ReactNativeDependencies.framework/ReactNativeDependencies",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermes.framework/hermes",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputPaths = (
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/React.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/ReactNativeDependencies.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermes.framework",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-siouxlandonline/Pods-siouxlandonline-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-siouxlandonline/Pods-siouxlandonline-resources.sh",
-				"${PODS_CONFIGURATION_BUILD_DIR}/EXConstants/EXConstants.bundle",
-				"${PODS_CONFIGURATION_BUILD_DIR}/EXConstants/ExpoConstants_privacy.bundle",
-				"${PODS_CONFIGURATION_BUILD_DIR}/ExpoFileSystem/ExpoFileSystem_privacy.bundle",
-				"${PODS_CONFIGURATION_BUILD_DIR}/React-Core/React-Core_privacy.bundle",
-				"${PODS_CONFIGURATION_BUILD_DIR}/React-cxxreact/React-cxxreact_privacy.bundle",
-			);
-			name = "[CP] Copy Pods Resources";
-			outputPaths = (
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/EXConstants.bundle",
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoConstants_privacy.bundle",
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoFileSystem_privacy.bundle",
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/React-Core_privacy.bundle",
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/React-cxxreact_privacy.bundle",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-siouxlandonline/Pods-siouxlandonline-resources.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		FD94A7058A39636899A58DAC /* [Expo] Configure project */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"$(SRCROOT)/.xcode.env",
-				"$(SRCROOT)/.xcode.env.local",
-				"$(SRCROOT)/siouxlandonline/siouxlandonline.entitlements",
-				"$(SRCROOT)/Pods/Target Support Files/Pods-siouxlandonline/expo-configure-project.sh",
-			);
-			name = "[Expo] Configure project";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(SRCROOT)/Pods/Target Support Files/Pods-siouxlandonline/ExpoModulesProvider.swift",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-siouxlandonline/expo-configure-project.sh\"\n";
-		};
-/* End PBXShellScriptBuildPhase section */
-
 /* Begin PBXSourcesBuildPhase section */
-		13B07F871A680F5B00A75B9A /* Sources */ = {
+		20C48ACF18607DD4828A0CB2 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
-				373A95DF6947C70687AC3F2C /* ExpoModulesProvider.swift in Sources */,
+				DC4BD8D4F1D830149E330981 /* APIClient.swift in Sources */,
+				851884D0EEDC8068228E3BC6 /* APIResponse.swift in Sources */,
+				FC349364ED29B93AC83B5F24 /* AQIRing.swift in Sources */,
+				D218CF21FC28A6987AE8E684 /* AboutView.swift in Sources */,
+				8F1F5B94F72DBFFEC1945A1E /* AccountSection.swift in Sources */,
+				2F844E89633A10CA1E5BE937 /* AirQuality.swift in Sources */,
+				2309C87C548530B5EB463F96 /* AirQualityCard.swift in Sources */,
+				F45C3F39086E8F54BB9114B7 /* AirQualityViewModel.swift in Sources */,
+				BDE714AAFD659F8D760C8AEA /* AircraftAnnotation.swift in Sources */,
+				577EE835525D6DC50C6126FE /* AppState.swift in Sources */,
+				9C2B462DF50EB381458F7233 /* AppearanceSettings.swift in Sources */,
+				4FC4611E9889FE056658B9F5 /* AuthViewModel.swift in Sources */,
+				9DDDBD3C72A584523DA9DCF0 /* Aviation.swift in Sources */,
+				9ABC71AFC2EB1EA78B920BD0 /* AviationViewModel.swift in Sources */,
+				FEF02B97C243203D87E38526 /* AviationWeatherCard.swift in Sources */,
+				20AA730452A46CD9F8126D1E /* BusAnnotation.swift in Sources */,
+				EB709D866FA8D5D09FB06195 /* CameraAnnotation.swift in Sources */,
+				0B0FE7508DFC616F7CD51F42 /* CameraDetailView.swift in Sources */,
+				637A739E2B061AFD5E30AC41 /* CamerasTab.swift in Sources */,
+				D7EE73FF9B3D578C42D6D92C /* CamerasViewModel.swift in Sources */,
+				57A28F974AE961267738BBAB /* Chat.swift in Sources */,
+				04C9FE4E405B889D449E5B5D /* ChatBubble.swift in Sources */,
+				5383B3DD68E96C36D083D2A3 /* ChatTab.swift in Sources */,
+				B139999A6CDDC7329BC88C70 /* ChatViewModel.swift in Sources */,
+				6CF45B46F2743FE9C5F665BB /* Color+Hex.swift in Sources */,
+				ADCBC055E18801CA669CB645 /* Colors.swift in Sources */,
+				4EF0E0E47E4BCEA072F5CE20 /* ContentView.swift in Sources */,
+				0684E34281A86D6F6282C57C /* Council.swift in Sources */,
+				1C8FF941A7BD0B1EB9498F16 /* CouncilCard.swift in Sources */,
+				A237F90D4CD2C5138C4D8258 /* CouncilViewModel.swift in Sources */,
+				B476C382ADF16AFCBBCEFFF3 /* DashboardCard.swift in Sources */,
+				C5A9536770A1A56A56C697F8 /* DataFreshness.swift in Sources */,
+				AF119929E4289156BDA6A71D /* Date+Formatting.swift in Sources */,
+				8B1614FEA9671D1F73ED366D /* DigestCard.swift in Sources */,
+				04691AA60FC6A62183E93B04 /* DigestViewModel.swift in Sources */,
+				4F3CCBE8E04FC3D89E5590DC /* Earthquake.swift in Sources */,
+				C68090D2ABEEADEBCE97DEC9 /* EarthquakeCard.swift in Sources */,
+				980AAE3A627E913231E0E5C8 /* EarthquakeViewModel.swift in Sources */,
+				CBB9B7A5B2BD0BC4C83F7948 /* EmptyStateView.swift in Sources */,
+				4F1D02BEA1F6D8312BCAF4B0 /* Endpoints.swift in Sources */,
+				2AF97F88E1B55FE4474CF22A /* ErrorStateView.swift in Sources */,
+				707353AE9E3493E5F7B150E6 /* Event.swift in Sources */,
+				BD806018C178271E6364A134 /* EventsCard.swift in Sources */,
+				40F756820BFA6BFF3623863B /* EventsViewModel.swift in Sources */,
+				935C8B70F2F534924019772D /* FlightBoardCard.swift in Sources */,
+				E45BBE833366137CE5CF437F /* FlightsViewModel.swift in Sources */,
+				6CC50B92C73D69F8FD54CB12 /* GasPrice.swift in Sources */,
+				95EF13CE2B0A528037DE76AE /* GasPricesCard.swift in Sources */,
+				5DC912ACC28D5037D5CD15E1 /* GasPricesViewModel.swift in Sources */,
+				29ACA09D4B39019A165132D5 /* GasStationAnnotation.swift in Sources */,
+				757972E4C6E4533A7AFBDB77 /* GlassStyles.swift in Sources */,
+				40EBDED2A3DBA5ED5E30E3D7 /* HLSPlayerView.swift in Sources */,
+				F17F0043A4961E46AED618D4 /* HapticManager.swift in Sources */,
+				2E9275FA1D73007D23297F2A /* HomeTab.swift in Sources */,
+				E861FB8C9D34A4B5A33867D9 /* KeychainManager.swift in Sources */,
+				93F190F61E4042FD8CC4EB24 /* MapLayerToggle.swift in Sources */,
+				6A04D81B74F845F23622D659 /* MapTab.swift in Sources */,
+				F897A56BA62EF34BD670150E /* MapViewModel.swift in Sources */,
+				125D5C0E4F8EB1C0779760FD /* MoreTab.swift in Sources */,
+				686676261E03E54C4A099958 /* News.swift in Sources */,
+				7174FBF47763F1EAF21ECA90 /* NewsCard.swift in Sources */,
+				7D00F3616F373BDE5ADA9F1A /* NewsViewModel.swift in Sources */,
+				884F1081074E4CCB7BF08EF7 /* NotificationSettings.swift in Sources */,
+				CFCA248489F38FD9679A9229 /* Outage.swift in Sources */,
+				CE16523EAA82EBF9D9CEF58F /* OutagesCard.swift in Sources */,
+				F46DACE108462B488819ACB0 /* OutagesViewModel.swift in Sources */,
+				E86A48692BA205826F2B8280 /* RefreshButton.swift in Sources */,
+				CF0853FCB6BD0DDCD3373570 /* River.swift in Sources */,
+				FB8A664F7BE9FB2B0D7F5112 /* RiverAnnotation.swift in Sources */,
+				DC48FC0E438042C96D8AC134 /* RiverGaugeCard.swift in Sources */,
+				DBBB184C68374CEA4BFFF9C8 /* RiversViewModel.swift in Sources */,
+				D89C72FFCE18D16D73E1E33E /* SSEClient.swift in Sources */,
+				40D42026D0A7225A7D3EA8B6 /* Scanner.swift in Sources */,
+				E1893CAE4B9E4CC69FF7B768 /* ScannerCard.swift in Sources */,
+				98F3C4D86A57B46F6F9BC0AF /* SectionHeader.swift in Sources */,
+				12397D866DE93350953F2DAD /* SettingsViewModel.swift in Sources */,
+				1C9C65E51B54FC44C180E951 /* SeverityBadge.swift in Sources */,
+				5DD6DCC577214256B8BF4F4D /* SignInView.swift in Sources */,
+				ADF2008A123C1BCF41CE293D /* SignUpView.swift in Sources */,
+				994ED314C11F7DB232032747 /* SiouxlandOnlineApp.swift in Sources */,
+				F40B7F28E49FDEB8D572A343 /* SkeletonView.swift in Sources */,
+				229BBC59E8851651BF933C41 /* Snowplow.swift in Sources */,
+				DAE1B6D687E583F6DEF13449 /* SnowplowAnnotation.swift in Sources */,
+				3D36302DA809E12448C9DC90 /* Status.swift in Sources */,
+				9285F89463DD3004ACEF4E17 /* StatusBadge.swift in Sources */,
+				168E620D58C54FFCBAB3ABCA /* StatusViewModel.swift in Sources */,
+				048E7F047712B02CB232E013 /* String+Weather.swift in Sources */,
+				7D96ABE15D427E96D84667D5 /* SuggestedQuestions.swift in Sources */,
+				E5D29A53EBE6690C87B8187D /* ThinkingIndicator.swift in Sources */,
+				013264BBEEFAE256A8E4372A /* ToolOutputView.swift in Sources */,
+				66468581DE1A96376DF56394 /* Traffic.swift in Sources */,
+				75753DAB6EB7CF411DDB5627 /* TrafficAnnotation.swift in Sources */,
+				AA9BAD4B0B047878EC3E7A5C /* TrafficCameraCard.swift in Sources */,
+				86A4ABDA1F3761396F835CF3 /* TrafficEventsCard.swift in Sources */,
+				B3C6948481A03FB062D82318 /* TrafficEventsViewModel.swift in Sources */,
+				E7D7A711BE0C3DAD3A9A67F4 /* Transit.swift in Sources */,
+				2766C480CE7A6A8EA6F557A8 /* TransitCard.swift in Sources */,
+				93E57DAD55B46ECC7D8AEEDF /* TransitViewModel.swift in Sources */,
+				45A78E5C7192605712B23A29 /* Typography.swift in Sources */,
+				0D55A108311B429D1D2A3A7D /* UnitsSettings.swift in Sources */,
+				E46A62BA128FCDCEBC150FC2 /* User.swift in Sources */,
+				8ABEB1C9CC083449CFB0D47C /* View+Glass.swift in Sources */,
+				905C4CC03AAF7EC7B29BDE6F /* Weather.swift in Sources */,
+				547DC25B36F14E8EEFA1989D /* WeatherAlertBanner.swift in Sources */,
+				26AC90F807E9FADBA1CD2881 /* WeatherForecastCard.swift in Sources */,
+				113BFF9D6ECD74B395091B48 /* WeatherGradients.swift in Sources */,
+				515E21E542EA10B7786BB23B /* WeatherHeroCard.swift in Sources */,
+				9F892D69C7D47A5DDF3A1A43 /* WeatherViewModel.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		59A7F91E10F4528D28959598 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C73E303F0B93B0002C8F6772 /* AQIWidget.swift in Sources */,
+				D0BDD9A9F745544EF0F548AB /* RiverWidget.swift in Sources */,
+				88D192289C2147913994A8C7 /* SiouxlandWidgets.swift in Sources */,
+				C143355F61BF7D0432A7D69C /* WeatherWidget.swift in Sources */,
+				B19D10F1A4EDF60FD16871EA /* WidgetAPIClient.swift in Sources */,
+				A947C35DB1B3AF1C01751906 /* WidgetModels.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6E067B5B3269F89833AF2645 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				476C5ED35C47DE966FF83296 /* AlertLiveActivity.swift in Sources */,
+				C4DC08FCCBDC87792A4A88CA /* RiverLiveActivity.swift in Sources */,
+				F123760871C9C60A97FA0671 /* WeatherLiveActivity.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		94C69F73F320A188D2389379 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
-/* Begin XCBuildConfiguration section */
-		13B07F941A680F5B00A75B9A /* Debug */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = 09979A0B8DEC287C43F1B2C1 /* Pods-siouxlandonline.debug.xcconfig */;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = siouxlandonline/siouxlandonline.entitlements;
-				CURRENT_PROJECT_VERSION = 1;
-				ENABLE_BITCODE = NO;
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"$(inherited)",
-					"FB_SONARKIT_ENABLED=1",
-				);
-				INFOPLIST_FILE = siouxlandonline/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					"-ObjC",
-					"-lc++",
-				);
-				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
-				PRODUCT_BUNDLE_IDENTIFIER = com.genaijake.siouxlandonline;
-				PRODUCT_NAME = siouxlandonline;
-				SWIFT_OBJC_BRIDGING_HEADER = "siouxlandonline/siouxlandonline-Bridging-Header.h";
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
-				VERSIONING_SYSTEM = "apple-generic";
-			};
-			name = Debug;
+/* Begin PBXTargetDependency section */
+		7E5A17B9E12936CA5B546153 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F9A6B0D98CC9F51081F257E7 /* SiouxlandOnline */;
+			targetProxy = 1601D04357DC62AF3566312C /* PBXContainerItemProxy */;
 		};
-		13B07F951A680F5B00A75B9A /* Release */ = {
+		E3E43E40D5DEE06B00D8D519 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = EBD82996F9DEF7BDE17C67DE /* SiouxlandLiveActivity */;
+			targetProxy = 2EB23001FA5CE5443E94E89A /* PBXContainerItemProxy */;
+		};
+		FC499C26832E5B853E07243A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 98669CA6A2412A8BEA7B6BA3 /* SiouxlandWidgets */;
+			targetProxy = 169D81A4271B4929E87D2EF5 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		28D06F26E8C776BEECE430CD /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = F8355DAAF4A764009FEA5B97 /* Pods-siouxlandonline.release.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = siouxlandonline/siouxlandonline.entitlements;
-				CURRENT_PROJECT_VERSION = 1;
-				INFOPLIST_FILE = siouxlandonline/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SiouxlandWidgets/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					"-ObjC",
-					"-lc++",
-				);
-				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
-				PRODUCT_BUNDLE_IDENTIFIER = com.genaijake.siouxlandonline;
-				PRODUCT_NAME = siouxlandonline;
-				SWIFT_OBJC_BRIDGING_HEADER = "siouxlandonline/siouxlandonline-Bridging-Header.h";
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
-				VERSIONING_SYSTEM = "apple-generic";
+				PRODUCT_BUNDLE_IDENTIFIER = com.siouxlandonline.ios.widgets;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
-		83CBBA201A601CBA00E9B192 /* Debug */ = {
+		2ADD3D4BE35430558888D8E9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SiouxlandWidgets/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.siouxlandonline.ios.widgets;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		33B76C6DE2B00D157BC6F412 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
-				CLANG_CXX_LANGUAGE_STANDARD = "c++20";
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_COMMA = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
 				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN_ENUM_CONVERSION = YES;
 				CLANG_WARN_INFINITE_RECURSION = YES;
@@ -418,61 +988,150 @@
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
-					"DEBUG=1",
 					"$(inherited)",
+					"DEBUG=1",
 				);
-				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
-				LD_RUNPATH_SEARCH_PATHS = (
-					/usr/lib/swift,
-					"$(inherited)",
-				);
-				LIBRARY_SEARCH_PATHS = "$(SDKROOT)/usr/lib/swift\"$(inherited)\"";
-				MTL_ENABLE_DEBUG_INFO = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/.pnpm/react-native@0.81.5_@babel+core@7.28.6_@types+react@19.2.8_react@19.2.3/node_modules/react-native";
+				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
-				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
-				USE_HERMES = true;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
 		};
-		83CBBA211A601CBA00E9B192 /* Release */ = {
+		37ADAD92988AC342DE5E7205 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SiouxlandLiveActivity/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.siouxlandonline.ios.liveactivity;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		4C0222E3462A8C2966C32DEC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.siouxlandonline.ios.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SiouxlandOnline.app/SiouxlandOnline";
+			};
+			name = Release;
+		};
+		B3C4F61C03757FFA72EA9B75 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.siouxlandonline.ios.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SiouxlandOnline.app/SiouxlandOnline";
+			};
+			name = Debug;
+		};
+		B6047E72C3E8B333C01D6727 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SiouxlandLiveActivity/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.siouxlandonline.ios.liveactivity;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		CC4C97A3FE63FA1F8C649F86 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_VALUES = "UILaunchScreen_Generation=YES UIApplicationSceneManifest_Generation=YES CFBundleDisplayName=Siouxland Online NSLocationWhenInUseUsageDescription=Shows your location on the map NSSupportsLiveActivities=YES";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.siouxlandonline.ios;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		EB36C1FE865AC6F0AAB5EE20 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
-				CLANG_CXX_LANGUAGE_STANDARD = "c++20";
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_COMMA = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
 				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN_ENUM_CONVERSION = YES;
 				CLANG_WARN_INFINITE_RECURSION = YES;
@@ -481,16 +1140,19 @@
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
-				COPY_PHASE_STRIP = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
@@ -498,43 +1160,86 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
-				LD_RUNPATH_SEARCH_PATHS = (
-					/usr/lib/swift,
-					"$(inherited)",
-				);
-				LIBRARY_SEARCH_PATHS = "$(SDKROOT)/usr/lib/swift\"$(inherited)\"";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
-				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/.pnpm/react-native@0.81.5_@babel+core@7.28.6_@types+react@19.2.8_react@19.2.3/node_modules/react-native";
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
-				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
-				USE_HERMES = true;
-				VALIDATE_PRODUCT = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		FEC740D4851DA79CC53C64B0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_VALUES = "UILaunchScreen_Generation=YES UIApplicationSceneManifest_Generation=YES CFBundleDisplayName=Siouxland Online NSLocationWhenInUseUsageDescription=Shows your location on the map NSSupportsLiveActivities=YES";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.siouxlandonline.ios;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "siouxlandonline" */ = {
+		6A1FDAC9D3C712557F36FD23 /* Build configuration list for PBXNativeTarget "SiouxlandLiveActivity" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				13B07F941A680F5B00A75B9A /* Debug */,
-				13B07F951A680F5B00A75B9A /* Release */,
+				B6047E72C3E8B333C01D6727 /* Debug */,
+				37ADAD92988AC342DE5E7205 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
-		83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "siouxlandonline" */ = {
+		935748FE4F3EE08FB429C002 /* Build configuration list for PBXNativeTarget "SiouxlandOnlineTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				83CBBA201A601CBA00E9B192 /* Debug */,
-				83CBBA211A601CBA00E9B192 /* Release */,
+				B3C4F61C03757FFA72EA9B75 /* Debug */,
+				4C0222E3462A8C2966C32DEC /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
+		};
+		B3C40DB5227154EFF8EFD3D2 /* Build configuration list for PBXNativeTarget "SiouxlandWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2ADD3D4BE35430558888D8E9 /* Debug */,
+				28D06F26E8C776BEECE430CD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		B3EFB05B4F38416527D77328 /* Build configuration list for PBXNativeTarget "SiouxlandOnline" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CC4C97A3FE63FA1F8C649F86 /* Debug */,
+				FEC740D4851DA79CC53C64B0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		D8A167FCD088E7492A86399C /* Build configuration list for PBXProject "SiouxlandOnline" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				33B76C6DE2B00D157BC6F412 /* Debug */,
+				EB36C1FE865AC6F0AAB5EE20 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
 	};
-	rootObject = 83CBB9F71A601CBA00E9B192 /* Project object */;
+	rootObject = 38FC34367E7D2D705A2DDE9C /* Project object */;
 }

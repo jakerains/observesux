@@ -1,0 +1,76 @@
+name: SiouxlandOnline
+options:
+  bundleIdPrefix: com.siouxlandonline
+  deploymentTarget:
+    iOS: "26.0"
+  xcodeVersion: "16.0"
+  generateEmptyDirectories: true
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+
+targets:
+  SiouxlandOnline:
+    type: application
+    platform: iOS
+    sources:
+      - SiouxlandOnline
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.siouxlandonline.ios
+        GENERATE_INFOPLIST_FILE: "YES"
+        INFOPLIST_VALUES: >-
+          UILaunchScreen_Generation=YES
+          UIApplicationSceneManifest_Generation=YES
+          CFBundleDisplayName=Siouxland Online
+          NSLocationWhenInUseUsageDescription=Shows your location on the map
+          NSSupportsLiveActivities=YES
+        CODE_SIGN_STYLE: Automatic
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+    dependencies:
+      - target: SiouxlandWidgets
+      - target: SiouxlandLiveActivity
+
+  SiouxlandWidgets:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: SiouxlandWidgets
+        excludes:
+          - "Info.plist"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.siouxlandonline.ios.widgets
+        INFOPLIST_FILE: SiouxlandWidgets/Info.plist
+        GENERATE_INFOPLIST_FILE: "YES"
+        CODE_SIGN_STYLE: Automatic
+
+  SiouxlandLiveActivity:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: SiouxlandLiveActivity
+        excludes:
+          - "Info.plist"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.siouxlandonline.ios.liveactivity
+        INFOPLIST_FILE: SiouxlandLiveActivity/Info.plist
+        GENERATE_INFOPLIST_FILE: "YES"
+        CODE_SIGN_STYLE: Automatic
+
+  SiouxlandOnlineTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - SiouxlandOnlineTests
+    dependencies:
+      - target: SiouxlandOnline
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.siouxlandonline.ios.tests
+        GENERATE_INFOPLIST_FILE: "YES"
