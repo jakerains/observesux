@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { fetchEarthquakes } from '@/lib/fetchers/usgs'
 import type { Earthquake, ApiResponse } from '@/types'
 
-export const revalidate = 600 // Revalidate every 10 minutes
+export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
@@ -18,7 +18,7 @@ export async function GET() {
     }
 
     return NextResponse.json(response, {
-      headers: { 'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=1200' }
+      headers: { 'Cache-Control': 'public, max-age=0, s-maxage=600' }
     })
   } catch (error) {
     console.error('Earthquakes API error:', error)

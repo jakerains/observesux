@@ -11,7 +11,7 @@ import type {
   TrafficEvent
 } from '@/types'
 
-export const revalidate = 60 // Revalidate every minute
+export const dynamic = 'force-dynamic'
 
 // Seasonal temperature baselines for Sioux City (Fahrenheit)
 const SEASONAL_TEMPS: Record<number, { min: number; max: number }> = {
@@ -323,7 +323,7 @@ export async function GET() {
     }
 
     return NextResponse.json(response, {
-      headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120' }
+      headers: { 'Cache-Control': 'public, max-age=0, s-maxage=60' }
     })
   } catch (error) {
     console.error('City summary API error:', error)

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { sql, isDatabaseConfigured } from '@/lib/db'
 import type { GasStation, GasPrice, GasPriceData, FuelType } from '@/types'
 
-export const revalidate = 3600 // Revalidate every hour
+export const dynamic = 'force-dynamic'
 
 interface DbStation {
   id: number
@@ -146,7 +146,7 @@ export async function GET() {
       timestamp: new Date().toISOString(),
       source: 'gasbuddy'
     }, {
-      headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200' }
+      headers: { 'Cache-Control': 'public, max-age=0, s-maxage=3600' }
     })
   } catch (error) {
     console.error('[Gas Prices API] Error:', error)

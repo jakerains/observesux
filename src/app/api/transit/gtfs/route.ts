@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import type { GtfsStop, TransitRoute, RouteShape, GtfsStopTime } from '@/types'
 
-export const revalidate = 3600 // 1 hour
+export const dynamic = 'force-dynamic'
 
 const PASSIO_API = 'https://passio3.com/siouxcity/passioTransit/gtfs/'
 
@@ -264,14 +264,14 @@ export async function GET(request: NextRequest) {
             routeId,
             timestamp: new Date().toISOString()
           }, {
-            headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200' }
+            headers: { 'Cache-Control': 'public, max-age=0, s-maxage=3600' }
           })
         }
         return NextResponse.json({
           stops: Array.from(data.stops.values()),
           timestamp: new Date().toISOString()
         }, {
-          headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200' }
+          headers: { 'Cache-Control': 'public, max-age=0, s-maxage=3600' }
         })
       }
 
@@ -280,7 +280,7 @@ export async function GET(request: NextRequest) {
           routes: data.routes,
           timestamp: new Date().toISOString()
         }, {
-          headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200' }
+          headers: { 'Cache-Control': 'public, max-age=0, s-maxage=3600' }
         })
       }
 
@@ -295,7 +295,7 @@ export async function GET(request: NextRequest) {
             routeId,
             timestamp: new Date().toISOString()
           }, {
-            headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200' }
+            headers: { 'Cache-Control': 'public, max-age=0, s-maxage=3600' }
           })
         }
         // Return all shapes with route associations
@@ -303,7 +303,7 @@ export async function GET(request: NextRequest) {
           shapes: Array.from(data.shapes.values()),
           timestamp: new Date().toISOString()
         }, {
-          headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200' }
+          headers: { 'Cache-Control': 'public, max-age=0, s-maxage=3600' }
         })
       }
 
@@ -324,7 +324,7 @@ export async function GET(request: NextRequest) {
             tripId,
             timestamp: new Date().toISOString()
           }, {
-            headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200' }
+            headers: { 'Cache-Control': 'public, max-age=0, s-maxage=3600' }
           })
         }
         return NextResponse.json({ error: 'tripId required for schedule' }, { status: 400 })
@@ -341,7 +341,7 @@ export async function GET(request: NextRequest) {
             stop: stop || null,
             timestamp: new Date().toISOString()
           }, {
-            headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200' }
+            headers: { 'Cache-Control': 'public, max-age=0, s-maxage=3600' }
           })
         }
 
@@ -354,7 +354,7 @@ export async function GET(request: NextRequest) {
             stops: foundStops,
             timestamp: new Date().toISOString()
           }, {
-            headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200' }
+            headers: { 'Cache-Control': 'public, max-age=0, s-maxage=3600' }
           })
         }
 
@@ -371,7 +371,7 @@ export async function GET(request: NextRequest) {
           cacheAge: Date.now() - data.lastFetched,
           timestamp: new Date().toISOString()
         }, {
-          headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200' }
+          headers: { 'Cache-Control': 'public, max-age=0, s-maxage=3600' }
         })
       }
 
@@ -384,7 +384,7 @@ export async function GET(request: NextRequest) {
           routeStops: Object.fromEntries(data.routeStops),
           timestamp: new Date().toISOString()
         }, {
-          headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200' }
+          headers: { 'Cache-Control': 'public, max-age=0, s-maxage=3600' }
         })
       }
     }

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { fetchNWSForecast, fetchNWSHourlyForecast } from '@/lib/fetchers/nws'
 import type { WeatherForecast, HourlyWeatherForecast, ApiResponse } from '@/types'
 
-export const revalidate = 300 // Revalidate every 5 minutes
+export const dynamic = 'force-dynamic'
 
 export interface ForecastResponse {
   forecast: WeatherForecast
@@ -27,7 +27,7 @@ export async function GET() {
     }
 
     return NextResponse.json(response, {
-      headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' }
+      headers: { 'Cache-Control': 'public, max-age=0, s-maxage=300' }
     })
   } catch (error) {
     console.error('Forecast API error:', error)

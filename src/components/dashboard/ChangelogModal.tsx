@@ -16,6 +16,15 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.9.18',
+    date: '2026-02-18',
+    fixed: [
+      'Stale data on first page load — replaced ISR caching with force-dynamic + CDN-only s-maxage on all data API routes',
+      'Removed stale-while-revalidate from all Cache-Control headers to prevent double-stale serving',
+      'Added max-age=0 to prevent browser-level caching of API responses',
+    ],
+  },
+  {
     version: '0.9.17',
     date: '2026-02-12',
     fixed: [

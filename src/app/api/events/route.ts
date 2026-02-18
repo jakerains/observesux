@@ -3,7 +3,7 @@ import { fetchCommunityEvents } from '@/lib/fetchers/events'
 import { getApprovedUserEvents } from '@/lib/db/userEvents'
 import type { CommunityEvent, CommunityEventsData, ApiResponse } from '@/types'
 
-export const revalidate = 1800 // Revalidate every 30 minutes
+export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json(response, {
-      headers: { 'Cache-Control': 'public, s-maxage=1800, stale-while-revalidate=3600' }
+      headers: { 'Cache-Control': 'public, max-age=0, s-maxage=1800' }
     })
   } catch (error) {
     console.error('Events API error:', error)

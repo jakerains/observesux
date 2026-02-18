@@ -5,6 +5,13 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.18] - 2026-02-18
+
+### Fixed
+- **Stale data on first page load**: Replaced ISR caching (`export const revalidate`) with `force-dynamic` + CDN-only `s-maxage` on all 18 data API routes — eliminates ISR's stale-first behavior that served hours-old data after quiet periods
+- **Double-stale caching**: Removed `stale-while-revalidate` from all Cache-Control headers, which added an extra stale-serving window on top of ISR
+- **Browser caching**: Added `max-age=0` to all API responses so browsers always fetch from CDN instead of using local cache
+
 ## [0.9.17] - 2026-02-12
 
 ### Fixed

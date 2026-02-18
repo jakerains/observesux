@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 
-export const revalidate = 120 // Revalidate every 2 minutes
+export const dynamic = 'force-dynamic'
 
 // Only show news from the last 3 days (72 hours)
 const MAX_AGE_HOURS = 72
@@ -309,7 +309,7 @@ export async function GET() {
     }
 
     return NextResponse.json(response, {
-      headers: { 'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=240' }
+      headers: { 'Cache-Control': 'public, max-age=0, s-maxage=120' }
     })
   } catch (error) {
     console.error('News API error:', error)
