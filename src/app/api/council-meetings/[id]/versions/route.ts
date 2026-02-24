@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getMeetingVersions, restoreMeetingVersion } from '@/lib/db/council-meetings'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * GET /api/council-meetings/:id/versions
  * List version history for a meeting.

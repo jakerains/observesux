@@ -3,6 +3,7 @@ import { generateEmbedding } from '@/lib/ai/embeddings'
 import { searchCouncilMeetingChunks } from '@/lib/db/council-meetings'
 import { isDatabaseConfigured } from '@/lib/db'
 
+export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 export const maxDuration = 30
 

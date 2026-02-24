@@ -16,6 +16,13 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.9.19',
+    date: '2026-02-24',
+    fixed: [
+      'Council meetings not appearing in list or widget after ingestion — added force-dynamic to all council-meetings API routes',
+    ],
+  },
+  {
     version: '0.9.18',
     date: '2026-02-18',
     fixed: [

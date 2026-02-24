@@ -5,6 +5,11 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.19] - 2026-02-24
+
+### Fixed
+- Council meetings not appearing in list or widget after ingestion — all council-meetings API routes were missing `force-dynamic`, causing Vercel to serve stale cached responses
+
 ## [0.9.18] - 2026-02-18
 
 ### Fixed

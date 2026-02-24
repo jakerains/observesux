@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getMeetingBySlug, getMeetingById, getMeetingByVideoId } from '@/lib/db/council-meetings'
 
+export const dynamic = 'force-dynamic'
+
 const DATE_SLUG_RE = /^\d{4}-\d{2}-\d{2}$/
 
 export async function GET(
