@@ -32,7 +32,7 @@ import { Label } from '@/components/ui/label'
 import { cn, markdownToHtml } from '@/lib/utils'
 import { format, parseISO } from 'date-fns'
 import type { CouncilMeeting, CouncilIngestStats, MeetingVersion } from '@/types/council-meetings'
-import { TranscriptUploadModal, type TranscriptUploadData } from './TranscriptUploadModal'
+import { TranscriptUploadModal, type TranscriptUploadData, type TranscriptPrefillData } from './TranscriptUploadModal'
 
 interface WorkflowOutput {
   success: boolean
@@ -50,6 +50,26 @@ interface ProgressEvent {
   current?: number
   total?: number
   [key: string]: unknown
+}
+
+/**
+ * Parse meeting date from title (client-side mirror of server function)
+ */
+function parseMeetingDateFromTitle(title: string): string | null {
+  const dateRegex = /(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{1,2}),?\s+(\d{4})/i
+  const match = title.match(dateRegex)
+  if (!match) return null
+
+  const monthNames: Record<string, string> = {
+    january: '01', february: '02', march: '03', april: '04',
+    may: '05', june: '06', july: '07', august: '08',
+    september: '09', october: '10', november: '11', december: '12',
+  }
+
+  const month = monthNames[match[1].toLowerCase()]
+  const day = match[2].padStart(2, '0')
+  const year = match[3]
+  return `${year}-${month}-${day}`
 }
 
 const statusBadgeVariant: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
@@ -97,6 +117,7 @@ export function CouncilIngestPanel() {
   const [loadingFeed, setLoadingFeed] = useState(false)
   const [uploadModalOpen, setUploadModalOpen] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
+  const [uploadPrefill, setUploadPrefill] = useState<TranscriptPrefillData | null>(null)
   const logEndRef = useRef<HTMLDivElement>(null)
 
   const fetchData = useCallback(async () => {
@@ -615,7 +636,10 @@ export function CouncilIngestPanel() {
 
             <Button
               variant="outline"
-              onClick={() => setUploadModalOpen(true)}
+              onClick={() => {
+                setUploadPrefill(null)
+                setUploadModalOpen(true)
+              }}
               disabled={ingesting || retryingVideoId !== null || isUploading}
               className="gap-2"
             >
@@ -787,6 +811,27 @@ export function CouncilIngestPanel() {
                       >
                         <ExternalLink className="h-4 w-4" />
                       </a>
+                      {!isProcessing && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 gap-1.5 text-xs"
+                          disabled={ingesting || retryingVideoId !== null || isUploading}
+                          onClick={() => {
+                            const meetingDate = parseMeetingDateFromTitle(video.title)
+                              || (video.publishedAt ? video.publishedAt.split('T')[0] : '')
+                            setUploadPrefill({
+                              title: video.title,
+                              videoId: video.videoId,
+                              meetingDate,
+                            })
+                            setUploadModalOpen(true)
+                          }}
+                        >
+                          <Upload className="h-3 w-3" />
+                          Upload
+                        </Button>
+                      )}
                       {isProcessable && !isProcessing && (
                         <Button
                           variant="outline"
@@ -1112,10 +1157,14 @@ export function CouncilIngestPanel() {
       {/* Upload Transcript Modal */}
       <TranscriptUploadModal
         open={uploadModalOpen}
-        onOpenChange={setUploadModalOpen}
+        onOpenChange={(open) => {
+          setUploadModalOpen(open)
+          if (!open) setUploadPrefill(null)
+        }}
         onSubmit={uploadTranscript}
         isSubmitting={isUploading}
         meetings={meetings}
+        prefillData={uploadPrefill}
       />
     </div>
   )

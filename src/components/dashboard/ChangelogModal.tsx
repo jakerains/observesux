@@ -16,8 +16,11 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
-    version: '0.9.19',
+    version: '0.9.20',
     date: '2026-02-24',
+    added: [
+      'Upload Transcript button on YouTube feed items — upload a transcript before or after processing, directly from the check feed',
+    ],
     fixed: [
       'Council meetings not appearing in list or widget after ingestion — added force-dynamic to all council-meetings API routes',
     ],
