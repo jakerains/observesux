@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Council meetings not appearing in list or widget after ingestion — all council-meetings API routes were missing `force-dynamic`, causing Vercel to serve stale cached responses
 - Recent Meetings list now orders by `updated_at` instead of `created_at`, so recently processed meetings always appear at the top
 - Reprocessing a video from the feed now updates the title and meeting date from YouTube (previously kept stale values from the original ingestion)
+- Deduplicate YouTube feed entries by title — filters out dead live stream links that YouTube leaves alongside the actual recorded VOD
 
 ## [0.9.18] - 2026-02-18
 

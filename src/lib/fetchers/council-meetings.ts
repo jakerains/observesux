@@ -148,10 +148,22 @@ export async function fetchCouncilRSS(): Promise<RSSVideoEntry[]> {
   const entries = parseYouTubeRSS(xml)
 
   // Filter out test videos
-  return entries.filter(entry => {
+  const filtered = entries.filter(entry => {
     const lowerTitle = entry.title.toLowerCase()
     return !lowerTitle.includes('test') && !lowerTitle.includes('placeholder')
   })
+
+  // Deduplicate by title — YouTube often publishes both a live stream link
+  // (which dies after the stream ends) and the actual VOD with the same title.
+  // Keep the most recently published entry for each title (the VOD).
+  const byTitle = new Map<string, RSSVideoEntry>()
+  for (const entry of filtered) {
+    const existing = byTitle.get(entry.title)
+    if (!existing || new Date(entry.publishedAt) > new Date(existing.publishedAt)) {
+      byTitle.set(entry.title, entry)
+    }
+  }
+  return Array.from(byTitle.values())
 }
 
 /**
