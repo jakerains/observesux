@@ -458,7 +458,7 @@ export async function getRecentMeetings(limit: number = 20): Promise<CouncilMeet
   try {
     const result = await sql`
       SELECT * FROM council_meetings
-      ORDER BY created_at DESC
+      ORDER BY updated_at DESC
       LIMIT ${limit}
     `
     return result.map(mapRowToMeeting)

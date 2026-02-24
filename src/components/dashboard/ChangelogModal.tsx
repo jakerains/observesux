@@ -16,13 +16,16 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
-    version: '0.9.20',
+    version: '0.9.21',
     date: '2026-02-24',
     added: [
       'Upload Transcript button on YouTube feed items — upload a transcript before or after processing, directly from the check feed',
+      '"Add" button on new feed items to create a meeting record without processing',
     ],
     fixed: [
       'Council meetings not appearing in list or widget after ingestion — added force-dynamic to all council-meetings API routes',
+      'Recent Meetings now orders by last updated, so recently processed meetings always show at the top',
+      'Reprocessing from the feed now updates the title and meeting date from YouTube',
     ],
   },
   {

@@ -22,6 +22,7 @@ import {
   Rss,
   Youtube,
   Upload,
+  Plus,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -118,6 +119,7 @@ export function CouncilIngestPanel() {
   const [uploadModalOpen, setUploadModalOpen] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadPrefill, setUploadPrefill] = useState<TranscriptPrefillData | null>(null)
+  const [addingVideoId, setAddingVideoId] = useState<string | null>(null)
   const logEndRef = useRef<HTMLDivElement>(null)
 
   const fetchData = useCallback(async () => {
@@ -519,6 +521,32 @@ export function CouncilIngestPanel() {
     }
   }
 
+  const addToSystem = async (video: { videoId: string; title: string; publishedAt: string }) => {
+    setAddingVideoId(video.videoId)
+    try {
+      const res = await fetch('/api/workflow/council-ingest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'add_only',
+          videoId: video.videoId,
+          title: video.title,
+          publishedAt: video.publishedAt,
+        }),
+      })
+
+      if (res.ok) {
+        // Refresh both feed and meetings list
+        await fetchData()
+        if (feedVideos) await fetchFeed()
+      }
+    } catch (error) {
+      console.error('Failed to add meeting:', error)
+    } finally {
+      setAddingVideoId(null)
+    }
+  }
+
   const latestProgress = progressLog[progressLog.length - 1]
 
   const formatDate = (dateStr: string | null | undefined): string => {
@@ -811,6 +839,22 @@ export function CouncilIngestPanel() {
                       >
                         <ExternalLink className="h-4 w-4" />
                       </a>
+                      {isNew && !isProcessing && (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          className="h-7 gap-1.5 text-xs"
+                          disabled={ingesting || retryingVideoId !== null || addingVideoId !== null}
+                          onClick={() => addToSystem(video)}
+                        >
+                          {addingVideoId === video.videoId ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Plus className="h-3 w-3" />
+                          )}
+                          Add
+                        </Button>
+                      )}
                       {!isProcessing && (
                         <Button
                           variant="ghost"

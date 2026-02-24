@@ -5,13 +5,16 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.9.20] - 2026-02-24
+## [0.9.21] - 2026-02-24
 
 ### Added
 - Upload Transcript button on each YouTube feed item — upload a transcript for any video directly from the check feed, pre-filled with title, video ID, and parsed meeting date
+- "Add" button on new feed items to create a meeting record in the system without processing
 
 ### Fixed
 - Council meetings not appearing in list or widget after ingestion — all council-meetings API routes were missing `force-dynamic`, causing Vercel to serve stale cached responses
+- Recent Meetings list now orders by `updated_at` instead of `created_at`, so recently processed meetings always appear at the top
+- Reprocessing a video from the feed now updates the title and meeting date from YouTube (previously kept stale values from the original ingestion)
 
 ## [0.9.18] - 2026-02-18
 

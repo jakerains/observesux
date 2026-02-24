@@ -207,6 +207,8 @@ async function processVideo(
  *   { force: boolean }   — reprocess all (including completed)
  *   { mode: 'upload', transcript: string, title: string, meetingDate: string, videoId?: string }
  *     — manual transcript upload
+ *   { mode: 'add_only', videoId: string, title: string, publishedAt?: string }
+ *     — add a feed video to the system without processing
  *   {}                   — normal ingestion (new + failed + no_captions)
  */
 export async function POST(request: NextRequest) {
@@ -216,7 +218,7 @@ export async function POST(request: NextRequest) {
 
   let force = false
   let singleVideoId: string | null = null
-  let mode: 'full' | 'recap_only' | 'upload' = 'full'
+  let mode: 'full' | 'recap_only' | 'upload' | 'add_only' = 'full'
   let videoMeta: { title?: string; publishedAt?: string } = {}
   let uploadData: { transcript?: string; title?: string; meetingDate?: string; videoId?: string } = {}
   try {
@@ -225,6 +227,7 @@ export async function POST(request: NextRequest) {
     if (body.videoId) singleVideoId = body.videoId
     if (body.mode === 'recap_only') mode = 'recap_only'
     if (body.mode === 'upload') mode = 'upload'
+    if (body.mode === 'add_only') mode = 'add_only'
     if (body.title) videoMeta.title = body.title
     if (body.publishedAt) videoMeta.publishedAt = body.publishedAt
     // Upload-specific fields
@@ -242,6 +245,37 @@ export async function POST(request: NextRequest) {
 
   if (!isDatabaseConfigured()) {
     return NextResponse.json({ error: 'Database not configured' }, { status: 500 })
+  }
+
+  // Add-only mode: create the meeting record without processing
+  if (mode === 'add_only' && singleVideoId && videoMeta.title) {
+    try {
+      const meetingDate = parseMeetingDateFromTitle(videoMeta.title)
+        || (videoMeta.publishedAt ? videoMeta.publishedAt.split('T')[0] : null)
+
+      const meeting = await upsertMeeting({
+        videoId: singleVideoId,
+        title: videoMeta.title,
+        publishedAt: videoMeta.publishedAt || null,
+        meetingDate,
+        videoUrl: `https://www.youtube.com/watch?v=${singleVideoId}`,
+      })
+
+      if (!meeting) {
+        return NextResponse.json({ error: 'Failed to create meeting record' }, { status: 500 })
+      }
+
+      // Set status to pending (awaiting transcript/processing)
+      await updateMeetingStatus(meeting.id, 'pending')
+
+      return NextResponse.json({ success: true, meeting })
+    } catch (error) {
+      console.error('[Council Ingest] Add-only failed:', error)
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : 'Unknown error' },
+        { status: 500 }
+      )
+    }
   }
 
   const encoder = new TextEncoder()
@@ -430,38 +464,39 @@ export async function POST(request: NextRequest) {
           })
 
           let meeting = await getMeetingByVideoId(videoId)
+
+          // Always upsert if we have metadata — updates title/date if YouTube changed them
+          if (videoMeta.title) {
+            const publishedAt = videoMeta.publishedAt || null
+            const meetingDate = parseMeetingDateFromTitle(videoMeta.title)
+              || (publishedAt ? publishedAt.split('T')[0] : null)
+            sendEvent(controller, encoder, 'progress', {
+              step: 'upsert',
+              message: meeting
+                ? `Updating record: ${videoMeta.title}`
+                : `Creating record: ${videoMeta.title}`,
+              videoId,
+            })
+            meeting = await upsertMeeting({
+              videoId,
+              title: videoMeta.title,
+              publishedAt,
+              meetingDate,
+              videoUrl: `https://www.youtube.com/watch?v=${videoId}`,
+            })
+          }
+
           if (!meeting) {
-            // New video not yet in DB — upsert it if we have metadata
-            if (videoMeta.title) {
-              const publishedAt = videoMeta.publishedAt || null
-              // Parse meeting date from title, fall back to publishedAt date
-              const meetingDate = parseMeetingDateFromTitle(videoMeta.title)
-                || (publishedAt ? publishedAt.split('T')[0] : null)
-              sendEvent(controller, encoder, 'progress', {
-                step: 'upsert',
-                message: `Creating record for: ${videoMeta.title}`,
-                videoId,
-              })
-              meeting = await upsertMeeting({
-                videoId,
-                title: videoMeta.title,
-                publishedAt,
-                meetingDate,
-                videoUrl: `https://www.youtube.com/watch?v=${videoId}`,
-              })
-            }
-            if (!meeting) {
-              sendEvent(controller, encoder, 'complete', {
-                success: false,
-                processed: 0,
-                skipped: 0,
-                failed: 1,
-                noCaptions: 0,
-                error: `Meeting not found for video ${videoId}`,
-              })
-              controller.close()
-              return
-            }
+            sendEvent(controller, encoder, 'complete', {
+              success: false,
+              processed: 0,
+              skipped: 0,
+              failed: 1,
+              noCaptions: 0,
+              error: `Meeting not found for video ${videoId}`,
+            })
+            controller.close()
+            return
           }
 
           // Recap-only mode: regenerate recap from existing transcript
