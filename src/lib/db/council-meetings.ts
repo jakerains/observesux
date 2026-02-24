@@ -98,6 +98,35 @@ export async function upsertMeeting(input: {
 }
 
 /**
+ * Sync title and meeting_date from RSS without changing status or recap.
+ * Used during bulk ingestion to pick up YouTube title changes on completed meetings.
+ * Returns true if the record was actually updated (title or date changed).
+ */
+export async function syncMeetingMetadata(
+  videoId: string,
+  title: string,
+  meetingDate: string | null
+): Promise<boolean> {
+  if (!isDatabaseConfigured()) return false
+
+  try {
+    const result = await sql`
+      UPDATE council_meetings
+      SET title = ${title},
+          meeting_date = COALESCE(${meetingDate}, meeting_date),
+          updated_at = NOW()
+      WHERE video_id = ${videoId}
+        AND (title != ${title} OR (${meetingDate}::text IS NOT NULL AND meeting_date::text IS DISTINCT FROM ${meetingDate}))
+      RETURNING id
+    `
+    return result.length > 0
+  } catch (error) {
+    console.error('Error syncing meeting metadata:', error)
+    return false
+  }
+}
+
+/**
  * Update meeting status
  */
 export async function updateMeetingStatus(

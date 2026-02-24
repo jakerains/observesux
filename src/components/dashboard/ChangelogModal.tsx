@@ -16,6 +16,14 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.9.22',
+    date: '2026-02-24',
+    fixed: [
+      'Automated cron syncs YouTube title/date changes for completed meetings',
+      '"Add" button preserves completed status for already-processed meetings',
+    ],
+  },
+  {
     version: '0.9.21',
     date: '2026-02-24',
     added: [

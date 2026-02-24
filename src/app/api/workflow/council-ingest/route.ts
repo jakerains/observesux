@@ -16,6 +16,7 @@ import {
   insertMeetingChunks,
   getCouncilIngestStats,
   getRecentMeetings,
+  syncMeetingMetadata,
 } from '@/lib/db/council-meetings'
 import { generateEmbedding } from '@/lib/ai/embeddings'
 import { isDatabaseConfigured } from '@/lib/db'
@@ -247,11 +248,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Database not configured' }, { status: 500 })
   }
 
-  // Add-only mode: create the meeting record without processing
+  // Add-only mode: create or update the meeting record without processing.
+  // If the meeting already exists and is completed, just update the metadata
+  // (title, date) without changing status. For new/failed records, set to pending.
   if (mode === 'add_only' && singleVideoId && videoMeta.title) {
     try {
       const meetingDate = parseMeetingDateFromTitle(videoMeta.title)
         || (videoMeta.publishedAt ? videoMeta.publishedAt.split('T')[0] : null)
+
+      // Check existing status before upsert (which sets status to processing)
+      const existing = await getMeetingByVideoId(singleVideoId)
+      const wasCompleted = existing?.status === 'completed'
 
       const meeting = await upsertMeeting({
         videoId: singleVideoId,
@@ -265,8 +272,8 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Failed to create meeting record' }, { status: 500 })
       }
 
-      // Set status to pending (awaiting transcript/processing)
-      await updateMeetingStatus(meeting.id, 'pending')
+      // Restore completed status if it was already done, otherwise set to pending
+      await updateMeetingStatus(meeting.id, wasCompleted ? 'completed' : 'pending')
 
       return NextResponse.json({ success: true, meeting })
     } catch (error) {
@@ -678,6 +685,17 @@ export async function POST(request: NextRequest) {
           }
 
           if (existing.status === 'completed') {
+            // Sync title/date from RSS in case YouTube updated them after ingestion
+            const freshDate = parseMeetingDateFromTitle(video.title)
+              || (video.publishedAt ? video.publishedAt.split('T')[0] : null)
+            const synced = await syncMeetingMetadata(video.videoId, video.title, freshDate)
+            if (synced) {
+              sendEvent(controller, encoder, 'progress', {
+                step: 'filter',
+                message: `Synced metadata for: ${video.title}`,
+                videoId: video.videoId,
+              })
+            }
             skipped++
             continue
           }
