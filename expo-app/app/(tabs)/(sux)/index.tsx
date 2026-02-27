@@ -18,11 +18,12 @@ import {
   Animated,
   Easing,
 } from 'react-native';
-import { SymbolView } from 'expo-symbols';
+import { Image as ExpoImage } from 'expo-image';
 import * as Haptics from 'expo-haptics';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { API_BASE_URL } from '@/lib/api';
 import { ToolOutputCard, type ToolOutput } from '@/components/chat/ToolOutputCard';
+import { MarkdownText } from '@/components/MarkdownText';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const suxImage = require('../../../assets/sux.png');
@@ -68,7 +69,7 @@ function ThinkingBubble() {
     <View style={{ alignSelf: 'flex-start', marginBottom: 12 }}>
       <View
         style={{
-          backgroundColor: PlatformColor('secondarySystemBackground'),
+          backgroundColor: '#1f130c',
           paddingHorizontal: 14,
           paddingVertical: 12,
           borderRadius: 18,
@@ -94,6 +95,7 @@ const SUGGESTED_QUESTIONS = [
 ];
 
 export default function SuxScreen() {
+  const insets = useSafeAreaInsets();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -314,7 +316,7 @@ export default function SuxScreen() {
   }, []);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: PlatformColor('systemBackground') }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#120905' }} edges={['top']}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -355,7 +357,7 @@ export default function SuxScreen() {
                 borderRadius: 8,
               }}
             >
-              <SymbolView name="arrow.counterclockwise" tintColor={PlatformColor('systemBlue')} size={20} />
+              <ExpoImage source="sf:arrow.counterclockwise" style={{ width: 20, height: 20 }} tintColor={'#e69c3a'} />
             </Pressable>
           )}
         </View>
@@ -402,7 +404,7 @@ export default function SuxScreen() {
                     onPress={() => handleSuggestion(question)}
                     disabled={isLoading}
                     style={{
-                      backgroundColor: PlatformColor('secondarySystemBackground'),
+                      backgroundColor: '#1f130c',
                       paddingHorizontal: 14,
                       paddingVertical: 8,
                       borderRadius: 16,
@@ -435,8 +437,8 @@ export default function SuxScreen() {
                     style={{
                       backgroundColor:
                         message.role === 'user'
-                          ? PlatformColor('systemBlue')
-                          : PlatformColor('secondarySystemBackground'),
+                          ? '#e69c3a'
+                          : '#1f130c',
                       paddingHorizontal: 14,
                       paddingVertical: 10,
                       borderRadius: 18,
@@ -444,16 +446,27 @@ export default function SuxScreen() {
                       borderBottomLeftRadius: message.role === 'assistant' ? 4 : 18,
                     }}
                   >
-                    {hasText && (
+                    {hasText && message.role === 'user' && (
                       <Text
                         style={{
                           fontSize: 15,
                           lineHeight: 20,
-                          color: message.role === 'user' ? '#ffffff' : PlatformColor('label'),
+                          color: '#ffffff',
                         }}
                       >
                         {message.content}
                       </Text>
+                    )}
+                    {hasText && message.role === 'assistant' && (
+                      <MarkdownText
+                        style={{
+                          fontSize: 15,
+                          lineHeight: 22,
+                          color: PlatformColor('label'),
+                        }}
+                      >
+                        {message.content}
+                      </MarkdownText>
                     )}
                   </View>
                 )}
@@ -480,9 +493,10 @@ export default function SuxScreen() {
             alignItems: 'center',
             paddingHorizontal: 16,
             paddingVertical: 12,
+            paddingBottom: 12 + insets.bottom,
             borderTopWidth: 0.5,
             borderTopColor: PlatformColor('separator'),
-            backgroundColor: PlatformColor('systemBackground'),
+            backgroundColor: '#120905',
             gap: 10,
           }}
         >
@@ -493,7 +507,7 @@ export default function SuxScreen() {
             placeholderTextColor={PlatformColor('placeholderText')}
             style={{
               flex: 1,
-              backgroundColor: PlatformColor('secondarySystemBackground'),
+              backgroundColor: '#1f130c',
               borderRadius: 20,
               paddingHorizontal: 16,
               paddingVertical: 10,
@@ -511,7 +525,7 @@ export default function SuxScreen() {
               width: 36,
               height: 36,
               borderRadius: 18,
-              backgroundColor: input.trim() && !isLoading ? PlatformColor('systemBlue') : PlatformColor('systemGray4'),
+              backgroundColor: input.trim() && !isLoading ? '#e69c3a' : PlatformColor('systemGray4'),
               alignItems: 'center',
               justifyContent: 'center',
             }}
@@ -519,7 +533,7 @@ export default function SuxScreen() {
             {isLoading ? (
               <ActivityIndicator size="small" color="#ffffff" />
             ) : (
-              <SymbolView name="arrow.up" tintColor="#ffffff" size={18} />
+              <ExpoImage source="sf:arrow.up" style={{ width: 18, height: 18 }} tintColor="#ffffff" />
             )}
           </Pressable>
         </View>

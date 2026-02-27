@@ -1,128 +1,44 @@
 /**
  * Tab layout for Siouxland Online
- * Uses expo-router Tabs with SF Symbols and custom SUX center tab
+ * Uses NativeTabs from expo-router for native iOS 26 tab bar
  */
 
-import { Tabs } from 'expo-router';
-import { Image, View } from 'react-native';
-import { SymbolView } from 'expo-symbols';
+import { NativeTabs } from 'expo-router/unstable-native-tabs';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const suxImage = require('../../assets/sux.png');
+const suxIcon = require('../../assets/sux-icon.png');
 
 export default function TabLayout() {
   return (
-    <Tabs
-      initialRouteName="(0-home)"
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: '#3b82f6',
-        tabBarInactiveTintColor: '#6b7280',
-        tabBarStyle: {
-          backgroundColor: '#000000',
-          borderTopColor: '#1f1f1f',
-          height: 85,
-          paddingBottom: 30,
-          paddingTop: 8,
-        },
-        sceneStyle: {
-          backgroundColor: '#000000',
-        },
-      }}
+    <NativeTabs
+      backgroundColor="#170d08"
+      iconColor={{ default: '#8b7e6d', selected: '#e69c3a' }}
     >
-      <Tabs.Screen
-        name="(0-home)"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ focused }) => (
-            <SymbolView
-              name={focused ? 'house.fill' : 'house'}
-              tintColor={focused ? '#3b82f6' : '#6b7280'}
-              size={24}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="(map)"
-        options={{
-          title: 'Map',
-          tabBarIcon: ({ focused }) => (
-            <SymbolView
-              name={focused ? 'map.fill' : 'map'}
-              tintColor={focused ? '#3b82f6' : '#6b7280'}
-              size={24}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="(sux)"
-        options={{
-          title: 'SUX',
-          tabBarIcon: ({ focused }) => (
-            <View
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: 22,
-                backgroundColor: focused ? '#1f1f1f' : 'transparent',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 4,
-              }}
-            >
-              <Image
-                source={suxImage}
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 18,
-                  opacity: focused ? 1 : 0.7,
-                }}
-                alt="SUX assistant"
-                accessibilityLabel="SUX assistant"
-              />
-            </View>
-          ),
-          tabBarLabelStyle: {
-            marginTop: -4,
-          },
-        }}
-      />
-      <Tabs.Screen
-        name="(cameras)"
-        options={{
-          title: 'Cameras',
-          tabBarIcon: ({ focused }) => (
-            <SymbolView
-              name={focused ? 'video.fill' : 'video'}
-              tintColor={focused ? '#3b82f6' : '#6b7280'}
-              size={24}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="(more)"
-        options={{
-          title: 'More',
-          tabBarIcon: ({ focused }) => (
-            <SymbolView
-              name={focused ? 'ellipsis.circle.fill' : 'ellipsis.circle'}
-              tintColor={focused ? '#3b82f6' : '#6b7280'}
-              size={24}
-            />
-          ),
-        }}
-      />
-      {/* Hide weather tab - moved to home screen widget */}
-      <Tabs.Screen
-        name="(weather)"
-        options={{
-          href: null,
-        }}
-      />
-    </Tabs>
+      <NativeTabs.Trigger name="(0-home)">
+        <NativeTabs.Trigger.Icon sf={{ default: 'house', selected: 'house.fill' }} />
+        <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="(map)">
+        <NativeTabs.Trigger.Icon sf={{ default: 'map', selected: 'map.fill' }} />
+        <NativeTabs.Trigger.Label>Map</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="(sux)">
+        <NativeTabs.Trigger.Icon src={suxIcon} renderingMode="original" />
+        <NativeTabs.Trigger.Label>SUX</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="(cameras)">
+        <NativeTabs.Trigger.Icon sf={{ default: 'video', selected: 'video.fill' }} />
+        <NativeTabs.Trigger.Label>Cameras</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="(more)">
+        <NativeTabs.Trigger.Icon sf={{ default: 'ellipsis.circle', selected: 'ellipsis.circle.fill' }} />
+        <NativeTabs.Trigger.Label>More</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+      {/* Weather tab — hidden from tab bar but still routable */}
+      <NativeTabs.Trigger name="(weather)" hidden>
+        <NativeTabs.Trigger.Icon sf={{ default: 'cloud.sun', selected: 'cloud.sun.fill' }} />
+        <NativeTabs.Trigger.Label>Weather</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+    </NativeTabs>
   );
 }

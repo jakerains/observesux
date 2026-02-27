@@ -8,7 +8,6 @@ import { useLocalSearchParams, Stack } from 'expo-router';
 import { Image } from 'expo-image';
 import { WebView } from 'react-native-webview';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { SymbolView } from 'expo-symbols';
 import * as Haptics from 'expo-haptics';
 
 type ViewMode = 'snapshot' | 'live';
@@ -72,7 +71,7 @@ export default function CameraDetailScreen() {
   </style>
 </head>
 <body>
-  <video id="player" playsinline webkit-playsinline controls>
+  <video id="player" playsinline controls>
     <source src="${streamUrl}" type="application/x-mpegURL">
     <source src="${streamUrl}" type="application/vnd.apple.mpegurl">
   </video>
@@ -104,7 +103,7 @@ export default function CameraDetailScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: PlatformColor('systemBackground') }}>
+    <View style={{ flex: 1, backgroundColor: '#120905' }}>
       <Stack.Screen
         options={{
           title: name || 'Camera',
@@ -116,9 +115,9 @@ export default function CameraDetailScreen() {
                 style={{ padding: 8 }}
               >
                 {isRefreshing ? (
-                  <ActivityIndicator size="small" color={PlatformColor('systemBlue')} />
+                  <ActivityIndicator size="small" color={'#e69c3a'} />
                 ) : (
-                  <SymbolView name="arrow.clockwise" tintColor={PlatformColor('systemBlue')} size={22} />
+                  <Image source="sf:arrow.clockwise" style={{ width: 22, height: 22 }} tintColor={'#e69c3a'} />
                 )}
               </Pressable>
             ) : null,
@@ -135,10 +134,10 @@ export default function CameraDetailScreen() {
                 justifyContent: 'center',
                 alignItems: 'center',
                 width: '100%',
-                backgroundColor: PlatformColor('secondarySystemBackground'),
+                backgroundColor: '#1f130c',
               }}
             >
-              <SymbolView name="video.slash" tintColor={PlatformColor('tertiaryLabel')} size={64} />
+              <Image source="sf:video.slash" style={{ width: 64, height: 64 }} tintColor={PlatformColor('tertiaryLabel')} />
               <Text style={{ marginTop: 16, marginBottom: 20, color: PlatformColor('secondaryLabel') }}>
                 Unable to load camera feed
               </Text>
@@ -149,7 +148,7 @@ export default function CameraDetailScreen() {
                   paddingVertical: 12,
                   borderRadius: 8,
                   borderCurve: 'continuous',
-                  backgroundColor: PlatformColor('systemBlue'),
+                  backgroundColor: '#e69c3a',
                 }}
               >
                 <Text style={{ color: '#fff', fontWeight: '600' }}>Retry</Text>
@@ -191,10 +190,10 @@ export default function CameraDetailScreen() {
                   flex: 1,
                   justifyContent: 'center',
                   alignItems: 'center',
-                  backgroundColor: PlatformColor('secondarySystemBackground'),
+                  backgroundColor: '#1f130c',
                 }}
               >
-                <SymbolView name="video.slash" tintColor={PlatformColor('tertiaryLabel')} size={64} />
+                <Image source="sf:video.slash" style={{ width: 64, height: 64 }} tintColor={PlatformColor('tertiaryLabel')} />
                 <Text style={{ marginTop: 16, marginBottom: 8, color: PlatformColor('label'), fontWeight: '600' }}>
                   Stream Unavailable
                 </Text>
@@ -208,7 +207,7 @@ export default function CameraDetailScreen() {
                     paddingVertical: 12,
                     borderRadius: 8,
                     borderCurve: 'continuous',
-                    backgroundColor: PlatformColor('systemBlue'),
+                    backgroundColor: '#e69c3a',
                   }}
                 >
                   <Text style={{ color: '#fff', fontWeight: '600' }}>View Snapshot</Text>
@@ -268,13 +267,13 @@ export default function CameraDetailScreen() {
                 paddingVertical: 8,
                 borderRadius: 6,
                 gap: 6,
-                backgroundColor: viewMode === 'snapshot' ? PlatformColor('systemBackground') : 'transparent',
+                backgroundColor: viewMode === 'snapshot' ? '#120905' : 'transparent',
               }}
             >
-              <SymbolView
-                name="photo"
+              <Image
+                source="sf:photo"
+                style={{ width: 16, height: 16 }}
                 tintColor={viewMode === 'snapshot' ? PlatformColor('label') : PlatformColor('secondaryLabel')}
-                size={16}
               />
               <Text
                 style={{
@@ -296,13 +295,13 @@ export default function CameraDetailScreen() {
                 paddingVertical: 8,
                 borderRadius: 6,
                 gap: 6,
-                backgroundColor: viewMode === 'live' ? PlatformColor('systemBackground') : 'transparent',
+                backgroundColor: viewMode === 'live' ? '#120905' : 'transparent',
               }}
             >
-              <SymbolView
-                name="video.fill"
+              <Image
+                source="sf:video.fill"
+                style={{ width: 16, height: 16 }}
                 tintColor={viewMode === 'live' ? '#ef4444' : PlatformColor('secondaryLabel')}
-                size={16}
               />
               <Text
                 style={{

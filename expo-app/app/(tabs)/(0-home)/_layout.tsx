@@ -16,12 +16,12 @@ export default function HomeLayout() {
   return (
     <Stack
       screenOptions={{
-        headerStyle: { backgroundColor: '#000000' },
+        headerStyle: { backgroundColor: '#170d08' },
         headerShadowVisible: false,
         headerBackButtonDisplayMode: 'minimal',
-        headerTintColor: '#ffffff',
-        headerTitleStyle: { color: '#ffffff', fontSize: 17, fontWeight: '600' },
-        contentStyle: { backgroundColor: '#000000' },
+        headerTintColor: '#e69c3a',
+        headerTitleStyle: { color: '#ece3d6', fontSize: 17, fontWeight: '600' },
+        contentStyle: { backgroundColor: '#120905' },
       }}
     >
       <Stack.Screen

@@ -17,7 +17,7 @@ import {
   Alert,
 } from 'react-native';
 import { router } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
+import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '../../lib/contexts';
 import { signInWithEmail } from '../../lib/auth';
@@ -87,7 +87,7 @@ export default function SignInScreen() {
               marginBottom: 16,
             }}
           >
-            <SymbolView name="person.fill" tintColor="white" size={40} />
+            <Image source="sf:person.fill" style={{ width: 40, height: 40 }} tintColor="white" />
           </View>
           <Text
             style={{
@@ -133,11 +133,7 @@ export default function SignInScreen() {
                 paddingHorizontal: 16,
               }}
             >
-              <SymbolView
-                name="envelope.fill"
-                tintColor={PlatformColor('secondaryLabel')}
-                size={18}
-              />
+              <Image source="sf:envelope.fill" style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel')} />
               <TextInput
                 value={email}
                 onChangeText={setEmail}
@@ -179,11 +175,7 @@ export default function SignInScreen() {
                 paddingHorizontal: 16,
               }}
             >
-              <SymbolView
-                name="lock.fill"
-                tintColor={PlatformColor('secondaryLabel')}
-                size={18}
-              />
+              <Image source="sf:lock.fill" style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel')} />
               <TextInput
                 value={password}
                 onChangeText={setPassword}
@@ -202,11 +194,7 @@ export default function SignInScreen() {
                 }}
               />
               <Pressable onPress={() => setShowPassword(!showPassword)}>
-                <SymbolView
-                  name={showPassword ? 'eye.slash.fill' : 'eye.fill'}
-                  tintColor={PlatformColor('secondaryLabel')}
-                  size={18}
-                />
+                <Image source={`sf:${showPassword ? 'eye.slash.fill' : 'eye.fill'}`} style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel')} />
               </Pressable>
             </View>
           </View>

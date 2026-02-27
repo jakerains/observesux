@@ -6,7 +6,7 @@ import { useState, useCallback } from 'react';
 import { ScrollView, View, RefreshControl, Pressable, Text, PlatformColor } from 'react-native';
 import { Link } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
-import { SymbolView, type SymbolViewProps } from 'expo-symbols';
+import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { format } from 'date-fns';
 import {
@@ -40,7 +40,7 @@ export default function WeatherScreen() {
   if (weatherLoading) {
     return (
       <ScrollView
-        style={{ backgroundColor: PlatformColor('systemBackground') }}
+        style={{ backgroundColor: '#120905' }}
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={{ flexGrow: 1 }}
       >
@@ -51,7 +51,7 @@ export default function WeatherScreen() {
 
   return (
     <ScrollView
-      style={{ backgroundColor: PlatformColor('systemBackground') }}
+      style={{ backgroundColor: '#120905' }}
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={{ padding: 16, gap: 24 }}
       refreshControl={
@@ -77,11 +77,11 @@ export default function WeatherScreen() {
                 }}
               >
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                  <SymbolView name="exclamationmark.triangle.fill" tintColor="rgb(245, 158, 11)" size={20} />
+                  <Image source="sf:exclamationmark.triangle.fill" style={{ width: 20, height: 20 }} tintColor="rgb(245, 158, 11)" />
                   <Text selectable style={{ flex: 1, fontWeight: '600', color: PlatformColor('label') }}>
                     {alert.event}
                   </Text>
-                  <SymbolView name="chevron.right" tintColor="rgb(245, 158, 11)" size={14} />
+                  <Image source="sf:chevron.right" style={{ width: 14, height: 14 }} tintColor="rgb(245, 158, 11)" />
                 </View>
                 <Text selectable numberOfLines={2} style={{ color: PlatformColor('secondaryLabel') }}>
                   {alert.headline}
@@ -105,7 +105,7 @@ export default function WeatherScreen() {
             style={{
               padding: 20,
               borderRadius: 16,
-              backgroundColor: PlatformColor('secondarySystemBackground'),
+              backgroundColor: '#1f130c',
               borderCurve: 'continuous',
             }}
           >
@@ -148,7 +148,7 @@ export default function WeatherScreen() {
           <View
             style={{
               borderRadius: 12,
-              backgroundColor: PlatformColor('secondarySystemBackground'),
+              backgroundColor: '#1f130c',
               borderCurve: 'continuous',
               overflow: 'hidden',
             }}
@@ -172,10 +172,10 @@ export default function WeatherScreen() {
                   </Text>
                 </View>
                 <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', marginHorizontal: 12 }}>
-                  <SymbolView
-                    name={(day.isDaytime ? 'sun.max.fill' : 'moon.fill') as SymbolViewProps['name']}
-                    tintColor={PlatformColor('systemBlue')}
-                    size={24}
+                  <Image
+                    source={`sf:${day.isDaytime ? 'sun.max.fill' : 'moon.fill'}`}
+                    style={{ width: 24, height: 24 }}
+                    tintColor={'#e69c3a'}
                   />
                   <Text
                     numberOfLines={1}
@@ -190,8 +190,8 @@ export default function WeatherScreen() {
                   </Text>
                   {day.probabilityOfPrecipitation !== null && day.probabilityOfPrecipitation > 0 && (
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 2 }}>
-                      <SymbolView name="drop.fill" tintColor={PlatformColor('systemBlue')} size={12} />
-                      <Text style={{ fontSize: 12, color: PlatformColor('systemBlue') }}>
+                      <Image source="sf:drop.fill" style={{ width: 12, height: 12 }} tintColor={'#e69c3a'} />
+                      <Text style={{ fontSize: 12, color: '#e69c3a' }}>
                         {day.probabilityOfPrecipitation}%
                       </Text>
                     </View>
@@ -209,7 +209,7 @@ export default function WeatherScreen() {
 function DetailItem({ icon, label, value }: { icon: string; label: string; value: string }) {
   return (
     <View style={{ width: '45%', gap: 4 }}>
-      <SymbolView name={icon as SymbolViewProps['name']} tintColor={PlatformColor('systemBlue')} size={20} />
+      <Image source={`sf:${icon}`} style={{ width: 20, height: 20 }} tintColor={'#e69c3a'} />
       <Text style={{ fontSize: 12, color: PlatformColor('tertiaryLabel') }}>{label}</Text>
       <Text selectable style={{ fontWeight: '600', color: PlatformColor('label') }}>{value}</Text>
     </View>

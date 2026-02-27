@@ -3,7 +3,7 @@
  */
 
 import { View, Pressable, Text, PlatformColor } from 'react-native';
-import { SymbolView } from 'expo-symbols';
+import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { useTransit, getDataStatus } from '@/lib/hooks/useDataFetching';
 import { refreshIntervals } from '@/lib/api';
@@ -107,7 +107,7 @@ function BusRow({ bus, onPress }: BusRowProps) {
           alignItems: 'center',
           justifyContent: 'center',
           marginRight: 12,
-          backgroundColor: bus.routeColor || PlatformColor('systemBlue'),
+          backgroundColor: bus.routeColor || '#e69c3a',
         }}
       >
         <Text style={{ color: '#ffffff', fontSize: 12, fontWeight: '700' }}>
@@ -178,7 +178,7 @@ export function TransitWidget() {
     >
       {activeBuses.length === 0 ? (
         <View style={{ alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-          <SymbolView name="bus" tintColor={PlatformColor('tertiaryLabel')} size={32} />
+          <Image source="sf:bus" style={{ width: 32, height: 32 }} tintColor={PlatformColor('tertiaryLabel')} />
           <Text style={{ marginTop: 8, color: PlatformColor('secondaryLabel') }}>
             No active buses
           </Text>

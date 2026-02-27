@@ -3,9 +3,10 @@
  */
 
 import { useCallback, useState } from 'react';
-import { ScrollView, RefreshControl, View, PlatformColor } from 'react-native';
+import { ScrollView, RefreshControl, View } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
+import { Brand } from '@/constants/BrandColors';
 import { WeatherWidget } from '@/components/widgets/WeatherWidget';
 import { DigestWidget } from '@/components/widgets/DigestWidget';
 import { TransitWidget } from '@/components/widgets/TransitWidget';
@@ -29,7 +30,7 @@ export default function HomeScreen() {
 
   return (
     <ScrollView
-      style={{ backgroundColor: PlatformColor('systemBackground') }}
+      style={{ backgroundColor: Brand.background }}
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={{ padding: 16, gap: 12 }}
       refreshControl={

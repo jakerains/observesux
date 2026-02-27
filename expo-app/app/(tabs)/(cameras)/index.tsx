@@ -16,7 +16,6 @@ import {
 import { Link } from 'expo-router';
 import { Image } from 'expo-image';
 import { useQueryClient } from '@tanstack/react-query';
-import { SymbolView } from 'expo-symbols';
 import * as Haptics from 'expo-haptics';
 import { useCameras } from '@/lib/hooks/useDataFetching';
 import { Skeleton } from '@/components/LoadingState';
@@ -50,7 +49,7 @@ function CameraCard({ camera }: { camera: TrafficCamera }) {
         style={{
           width: cardWidth,
           borderRadius: 12,
-          backgroundColor: PlatformColor('secondarySystemBackground'),
+          backgroundColor: '#1f130c',
           borderCurve: 'continuous',
           overflow: 'hidden',
         }}
@@ -71,7 +70,7 @@ function CameraCard({ camera }: { camera: TrafficCamera }) {
                 backgroundColor: PlatformColor('tertiarySystemBackground'),
               }}
             >
-              <SymbolView name="video.slash" tintColor={PlatformColor('tertiaryLabel')} size={32} />
+              <Image source="sf:video.slash" style={{ width: 32, height: 32 }} tintColor={PlatformColor('tertiaryLabel')} />
             </View>
           ) : (
             <Image
@@ -118,7 +117,7 @@ function CameraCard({ camera }: { camera: TrafficCamera }) {
                 gap: 4,
               }}
             >
-              <SymbolView name="video.fill" tintColor="#ffffff" size={10} />
+              <Image source="sf:video.fill" style={{ width: 10, height: 10 }} tintColor="#ffffff" />
               <Text style={{ color: '#ffffff', fontSize: 9, fontWeight: '600' }}>VIDEO</Text>
             </View>
           )}
@@ -169,7 +168,7 @@ function CameraCardSkeleton() {
       style={{
         width: cardWidth,
         borderRadius: 12,
-        backgroundColor: PlatformColor('secondarySystemBackground'),
+        backgroundColor: '#1f130c',
         borderCurve: 'continuous',
         overflow: 'hidden',
       }}
@@ -202,7 +201,7 @@ export default function CamerasScreen() {
   if (isLoading) {
     return (
       <ScrollView
-        style={{ backgroundColor: PlatformColor('systemBackground') }}
+        style={{ backgroundColor: '#120905' }}
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={{ padding: SPACING }}
       >
@@ -218,11 +217,11 @@ export default function CamerasScreen() {
   if (isError) {
     return (
       <ScrollView
-        style={{ backgroundColor: PlatformColor('systemBackground') }}
+        style={{ backgroundColor: '#120905' }}
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={{ flexGrow: 1, alignItems: 'center', justifyContent: 'center', padding: 24 }}
       >
-        <SymbolView name="video.slash" tintColor={PlatformColor('tertiaryLabel')} size={48} />
+        <Image source="sf:video.slash" style={{ width: 48, height: 48 }} tintColor={PlatformColor('tertiaryLabel')} />
         <Text style={{ marginTop: 12, color: PlatformColor('secondaryLabel') }}>
           Unable to load cameras
         </Text>
@@ -233,7 +232,7 @@ export default function CamerasScreen() {
             paddingHorizontal: 20,
             paddingVertical: 10,
             borderRadius: 8,
-            backgroundColor: PlatformColor('systemBlue'),
+            backgroundColor: '#e69c3a',
           }}
         >
           <Text style={{ color: '#fff', fontWeight: '600' }}>Retry</Text>
@@ -248,7 +247,7 @@ export default function CamerasScreen() {
       renderItem={({ item }) => <CameraCard camera={item} />}
       keyExtractor={(item) => item.id}
       numColumns={COLUMN_COUNT}
-      style={{ backgroundColor: PlatformColor('systemBackground') }}
+      style={{ backgroundColor: '#120905' }}
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={{ padding: SPACING, gap: SPACING }}
       columnWrapperStyle={{ justifyContent: 'space-between' }}

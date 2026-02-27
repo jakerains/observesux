@@ -5,10 +5,11 @@
 
 import { View, Text, Pressable, PlatformColor } from 'react-native';
 import { useRouter } from 'expo-router';
-import { SymbolView, type SymbolViewProps } from 'expo-symbols';
+import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { DashboardCard } from '../DashboardCard';
 import { CardSkeleton } from '../LoadingState';
+import { MarkdownText } from '../MarkdownText';
 import { useDigest, getDataStatus } from '@/lib/hooks/useDataFetching';
 import { refreshIntervals } from '@/lib/api';
 
@@ -82,10 +83,10 @@ export function DigestWidget() {
     >
       {!digest ? (
         <View style={{ alignItems: 'center', paddingVertical: 16 }}>
-          <SymbolView
-            name="newspaper"
+          <Image
+            source="sf:newspaper"
+            style={{ width: 40, height: 40 }}
             tintColor={PlatformColor('tertiaryLabel')}
-            size={40}
           />
           <Text
             style={{
@@ -113,10 +114,10 @@ export function DigestWidget() {
                 borderRadius: 6,
               }}
             >
-              <SymbolView
-                name={(edition ? editionIcons[edition] : 'newspaper.fill') as SymbolViewProps['name']}
+              <Image
+                source={`sf:${edition ? editionIcons[edition] : 'newspaper.fill'}`}
+                style={{ width: 12, height: 12 }}
                 tintColor={PlatformColor('secondaryLabel')}
-                size={12}
               />
               <Text
                 style={{
@@ -139,7 +140,7 @@ export function DigestWidget() {
           </View>
 
           {/* Summary */}
-          <Text
+          <MarkdownText
             style={{
               fontSize: 14,
               lineHeight: 20,
@@ -148,7 +149,7 @@ export function DigestWidget() {
             numberOfLines={4}
           >
             {digest.summary || "Check out today's community digest for weather, news, events, and more."}
-          </Text>
+          </MarkdownText>
 
           {/* Read more button */}
           <Pressable
@@ -168,15 +169,15 @@ export function DigestWidget() {
               style={{
                 fontSize: 14,
                 fontWeight: '500',
-                color: PlatformColor('systemBlue'),
+                color: '#e69c3a',
               }}
             >
               Read Full Digest
             </Text>
-            <SymbolView
-              name="arrow.right"
-              tintColor={PlatformColor('systemBlue')}
-              size={12}
+            <Image
+              source="sf:arrow.right"
+              style={{ width: 12, height: 12 }}
+              tintColor={'#e69c3a'}
             />
           </Pressable>
         </View>

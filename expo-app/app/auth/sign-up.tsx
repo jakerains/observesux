@@ -17,7 +17,7 @@ import {
   Alert,
 } from 'react-native';
 import { router } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
+import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '../../lib/contexts';
 import { signUpWithEmail } from '../../lib/auth';
@@ -111,7 +111,7 @@ export default function SignUpScreen() {
               marginBottom: 16,
             }}
           >
-            <SymbolView name="person.badge.plus" tintColor="white" size={40} />
+            <Image source="sf:person.badge.plus" style={{ width: 40, height: 40 }} tintColor="white" />
           </View>
           <Text
             style={{
@@ -157,11 +157,7 @@ export default function SignUpScreen() {
                 paddingHorizontal: 16,
               }}
             >
-              <SymbolView
-                name="person.fill"
-                tintColor={PlatformColor('secondaryLabel')}
-                size={18}
-              />
+              <Image source="sf:person.fill" style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel')} />
               <TextInput
                 value={name}
                 onChangeText={setName}
@@ -202,11 +198,7 @@ export default function SignUpScreen() {
                 paddingHorizontal: 16,
               }}
             >
-              <SymbolView
-                name="envelope.fill"
-                tintColor={PlatformColor('secondaryLabel')}
-                size={18}
-              />
+              <Image source="sf:envelope.fill" style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel')} />
               <TextInput
                 value={email}
                 onChangeText={setEmail}
@@ -248,11 +240,7 @@ export default function SignUpScreen() {
                 paddingHorizontal: 16,
               }}
             >
-              <SymbolView
-                name="lock.fill"
-                tintColor={PlatformColor('secondaryLabel')}
-                size={18}
-              />
+              <Image source="sf:lock.fill" style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel')} />
               <TextInput
                 value={password}
                 onChangeText={setPassword}
@@ -271,11 +259,7 @@ export default function SignUpScreen() {
                 }}
               />
               <Pressable onPress={() => setShowPassword(!showPassword)}>
-                <SymbolView
-                  name={showPassword ? 'eye.slash.fill' : 'eye.fill'}
-                  tintColor={PlatformColor('secondaryLabel')}
-                  size={18}
-                />
+                <Image source={`sf:${showPassword ? 'eye.slash.fill' : 'eye.fill'}`} style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel')} />
               </Pressable>
             </View>
           </View>
@@ -301,11 +285,7 @@ export default function SignUpScreen() {
                 paddingHorizontal: 16,
               }}
             >
-              <SymbolView
-                name="lock.fill"
-                tintColor={PlatformColor('secondaryLabel')}
-                size={18}
-              />
+              <Image source="sf:lock.fill" style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel')} />
               <TextInput
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}

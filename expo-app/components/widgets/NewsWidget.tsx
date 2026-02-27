@@ -4,7 +4,6 @@
 
 import { View, Pressable, Linking, Text, PlatformColor } from 'react-native';
 import { Image } from 'expo-image';
-import { SymbolView } from 'expo-symbols';
 import { formatDistanceToNow } from 'date-fns';
 import * as Haptics from 'expo-haptics';
 import { useNews, getDataStatus } from '@/lib/hooks/useDataFetching';
@@ -66,7 +65,7 @@ function NewsRow({ item }: NewsRowProps) {
         </Text>
 
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Text style={{ fontSize: 12, color: PlatformColor('systemBlue') }}>{item.source}</Text>
+          <Text style={{ fontSize: 12, color: '#e69c3a' }}>{item.source}</Text>
           {timeAgo && (
             <>
               <Text style={{ fontSize: 12, marginHorizontal: 6, color: PlatformColor('tertiaryLabel') }}>•</Text>
@@ -76,7 +75,7 @@ function NewsRow({ item }: NewsRowProps) {
         </View>
       </View>
 
-      <SymbolView name="chevron.right" tintColor={PlatformColor('tertiaryLabel')} size={16} style={{ marginLeft: 4 }} />
+      <Image source="sf:chevron.right" style={{ width: 16, height: 16, marginLeft: 4 }} tintColor={PlatformColor('tertiaryLabel')} />
     </Pressable>
   );
 }
@@ -125,7 +124,7 @@ export function NewsWidget() {
     >
       {displayNews.length === 0 ? (
         <View style={{ alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-          <SymbolView name="newspaper" tintColor={PlatformColor('tertiaryLabel')} size={32} />
+          <Image source="sf:newspaper" style={{ width: 32, height: 32 }} tintColor={PlatformColor('tertiaryLabel')} />
           <Text style={{ marginTop: 8, color: PlatformColor('secondaryLabel') }}>
             No news available
           </Text>

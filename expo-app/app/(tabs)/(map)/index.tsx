@@ -8,9 +8,8 @@ import MapView, { Marker, Callout, PROVIDER_DEFAULT, Region } from 'react-native
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Image } from 'expo-image';
-import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import * as Haptics from 'expo-haptics';
-import { useCameras, useTransit, useTrafficEvents } from '@/lib/hooks/useDataFetching';
+import { useCameras, useTransit, useTrafficEvents, useGasPrices } from '@/lib/hooks/useDataFetching';
 
 const SIOUX_CITY_CENTER: Region = {
   latitude: 42.4963,
@@ -19,7 +18,7 @@ const SIOUX_CITY_CENTER: Region = {
   longitudeDelta: 0.15,
 };
 
-type LayerType = 'cameras' | 'buses' | 'traffic';
+type LayerType = 'cameras' | 'buses' | 'traffic' | 'gas';
 
 function LayerToggle({
   sfSymbol,
@@ -49,11 +48,11 @@ function LayerToggle({
         paddingVertical: 8,
         borderRadius: 20,
         gap: 6,
-        backgroundColor: active ? PlatformColor('systemBlue') : PlatformColor('secondarySystemBackground'),
+        backgroundColor: active ? '#e69c3a' : '#1f130c',
         boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
       }}
     >
-      <SymbolView name={sfSymbol as SymbolViewProps['name']} tintColor={active ? '#fff' : PlatformColor('label')} size={18} />
+      <Image source={`sf:${sfSymbol}`} style={{ width: 18, height: 18 }} tintColor={active ? '#fff' : PlatformColor('label')} />
       <Text style={{ fontSize: 12, fontWeight: active ? '600' : '400', color: active ? '#fff' : PlatformColor('label') }}>
         {label}
       </Text>
@@ -66,10 +65,10 @@ function LayerToggle({
             alignItems: 'center',
             justifyContent: 'center',
             paddingHorizontal: 4,
-            backgroundColor: active ? '#fff' : PlatformColor('systemBlue'),
+            backgroundColor: active ? '#fff' : '#e69c3a',
           }}
         >
-          <Text style={{ fontSize: 10, fontWeight: '600', color: active ? PlatformColor('systemBlue') : '#fff' }}>
+          <Text style={{ fontSize: 10, fontWeight: '600', color: active ? '#e69c3a' : '#fff' }}>
             {count}
           </Text>
         </View>
@@ -89,10 +88,12 @@ export default function MapScreen() {
   const { data: camerasData } = useCameras();
   const { data: transitData } = useTransit();
   const { data: trafficData } = useTrafficEvents();
+  const { data: gasData } = useGasPrices();
 
   const cameras = Array.isArray(camerasData?.data) ? camerasData.data : [];
   const buses = Array.isArray(transitData?.data) ? transitData.data : [];
   const trafficEvents = Array.isArray(trafficData?.data) ? trafficData.data : [];
+  const gasStations = Array.isArray(gasData?.data) ? gasData.data : [];
 
   const toggleLayer = (layer: LayerType) => {
     setActiveLayers((prev) => {
@@ -127,7 +128,7 @@ export default function MapScreen() {
   }, [colorScheme]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: PlatformColor('systemBackground') }}>
+    <View style={{ flex: 1, backgroundColor: '#120905' }}>
       <MapView
         ref={mapRef}
         style={{ flex: 1 }}
@@ -156,7 +157,7 @@ export default function MapScreen() {
                   backgroundColor: '#3b82f6',
                 }}
               >
-                <SymbolView name="video.fill" tintColor="#fff" size={14} />
+                <Image source="sf:video.fill" style={{ width: 14, height: 14 }} tintColor="#fff" />
               </View>
               <Callout
                 tooltip
@@ -209,7 +210,7 @@ export default function MapScreen() {
                           gap: 4,
                         }}
                       >
-                        <SymbolView name="video.fill" tintColor="#ffffff" size={10} />
+                        <Image source="sf:video.fill" style={{ width: 10, height: 10 }} tintColor="#ffffff" />
                         <Text style={{ color: '#ffffff', fontSize: 9, fontWeight: '600' }}>VIDEO</Text>
                       </View>
                     )}
@@ -248,7 +249,7 @@ export default function MapScreen() {
                       >
                         Tap for full view
                       </Text>
-                      <SymbolView name="chevron.right" tintColor="#3b82f6" size={10} style={{ marginLeft: 2 }} />
+                      <Image source="sf:chevron.right" style={{ width: 10, height: 10, marginLeft: 2 }} tintColor="#3b82f6" />
                     </View>
                   </View>
                 </View>
@@ -277,7 +278,32 @@ export default function MapScreen() {
                   backgroundColor: bus.routeColor || '#22c55e',
                 }}
               >
-                <SymbolView name="bus.fill" tintColor="#fff" size={12} />
+                <Image source="sf:bus.fill" style={{ width: 12, height: 12 }} tintColor="#fff" />
+              </View>
+            </Marker>
+          ))}
+
+        {activeLayers.has('gas') &&
+          gasStations.map((station) => (
+            <Marker
+              key={`gas-${station.id}`}
+              coordinate={{ latitude: station.latitude, longitude: station.longitude }}
+              title={station.name}
+              description={station.prices.regular ? `Regular: $${station.prices.regular.toFixed(2)}` : station.address}
+            >
+              <View
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 14,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderWidth: 2,
+                  borderColor: '#ffffff',
+                  backgroundColor: '#f59e0b',
+                }}
+              >
+                <Image source="sf:fuelpump.fill" style={{ width: 14, height: 14 }} tintColor="#fff" />
               </View>
             </Marker>
           ))}
@@ -303,7 +329,7 @@ export default function MapScreen() {
                     event.severity === 'critical' ? '#ef4444' : event.severity === 'major' ? '#f97316' : '#f59e0b',
                 }}
               >
-                <SymbolView name="exclamationmark.triangle.fill" tintColor="#fff" size={14} />
+                <Image source="sf:exclamationmark.triangle.fill" style={{ width: 14, height: 14 }} tintColor="#fff" />
               </View>
             </Marker>
           ))}
@@ -333,6 +359,13 @@ export default function MapScreen() {
             onPress={() => toggleLayer('traffic')}
             count={trafficEvents.length}
           />
+          <LayerToggle
+            sfSymbol="fuelpump.fill"
+            label="Gas"
+            active={activeLayers.has('gas')}
+            onPress={() => toggleLayer('gas')}
+            count={gasStations.length}
+          />
         </ScrollView>
       </View>
 
@@ -346,11 +379,11 @@ export default function MapScreen() {
             borderRadius: 22,
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: PlatformColor('secondarySystemBackground'),
+            backgroundColor: '#1f130c',
             boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
           }}
         >
-          <SymbolView name="location.fill" tintColor={PlatformColor('systemBlue')} size={22} />
+          <Image source="sf:location.fill" style={{ width: 22, height: 22 }} tintColor={'#e69c3a'} />
         </Pressable>
       </View>
     </View>

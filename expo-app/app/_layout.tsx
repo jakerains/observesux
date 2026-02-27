@@ -38,11 +38,11 @@ function RootLayoutInner() {
   const { token } = useAuth();
 
   const headerOptions = {
-    headerStyle: { backgroundColor: '#000000' },
+    headerStyle: { backgroundColor: '#170d08' },
     headerShadowVisible: false,
     headerBackButtonDisplayMode: 'minimal' as const,
-    headerTintColor: '#ffffff',
-    headerTitleStyle: { color: '#ffffff', fontSize: 17, fontWeight: '600' as const },
+    headerTintColor: '#e69c3a',
+    headerTitleStyle: { color: '#ece3d6', fontSize: 17, fontWeight: '600' as const },
   };
 
   return (
@@ -100,7 +100,7 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: PlatformColor('systemBackground') }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#120905' }}>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <RootLayoutInner />

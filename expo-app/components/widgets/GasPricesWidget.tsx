@@ -4,7 +4,7 @@
 
 import { useState } from 'react';
 import { View, Pressable, Text, PlatformColor } from 'react-native';
-import { SymbolView } from 'expo-symbols';
+import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { useGasPrices, getDataStatus } from '@/lib/hooks/useDataFetching';
 import { refreshIntervals } from '@/lib/api';
@@ -148,7 +148,7 @@ export function GasPricesWidget() {
               borderCurve: 'continuous',
               alignItems: 'center',
               backgroundColor: selectedFuel === fuel.key
-                ? PlatformColor('systemBlue')
+                ? '#e69c3a'
                 : PlatformColor('tertiarySystemFill'),
             }}
           >
@@ -168,7 +168,7 @@ export function GasPricesWidget() {
       {/* Station List */}
       {sortedStations.length === 0 ? (
         <View style={{ alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-          <SymbolView name="fuelpump" tintColor={PlatformColor('tertiaryLabel')} size={32} />
+          <Image source="sf:fuelpump" style={{ width: 32, height: 32 }} tintColor={PlatformColor('tertiaryLabel')} />
           <Text style={{ marginTop: 8, color: PlatformColor('secondaryLabel') }}>
             No prices available
           </Text>
