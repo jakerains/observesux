@@ -83,22 +83,35 @@ export function GasPricesWidget() {
   const [selectedFuel, setSelectedFuel] = useState<FuelType>('regular');
   const { data, isLoading, isError, refetch, isFetching, dataUpdatedAt } = useGasPrices();
 
-  // API returns { data: { stations: [...], stats: {} } }
-  // Each station has prices as [{fuelType: "Regular", price: 2.23}] array
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const rawData = data?.data as any;
-  const rawStations: any[] = Array.isArray(rawData?.stations) ? rawData.stations : [];
-  const stations: GasStation[] = rawStations.map((s) => ({
-    id: String(s.id),
-    name: s.brandName || s.name || 'Unknown',
-    address: s.streetAddress || s.address || '',
-    latitude: s.latitude,
-    longitude: s.longitude,
-    lastUpdated: '',
-    prices: Array.isArray(s.prices)
-      ? Object.fromEntries(s.prices.map((p: { fuelType: string; price: number }) => [p.fuelType.toLowerCase(), p.price]))
-      : (s.prices || {}),
-  }));
+  // API returns { stations: [...], stats: {} } — extract and normalize
+  const rawPayload = data?.data as unknown;
+  const rawList = Array.isArray(rawPayload)
+    ? (rawPayload as unknown[])
+    : Array.isArray((rawPayload as Record<string, unknown>)?.stations)
+    ? ((rawPayload as { stations: unknown[] }).stations)
+    : [];
+
+  const stations: GasStation[] = rawList.map((s: unknown) => {
+    const raw = s as Record<string, unknown>;
+    // API prices come as [{fuelType: 'Regular', price: 2.23}] — flatten to {regular: 2.23}
+    const pricesFlat = Array.isArray(raw.prices)
+      ? Object.fromEntries(
+          (raw.prices as { fuelType: string; price: number }[]).map((p) => [
+            p.fuelType.toLowerCase(),
+            p.price,
+          ])
+        )
+      : (raw.prices as Record<string, number>) ?? {};
+    return {
+      id: String(raw.id),
+      name: (raw.brandName as string) || (raw.name as string) || 'Unknown',
+      address: (raw.streetAddress as string) || (raw.address as string) || '',
+      latitude: (raw.latitude as number) ?? 0,
+      longitude: (raw.longitude as number) ?? 0,
+      prices: pricesFlat,
+      lastUpdated: (raw.scrapedAt as string) || '',
+    };
+  });
 
   // Sort stations by selected fuel price
   const sortedStations = [...stations]
