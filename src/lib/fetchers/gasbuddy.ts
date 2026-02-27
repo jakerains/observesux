@@ -1,5 +1,5 @@
 // GasBuddy Gas Price Scraper using Firecrawl Scrape API
-// Uses simple scrape endpoint with markdown - faster and cheaper than extract/agent mode
+// Uses simple scrape endpoint with markdown - GasBuddy requires JS wait for station listings
 
 // Fuel type configuration
 const FUEL_TYPES = [
@@ -32,7 +32,8 @@ interface StationPriceMap {
 }
 
 /**
- * Scrape a single fuel type from GasBuddy using Firecrawl's scrape API
+ * Scrape a single fuel type from GasBuddy using Firecrawl's scrape API.
+ * GasBuddy is a React app — requires a JS wait action so station listings render.
  */
 async function scrapeFuelType(fuelCode: number, fuelName: string): Promise<Array<{ name: string; address: string; price: number }>> {
   const url = `${GASBUDDY_BASE_URL}&fuel=${fuelCode}`
@@ -47,22 +48,27 @@ async function scrapeFuelType(fuelCode: number, fuelName: string): Promise<Array
     },
     body: JSON.stringify({
       url,
+      formats: ['markdown'],
       onlyMainContent: true,
-      maxAge: 172800000, // 48 hours cache
-      formats: ['markdown']
-    })
+      // GasBuddy renders stations client-side — wait for JS to load them
+      actions: [
+        { type: 'wait', milliseconds: 3000 }
+      ]
+      // No maxAge: always fetch fresh data (don't use cached empty scrapes)
+    }),
+    signal: AbortSignal.timeout(60000), // 60s timeout
   })
 
   if (!response.ok) {
     const errorText = await response.text()
     console.error(`[GasBuddy Scraper] Firecrawl error for ${fuelName}:`, errorText)
-    throw new Error(`Firecrawl scrape failed for ${fuelName}: ${response.status}`)
+    throw new Error(`Firecrawl scrape failed for ${fuelName}: ${response.status} ${errorText}`)
   }
 
   const data = await response.json()
 
   if (!data.success || !data.data?.markdown) {
-    console.warn(`[GasBuddy Scraper] No markdown returned for ${fuelName}`)
+    console.warn(`[GasBuddy Scraper] No markdown returned for ${fuelName}`, data)
     return []
   }
 
@@ -71,91 +77,109 @@ async function scrapeFuelType(fuelCode: number, fuelName: string): Promise<Array
 }
 
 /**
- * Parse GasBuddy markdown to extract station data
- * GasBuddy typically shows stations in a list format with price and address
+ * Parse GasBuddy markdown to extract station data.
+ *
+ * GasBuddy renders stations as:
+ *   ### [StationName](url)[optional verified icon]
+ *   [star rating line]
+ *   [review count — a lone number]
+ *   [street address]
+ *   [City, ST]
+ *   $X.XX
+ *   [reporter info / time ago line]
+ *
+ * Station listings begin after the "## ... Gas Prices Near ..." heading.
  */
 function parseGasBuddyMarkdown(markdown: string, fuelType: string): Array<{ name: string; address: string; price: number }> {
   const stations: Array<{ name: string; address: string; price: number }> = []
 
-  // GasBuddy markdown patterns vary but commonly include:
-  // - Station name (brand)
-  // - Price (e.g., $2.45 or 2.45)
-  // - Address
+  // Find where the actual station listings start (skip the filter/nav section)
+  const listingMatch = markdown.match(/## .+Gas Prices Near/)
+  const listingSection = listingMatch
+    ? markdown.slice(markdown.indexOf(listingMatch[0]))
+    : markdown
 
-  // Pattern 1: Look for price patterns followed by station info
-  // Format often: "$2.459" or "2.45" followed by station details
-  const pricePattern = /\$?(\d+\.\d{2,3})\s*(?:\/gal)?/gi
+  const lines = listingSection.split('\n').map(l => l.trim()).filter(Boolean)
 
-  // Split by common station separators
-  const lines = markdown.split('\n')
+  type StationState = {
+    name: string
+    street: string
+    cityState: string
+    price: number | null
+  }
 
-  let currentStation: { name: string; address: string; price: number } | null = null
+  let current: StationState | null = null
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim()
-    if (!line) continue
+  const saveStation = () => {
+    if (!current || current.price === null || !current.name) return
+    const address = current.street && current.cityState
+      ? `${current.street}, ${current.cityState}`
+      : current.cityState || current.street
+    if (address && current.price > 0 && current.price < 10) {
+      stations.push({ name: current.name, address, price: current.price })
+    }
+    current = null
+  }
 
-    // Look for price in the line
-    const priceMatch = line.match(/\$?(\d+\.\d{2,3})/)
-
-    // Look for common station brand names
-    const brandMatch = line.match(/(Casey['']?s|Kum\s*&?\s*Go|QuikTrip|QT|Sapp Bros|Hy-Vee|Walmart|Costco|Sam['']?s Club|Murphy USA|Shell|BP|Chevron|Phillips 66|Sinclair|Cenex|Git['']?N['']?Go|Pump ['']?N['']? Pak|Fareway|Flying J|Pilot|Love['']?s|Kwik|Amoco|Conoco|Texaco|Exxon|Mobil|Valero|Speedway|Thorntons|Maverik|HyVee|7-Eleven)/i)
-
-    // Look for address patterns (contains street number and common street types)
-    const addressMatch = line.match(/(\d+\s+(?:N|S|E|W|North|South|East|West|NE|NW|SE|SW)?\.?\s*[\w\s]+(?:St|Street|Ave|Avenue|Blvd|Boulevard|Rd|Road|Dr|Drive|Hwy|Highway|Way|Lane|Ln|Pkwy|Parkway|Ct|Court|Cir|Circle)\.?(?:,?\s*[\w\s]+,?\s*(?:IA|Iowa|NE|Nebraska|SD|South Dakota))?(?:\s+\d{5})?)/i)
-
-    if (priceMatch && brandMatch) {
-      // We found both price and brand on the same line
-      const price = parseFloat(priceMatch[1])
-      if (price > 0 && price < 10) { // Sanity check for gas prices
-        currentStation = {
-          name: brandMatch[1].replace(/[']/g, "'"),
-          address: addressMatch ? addressMatch[1] : '',
-          price
-        }
-
-        // If we have address too, add to stations
-        if (currentStation.address) {
-          stations.push(currentStation)
-          currentStation = null
-        }
+  for (const line of lines) {
+    // New station header: ### [Name](url)...
+    const stationMatch = line.match(/^###\s+\[([^\]]+)\]/)
+    if (stationMatch) {
+      saveStation()
+      current = {
+        name: stationMatch[1].trim(),
+        street: '',
+        cityState: '',
+        price: null,
       }
-    } else if (currentStation && !currentStation.address && addressMatch) {
-      // We have a pending station and found its address
-      currentStation.address = addressMatch[1]
-      stations.push(currentStation)
-      currentStation = null
-    } else if (priceMatch && !brandMatch) {
-      // Price without brand - might be in a different format
-      const price = parseFloat(priceMatch[1])
-      if (price > 0 && price < 10) {
-        // Look ahead for station name
-        for (let j = i + 1; j < Math.min(i + 5, lines.length); j++) {
-          const nextLine = lines[j].trim()
-          const nextBrand = nextLine.match(/(Casey['']?s|Kum\s*&?\s*Go|QuikTrip|QT|Sapp Bros|Hy-Vee|Walmart|Costco|Sam['']?s Club|Murphy USA|Shell|BP|Chevron|Phillips 66|Sinclair|Cenex|Git['']?N['']?Go|Pump ['']?N['']? Pak|Fareway|Flying J|Pilot|Love['']?s|Kwik|Amoco|Conoco|Texaco|Exxon|Mobil|Valero|Speedway|Thorntons|Maverik|HyVee|7-Eleven)/i)
-          const nextAddress = nextLine.match(/(\d+\s+(?:N|S|E|W|North|South|East|West|NE|NW|SE|SW)?\.?\s*[\w\s]+(?:St|Street|Ave|Avenue|Blvd|Boulevard|Rd|Road|Dr|Drive|Hwy|Highway|Way|Lane|Ln|Pkwy|Parkway|Ct|Court|Cir|Circle)\.?)/i)
+      continue
+    }
 
-          if (nextBrand) {
-            currentStation = { name: nextBrand[1].replace(/[']/g, "'"), address: '', price }
-          }
-          if (currentStation && nextAddress) {
-            currentStation.address = nextAddress[1]
-            stations.push(currentStation)
-            currentStation = null
-            break
-          }
-        }
-      }
+    if (!current) continue
+
+    // Skip star rating lines
+    if (line.includes('Star Icon')) continue
+
+    // Skip reporter/time-ago lines (contain "Reporter Icon" or "X Hours/Days/Minutes Ago")
+    if (
+      line.includes('Reporter Icon') ||
+      /\d+\s+(?:Hour|Day|Minute)s?\s+Ago/i.test(line) ||
+      /^[![]/.test(line)
+    ) continue
+
+    // Skip pure number lines (review count)
+    if (/^\d+$/.test(line)) continue
+
+    // Price line: $X.XX or $X.XXX
+    const priceMatch = line.match(/^\$(\d+\.\d{2,3})$/)
+    if (priceMatch) {
+      current.price = parseFloat(priceMatch[1])
+      saveStation()
+      continue
+    }
+
+    // City, State line: "Sioux City, IA" / "North Sioux City, SD"
+    if (!current.cityState && /^[\w\s.'-]+,\s+[A-Z]{2}$/.test(line)) {
+      current.cityState = line
+      continue
+    }
+
+    // Street address: starts with a digit and has more content (not just a review count)
+    if (!current.street && !current.cityState && /^\d/.test(line) && !/^\d+\s+(?:Hour|Day|Min)/i.test(line)) {
+      current.street = line
+      continue
     }
   }
+
+  saveStation() // flush last station
 
   console.log(`[GasBuddy Scraper] Parsed ${stations.length} stations for ${fuelType}`)
   return stations
 }
 
 /**
- * Scrape gas prices from GasBuddy using Firecrawl's scrape API
- * Fetches all fuel types (Regular, Midgrade, Premium, Diesel) in parallel
+ * Scrape gas prices from GasBuddy using Firecrawl's scrape API.
+ * Fetches all fuel types (Regular, Midgrade, Premium, Diesel) in parallel.
  */
 export async function scrapeGasPrices(): Promise<ScrapedGasStation[]> {
   if (!process.env.FIRECRAWL_API_KEY) {
@@ -182,7 +206,6 @@ export async function scrapeGasPrices(): Promise<ScrapedGasStation[]> {
 
     for (const { fuelType, stations } of results) {
       for (const station of stations) {
-        // Create a consistent key for the station
         const key = `${station.name.toLowerCase()}|${station.address.toLowerCase()}`
 
         if (!stationMap[key]) {

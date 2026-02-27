@@ -16,6 +16,19 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.9.24',
+    date: '2026-02-27',
+    changed: [
+      'Current conditions now uses Open-Meteo model data instead of NWS KSUX airport station — more accurate for city conditions (airport tarmac inflates temps)',
+    ],
+    fixed: [
+      'Gas price scraper now correctly waits for GasBuddy\'s JavaScript to render station listings before parsing (was silently returning 0 stations)',
+      'Removed 48-hour Firecrawl cache that was locking in stale empty scrape results',
+      'Rewrote GasBuddy markdown parser with a block-aware state machine matching the actual page structure',
+      'Admin "Run Scrape Now" always showed "Unknown error" — removed dead workflow polling code and now correctly reads the direct API response',
+    ],
+  },
+  {
     version: '0.9.23',
     date: '2026-02-27',
     fixed: [

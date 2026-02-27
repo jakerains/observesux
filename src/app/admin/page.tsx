@@ -1252,11 +1252,9 @@ function DigestPanel() {
 
 // Tools Panel Component
 function ToolsPanel() {
-  const [gasScrapeStatus, setGasScrapeStatus] = useState<'idle' | 'running' | 'polling' | 'success' | 'error'>('idle')
-  const [runId, setRunId] = useState<string | null>(null)
+  const [gasScrapeStatus, setGasScrapeStatus] = useState<'idle' | 'running' | 'success' | 'error'>('idle')
   const [gasScrapeResult, setGasScrapeResult] = useState<{
     stationsScraped?: number
-    stationsProcessed?: number
     pricesInserted?: number
     geocoded?: number
     message?: string
@@ -1290,35 +1288,6 @@ function ToolsPanel() {
       .catch(console.error)
   }, [])
 
-  // Poll for workflow status
-  const pollStatus = useCallback(async (workflowRunId: string) => {
-    try {
-      const res = await fetch(`/api/admin/gas-scrape?runId=${workflowRunId}`)
-      const data = await res.json()
-
-      if (data.status === 'completed') {
-        setGasScrapeStatus('success')
-        setGasScrapeResult(data.result)
-        setRunId(null)
-      } else if (data.status === 'failed' || data.error) {
-        setGasScrapeStatus('error')
-        setGasScrapeResult({ message: data.error || 'Workflow failed' })
-        setRunId(null)
-      }
-      // If still running, continue polling (handled by useEffect)
-    } catch (error) {
-      console.error('Failed to poll status:', error)
-    }
-  }, [])
-
-  // Poll while workflow is running
-  useEffect(() => {
-    if (gasScrapeStatus === 'polling' && runId) {
-      const interval = setInterval(() => pollStatus(runId), 3000)
-      return () => clearInterval(interval)
-    }
-  }, [gasScrapeStatus, runId, pollStatus])
-
   const runGasScrape = async () => {
     setGasScrapeStatus('running')
     setGasScrapeResult(null)
@@ -1331,14 +1300,17 @@ function ToolsPanel() {
 
       const data = await res.json()
 
-      if (res.ok && data.runId) {
-        // Workflow started - begin polling
-        setRunId(data.runId)
-        setGasScrapeStatus('polling')
-        setGasScrapeResult({ message: `Workflow started (${data.runId.slice(0, 8)}...)` })
+      if (res.ok && data.success) {
+        setGasScrapeStatus('success')
+        setGasScrapeResult({
+          stationsScraped: data.stationsScraped,
+          pricesInserted: data.pricesInserted,
+          geocoded: data.geocoded,
+          timestamp: data.timestamp,
+        })
       } else {
         setGasScrapeStatus('error')
-        setGasScrapeResult({ message: data.message || data.error || 'Unknown error' })
+        setGasScrapeResult({ message: data.message || data.error || 'Scrape returned no stations' })
       }
     } catch (error) {
       setGasScrapeStatus('error')

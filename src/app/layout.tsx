@@ -115,7 +115,7 @@ function JsonLdSchema() {
           width: 512,
           height: 512,
         },
-        sameAs: ['https://github.com/jakerains/siouxland-online'],
+        sameAs: ['https://github.com/jakerains/observesux'],
       },
       {
         '@type': 'LocalBusiness',

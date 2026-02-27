@@ -295,7 +295,7 @@ function DashboardContent() {
           <p className="mb-3">
             Built with Next.js, shadcn/ui, and public APIs.
             <a
-              href="https://github.com/jakerains/siouxland-online"
+              href="https://github.com/jakerains/observesux"
               className="text-primary hover:underline ml-1"
               target="_blank"
               rel="noopener noreferrer"

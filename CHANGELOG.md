@@ -5,6 +5,17 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.24] - 2026-02-27
+
+### Changed
+- Current conditions widget now uses Open-Meteo exclusively instead of NWS KSUX station — the airport sensor repeatedly caused issues (stale observations, null wind speed, inflated temps from runway asphalt); Open-Meteo is a high-quality 1km² grid model that is more representative of city conditions
+
+### Fixed
+- Gas price scraper was silently failing — Firecrawl was scraping GasBuddy without a JS wait, getting an empty shell (station listings are client-rendered); fixed by adding a 3s `wait` action
+- Removed 48-hour `maxAge` cache from Firecrawl gas scrape calls that was locking in stale empty results
+- Rewrote GasBuddy markdown parser to use a block-aware state machine matching the actual `### [Name]` → street → city/state → `$price` structure instead of fragile inline regex
+- Admin panel "Run Scrape Now" always showed "Unknown error" — the frontend expected a workflow `runId` for polling, but the API returns a direct result; removed dead polling code and handle `success` response correctly
+
 ## [0.9.23] - 2026-02-27
 
 ### Fixed

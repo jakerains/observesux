@@ -157,6 +157,7 @@ export function WeatherWidget() {
   })) || []
 
   const weather = weatherData?.data
+  const airportTemp = weatherData?.airportTemp ?? null
   const alerts = alertsData?.data || []
   const forecast = forecastData?.data?.forecast
   const hourlyForecast = forecastData?.data?.hourly
@@ -337,6 +338,13 @@ export function WeatherWidget() {
         <div className="mt-3 p-2 bg-yellow-500/10 border border-yellow-500/20 rounded text-sm">
           <Wind className="inline h-4 w-4 mr-1" />
           Wind gusts up to {weather.windGust} mph
+        </div>
+      )}
+
+      {/* Airport reference temp — Sioux Gateway (KSUX) station reading */}
+      {airportTemp !== null && (
+        <div className="mt-2 text-xs text-muted-foreground/60">
+          Sioux Gateway Airport (KSUX): {Math.round(airportTemp)}°F
         </div>
       )}
 

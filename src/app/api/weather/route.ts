@@ -1,7 +1,31 @@
 import { NextResponse } from 'next/server'
-import { fetchNWSObservations } from '@/lib/fetchers/nws'
 import { storeWeatherObservation } from '@/lib/db/historical'
 import type { WeatherObservation, ApiResponse } from '@/types'
+
+// Best-effort fetch of NWS KSUX station temp for secondary "airport reading" display.
+// Not used as the primary source — just surfaced as a reference in the UI.
+async function fetchKSUXTemp(): Promise<number | null> {
+  try {
+    const res = await fetch(
+      'https://api.weather.gov/stations/KSUX/observations/latest',
+      {
+        headers: { 'User-Agent': 'SiouxlandOnline/1.0 (https://siouxland.online)', Accept: 'application/geo+json' },
+        cache: 'no-store',
+        signal: AbortSignal.timeout(5000),
+      }
+    )
+    if (!res.ok) return null
+    const data = await res.json()
+    const tempC: number | null = data.properties?.temperature?.value ?? null
+    if (tempC === null) return null
+    const ageMs = Date.now() - new Date(data.properties.timestamp).getTime()
+    // Don't show airport temp if the observation is more than 2 hours old
+    if (ageMs > 2 * 60 * 60 * 1000) return null
+    return Math.round((tempC * 9 / 5 + 32) * 10) / 10
+  } catch {
+    return null
+  }
+}
 
 export const dynamic = 'force-dynamic'
 
@@ -24,7 +48,7 @@ function wmoCodeToDescription(code: number): string {
   return 'Unknown'
 }
 
-async function fetchOpenMeteoFallback(): Promise<WeatherObservation> {
+async function fetchOpenMeteo(): Promise<WeatherObservation> {
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,wind_direction_10m,wind_gusts_10m,weather_code,visibility,surface_pressure&wind_speed_unit=mph&temperature_unit=fahrenheit&timezone=America%2FChicago`
   const res = await fetch(url, { cache: 'no-store' })
   if (!res.ok) throw new Error(`Open-Meteo error: ${res.status}`)
@@ -51,25 +75,23 @@ async function fetchOpenMeteoFallback(): Promise<WeatherObservation> {
 }
 
 export async function GET() {
-  let observation: WeatherObservation
-  let source: string
+  // Fetch Open-Meteo (primary) and KSUX airport temp (secondary reference) in parallel
+  const [observationResult, airportTemp] = await Promise.all([
+    fetchOpenMeteo().catch((error) => {
+      console.error('[Weather] Open-Meteo failed:', error)
+      return null
+    }),
+    fetchKSUXTemp(),
+  ])
 
-  try {
-    observation = await fetchNWSObservations()
-    source = 'nws'
-  } catch (nwsError) {
-    console.warn('[Weather] NWS failed, falling back to Open-Meteo:', nwsError instanceof Error ? nwsError.message : nwsError)
-    try {
-      observation = await fetchOpenMeteoFallback()
-      source = 'open-meteo'
-    } catch (fallbackError) {
-      console.error('[Weather] Both NWS and Open-Meteo failed:', fallbackError)
-      return NextResponse.json(
-        { data: null, timestamp: new Date(), source: 'error', error: 'Failed to fetch weather data' },
-        { status: 500 }
-      )
-    }
+  if (!observationResult) {
+    return NextResponse.json(
+      { data: null, timestamp: new Date(), source: 'error', error: 'Failed to fetch weather data' },
+      { status: 500 }
+    )
   }
+
+  const observation = observationResult
 
   // Store observation to database for historical tracking (non-blocking)
   const feelsLike = observation.windChill ?? observation.heatIndex ?? observation.temperature
@@ -86,10 +108,11 @@ export async function GET() {
     observedAt: new Date(observation.timestamp)
   }).catch(() => {})
 
-  const response: ApiResponse<WeatherObservation> = {
+  const response: ApiResponse<WeatherObservation> & { airportTemp: number | null } = {
     data: observation,
     timestamp: new Date(),
-    source
+    source: 'open-meteo',
+    airportTemp,
   }
 
   return NextResponse.json(response, {

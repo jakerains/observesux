@@ -66,7 +66,7 @@ export function useTrafficEvents(refreshInterval = 300000) {
 // Weather
 // ============================================
 export function useWeather(refreshInterval = 60000) {
-  return useSWR<ApiResponse<WeatherObservation>>(
+  return useSWR<ApiResponse<WeatherObservation> & { airportTemp?: number | null }>(
     '/api/weather',
     fetcher,
     {
