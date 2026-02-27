@@ -1,5 +1,5 @@
 /**
- * Weather Widget - Full-bleed bridge photo hero
+ * Weather Widget - Full-bleed bridge photo hero with time-of-day and condition-based overlays
  */
 
 import { useState } from 'react';
@@ -21,16 +21,42 @@ import { Brand } from '@/constants/BrandColors';
 // Bridge photos keyed by time of day — Metro requires static require() calls
 const BRIDGE_IMAGES = {
   morning: require('@/assets/siouxlandbridge-morning.jpeg'),
-  noon: require('@/assets/siouxlandbridge-noon.jpeg'),
+  noon:    require('@/assets/siouxlandbridge-noon.jpeg'),
   evening: require('@/assets/siouxlandbridge-evening.jpeg'),
-  night: require('@/assets/siouxlandbridge-night.jpeg'),
-};
+  night:   require('@/assets/siouxlandbridge-night.jpeg'),
+} as const;
 
-function getBridgeImage(hour: number) {
-  if (hour >= 6 && hour < 12) return BRIDGE_IMAGES.morning;
-  if (hour >= 12 && hour < 18) return BRIDGE_IMAGES.noon;
-  if (hour >= 18 && hour < 21) return BRIDGE_IMAGES.evening;
-  return BRIDGE_IMAGES.night;
+type TimeOfDay = keyof typeof BRIDGE_IMAGES;
+
+function getTimeOfDay(hour: number): TimeOfDay {
+  if (hour >= 5  && hour < 11) return 'morning';
+  if (hour >= 11 && hour < 17) return 'noon';
+  if (hour >= 17 && hour < 21) return 'evening';
+  return 'night';
+}
+
+/**
+ * Gradient overlay that tints the bridge photo by weather condition.
+ * Semi-transparent at top (image shows through), denser at bottom for text contrast.
+ */
+function getConditionOverlay(conditions: string, icon: string): [string, string, string] {
+  const c = conditions?.toLowerCase() || '';
+  const i = icon?.toLowerCase() || '';
+
+  if (i.includes('tsra') || c.includes('thunder') || c.includes('storm')) {
+    return ['rgba(20,10,35,0.15)', 'rgba(15,8,28,0.55)', 'rgba(10,5,20,0.82)'];
+  }
+  if (c.includes('rain') || c.includes('drizzle') || c.includes('shower') || i.includes('rain')) {
+    return ['rgba(15,20,38,0.15)', 'rgba(10,15,30,0.55)', 'rgba(8,12,24,0.82)'];
+  }
+  if (c.includes('snow') || c.includes('sleet') || i.includes('snow')) {
+    return ['rgba(30,32,40,0.10)', 'rgba(22,24,32,0.50)', 'rgba(15,17,24,0.78)'];
+  }
+  if (c.includes('cloud') || c.includes('overcast') || i.includes('bkn') || i.includes('ovc')) {
+    return ['rgba(28,22,16,0.15)', 'rgba(22,17,12,0.55)', 'rgba(16,12,8,0.80)'];
+  }
+  // Clear / default — warm amber tint matching the bridge sunset shots
+  return ['rgba(40,20,5,0.10)', 'rgba(30,15,4,0.50)', 'rgba(18,8,2,0.78)'];
 }
 
 function getForecastIcon(shortForecast: string): string {
@@ -95,7 +121,7 @@ export function WeatherWidget() {
   const fetchedAt = dataUpdatedAt ? new Date(dataUpdatedAt).toISOString() : undefined;
   const status = getDataStatus(fetchedAt, refreshIntervals.weather, isLoading, isError);
 
-  const bridgeImage = getBridgeImage(new Date().getHours());
+  const bridgeImage = BRIDGE_IMAGES[getTimeOfDay(new Date().getHours())];
 
   // Full-bleed loading placeholder
   if (isLoading || isError || !weather) {
@@ -122,11 +148,13 @@ export function WeatherWidget() {
       ? Math.round(weather.windChill)
       : null;
 
+  const [overlayTop, overlayMid, overlayBottom] = getConditionOverlay(weather.conditions, weather.icon);
+
   return (
     <View style={{ marginHorizontal: -16, overflow: 'hidden' }}>
       <ImageBackground source={bridgeImage} style={{ width: '100%' }} resizeMode="cover">
         <LinearGradient
-          colors={['rgba(0,0,0,0.15)', 'rgba(0,0,0,0.55)', 'rgba(0,0,0,0.75)']}
+          colors={[overlayTop, overlayMid, overlayBottom]}
           style={{ paddingTop: 16, paddingBottom: 20, paddingHorizontal: 20 }}
         >
           {/* Status pill + refresh — top right */}
@@ -230,90 +258,90 @@ export function WeatherWidget() {
             )}
           </View>
 
-          {/* 7-Day Forecast Toggle — always visible */}
+          {/* 7-Day Forecast Toggle */}
           <>
-              <Pressable
-                onPress={() => {
-                  if (process.env.EXPO_OS === 'ios') {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  }
-                  setForecastExpanded((v) => !v);
-                }}
-                style={{
-                  marginTop: 16,
-                  alignSelf: 'center',
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 8,
-                  paddingVertical: 13,
-                  paddingHorizontal: 24,
-                  borderRadius: 24,
-                  backgroundColor: 'rgba(0,0,0,0.38)',
-                  borderWidth: 0.5,
-                  borderColor: 'rgba(255,255,255,0.18)',
-                }}
-              >
-                <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.85)', fontWeight: '400' }}>
-                  7-Day Forecast
-                </Text>
-                <Image
-                  source={`sf:chevron.${forecastExpanded ? 'up' : 'down'}`}
-                  style={{ width: 13, height: 13 }}
-                  tintColor="rgba(255,255,255,0.6)"
-                />
-              </Pressable>
-
-              {forecastExpanded && (() => {
-                // Pair daytime periods with their following nighttime period for hi/lo
-                const pairs: { day: typeof forecast[0]; night?: typeof forecast[0] }[] = [];
-                for (let i = 0; i < forecast.length; i++) {
-                  if (forecast[i].isDaytime) {
-                    pairs.push({
-                      day: forecast[i],
-                      night: forecast[i + 1]?.isDaytime === false ? forecast[i + 1] : undefined,
-                    });
-                  }
+            <Pressable
+              onPress={() => {
+                if (process.env.EXPO_OS === 'ios') {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 }
-                return (
-                  <View style={{ marginTop: 12 }}>
-                    {pairs.slice(0, 7).map(({ day, night }, i) => (
-                      <View
-                        key={`${day.name}-${i}`}
-                        style={{
-                          flexDirection: 'row',
-                          alignItems: 'center',
-                          paddingVertical: 11,
-                          borderTopWidth: 0.5,
-                          borderTopColor: 'rgba(255,255,255,0.12)',
-                        }}
-                      >
-                        <Text style={{ width: 52, fontSize: 13, fontWeight: '500', color: 'rgba(255,255,255,0.85)' }}>
-                          {day.name?.length > 6 ? day.name.slice(0, 3) : day.name}
+                setForecastExpanded((v) => !v);
+              }}
+              style={{
+                marginTop: 16,
+                alignSelf: 'center',
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                paddingVertical: 13,
+                paddingHorizontal: 24,
+                borderRadius: 24,
+                backgroundColor: 'rgba(0,0,0,0.38)',
+                borderWidth: 0.5,
+                borderColor: 'rgba(255,255,255,0.18)',
+              }}
+            >
+              <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.85)', fontWeight: '400' }}>
+                7-Day Forecast
+              </Text>
+              <Image
+                source={`sf:chevron.${forecastExpanded ? 'up' : 'down'}`}
+                style={{ width: 13, height: 13 }}
+                tintColor="rgba(255,255,255,0.6)"
+              />
+            </Pressable>
+
+            {forecastExpanded && (() => {
+              // Pair daytime periods with their following nighttime period for hi/lo
+              const pairs: { day: typeof forecast[0]; night?: typeof forecast[0] }[] = [];
+              for (let i = 0; i < forecast.length; i++) {
+                if (forecast[i].isDaytime) {
+                  pairs.push({
+                    day: forecast[i],
+                    night: forecast[i + 1]?.isDaytime === false ? forecast[i + 1] : undefined,
+                  });
+                }
+              }
+              return (
+                <View style={{ marginTop: 12 }}>
+                  {pairs.slice(0, 7).map(({ day, night }, i) => (
+                    <View
+                      key={`${day.name}-${i}`}
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        paddingVertical: 11,
+                        borderTopWidth: 0.5,
+                        borderTopColor: 'rgba(255,255,255,0.12)',
+                      }}
+                    >
+                      <Text style={{ width: 52, fontSize: 13, fontWeight: '500', color: 'rgba(255,255,255,0.85)' }}>
+                        {day.name?.length > 6 ? day.name.slice(0, 3) : day.name}
+                      </Text>
+                      <Image
+                        source={`sf:${getForecastIcon(day.shortForecast)}`}
+                        style={{ width: 18, height: 18, marginRight: 10 }}
+                        tintColor={Brand.amber}
+                      />
+                      <Text numberOfLines={1} style={{ flex: 1, fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>
+                        {day.shortForecast}
+                      </Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4, marginLeft: 8 }}>
+                        <Text style={{ fontSize: 16, fontWeight: '700', color: '#ffffff' }}>
+                          {day.temperature}°
                         </Text>
-                        <Image
-                          source={`sf:${getForecastIcon(day.shortForecast)}`}
-                          style={{ width: 18, height: 18, marginRight: 10 }}
-                          tintColor={Brand.amber}
-                        />
-                        <Text numberOfLines={1} style={{ flex: 1, fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>
-                          {day.shortForecast}
-                        </Text>
-                        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4, marginLeft: 8 }}>
-                          <Text style={{ fontSize: 16, fontWeight: '700', color: '#ffffff' }}>
-                            {day.temperature}°
+                        {night && (
+                          <Text style={{ fontSize: 13, fontWeight: '400', color: 'rgba(255,255,255,0.45)' }}>
+                            / {night.temperature}°
                           </Text>
-                          {night && (
-                            <Text style={{ fontSize: 13, fontWeight: '400', color: 'rgba(255,255,255,0.45)' }}>
-                              / {night.temperature}°
-                            </Text>
-                          )}
-                        </View>
+                        )}
                       </View>
-                    ))}
-                  </View>
-                );
-              })()}
+                    </View>
+                  ))}
+                </View>
+              );
+            })()}
           </>
         </LinearGradient>
       </ImageBackground>
