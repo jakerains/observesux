@@ -16,6 +16,16 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.9.23',
+    date: '2026-02-27',
+    fixed: [
+      'Weather hero now shows current conditions — stale NWS station observations (>2h old) are detected and rejected instead of being cached and served',
+      'Open-Meteo fallback automatically activates when NWS station is offline or reporting stale data',
+      'Removed redundant Next.js fetch cache on NWS requests that was holding onto old responses',
+      'Reduced weather DB cache TTL from 15 minutes to 5 minutes for fresher data on page load',
+    ],
+  },
+  {
     version: '0.9.22',
     date: '2026-02-24',
     fixed: [

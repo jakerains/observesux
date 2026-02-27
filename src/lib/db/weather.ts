@@ -122,7 +122,7 @@ export async function cacheWeather(observation: WeatherObservation): Promise<voi
         heat_index = EXCLUDED.heat_index,
         wind_chill = EXCLUDED.wind_chill,
         cached_at = NOW(),
-        expires_at = NOW() + INTERVAL '15 minutes'
+        expires_at = NOW() + INTERVAL '5 minutes'
     `
 
     console.log(`[Weather DB] Cached weather for ${observation.stationId}`)

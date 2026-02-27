@@ -112,7 +112,7 @@ export async function fetchNWSObservations(forceRefresh = false): Promise<Weathe
           'User-Agent': 'SiouxlandOnline/1.0 (https://siouxland.online)',
           'Accept': 'application/geo+json'
         },
-        next: { revalidate: 60 } // Cache for 1 minute
+        cache: 'no-store' // DB cache handles caching — skip Next.js fetch cache
       }
     )
 
@@ -123,10 +123,19 @@ export async function fetchNWSObservations(forceRefresh = false): Promise<Weathe
     const data = await response.json()
     const props: NWSObservationProperties = data.properties
 
+    const observationTime = new Date(props.timestamp)
+    const ageMs = Date.now() - observationTime.getTime()
+    const twoHoursMs = 2 * 60 * 60 * 1000
+
+    if (ageMs > twoHoursMs) {
+      console.warn(`[Weather] KSUX observation is ${Math.round(ageMs / 60000)} minutes old (from ${props.timestamp}) — skipping stale data`)
+      throw new Error(`NWS KSUX observation is stale (${Math.round(ageMs / 3600000 * 10) / 10}h old)`)
+    }
+
     const observation: WeatherObservation = {
       stationId: STATION_ID,
       stationName: 'Sioux City Gateway Airport',
-      timestamp: new Date(props.timestamp),
+      timestamp: observationTime,
       temperature: celsiusToFahrenheit(props.temperature?.value),
       temperatureUnit: 'F',
       humidity: props.relativeHumidity?.value ? Math.round(props.relativeHumidity.value) : null,

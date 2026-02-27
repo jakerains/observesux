@@ -5,6 +5,14 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.23] - 2026-02-27
+
+### Fixed
+- Weather hero now shows current conditions — NWS stale observation detection prevents days-old station data from being cached and served as current
+- Open-Meteo fallback automatically activates when NWS station is offline or reporting stale data
+- Removed redundant Next.js fetch cache layer on NWS requests that was holding onto stale responses
+- Reduced weather DB cache TTL from 15 minutes to 5 minutes for fresher data on page load
+
 ## [0.9.22] - 2026-02-24
 
 ### Fixed
