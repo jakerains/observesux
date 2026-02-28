@@ -81,7 +81,7 @@ function StationRow({ station, fuelType, isLowest }: StationRowProps) {
 
 export function GasPricesWidget() {
   const [selectedFuel, setSelectedFuel] = useState<FuelType>('regular');
-  const { data, isLoading, isError, refetch, isFetching } = useGasPrices();
+  const { data, isLoading, isError, refetch, isFetching, dataUpdatedAt } = useGasPrices();
 
   // API returns { data: { stations: [...], stats: {} } }
   // Each station has prices as [{fuelType: "Regular", price: 2.23}] array
@@ -108,12 +108,8 @@ export function GasPricesWidget() {
 
   const lowestPrice = sortedStations[0]?.prices[selectedFuel];
 
-  const status = getDataStatus(
-    data?.timestamp,
-    refreshIntervals.gasPrices,
-    isLoading,
-    isError
-  );
+  const fetchedAt = dataUpdatedAt ? new Date(dataUpdatedAt).toISOString() : undefined;
+  const status = getDataStatus(fetchedAt, refreshIntervals.gasPrices, isLoading, isError);
 
   if (isLoading) {
     return (

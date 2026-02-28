@@ -49,11 +49,11 @@ function formatDigestDate(dateStr: string, createdAt: string): string {
 
 export function DigestWidget() {
   const router = useRouter();
-  const { data, isLoading, isError, refetch, isFetching } = useDigest();
+  const { data, isLoading, isError, refetch, isFetching, dataUpdatedAt } = useDigest();
 
-  // Use digest's createdAt for freshness since API doesn't return a timestamp wrapper
   const digest = data?.digest;
-  const status = getDataStatus(digest?.createdAt, refreshIntervals.digest, isLoading, isError);
+  const fetchedAt = dataUpdatedAt ? new Date(dataUpdatedAt).toISOString() : undefined;
+  const status = getDataStatus(fetchedAt, refreshIntervals.digest, isLoading, isError);
 
   if (isLoading) {
     return (
