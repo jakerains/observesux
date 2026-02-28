@@ -70,7 +70,14 @@ export function WeatherWidget() {
   const weather = data?.data;
   const alerts = Array.isArray(alertsData?.data) ? alertsData.data : [];
   const hasAlerts = alerts.length > 0;
-  const forecast = Array.isArray(forecastData?.data) ? forecastData.data : [];
+  // API returns { data: { forecast: { periods: [...] } } }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rawForecast = forecastData?.data as any;
+  const forecast = Array.isArray(rawForecast?.forecast?.periods)
+    ? rawForecast.forecast.periods
+    : Array.isArray(rawForecast)
+    ? rawForecast
+    : [];
   const status = getDataStatus(data?.timestamp, refreshIntervals.weather, isLoading, isError);
 
   const bridgeImage = getBridgeImage(new Date().getHours());

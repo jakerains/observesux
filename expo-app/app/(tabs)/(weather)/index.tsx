@@ -25,7 +25,14 @@ export default function WeatherScreen() {
   const { data: alertsData } = useWeatherAlerts();
 
   const weather = weatherData?.data;
-  const forecast = Array.isArray(forecastData?.data) ? forecastData.data : [];
+  // API returns { data: { forecast: { periods: [...] } } }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rawForecast = forecastData?.data as any;
+  const forecast = Array.isArray(rawForecast?.forecast?.periods)
+    ? rawForecast.forecast.periods
+    : Array.isArray(rawForecast)
+    ? rawForecast
+    : [];
   const alerts = Array.isArray(alertsData?.data) ? alertsData.data : [];
 
   const onRefresh = useCallback(async () => {
