@@ -140,7 +140,15 @@ export function TransitWidget() {
   // Transit API returns { buses: [...], routes: [...] } at top level — no data wrapper
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const raw = data as any;
-  const buses: Bus[] = Array.isArray(raw?.buses) ? raw.buses : [];
+  const VALID_OCCUPANCY = ['EMPTY', 'MANY_SEATS', 'FEW_SEATS', 'STANDING', 'CRUSHED', 'FULL'];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const buses: Bus[] = Array.isArray(raw?.buses) ? raw.buses.map((b: any) => ({
+    ...b,
+    // API returns scheduleAdherence as a string ("unknown"); use minutesOffSchedule (number)
+    scheduleAdherence: typeof b.minutesOffSchedule === 'number' ? b.minutesOffSchedule : undefined,
+    // API uses occupancyStatus; only map if it's a valid enum value
+    occupancy: VALID_OCCUPANCY.includes(b.occupancyStatus) ? b.occupancyStatus : undefined,
+  })) : [];
   const activeBuses = buses.slice(0, 5); // Show top 5 buses
 
   const status = getDataStatus(
