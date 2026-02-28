@@ -83,7 +83,22 @@ export function GasPricesWidget() {
   const [selectedFuel, setSelectedFuel] = useState<FuelType>('regular');
   const { data, isLoading, isError, refetch, isFetching } = useGasPrices();
 
-  const stations = Array.isArray(data?.data) ? data.data : [];
+  // API returns { data: { stations: [...], stats: {} } }
+  // Each station has prices as [{fuelType: "Regular", price: 2.23}] array
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rawData = data?.data as any;
+  const rawStations: any[] = Array.isArray(rawData?.stations) ? rawData.stations : [];
+  const stations: GasStation[] = rawStations.map((s) => ({
+    id: String(s.id),
+    name: s.brandName || s.name || 'Unknown',
+    address: s.streetAddress || s.address || '',
+    latitude: s.latitude,
+    longitude: s.longitude,
+    lastUpdated: '',
+    prices: Array.isArray(s.prices)
+      ? Object.fromEntries(s.prices.map((p: { fuelType: string; price: number }) => [p.fuelType.toLowerCase(), p.price]))
+      : (s.prices || {}),
+  }));
 
   // Sort stations by selected fuel price
   const sortedStations = [...stations]
