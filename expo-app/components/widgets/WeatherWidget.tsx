@@ -249,37 +249,56 @@ export function WeatherWidget() {
                 />
               </Pressable>
 
-              {forecastExpanded && (
-                <View style={{ marginTop: 12 }}>
-                  {forecast.slice(0, 7).map((day, i) => (
-                    <View
-                      key={`${day.name}-${i}`}
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        paddingVertical: 11,
-                        borderTopWidth: 0.5,
-                        borderTopColor: 'rgba(255,255,255,0.12)',
-                      }}
-                    >
-                      <Text style={{ width: 64, fontSize: 13, fontWeight: '500', color: 'rgba(255,255,255,0.85)' }}>
-                        {day.name?.length > 6 ? day.name.slice(0, 3) : day.name}
-                      </Text>
-                      <Image
-                        source={`sf:${day.isDaytime ? 'sun.max.fill' : 'moon.stars.fill'}`}
-                        style={{ width: 18, height: 18, marginRight: 10 }}
-                        tintColor={Brand.amber}
-                      />
-                      <Text numberOfLines={1} style={{ flex: 1, fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>
-                        {day.shortForecast}
-                      </Text>
-                      <Text style={{ fontSize: 16, fontWeight: '700', color: '#ffffff', marginLeft: 8 }}>
-                        {day.temperature}°
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-              )}
+              {forecastExpanded && (() => {
+                // Pair daytime periods with their following nighttime period for hi/lo
+                const pairs: { day: typeof forecast[0]; night?: typeof forecast[0] }[] = [];
+                for (let i = 0; i < forecast.length; i++) {
+                  if (forecast[i].isDaytime) {
+                    pairs.push({
+                      day: forecast[i],
+                      night: forecast[i + 1]?.isDaytime === false ? forecast[i + 1] : undefined,
+                    });
+                  }
+                }
+                return (
+                  <View style={{ marginTop: 12 }}>
+                    {pairs.slice(0, 7).map(({ day, night }, i) => (
+                      <View
+                        key={`${day.name}-${i}`}
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          paddingVertical: 11,
+                          borderTopWidth: 0.5,
+                          borderTopColor: 'rgba(255,255,255,0.12)',
+                        }}
+                      >
+                        <Text style={{ width: 52, fontSize: 13, fontWeight: '500', color: 'rgba(255,255,255,0.85)' }}>
+                          {day.name?.length > 6 ? day.name.slice(0, 3) : day.name}
+                        </Text>
+                        <Image
+                          source="sf:sun.max.fill"
+                          style={{ width: 18, height: 18, marginRight: 10 }}
+                          tintColor={Brand.amber}
+                        />
+                        <Text numberOfLines={1} style={{ flex: 1, fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>
+                          {day.shortForecast}
+                        </Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4, marginLeft: 8 }}>
+                          <Text style={{ fontSize: 16, fontWeight: '700', color: '#ffffff' }}>
+                            {day.temperature}°
+                          </Text>
+                          {night && (
+                            <Text style={{ fontSize: 13, fontWeight: '400', color: 'rgba(255,255,255,0.45)' }}>
+                              / {night.temperature}°
+                            </Text>
+                          )}
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                );
+              })()}
           </>
         </LinearGradient>
       </ImageBackground>
