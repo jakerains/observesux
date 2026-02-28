@@ -16,6 +16,13 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.9.26',
+    date: '2026-02-28',
+    changed: [
+      'Removed stale development artifacts: legacy native Swift iOS project, old RAG data scrapes, Remotion experiment, and leftover root-level EAS config',
+    ],
+  },
+  {
     version: '0.9.25',
     date: '2026-02-28',
     added: [
