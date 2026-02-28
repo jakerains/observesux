@@ -2,7 +2,7 @@
  * Quick Stats Bar - Top of dashboard showing key metrics at a glance
  */
 
-import { View, ScrollView, Text, PlatformColor } from 'react-native';
+import { View, ScrollView, Text } from 'react-native';
 import { Image } from 'expo-image';
 import { useWeather, useAirQuality, useTransit } from '@/lib/hooks/useDataFetching';
 import { Skeleton } from './LoadingState';
@@ -16,38 +16,41 @@ interface StatItemProps {
 }
 
 function StatItem({ sfSymbol, label, value, tintColor }: StatItemProps) {
+  const color = tintColor || Brand.amber;
   return (
     <View
       style={{
-        flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 10,
-        paddingHorizontal: 14,
-        borderRadius: 10,
+        paddingTop: 12,
+        paddingBottom: 10,
+        paddingHorizontal: 16,
+        borderRadius: 14,
         borderCurve: 'continuous',
         backgroundColor: Brand.card,
+        minWidth: 80,
+        borderTopWidth: 2,
+        borderTopColor: color,
+        gap: 4,
       }}
     >
       <Image
         source={`sf:${sfSymbol}`}
-        style={{ width: 18, height: 18, marginRight: 8 }}
-        tintColor={tintColor || Brand.amber}
+        style={{ width: 18, height: 18 }}
+        tintColor={color}
       />
-      <View>
-        <Text
-          style={{
-            fontSize: 10,
-            textTransform: 'uppercase',
-            letterSpacing: 0.5,
-            color: PlatformColor('secondaryLabel'),
-          }}
-        >
-          {label}
-        </Text>
-        <Text style={{ fontSize: 15, fontWeight: '600', color: PlatformColor('label') }}>
-          {value}
-        </Text>
-      </View>
+      <Text style={{ fontSize: 20, fontWeight: '700', color: Brand.foreground, lineHeight: 24 }}>
+        {value}
+      </Text>
+      <Text
+        style={{
+          fontSize: 10,
+          textTransform: 'uppercase',
+          letterSpacing: 0.6,
+          color: Brand.muted,
+        }}
+      >
+        {label}
+      </Text>
     </View>
   );
 }
@@ -56,18 +59,18 @@ function StatSkeleton() {
   return (
     <View
       style={{
-        flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 10,
-        paddingHorizontal: 14,
-        borderRadius: 10,
+        paddingTop: 12,
+        paddingBottom: 10,
+        paddingHorizontal: 16,
+        borderRadius: 14,
+        minWidth: 80,
+        gap: 4,
       }}
     >
       <Skeleton width={18} height={18} borderRadius={9} />
-      <View style={{ marginLeft: 8 }}>
-        <Skeleton width={40} height={12} />
-        <Skeleton width={50} height={16} style={{ marginTop: 4 }} />
-      </View>
+      <Skeleton width={44} height={20} style={{ marginTop: 2 }} />
+      <Skeleton width={36} height={10} style={{ marginTop: 2 }} />
     </View>
   );
 }

@@ -15,6 +15,12 @@ export interface Settings {
   distanceUnit: 'mi' | 'km';
   refreshMultiplier: 0.5 | 1 | 2; // 0.5 = fast, 1 = normal, 2 = battery saver
   notificationsEnabled: boolean;
+  // Per-type notification preferences (only relevant when notificationsEnabled is true)
+  notifyWeather: boolean;
+  notifyRiver: boolean;
+  notifyAirQuality: boolean;
+  notifyTraffic: boolean;
+  notifyDigest: boolean;
 }
 
 // Default settings
@@ -24,6 +30,11 @@ export const DEFAULT_SETTINGS: Settings = {
   distanceUnit: 'mi',
   refreshMultiplier: 1,
   notificationsEnabled: false,
+  notifyWeather: true,
+  notifyRiver: true,
+  notifyAirQuality: true,
+  notifyTraffic: true,
+  notifyDigest: true,
 };
 
 // Context type

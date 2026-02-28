@@ -7,8 +7,14 @@ import {
   cleanupOldTriggeredAlerts,
   type AlertType
 } from '@/lib/db/alerts'
+import {
+  getDeviceTokensForType,
+  hasDeviceAlertBeenTriggered,
+  recordDeviceTriggeredAlert,
+  cleanupOldDeviceTriggeredAlerts,
+} from '@/lib/db/device-push'
 import { sendPushToUser, type PushPayload } from '@/lib/push/send'
-import { sendExpoPushToUser, type ExpoPushPayload } from '@/lib/push/send-expo'
+import { sendExpoPushToUser, sendExpoPushToTokens, type ExpoPushPayload } from '@/lib/push/send-expo'
 import {
   matchesWeatherAlert,
   matchesRiverAlert,
@@ -71,11 +77,14 @@ export async function GET(request: NextRequest) {
     results.air_quality = airQualityResult
     results.traffic = trafficResult
 
-    // Cleanup old triggered alerts
-    const cleanedUp = await cleanupOldTriggeredAlerts()
+    // Cleanup old triggered alerts (both auth and device)
+    const [cleanedUp, deviceCleanedUp] = await Promise.all([
+      cleanupOldTriggeredAlerts(),
+      cleanupOldDeviceTriggeredAlerts(),
+    ])
 
     const totalNotified = Object.values(results).reduce((sum, r) => sum + r.notified, 0)
-    console.log(`[Check Alerts Cron] Complete: ${totalNotified} notifications sent, ${cleanedUp} old alerts cleaned`)
+    console.log(`[Check Alerts Cron] Complete: ${totalNotified} notifications sent, ${cleanedUp + deviceCleanedUp} old alerts cleaned`)
 
     return NextResponse.json({
       success: true,
@@ -140,37 +149,53 @@ async function checkWeatherAlerts(baseUrl: string): Promise<{ checked: number; m
       return { checked, matched, notified }
     }
 
-    // Get users subscribed to weather alerts
+    // Get users subscribed to weather alerts (auth-based)
     const subscriptions = await getEnabledSubscriptionsByType('weather')
+    // Get anonymous device subscribers
+    const deviceSubs = await getDeviceTokensForType('weather')
 
     for (const alert of alerts) {
+      const sourceId = getAlertSourceId('weather', alert)
+      const payload = createAlertNotificationPayload('weather', alert)
+      const expoPayload: ExpoPushPayload = {
+        title: payload.title,
+        body: payload.body,
+        data: { url: (payload as any).url, tag: (payload as any).tag },
+        sound: 'default',
+        priority: 'high',
+      }
+
+      // Auth-based users
       for (const sub of subscriptions) {
         if (matchesWeatherAlert(alert, sub.config as { severities: string[]; events: string[] })) {
           matched++
-
-          const sourceId = getAlertSourceId('weather', alert)
           const alreadyTriggered = await hasAlertBeenTriggered(sub.userId, 'weather', sourceId)
-
           if (!alreadyTriggered) {
-            const payload = createAlertNotificationPayload('weather', alert)
-            const expoPayload: ExpoPushPayload = {
-              title: payload.title,
-              body: payload.body,
-              data: { url: (payload as any).url, tag: (payload as any).tag },
-              sound: 'default',
-              priority: 'high',
-            }
             const [webResult, expoResult] = await Promise.all([
               sendPushToUser(sub.userId, payload as PushPayload),
               sendExpoPushToUser(sub.userId, expoPayload),
             ])
-            const anySent = webResult.sent > 0 || expoResult.sent > 0
-            if (anySent) {
+            if (webResult.sent > 0 || expoResult.sent > 0) {
               notified++
               await recordTriggeredAlert(sub.userId, 'weather', sourceId, alert as unknown as Record<string, unknown>)
             }
           }
         }
+      }
+
+      // Anonymous device subscribers
+      const pendingDeviceTokens: string[] = []
+      for (const dev of deviceSubs) {
+        const alreadyTriggered = await hasDeviceAlertBeenTriggered(dev.deviceId, 'weather', sourceId)
+        if (!alreadyTriggered) {
+          pendingDeviceTokens.push(dev.expoPushToken)
+          // Record immediately to prevent duplicates in this cron run
+          await recordDeviceTriggeredAlert(dev.deviceId, 'weather', sourceId)
+        }
+      }
+      if (pendingDeviceTokens.length > 0) {
+        const result = await sendExpoPushToTokens(pendingDeviceTokens, expoPayload)
+        notified += result.sent
       }
     }
   } catch (error) {
@@ -215,35 +240,47 @@ async function checkRiverAlerts(baseUrl: string): Promise<{ checked: number; mat
     }
 
     const subscriptions = await getEnabledSubscriptionsByType('river')
+    const deviceSubs = await getDeviceTokensForType('river')
 
     for (const reading of alertReadings) {
+      const sourceId = getAlertSourceId('river', reading)
+      const payload = createAlertNotificationPayload('river', reading)
+      const expoPayload: ExpoPushPayload = {
+        title: payload.title,
+        body: payload.body,
+        data: { url: (payload as any).url, tag: (payload as any).tag },
+        sound: 'default',
+        priority: 'high',
+      }
+
       for (const sub of subscriptions) {
         if (matchesRiverAlert(reading, sub.config as { siteIds: string[]; stages: string[] })) {
           matched++
-
-          const sourceId = getAlertSourceId('river', reading)
           const alreadyTriggered = await hasAlertBeenTriggered(sub.userId, 'river', sourceId)
-
           if (!alreadyTriggered) {
-            const payload = createAlertNotificationPayload('river', reading)
-            const expoPayload: ExpoPushPayload = {
-              title: payload.title,
-              body: payload.body,
-              data: { url: (payload as any).url, tag: (payload as any).tag },
-              sound: 'default',
-              priority: 'high',
-            }
             const [webResult, expoResult] = await Promise.all([
               sendPushToUser(sub.userId, payload as PushPayload),
               sendExpoPushToUser(sub.userId, expoPayload),
             ])
-            const anySent = webResult.sent > 0 || expoResult.sent > 0
-            if (anySent) {
+            if (webResult.sent > 0 || expoResult.sent > 0) {
               notified++
               await recordTriggeredAlert(sub.userId, 'river', sourceId, reading as unknown as Record<string, unknown>)
             }
           }
         }
+      }
+
+      const pendingDeviceTokens: string[] = []
+      for (const dev of deviceSubs) {
+        const alreadyTriggered = await hasDeviceAlertBeenTriggered(dev.deviceId, 'river', sourceId)
+        if (!alreadyTriggered) {
+          pendingDeviceTokens.push(dev.expoPushToken)
+          await recordDeviceTriggeredAlert(dev.deviceId, 'river', sourceId)
+        }
+      }
+      if (pendingDeviceTokens.length > 0) {
+        const result = await sendExpoPushToTokens(pendingDeviceTokens, expoPayload)
+        notified += result.sent
       }
     }
   } catch (error) {
@@ -280,33 +317,46 @@ async function checkAirQualityAlerts(baseUrl: string): Promise<{ checked: number
     checked = 1
 
     const subscriptions = await getEnabledSubscriptionsByType('air_quality')
+    const deviceSubs = await getDeviceTokensForType('air_quality')
+    const sourceId = getAlertSourceId('air_quality', reading)
+    const payload = createAlertNotificationPayload('air_quality', reading)
+    const expoPayload: ExpoPushPayload = {
+      title: payload.title,
+      body: payload.body,
+      data: { url: (payload as any).url, tag: (payload as any).tag },
+      sound: 'default',
+      priority: 'high',
+    }
 
     for (const sub of subscriptions) {
       if (matchesAirQualityAlert(reading, sub.config as { minAqi: number })) {
         matched++
-
-        const sourceId = getAlertSourceId('air_quality', reading)
         const alreadyTriggered = await hasAlertBeenTriggered(sub.userId, 'air_quality', sourceId)
-
         if (!alreadyTriggered) {
-          const payload = createAlertNotificationPayload('air_quality', reading)
-          const expoPayload: ExpoPushPayload = {
-            title: payload.title,
-            body: payload.body,
-            data: { url: (payload as any).url, tag: (payload as any).tag },
-            sound: 'default',
-            priority: 'high',
-          }
           const [webResult, expoResult] = await Promise.all([
             sendPushToUser(sub.userId, payload as PushPayload),
             sendExpoPushToUser(sub.userId, expoPayload),
           ])
-          const anySent = webResult.sent > 0 || expoResult.sent > 0
-          if (anySent) {
+          if (webResult.sent > 0 || expoResult.sent > 0) {
             notified++
             await recordTriggeredAlert(sub.userId, 'air_quality', sourceId, reading as unknown as Record<string, unknown>)
           }
         }
+      }
+    }
+
+    if (matchesAirQualityAlert(reading, { minAqi: 101 })) {
+      const pendingDeviceTokens: string[] = []
+      for (const dev of deviceSubs) {
+        const alreadyTriggered = await hasDeviceAlertBeenTriggered(dev.deviceId, 'air_quality', sourceId)
+        if (!alreadyTriggered) {
+          pendingDeviceTokens.push(dev.expoPushToken)
+          await recordDeviceTriggeredAlert(dev.deviceId, 'air_quality', sourceId)
+        }
+      }
+      if (pendingDeviceTokens.length > 0) {
+        const result = await sendExpoPushToTokens(pendingDeviceTokens, expoPayload)
+        notified += result.sent
       }
     }
   } catch (error) {
@@ -351,34 +401,49 @@ async function checkTrafficAlerts(baseUrl: string): Promise<{ checked: number; m
     }
 
     const subscriptions = await getEnabledSubscriptionsByType('traffic')
+    const deviceSubs = await getDeviceTokensForType('traffic')
 
     for (const incident of incidents) {
+      const sourceId = getAlertSourceId('traffic', incident)
+      const payload = createAlertNotificationPayload('traffic', incident)
+      const expoPayload: ExpoPushPayload = {
+        title: payload.title,
+        body: payload.body,
+        data: { url: (payload as any).url, tag: (payload as any).tag },
+        sound: 'default',
+        priority: 'high',
+      }
+
       for (const sub of subscriptions) {
         if (matchesTrafficAlert(incident, sub.config as { severities: string[] })) {
           matched++
-
-          const sourceId = getAlertSourceId('traffic', incident)
           const alreadyTriggered = await hasAlertBeenTriggered(sub.userId, 'traffic', sourceId)
-
           if (!alreadyTriggered) {
-            const payload = createAlertNotificationPayload('traffic', incident)
-            const expoPayload: ExpoPushPayload = {
-              title: payload.title,
-              body: payload.body,
-              data: { url: (payload as any).url, tag: (payload as any).tag },
-              sound: 'default',
-              priority: 'high',
-            }
             const [webResult, expoResult] = await Promise.all([
               sendPushToUser(sub.userId, payload as PushPayload),
               sendExpoPushToUser(sub.userId, expoPayload),
             ])
-            const anySent = webResult.sent > 0 || expoResult.sent > 0
-            if (anySent) {
+            if (webResult.sent > 0 || expoResult.sent > 0) {
               notified++
               await recordTriggeredAlert(sub.userId, 'traffic', sourceId, incident as unknown as Record<string, unknown>)
             }
           }
+        }
+      }
+
+      // All device subscribers get major/critical traffic incidents
+      if (['major', 'critical'].includes(incident.severity ?? '')) {
+        const pendingDeviceTokens: string[] = []
+        for (const dev of deviceSubs) {
+          const alreadyTriggered = await hasDeviceAlertBeenTriggered(dev.deviceId, 'traffic', sourceId)
+          if (!alreadyTriggered) {
+            pendingDeviceTokens.push(dev.expoPushToken)
+            await recordDeviceTriggeredAlert(dev.deviceId, 'traffic', sourceId)
+          }
+        }
+        if (pendingDeviceTokens.length > 0) {
+          const result = await sendExpoPushToTokens(pendingDeviceTokens, expoPayload)
+          notified += result.sent
         }
       }
     }

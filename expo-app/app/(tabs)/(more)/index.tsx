@@ -2,18 +2,12 @@
  * More Screen - Settings and additional sections
  */
 
-import { useCallback } from 'react';
-import { View, ScrollView, Pressable, Linking, Switch, Text, PlatformColor, Alert } from 'react-native';
+import { View, ScrollView, Pressable, Linking, Text, PlatformColor } from 'react-native';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Constants from 'expo-constants';
 import { useSettings, getThemeLabel, getUnitsLabel, getRefreshLabel } from '../../../lib/contexts';
-import {
-  registerForPushNotifications,
-  registerPushTokenWithServer,
-  unregisterPushToken,
-} from '../../../lib/notifications';
 
 interface MenuItemProps {
   sfSymbol: string;
@@ -122,39 +116,28 @@ function MenuSection({
   );
 }
 
+function getNotificationSubtitle(enabled: boolean, settings: ReturnType<typeof useSettings>['settings']): string {
+  if (!enabled) return 'Tap to enable';
+  const types = [
+    settings.notifyWeather && 'Weather',
+    settings.notifyRiver && 'River',
+    settings.notifyAirQuality && 'Air Quality',
+    settings.notifyTraffic && 'Traffic',
+    settings.notifyDigest && 'Digest',
+  ].filter(Boolean);
+  if (types.length === 0) return 'Enabled — no types selected';
+  if (types.length === 5) return 'All alerts enabled';
+  return `${types.join(', ')}`;
+}
+
 export default function MoreScreen() {
-  const { settings, updateSetting } = useSettings();
+  const { settings } = useSettings();
 
   const version = Constants.expoConfig?.version || '1.0.0';
 
   const openWebsite = () => {
     Linking.openURL('https://siouxland.online');
   };
-
-  const handleNotificationToggle = useCallback(async (enabled: boolean) => {
-    if (process.env.EXPO_OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-
-    if (enabled) {
-      const pushToken = await registerForPushNotifications();
-
-      if (pushToken) {
-        await updateSetting('notificationsEnabled', true);
-      } else {
-        Alert.alert(
-          'Notifications Disabled',
-          'Please enable notifications in your device Settings to receive alerts.',
-          [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Open Settings', onPress: () => Linking.openSettings() },
-          ]
-        );
-      }
-    } else {
-      await updateSetting('notificationsEnabled', false);
-    }
-  }, [updateSetting]);
 
   return (
     <ScrollView
@@ -167,12 +150,20 @@ export default function MoreScreen() {
         <MenuItem
           sfSymbol="bell"
           label="Notifications"
-          subtitle="Weather alerts, traffic updates"
+          subtitle={getNotificationSubtitle(settings.notificationsEnabled, settings)}
+          onPress={() => router.push('/(tabs)/(more)/notifications')}
           rightElement={
-            <Switch
-              value={settings.notificationsEnabled}
-              onValueChange={handleNotificationToggle}
-            />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <View
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: 4,
+                  backgroundColor: settings.notificationsEnabled ? '#22c55e' : '#6b7280',
+                }}
+              />
+              <Image source="sf:chevron.right" style={{ width: 16, height: 16 }} tintColor={PlatformColor('tertiaryLabel')} />
+            </View>
           }
         />
       </MenuSection>

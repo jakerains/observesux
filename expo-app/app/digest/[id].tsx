@@ -56,18 +56,64 @@ function SectionHeader({ icon, title }: { icon: string; title: string }) {
 }
 
 /**
+ * Renders a single line of digest content — heading, bullet, or paragraph.
+ */
+function DigestLine({ line }: { line: string }) {
+  // ### sub-heading within a block — amber bold label
+  if (/^###\s/.test(line)) {
+    return (
+      <Text
+        style={{
+          fontSize: 12,
+          fontWeight: '700',
+          color: Brand.amber,
+          letterSpacing: 0.6,
+          marginTop: 6,
+        }}
+      >
+        {line.replace(/^###\s+/, '')}
+      </Text>
+    );
+  }
+
+  // Bullet item
+  if (/^[-*]\s/.test(line)) {
+    return (
+      <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
+        <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: Brand.amber, marginTop: 10, flexShrink: 0 }} />
+        <MarkdownText style={{ flex: 1, color: Brand.foreground, lineHeight: 23, fontSize: 15 }}>
+          {line.replace(/^[-*]\s+/, '')}
+        </MarkdownText>
+      </View>
+    );
+  }
+
+  // Regular paragraph
+  return (
+    <MarkdownText style={{ color: Brand.foreground, lineHeight: 25, fontSize: 15 }}>
+      {line}
+    </MarkdownText>
+  );
+}
+
+/**
  * Renders digest markdown content with proper heading hierarchy,
- * bullet lists, and inline bold — matching the council recap style.
+ * bullet lists, and inline bold — each line classified independently
+ * so mixed blocks (e.g. bold heading + bullets separated by \n) render correctly.
  */
 function DigestBody({ text }: { text: string }) {
-  // Normalize whitespace only — preserve all markdown syntax
   const normalized = text.replace(/\n{3,}/g, '\n\n');
   const blocks = normalized.split(/\n{2,}/).map((b) => b.trim()).filter(Boolean);
 
   return (
-    <View style={{ gap: 10 }}>
+    <View style={{ gap: 12 }}>
       {blocks.map((block, i) => {
-        // ## Section header — render as a section divider with amber accent
+        // Horizontal rule — --- or *** or ___
+        if (/^(-{3,}|\*{3,}|_{3,})$/.test(block)) {
+          return <View key={i} style={{ height: 0.5, backgroundColor: Brand.separator, marginVertical: 8 }} />;
+        }
+
+        // ## Section header — amber accent bar
         if (/^##\s/.test(block)) {
           const heading = block.replace(/^##\s+/, '');
           return (
@@ -83,38 +129,18 @@ function DigestBody({ text }: { text: string }) {
           );
         }
 
-        // ### Sub-header
-        if (/^###\s/.test(block)) {
-          return (
-            <Text key={i} style={{ fontSize: 14, fontWeight: '600', color: Brand.foreground, marginTop: 4, lineHeight: 20, opacity: 0.85 }}>
-              {block.replace(/^###\s+/, '')}
-            </Text>
-          );
+        // Process each line individually — handles mixed blocks like:
+        //   **Quick Stats**\n- **Gas:** ...\n- **Rivers:** ...
+        const lines = block.split('\n').map((l) => l.trim()).filter(Boolean);
+        if (lines.length === 1) {
+          return <DigestLine key={i} line={lines[0]} />;
         }
-
-        // Bullet list block — lines starting with - or *
-        const lines = block.split('\n');
-        const isBulletBlock = lines.every((l) => /^[-*]\s/.test(l.trim()) || l.trim() === '');
-        if (isBulletBlock) {
-          return (
-            <View key={i} style={{ gap: 6 }}>
-              {lines.filter(Boolean).map((line, j) => (
-                <View key={j} style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
-                  <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: Brand.amber, marginTop: 8, flexShrink: 0 }} />
-                  <MarkdownText style={{ flex: 1, color: Brand.foreground, lineHeight: 22, fontSize: 15 }}>
-                    {line.replace(/^[-*]\s+/, '')}
-                  </MarkdownText>
-                </View>
-              ))}
-            </View>
-          );
-        }
-
-        // Regular paragraph — use MarkdownText to preserve **bold**
         return (
-          <MarkdownText key={i} style={{ color: Brand.foreground, lineHeight: 24, fontSize: 15 }}>
-            {block}
-          </MarkdownText>
+          <View key={i} style={{ gap: 6 }}>
+            {lines.map((line, j) => (
+              <DigestLine key={j} line={line} />
+            ))}
+          </View>
         );
       })}
     </View>

@@ -18,6 +18,8 @@ import { getDigestSystemPrompt, buildDigestPrompt } from '@/lib/digest/system-pr
 import { saveDigest, getTodaysDigest, pruneOldDigests } from '@/lib/db/digest'
 import { isDatabaseConfigured } from '@/lib/db'
 import { getCurrentEdition, type DigestEdition, type DigestData } from '@/lib/digest/types'
+import { getDeviceTokensForType } from '@/lib/db/device-push'
+import { sendExpoPushToTokens } from '@/lib/push/send-expo'
 
 export interface DigestWorkflowInput {
   edition?: DigestEdition
@@ -134,6 +136,43 @@ async function checkExistingDigest(edition: DigestEdition): Promise<{ exists: bo
 }
 
 /**
+ * Send push notifications to all device subscribers who want digest alerts.
+ * Only runs for published (non-draft) digests.
+ */
+async function sendDigestPushStep(params: {
+  edition: DigestEdition
+  digestId: string
+}): Promise<{ sent: number; failed: number }> {
+  "use step"
+
+  const editionLabels: Record<DigestEdition, string> = {
+    morning: '☀️ Morning Digest',
+    midday: '🌤 Midday Digest',
+    evening: '🌙 Evening Digest',
+  }
+
+  try {
+    const deviceSubs = await getDeviceTokensForType('digest')
+    if (deviceSubs.length === 0) return { sent: 0, failed: 0 }
+
+    const tokens = deviceSubs.map(d => d.expoPushToken)
+    const result = await sendExpoPushToTokens(tokens, {
+      title: editionLabels[params.edition] ?? 'Siouxland Digest',
+      body: 'Your Siouxland update is ready — tap to read.',
+      data: { url: `/digest/${params.digestId}`, tag: `digest-${params.edition}` },
+      sound: 'default',
+      priority: 'normal',
+    })
+
+    console.log(`[Digest Workflow] Push sent: ${result.sent} delivered, ${result.failed} failed`)
+    return result
+  } catch (error) {
+    console.error('[Digest Workflow] Failed to send digest push:', error)
+    return { sent: 0, failed: 0 }
+  }
+}
+
+/**
  * Prune old digests (wrapped in a step for workflow compatibility)
  */
 async function pruneOldDigestsStep(daysToKeep: number): Promise<void> {
@@ -234,6 +273,11 @@ export async function digestWorkflow(
         edition,
         error: 'Failed to save digest to database'
       }
+    }
+
+    // Send push notifications to device subscribers (only for published digests)
+    if (!draft) {
+      await sendDigestPushStep({ edition, digestId: savedDigest.id })
     }
 
     // Prune old digests (as a step so it works in workflow context)

@@ -48,6 +48,12 @@ export default function MoreLayout() {
           title: 'Alert Subscriptions',
         }}
       />
+      <Stack.Screen
+        name="notifications"
+        options={{
+          title: 'Notifications',
+        }}
+      />
     </Stack>
   );
 }

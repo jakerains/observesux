@@ -5,6 +5,7 @@ import {
   deactivateExpoPushToken,
   storeExpoPushReceiptIds,
 } from '@/lib/db/expo-push'
+import { deactivateDevicePushToken } from '@/lib/db/device-push'
 
 const expo = new Expo()
 
@@ -143,4 +144,60 @@ export async function sendExpoPushToUsers(
   }
 
   return { totalSent, totalFailed, ticketIds: allTicketIds }
+}
+
+/**
+ * Send an Expo push notification to a list of raw device tokens.
+ * Used for anonymous (no-auth) device subscriptions.
+ * Deactivates stale tokens on DeviceNotRegistered but does not track receipts.
+ */
+export async function sendExpoPushToTokens(
+  tokens: string[],
+  payload: ExpoPushPayload
+): Promise<{ sent: number; failed: number }> {
+  const validTokens = tokens.filter(t => Expo.isExpoPushToken(t))
+  if (validTokens.length === 0) return { sent: 0, failed: 0 }
+
+  const messages: ExpoPushMessage[] = validTokens.map(token => ({
+    to: token,
+    title: payload.title,
+    body: payload.body,
+    data: payload.data,
+    sound: payload.sound !== undefined ? payload.sound : 'default',
+    priority: payload.priority ?? 'high',
+  }))
+
+  const chunks = expo.chunkPushNotifications(messages)
+  let sent = 0
+  let failed = 0
+  let offset = 0
+
+  for (const chunk of chunks) {
+    let tickets: ExpoPushTicket[]
+    try {
+      tickets = await expo.sendPushNotificationsAsync(chunk)
+    } catch (error) {
+      console.error('[Expo] Failed to send device push chunk:', error)
+      failed += chunk.length
+      offset += chunk.length
+      continue
+    }
+
+    for (let i = 0; i < tickets.length; i++) {
+      const ticket = tickets[i]
+      const token = validTokens[offset + i]
+      if (ticket.status === 'ok') {
+        sent++
+      } else if (ticket.status === 'error') {
+        const err = (ticket as { details?: { error?: string } }).details
+        if (err?.error === 'DeviceNotRegistered') {
+          deactivateDevicePushToken(token).catch(() => {})
+        }
+        failed++
+      }
+    }
+    offset += chunk.length
+  }
+
+  return { sent, failed }
 }
