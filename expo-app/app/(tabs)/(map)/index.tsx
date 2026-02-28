@@ -2,9 +2,10 @@
  * Map Screen - Interactive map with cameras, buses, traffic
  */
 
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useCallback } from 'react';
 import { View, Pressable, ScrollView, Text, PlatformColor, useColorScheme, StyleSheet } from 'react-native';
 import MapView, { Marker, Callout, PROVIDER_DEFAULT, Region } from 'react-native-maps';
+import * as Location from 'expo-location';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Image } from 'expo-image';
@@ -84,6 +85,7 @@ export default function MapScreen() {
   const router = useRouter();
 
   const [activeLayers, setActiveLayers] = useState<Set<LayerType>>(new Set(['cameras', 'buses']));
+  const [locationTracking, setLocationTracking] = useState(false);
 
   const { data: camerasData } = useCameras();
   const { data: transitData } = useTransit();
@@ -123,12 +125,37 @@ export default function MapScreen() {
     });
   };
 
-  const resetMapView = () => {
+  const centerOnUser = useCallback(async () => {
     if (process.env.EXPO_OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    mapRef.current?.animateToRegion(SIOUX_CITY_CENTER, 500);
-  };
+
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== 'granted') {
+      // Permission denied — fall back to city center
+      setLocationTracking(false);
+      mapRef.current?.animateToRegion(SIOUX_CITY_CENTER, 500);
+      return;
+    }
+
+    setLocationTracking(true);
+
+    // Get last known position first for instant response
+    const last = await Location.getLastKnownPositionAsync();
+    if (last) {
+      mapRef.current?.animateToRegion(
+        { latitude: last.coords.latitude, longitude: last.coords.longitude, latitudeDelta: 0.02, longitudeDelta: 0.02 },
+        500
+      );
+    }
+
+    // Then refine with accurate position
+    const current = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+    mapRef.current?.animateToRegion(
+      { latitude: current.coords.latitude, longitude: current.coords.longitude, latitudeDelta: 0.02, longitudeDelta: 0.02 },
+      300
+    );
+  }, []);
 
   const mapStyle = useMemo(() => {
     if (colorScheme === 'dark') {
@@ -521,9 +548,33 @@ export default function MapScreen() {
       </View>
 
       {/* Map Controls */}
-      <View style={{ position: 'absolute', right: 16, bottom: insets.bottom + 100 }}>
+      <View style={{ position: 'absolute', right: 16, bottom: insets.bottom + 100, gap: 10 }}>
+        {/* Center on user location */}
         <Pressable
-          onPress={resetMapView}
+          onPress={centerOnUser}
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: 22,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: locationTracking ? '#e69c3a' : '#1f130c',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+          }}
+        >
+          <Image
+            source={locationTracking ? 'sf:location.fill' : 'sf:location'}
+            style={{ width: 22, height: 22 }}
+            tintColor={locationTracking ? '#ffffff' : '#e69c3a'}
+          />
+        </Pressable>
+        {/* Reset to Sioux City */}
+        <Pressable
+          onPress={() => {
+            if (process.env.EXPO_OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setLocationTracking(false);
+            mapRef.current?.animateToRegion(SIOUX_CITY_CENTER, 500);
+          }}
           style={{
             width: 44,
             height: 44,
@@ -531,10 +582,10 @@ export default function MapScreen() {
             alignItems: 'center',
             justifyContent: 'center',
             backgroundColor: '#1f130c',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
           }}
         >
-          <Image source="sf:location.fill" style={{ width: 22, height: 22 }} tintColor={'#e69c3a'} />
+          <Image source="sf:arrow.counterclockwise" style={{ width: 20, height: 20 }} tintColor="#e69c3a" />
         </Pressable>
       </View>
     </View>
