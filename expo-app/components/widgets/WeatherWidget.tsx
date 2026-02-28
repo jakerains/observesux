@@ -33,6 +33,20 @@ function getBridgeImage(hour: number) {
   return BRIDGE_IMAGES.night;
 }
 
+function getForecastIcon(shortForecast: string): string {
+  const f = shortForecast?.toLowerCase() ?? '';
+  if (f.includes('thunder')) return 'cloud.bolt.rain.fill';
+  if (f.includes('snow') || f.includes('blizzard') || f.includes('flurr')) return 'cloud.snow.fill';
+  if (f.includes('sleet') || f.includes('freezing rain') || f.includes('ice')) return 'cloud.sleet.fill';
+  if (f.includes('rain') || f.includes('shower') || f.includes('drizzle')) return 'cloud.rain.fill';
+  if (f.includes('fog') || f.includes('haze') || f.includes('smoke')) return 'cloud.fog.fill';
+  if (f.includes('windy') || f.includes('breezy')) return 'wind';
+  if (f.includes('mostly cloudy') || f.includes('considerable cloud') || f.includes('overcast')) return 'cloud.fill';
+  if (f.includes('partly cloudy') || f.includes('partly sunny') || f.includes('mostly sunny') || f.includes('mostly clear')) return 'cloud.sun.fill';
+  if (f.includes('cloudy')) return 'cloud.fill';
+  return 'sun.max.fill';
+}
+
 function StatChip({ icon, label, value }: { icon: string; label: string; value: string }) {
   return (
     <BlurView
@@ -277,7 +291,7 @@ export function WeatherWidget() {
                           {day.name?.length > 6 ? day.name.slice(0, 3) : day.name}
                         </Text>
                         <Image
-                          source="sf:sun.max.fill"
+                          source={`sf:${getForecastIcon(day.shortForecast)}`}
                           style={{ width: 18, height: 18, marginRight: 10 }}
                           tintColor={Brand.amber}
                         />
