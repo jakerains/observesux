@@ -35,7 +35,20 @@ interface Message {
   toolOutputs?: ToolOutput[];
 }
 
-function ThinkingBubble() {
+function getThinkingStatus(toolName: string): string {
+  if (/weather/i.test(toolName)) return 'Checking weather...';
+  if (/traffic/i.test(toolName)) return 'Checking traffic conditions...';
+  if (/council|meeting/i.test(toolName)) return 'Searching council records...';
+  if (/news/i.test(toolName)) return 'Looking up local news...';
+  if (/river|flood/i.test(toolName)) return 'Checking river levels...';
+  if (/gas|price|fuel/i.test(toolName)) return 'Checking gas prices...';
+  if (/transit|bus/i.test(toolName)) return 'Checking transit...';
+  if (/air|quality/i.test(toolName)) return 'Checking air quality...';
+  if (/camera/i.test(toolName)) return 'Looking up cameras...';
+  return 'Searching local resources...';
+}
+
+function ThinkingBubble({ status }: { status?: string }) {
   const opacity = useRef(new Animated.Value(0.35)).current;
 
   useEffect(() => {
@@ -75,12 +88,21 @@ function ThinkingBubble() {
           borderRadius: 18,
           borderBottomLeftRadius: 4,
           gap: 8,
-          minWidth: 120,
+          minWidth: 140,
         }}
       >
-        <Animated.View style={[barStyle, { width: 120, opacity }]} />
-        <Animated.View style={[barStyle, { width: 90, opacity }]} />
-        <Animated.View style={[barStyle, { width: 60, opacity }]} />
+        {status ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Animated.View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: '#e69c3a', opacity }} />
+            <Text style={{ fontSize: 13, color: 'rgba(236,227,214,0.55)', fontStyle: 'italic' }}>{status}</Text>
+          </View>
+        ) : (
+          <>
+            <Animated.View style={[barStyle, { width: 120, opacity }]} />
+            <Animated.View style={[barStyle, { width: 90, opacity }]} />
+            <Animated.View style={[barStyle, { width: 60, opacity }]} />
+          </>
+        )}
       </View>
     </View>
   );
@@ -99,6 +121,7 @@ export default function SuxScreen() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [thinkingStatus, setThinkingStatus] = useState('');
   const scrollViewRef = useRef<ScrollView>(null);
 
   // Auto-scroll to bottom when new messages arrive
@@ -183,6 +206,7 @@ export default function SuxScreen() {
 
       const applyTextDelta = (delta: string) => {
         assistantContent += delta;
+        setThinkingStatus(''); // clear once text starts flowing
         setMessages((prev) =>
           prev.map((m) =>
             m.id === assistantId ? { ...m, content: assistantContent } : m
@@ -220,8 +244,10 @@ export default function SuxScreen() {
             applyTextDelta(payload.text);
           } else if (payload?.type === 'tool-input-available' && payload.toolCallId && payload.toolName) {
             toolCallMap.set(payload.toolCallId, payload.toolName);
+            setThinkingStatus(getThinkingStatus(payload.toolName));
           } else if (payload?.type === 'tool-input-start' && payload.toolCallId && payload.toolName) {
             toolCallMap.set(payload.toolCallId, payload.toolName);
+            setThinkingStatus(getThinkingStatus(payload.toolName));
           } else if (payload?.type === 'tool-output-available' && payload.toolCallId) {
             const toolName = payload.toolName || toolCallMap.get(payload.toolCallId) || 'tool';
             applyToolOutput(payload.toolCallId, toolName, payload.output);
@@ -297,6 +323,7 @@ export default function SuxScreen() {
       );
     } finally {
       setIsLoading(false);
+      setThinkingStatus('');
     }
   }, [messages, isLoading]);
 
@@ -482,8 +509,12 @@ export default function SuxScreen() {
             );
           })}
 
-          {/* Loading indicator */}
-          {isLoading && messages[messages.length - 1]?.role === 'user' && <ThinkingBubble />}
+          {/* Loading indicator — show when assistant message is empty (still waiting for stream) */}
+          {isLoading &&
+            messages[messages.length - 1]?.role === 'assistant' &&
+            !messages[messages.length - 1]?.content?.trim() && (
+              <ThinkingBubble status={thinkingStatus || 'Thinking...'} />
+            )}
         </ScrollView>
 
         {/* Input Area */}
