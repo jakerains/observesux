@@ -9,6 +9,7 @@ import { Image } from 'expo-image';
 import { useQuery } from '@tanstack/react-query';
 import { fetcher, endpoints } from '@/lib/api';
 import { LoadingSpinner } from '@/components/LoadingState';
+import { MarkdownText } from '@/components/MarkdownText';
 import { Brand } from '@/constants/BrandColors';
 import type { CouncilResponse } from '@/lib/types';
 
@@ -142,7 +143,7 @@ export default function CouncilDetailScreen() {
         {!!recap?.article && (
           <View style={{ marginBottom: 20 }}>
             <SectionHeader icon="doc.richtext" title="Full Recap" />
-            <Text style={{ color: Brand.foreground, lineHeight: 22 }}>{recap.article}</Text>
+            <ArticleBody text={recap.article} />
           </View>
         )}
 
@@ -165,6 +166,35 @@ function SectionHeader({ icon, title }: { icon: string; title: string }) {
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
       <Image source={`sf:${icon}`} style={{ width: 18, height: 18 }} tintColor={Brand.amber} />
       <Text style={{ fontSize: 15, fontWeight: '600', color: Brand.foreground }}>{title}</Text>
+    </View>
+  );
+}
+
+function ArticleBody({ text }: { text: string }) {
+  const blocks = text.split(/\n{2,}/).map((b) => b.trim()).filter(Boolean);
+  return (
+    <View style={{ gap: 10 }}>
+      {blocks.map((block, i) => {
+        if (/^##\s/.test(block)) {
+          return (
+            <Text key={i} style={{ fontSize: 16, fontWeight: '700', color: Brand.foreground, marginTop: i > 0 ? 6 : 0, lineHeight: 22 }}>
+              {block.replace(/^##\s+/, '')}
+            </Text>
+          );
+        }
+        if (/^###\s/.test(block)) {
+          return (
+            <Text key={i} style={{ fontSize: 14, fontWeight: '600', color: Brand.amber, marginTop: 4, lineHeight: 20 }}>
+              {block.replace(/^###\s+/, '')}
+            </Text>
+          );
+        }
+        return (
+          <MarkdownText key={i} style={{ color: Brand.foreground, lineHeight: 22, fontSize: 14 }}>
+            {block}
+          </MarkdownText>
+        );
+      })}
     </View>
   );
 }
