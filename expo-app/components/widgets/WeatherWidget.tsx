@@ -224,33 +224,28 @@ export function WeatherWidget() {
                   }
                   setForecastExpanded((v) => !v);
                 }}
-                style={{ marginTop: 16 }}
+                style={{
+                  marginTop: 16,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  paddingVertical: 13,
+                  paddingHorizontal: 24,
+                  borderRadius: 24,
+                  backgroundColor: 'rgba(0,0,0,0.38)',
+                  borderWidth: 0.5,
+                  borderColor: 'rgba(255,255,255,0.18)',
+                }}
               >
-                <BlurView
-                  intensity={25}
-                  tint="dark"
-                  style={{
-                    borderRadius: 24,
-                    overflow: 'hidden',
-                    borderWidth: 0.5,
-                    borderColor: 'rgba(255,255,255,0.2)',
-                    paddingVertical: 12,
-                    paddingHorizontal: 20,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 8,
-                  }}
-                >
-                  <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.8)', fontWeight: '500' }}>
-                    7-Day Forecast
-                  </Text>
-                  <Image
-                    source={`sf:chevron.${forecastExpanded ? 'up' : 'down'}`}
-                    style={{ width: 13, height: 13 }}
-                    tintColor="rgba(255,255,255,0.6)"
-                  />
-                </BlurView>
+                <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.85)', fontWeight: '400' }}>
+                  7-Day Forecast
+                </Text>
+                <Image
+                  source={`sf:chevron.${forecastExpanded ? 'up' : 'down'}`}
+                  style={{ width: 13, height: 13 }}
+                  tintColor="rgba(255,255,255,0.6)"
+                />
               </Pressable>
 
               {forecastExpanded && (
