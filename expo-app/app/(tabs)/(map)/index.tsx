@@ -336,6 +336,11 @@ export default function MapScreen() {
                   color: fuelColors[k.toLowerCase()] ?? '#9ca3af',
                 }));
 
+            // Skip stations with no gasoline prices (diesel-only stations)
+            const GAS_FUEL_TYPES = new Set(['regular', 'midgrade', 'mid', 'mid-grade', 'premium', 'e85']);
+            const hasGas = priceList.some(({ label }) => GAS_FUEL_TYPES.has(label.toLowerCase()));
+            if (!hasGas) return null;
+
             const stationName = (station as any).brandName || station.name || 'Gas Station';
             const address = (station as any).streetAddress || station.address || '';
 
