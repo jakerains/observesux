@@ -226,6 +226,7 @@ export function WeatherWidget() {
                 }}
                 style={{
                   marginTop: 16,
+                  alignSelf: 'center',
                   flexDirection: 'row',
                   alignItems: 'center',
                   justifyContent: 'center',
