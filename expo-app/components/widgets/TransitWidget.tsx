@@ -136,7 +136,7 @@ function BusRow({ bus, onPress }: BusRowProps) {
 }
 
 export function TransitWidget() {
-  const { data, isLoading, isError, refetch, isFetching } = useTransit();
+  const { data, isLoading, isError, refetch, isFetching, dataUpdatedAt } = useTransit();
 
   // Transit API returns { buses: [...], routes: [...] } at top level — no data wrapper
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -152,12 +152,8 @@ export function TransitWidget() {
   })) : [];
   const activeBuses = buses.slice(0, 5); // Show top 5 buses
 
-  const status = getDataStatus(
-    data?.timestamp,
-    refreshIntervals.transit,
-    isLoading,
-    isError
-  );
+  const fetchedAt = dataUpdatedAt ? new Date(dataUpdatedAt).toISOString() : undefined;
+  const status = getDataStatus(fetchedAt, refreshIntervals.transit, isLoading, isError);
 
   if (isLoading) {
     return (

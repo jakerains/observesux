@@ -77,7 +77,7 @@ function StatChip({ icon, label, value }: { icon: string; label: string; value: 
 export function WeatherWidget() {
   const router = useRouter();
   const [forecastExpanded, setForecastExpanded] = useState(false);
-  const { data, isLoading, isError, refetch, isFetching } = useWeather();
+  const { data, isLoading, isError, refetch, isFetching, dataUpdatedAt } = useWeather();
   const { data: alertsData } = useWeatherAlerts();
   const { data: forecastData } = useWeatherForecast();
 
@@ -92,7 +92,8 @@ export function WeatherWidget() {
     : Array.isArray(rawForecast)
     ? rawForecast
     : [];
-  const status = getDataStatus(data?.timestamp, refreshIntervals.weather, isLoading, isError);
+  const fetchedAt = dataUpdatedAt ? new Date(dataUpdatedAt).toISOString() : undefined;
+  const status = getDataStatus(fetchedAt, refreshIntervals.weather, isLoading, isError);
 
   const bridgeImage = getBridgeImage(new Date().getHours());
 

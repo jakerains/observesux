@@ -81,17 +81,13 @@ function NewsRow({ item }: NewsRowProps) {
 }
 
 export function NewsWidget() {
-  const { data, isLoading, isError, refetch, isFetching } = useNews();
+  const { data, isLoading, isError, refetch, isFetching, dataUpdatedAt } = useNews();
 
   const news = Array.isArray(data?.data) ? data.data : [];
   const displayNews = news.slice(0, 5);
 
-  const status = getDataStatus(
-    data?.timestamp,
-    refreshIntervals.news,
-    isLoading,
-    isError
-  );
+  const fetchedAt = dataUpdatedAt ? new Date(dataUpdatedAt).toISOString() : undefined;
+  const status = getDataStatus(fetchedAt, refreshIntervals.news, isLoading, isError);
 
   if (isLoading) {
     return (
