@@ -45,7 +45,8 @@ function OccupancyBadge({ occupancy }: { occupancy?: Bus['occupancy'] }) {
 }
 
 function ScheduleBadge({ adherence }: { adherence?: number }) {
-  if (adherence === undefined) return null;
+  // Hide badge for undefined or clearly bogus values (>120 min = bad backend data)
+  if (adherence === undefined || Math.abs(adherence) > 120) return null;
 
   let label: string;
   let color: string;
@@ -111,13 +112,13 @@ function BusRow({ bus, onPress }: BusRowProps) {
         }}
       >
         <Text style={{ color: '#ffffff', fontSize: 12, fontWeight: '700' }}>
-          {bus.routeName?.split(' ')[0] || bus.routeId}
+          {bus.routeId}
         </Text>
       </View>
 
       <View style={{ flex: 1, marginRight: 8 }}>
         <Text numberOfLines={1} style={{ fontWeight: '500', color: PlatformColor('label') }}>
-          {bus.routeName || `Route ${bus.routeId}`}
+          {bus.routeName?.trim() || `Route ${bus.routeId}`}
         </Text>
         {bus.nextStop && (
           <Text numberOfLines={1} style={{ color: PlatformColor('secondaryLabel') }}>
