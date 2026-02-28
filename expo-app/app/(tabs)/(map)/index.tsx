@@ -4,8 +4,7 @@
 
 import { useState, useRef, useMemo, useCallback } from 'react';
 import { View, Pressable, ScrollView, Text, PlatformColor, useColorScheme, StyleSheet } from 'react-native';
-import MapView, { Marker, Callout, PROVIDER_DEFAULT, Region } from 'react-native-maps';
-import * as Location from 'expo-location';
+import MapView, { Marker, Callout, PROVIDER_DEFAULT, Region, type UserLocationChangeEvent } from 'react-native-maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Image } from 'expo-image';
@@ -86,6 +85,7 @@ export default function MapScreen() {
 
   const [activeLayers, setActiveLayers] = useState<Set<LayerType>>(new Set(['cameras', 'buses']));
   const [locationTracking, setLocationTracking] = useState(false);
+  const userCoords = useRef<{ latitude: number; longitude: number } | null>(null);
 
   const { data: camerasData } = useCameras();
   const { data: transitData } = useTransit();
@@ -125,36 +125,27 @@ export default function MapScreen() {
     });
   };
 
-  const centerOnUser = useCallback(async () => {
+  const onUserLocationChange = useCallback((e: UserLocationChangeEvent) => {
+    const coord = e.nativeEvent?.coordinate;
+    if (coord) {
+      userCoords.current = { latitude: coord.latitude, longitude: coord.longitude };
+    }
+  }, []);
+
+  const centerOnUser = useCallback(() => {
     if (process.env.EXPO_OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
-      // Permission denied — fall back to city center
-      setLocationTracking(false);
-      mapRef.current?.animateToRegion(SIOUX_CITY_CENTER, 500);
-      return;
-    }
-
-    setLocationTracking(true);
-
-    // Get last known position first for instant response
-    const last = await Location.getLastKnownPositionAsync();
-    if (last) {
+    if (userCoords.current) {
+      setLocationTracking(true);
       mapRef.current?.animateToRegion(
-        { latitude: last.coords.latitude, longitude: last.coords.longitude, latitudeDelta: 0.02, longitudeDelta: 0.02 },
+        { ...userCoords.current, latitudeDelta: 0.02, longitudeDelta: 0.02 },
         500
       );
+    } else {
+      // Location not yet available — still animate to Sioux City
+      mapRef.current?.animateToRegion(SIOUX_CITY_CENTER, 500);
     }
-
-    // Then refine with accurate position
-    const current = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-    mapRef.current?.animateToRegion(
-      { latitude: current.coords.latitude, longitude: current.coords.longitude, latitudeDelta: 0.02, longitudeDelta: 0.02 },
-      300
-    );
   }, []);
 
   const mapStyle = useMemo(() => {
@@ -180,6 +171,7 @@ export default function MapScreen() {
         showsUserLocation
         showsMyLocationButton={false}
         showsCompass={false}
+        onUserLocationChange={onUserLocationChange}
         customMapStyle={mapStyle}
       >
         {activeLayers.has('cameras') &&

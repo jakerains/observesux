@@ -44,9 +44,6 @@ importers:
       expo-linking:
         specifier: ~55.0.7
         version: 55.0.7(expo@55.0.4)(react-native@0.83.2(@babel/core@7.28.6)(@types/react@19.2.14)(react@19.2.0))(react@19.2.0)(typescript@5.9.3)
-      expo-location:
-        specifier: ^55.1.2
-        version: 55.1.2(expo@55.0.4)
       expo-navigation-bar:
         specifier: ~55.0.8
         version: 55.0.8(expo@55.0.4)(react-native@0.83.2(@babel/core@7.28.6)(@types/react@19.2.14)(react@19.2.0))(react@19.2.0)
@@ -2513,11 +2510,6 @@ packages:
     peerDependencies:
       react: '*'
       react-native: '*'
-
-  expo-location@55.1.2:
-    resolution: {integrity: sha512-QT/9Hh0mjBnsJD1A6VYVKskFK9PODTpHVMA3DmGDTbvKS55yhY/fj6f28dn3zAYTaLAWIZa5j3/C+LCJSq7kwA==}
-    peerDependencies:
-      expo: '*'
 
   expo-modules-autolinking@55.0.8:
     resolution: {integrity: sha512-nrWB1pkNp7bR8ECUTgYUiJ2Pyh6AvxCBXZ+lyPlfl1TzEIGhwU1Yqr+d78eJDueXaW+9zKeE0HqrTZoLS3ve4A==}
@@ -7576,11 +7568,6 @@ snapshots:
       - expo
       - supports-color
       - typescript
-
-  expo-location@55.1.2(expo@55.0.4):
-    dependencies:
-      '@expo/image-utils': 0.8.12
-      expo: 55.0.4(@babel/core@7.28.6)(@expo/dom-webview@0.2.8)(@expo/metro-runtime@55.0.6)(expo-router@55.0.3)(react-dom@19.2.0(react@19.2.0))(react-native-webview@13.16.0(react-native@0.83.2(@babel/core@7.28.6)(@types/react@19.2.14)(react@19.2.0))(react@19.2.0))(react-native@0.83.2(@babel/core@7.28.6)(@types/react@19.2.14)(react@19.2.0))(react@19.2.0)(typescript@5.9.3)
 
   expo-modules-autolinking@55.0.8(typescript@5.9.3):
     dependencies:
