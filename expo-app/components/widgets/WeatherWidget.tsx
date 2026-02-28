@@ -3,11 +3,12 @@
  */
 
 import { useState } from 'react';
-import { View, Pressable, Text, ImageBackground } from 'react-native';
+import { View, Pressable, Text, ImageBackground, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
+import Svg, { Defs, Pattern, Rect, Circle } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 import {
   useWeather,
@@ -73,6 +74,22 @@ function getForecastIcon(shortForecast: string): string {
   return 'sun.max.fill';
 }
 
+/** White dot grid — matches the web app's radial-gradient dots pattern at 20% opacity */
+function DotsOverlay() {
+  return (
+    <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
+      <Svg width="100%" height="100%">
+        <Defs>
+          <Pattern id="dots" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
+            <Circle cx="12" cy="12" r="1" fill="white" fillOpacity={0.20} />
+          </Pattern>
+        </Defs>
+        <Rect width="100%" height="100%" fill="url(#dots)" />
+      </Svg>
+    </View>
+  );
+}
+
 function StatChip({ icon, label, value }: { icon: string; label: string; value: string }) {
   return (
     <BlurView
@@ -135,6 +152,7 @@ export function WeatherWidget() {
             {isError && (
               <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 14 }}>Unable to load weather</Text>
             )}
+            <DotsOverlay />
           </LinearGradient>
         </ImageBackground>
       </View>
@@ -343,6 +361,7 @@ export function WeatherWidget() {
               );
             })()}
           </>
+          <DotsOverlay />
         </LinearGradient>
       </ImageBackground>
     </View>
