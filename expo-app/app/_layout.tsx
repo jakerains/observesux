@@ -10,8 +10,8 @@ import { PlatformColor } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { AuthProvider, SettingsProvider, useAuth, useSettings } from '../lib/contexts';
-import { configureNotifications, registerForPushNotifications, registerPushTokenWithServer } from '../lib/notifications';
+import { AuthProvider, SettingsProvider, useAuth } from '../lib/contexts';
+import { configureNotifications } from '../lib/notifications';
 
 // Prevent the splash screen from auto-hiding before assets load
 SplashScreen.preventAutoHideAsync();
@@ -32,29 +32,10 @@ const queryClient = new QueryClient({
 });
 
 /**
- * Inner component that handles push token re-registration on sign-in.
- * Rendered inside SettingsProvider so it can access useSettings().
- */
-function PushTokenReregistrar({ token, isAuthenticated }: { token: string | null; isAuthenticated: boolean }) {
-  const { settings } = useSettings();
-
-  useEffect(() => {
-    if (!isAuthenticated || !token || !settings.notificationsEnabled) return;
-    registerForPushNotifications().then(pushToken => {
-      if (pushToken) {
-        registerPushTokenWithServer(pushToken, token);
-      }
-    });
-  }, [isAuthenticated]); // Only re-run when auth state changes
-
-  return null;
-}
-
-/**
  * Inner layout with access to auth context for passing token to settings
  */
 function RootLayoutInner() {
-  const { token, isAuthenticated } = useAuth();
+  const { token } = useAuth();
 
   const headerOptions = {
     headerStyle: { backgroundColor: '#170d08' },
@@ -66,7 +47,6 @@ function RootLayoutInner() {
 
   return (
     <SettingsProvider authToken={token}>
-      <PushTokenReregistrar token={token} isAuthenticated={isAuthenticated} />
       <StatusBar style="light" />
       <Stack screenOptions={headerOptions}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -112,14 +92,7 @@ function RootLayoutInner() {
             headerShown: true,
           }}
         />
-        <Stack.Screen
-          name="auth/callback"
-          options={{
-            title: '',
-            headerShown: false,
-            presentation: 'fullScreenModal',
-          }}
-        />
+
       </Stack>
     </SettingsProvider>
   );

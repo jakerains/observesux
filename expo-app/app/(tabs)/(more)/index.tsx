@@ -1,5 +1,5 @@
 /**
- * More Screen - Settings, account, and additional sections
+ * More Screen - Settings and additional sections
  */
 
 import { useCallback } from 'react';
@@ -8,7 +8,7 @@ import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Constants from 'expo-constants';
-import { useAuth, useSettings, getThemeLabel, getUnitsLabel, getRefreshLabel } from '../../../lib/contexts';
+import { useSettings, getThemeLabel, getUnitsLabel, getRefreshLabel } from '../../../lib/contexts';
 import {
   registerForPushNotifications,
   registerPushTokenWithServer,
@@ -123,7 +123,6 @@ function MenuSection({
 }
 
 export default function MoreScreen() {
-  const { user, isAuthenticated, signOut, token } = useAuth();
   const { settings, updateSetting } = useSettings();
 
   const version = Constants.expoConfig?.version || '1.0.0';
@@ -132,78 +131,30 @@ export default function MoreScreen() {
     Linking.openURL('https://siouxland.online');
   };
 
-  const handleSignIn = useCallback(() => {
-    if (process.env.EXPO_OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    // Navigate to native sign-in screen
-    router.push('/auth/sign-in');
-  }, []);
-
-  const handleSignOut = useCallback(async () => {
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Sign Out',
-          style: 'destructive',
-          onPress: async () => {
-            // Unregister push token before signing out
-            if (token && settings.notificationsEnabled) {
-              await unregisterPushToken(token);
-            }
-            await signOut();
-          },
-        },
-      ]
-    );
-  }, [signOut, token, settings.notificationsEnabled]);
-
   const handleNotificationToggle = useCallback(async (enabled: boolean) => {
     if (process.env.EXPO_OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
 
     if (enabled) {
-      // Request permission and register
       const pushToken = await registerForPushNotifications();
 
       if (pushToken) {
-        // If user is authenticated, register with server
-        if (token) {
-          const registered = await registerPushTokenWithServer(pushToken, token);
-          if (!registered) {
-            Alert.alert(
-              'Notification Setup',
-              'Notifications enabled locally but could not sync with server. Some alerts may not be delivered.'
-            );
-          }
-        }
         await updateSetting('notificationsEnabled', true);
       } else {
-        // Permission denied
         Alert.alert(
           'Notifications Disabled',
           'Please enable notifications in your device Settings to receive alerts.',
           [
             { text: 'Cancel', style: 'cancel' },
-            {
-              text: 'Open Settings',
-              onPress: () => Linking.openSettings(),
-            },
+            { text: 'Open Settings', onPress: () => Linking.openSettings() },
           ]
         );
       }
     } else {
-      // Disable notifications
-      if (token) {
-        await unregisterPushToken(token);
-      }
       await updateSetting('notificationsEnabled', false);
     }
-  }, [token, updateSetting]);
+  }, [updateSetting]);
 
   return (
     <ScrollView
@@ -211,24 +162,8 @@ export default function MoreScreen() {
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={{ padding: 16 }}
     >
-      {/* Account Section */}
-      <MenuSection title="ACCOUNT">
-        {isAuthenticated ? (
-          <MenuItem
-            sfSymbol="person.fill"
-            label={user?.name || user?.email || 'Signed In'}
-            subtitle={user?.email || 'Tap to sign out'}
-            onPress={handleSignOut}
-            tintColor="#22c55e"
-          />
-        ) : (
-          <MenuItem
-            sfSymbol="person"
-            label="Sign In"
-            subtitle="Sync settings across devices"
-            onPress={handleSignIn}
-          />
-        )}
+      {/* Notifications Section */}
+      <MenuSection title="NOTIFICATIONS">
         <MenuItem
           sfSymbol="bell"
           label="Notifications"
@@ -240,14 +175,6 @@ export default function MoreScreen() {
             />
           }
         />
-        {isAuthenticated && (
-          <MenuItem
-            sfSymbol="bell.badge"
-            label="Alert Subscriptions"
-            subtitle="Weather, river, air quality, traffic"
-            onPress={() => router.push('/(tabs)/(more)/alerts')}
-          />
-        )}
       </MenuSection>
 
       {/* Data Sources Section */}
