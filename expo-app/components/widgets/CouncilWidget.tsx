@@ -14,14 +14,15 @@ import { CardSkeleton } from '../LoadingState';
 
 export function CouncilWidget() {
   const router = useRouter();
-  const { data, isLoading, isError, refetch, isFetching } = useCouncilMeetings();
+  const { data, isLoading, isError, refetch, isFetching, dataUpdatedAt } = useCouncilMeetings();
 
   const meetings = data?.meetings ?? [];
   // Show the most recent completed meeting with a recap
   const latest = meetings.find((m) => m.status === 'completed' && m.recap) ?? meetings[0];
 
-  // Use meeting updatedAt as freshness proxy — council data changes infrequently
-  const status = getDataStatus(latest?.updatedAt, refreshIntervals.council, isLoading, isError);
+  // Use React Query's dataUpdatedAt (last fetch time) for freshness — not the meeting's DB timestamp
+  const fetchedAt = dataUpdatedAt ? new Date(dataUpdatedAt).toISOString() : undefined;
+  const status = getDataStatus(fetchedAt, refreshIntervals.council, isLoading, isError);
 
   if (isLoading) {
     return (
