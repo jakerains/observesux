@@ -174,6 +174,33 @@ export interface GasStation {
   lastUpdated: string;
 }
 
+// Council Meeting types
+export interface CouncilMeetingRecap {
+  summary: string;
+  article?: string;
+  decisions: string[];
+  topics: string[];
+  publicComments?: string[];
+}
+
+export interface CouncilMeeting {
+  id: string;
+  videoId: string;
+  title: string;
+  publishedAt: string | null;
+  meetingDate: string | null;
+  videoUrl: string | null;
+  recap: CouncilMeetingRecap | null;
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'no_captions';
+  chunkCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CouncilResponse {
+  meetings: CouncilMeeting[];
+}
+
 // Flight types
 export interface Flight {
   id: string;

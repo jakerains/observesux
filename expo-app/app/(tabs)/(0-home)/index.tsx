@@ -13,6 +13,7 @@ import { TransitWidget } from '@/components/widgets/TransitWidget';
 import { AirQualityWidget } from '@/components/widgets/AirQualityWidget';
 import { GasPricesWidget } from '@/components/widgets/GasPricesWidget';
 import { NewsWidget } from '@/components/widgets/NewsWidget';
+import { CouncilWidget } from '@/components/widgets/CouncilWidget';
 import { QuickStatsBar } from '@/components/QuickStatsBar';
 
 export default function HomeScreen() {
@@ -45,6 +46,7 @@ export default function HomeScreen() {
         <AirQualityWidget />
         <GasPricesWidget />
         <TransitWidget />
+        <CouncilWidget />
         <NewsWidget />
       </View>
     </ScrollView>

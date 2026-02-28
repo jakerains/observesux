@@ -82,6 +82,17 @@ function RootLayoutInner() {
           }}
         />
         <Stack.Screen
+          name="council/[id]"
+          options={{
+            title: 'Council Recap',
+            presentation: 'formSheet',
+            sheetGrabberVisible: true,
+            sheetAllowedDetents: [0.85, 1.0],
+            sheetExpandsWhenScrolledToEdge: false,
+            headerShown: true,
+          }}
+        />
+        <Stack.Screen
           name="auth/callback"
           options={{
             title: '',

@@ -22,6 +22,7 @@ import type {
   Flight,
   PowerOutage,
   DigestResponse,
+  CouncilResponse,
 } from '../types';
 
 /**
@@ -213,6 +214,20 @@ export function useDigest() {
   return useQuery({
     queryKey: ['digest'],
     queryFn: () => fetcher<DigestResponse>(endpoints.digest),
+    refetchInterval: interval,
+    staleTime: interval / 2,
+  });
+}
+
+/**
+ * Council meetings hook
+ * Note: Returns { meetings: [...] } directly (not wrapped in ApiResponse)
+ */
+export function useCouncilMeetings() {
+  const interval = useRefreshInterval(refreshIntervals.council);
+  return useQuery({
+    queryKey: ['council'],
+    queryFn: () => fetcher<CouncilResponse>(endpoints.council),
     refetchInterval: interval,
     staleTime: interval / 2,
   });

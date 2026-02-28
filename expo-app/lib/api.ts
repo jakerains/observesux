@@ -80,6 +80,7 @@ export const endpoints = {
   outages: '/api/outages',
   status: '/api/status',
   digest: '/api/user/digest',
+  council: '/api/council-meetings/recaps?all=true',
 } as const;
 
 /**
@@ -97,4 +98,5 @@ export const refreshIntervals = {
   flights: 5 * 60 * 1000, // 5 minutes
   outages: 5 * 60 * 1000, // 5 minutes
   digest: 60 * 1000, // 1 minute
+  council: 30 * 60 * 1000, // 30 minutes — meetings happen every 2 weeks
 } as const;
