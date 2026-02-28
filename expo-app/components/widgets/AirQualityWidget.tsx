@@ -19,16 +19,12 @@ const aqiColors: Record<string, { bg: string; text: string }> = {
 };
 
 export function AirQualityWidget() {
-  const { data, isLoading, isError, refetch, isFetching } = useAirQuality();
+  const { data, isLoading, isError, refetch, isFetching, dataUpdatedAt } = useAirQuality();
 
   const aqi = data?.data;
 
-  const status = getDataStatus(
-    data?.timestamp,
-    refreshIntervals.airQuality,
-    isLoading,
-    isError
-  );
+  const fetchedAt = dataUpdatedAt ? new Date(dataUpdatedAt).toISOString() : undefined;
+  const status = getDataStatus(fetchedAt, refreshIntervals.airQuality, isLoading, isError);
 
   if (isLoading) {
     return (
