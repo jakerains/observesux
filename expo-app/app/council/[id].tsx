@@ -28,7 +28,8 @@ export default function CouncilDetailScreen() {
   const { data, isLoading } = useCouncilMeetings();
 
   const meetings = data?.meetings ?? [];
-  const meeting = meetings.find((m) => m.id === id);
+  // DB returns integer IDs; route params are always strings — coerce for comparison
+  const meeting = meetings.find((m) => String(m.id) === String(id));
 
   const dateLabel = meeting?.meetingDate
     ? format(parseISO(meeting.meetingDate), 'EEEE, MMMM d, yyyy')
@@ -43,7 +44,7 @@ export default function CouncilDetailScreen() {
       {isLoading ? (
         <LoadingSpinner message="Loading recap..." />
       ) : !meeting ? (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <View style={{ flex: 1, minHeight: 200, justifyContent: 'center', alignItems: 'center' }}>
           <Image
             source="sf:building.columns"
             style={{ width: 64, height: 64 }}

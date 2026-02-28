@@ -134,7 +134,7 @@ export function CouncilWidget() {
           if (process.env.EXPO_OS === 'ios') {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           }
-          router.push(`/council/${latest.id}`);
+          router.push(`/council/${String(latest.id)}`);
         }}
         style={{
           flexDirection: 'row',
