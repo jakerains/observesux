@@ -478,7 +478,7 @@ export default function SuxScreen() {
                         style={{
                           fontSize: 15,
                           lineHeight: 20,
-                          color: '#ffffff',
+                          color: '#1a0f07',
                         }}
                       >
                         {message.content}
