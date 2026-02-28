@@ -18,6 +18,15 @@ import {
   Animated,
   Easing,
 } from 'react-native';
+import Reanimated, {
+  useSharedValue,
+  withRepeat,
+  withTiming,
+  useAnimatedStyle,
+  interpolateColor,
+  Easing as REasing,
+  type SharedValue,
+} from 'react-native-reanimated';
 import { Image as ExpoImage } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -34,6 +43,58 @@ interface Message {
   content: string;
   toolOutputs?: ToolOutput[];
 }
+
+// --- Shimmer text (left-to-right sweep via per-character Reanimated color) ---
+
+function ShimmerChar({ char, charPos, sweep }: {
+  char: string;
+  charPos: number;
+  sweep: SharedValue<number>;
+}) {
+  const style = useAnimatedStyle(() => {
+    const spread = 0.22;
+    const dist = Math.abs(sweep.value - charPos);
+    const t = Math.max(0, 1 - dist / spread);
+    return {
+      color: interpolateColor(t, [0, 1], ['rgba(236,227,214,0.38)', 'rgba(255,255,255,0.92)']),
+    };
+  });
+  return (
+    <Reanimated.Text style={[{ fontSize: 13, fontStyle: 'italic' }, style]}>
+      {char}
+    </Reanimated.Text>
+  );
+}
+
+function ShimmerText({ children }: { children: string }) {
+  const sweep = useSharedValue(-0.15);
+
+  useEffect(() => {
+    sweep.value = -0.15;
+    sweep.value = withRepeat(
+      withTiming(1.15, { duration: 1600, easing: REasing.linear }),
+      -1,
+      false
+    );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [children]);
+
+  const chars = children.split('');
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' }}>
+      {chars.map((char, i) => (
+        <ShimmerChar
+          key={i}
+          char={char}
+          charPos={i / Math.max(chars.length - 1, 1)}
+          sweep={sweep}
+        />
+      ))}
+    </View>
+  );
+}
+
+// --- end shimmer ---
 
 function getThinkingStatus(toolName: string): string {
   if (/weather/i.test(toolName)) return 'Checking weather...';
@@ -94,7 +155,7 @@ function ThinkingBubble({ status }: { status?: string }) {
         {status ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Animated.View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: '#e69c3a', opacity }} />
-            <Text style={{ fontSize: 13, color: 'rgba(236,227,214,0.55)', fontStyle: 'italic' }}>{status}</Text>
+            <ShimmerText>{status}</ShimmerText>
           </View>
         ) : (
           <>
