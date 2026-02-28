@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCurrentUser } from '@/lib/auth/server'
+import { getCurrentUserFromRequest } from '@/lib/auth/server'
 import {
   getUserAlertSubscriptions,
   upsertAlertSubscription,
@@ -17,13 +17,13 @@ const VALID_ALERT_TYPES: AlertType[] = ['weather', 'river', 'air_quality', 'traf
  * GET /api/user/alerts
  * Get all alert subscriptions for the current user
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   if (!isDatabaseConfigured()) {
     return NextResponse.json({ error: 'Database not configured' }, { status: 500 })
   }
 
   try {
-    const user = await getCurrentUser()
+    const user = await getCurrentUserFromRequest(request)
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const user = await getCurrentUser()
+    const user = await getCurrentUserFromRequest(request)
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -120,7 +120,7 @@ export async function PATCH(request: NextRequest) {
   }
 
   try {
-    const user = await getCurrentUser()
+    const user = await getCurrentUserFromRequest(request)
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -175,7 +175,7 @@ export async function DELETE(request: NextRequest) {
   }
 
   try {
-    const user = await getCurrentUser()
+    const user = await getCurrentUserFromRequest(request)
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

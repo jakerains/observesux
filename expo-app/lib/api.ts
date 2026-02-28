@@ -51,12 +51,40 @@ export async function authenticatedFetcher<T>(
 }
 
 /**
+ * Authenticated mutator with Bearer token (for POST/PUT/PATCH/DELETE)
+ */
+export async function authenticatedMutator<T>(
+  endpoint: string,
+  token: string,
+  method: 'POST' | 'PUT' | 'PATCH' | 'DELETE',
+  body?: unknown
+): Promise<T> {
+  const url = `${API_BASE_URL}${endpoint}`;
+
+  const response = await fetch(url, {
+    method,
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+
+  if (!response.ok) {
+    throw new Error(`API Error: ${response.status} ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+/**
  * User-related API endpoints
  */
 export const userEndpoints = {
   profile: '/api/user/profile',
   preferences: '/api/user/preferences',
-  alertSubscriptions: '/api/user/alert-subscriptions',
+  alertSubscriptions: '/api/user/alerts',
   watchlist: '/api/user/watchlist',
   mobilePush: '/api/user/mobile-push',
 } as const;
@@ -74,6 +102,7 @@ export const endpoints = {
   trafficEvents: '/api/traffic-events',
   news: '/api/news',
   airQuality: '/api/air-quality',
+  airQualityHistory: '/api/history?type=air&hours=24',
   rivers: '/api/rivers',
   gasPrices: '/api/gas-prices',
   flights: '/api/flights',

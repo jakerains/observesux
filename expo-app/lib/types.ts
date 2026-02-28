@@ -255,3 +255,62 @@ export interface DigestResponse {
 
 // Data freshness status
 export type DataStatus = 'live' | 'stale' | 'error' | 'loading';
+
+// Auth-gated data types
+
+export type AlertType = 'weather' | 'river' | 'air_quality' | 'traffic';
+
+export interface AlertSubscription {
+  id: string;
+  alertType: AlertType;
+  config: Record<string, unknown>;
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AlertSubscriptionsResponse {
+  subscriptions: Record<AlertType, AlertSubscription | null>;
+  availableTypes: AlertType[];
+}
+
+export interface UserPreferences {
+  userId: string;
+  widgetSettings: Record<string, unknown>;
+  theme: 'light' | 'dark' | 'system';
+  updatedAt: string | null;
+}
+
+export interface PreferencesResponse {
+  preferences: UserPreferences;
+}
+
+export type WatchlistItemType = 'camera' | 'bus_route' | 'river_gauge' | 'gas_station';
+
+export interface WatchlistItem {
+  id: string;
+  itemType: WatchlistItemType;
+  itemId: string;
+  itemName: string;
+  itemMetadata: Record<string, unknown> | null;
+  createdAt: string;
+}
+
+export interface WatchlistResponse {
+  items: WatchlistItem[];
+  grouped: Record<WatchlistItemType, WatchlistItem[]>;
+  count: number;
+}
+
+// History types
+export interface AirQualityHistoryPoint {
+  time: string;
+  aqi: number;
+}
+
+export interface AirQualityHistoryResponse {
+  configured: boolean;
+  hours?: number;
+  airQuality?: AirQualityHistoryPoint[];
+  message?: string;
+}

@@ -5,6 +5,25 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.25] - 2026-02-28
+
+### Added
+- Mobile app: Expo push notification support — Expo push tokens registered and stored server-side, receipt polling cron for delivery confirmation
+- Mobile app: Alerts screen in the More tab — subscribe/unsubscribe to weather, traffic, and other alert types from the app
+- Mobile app: Air quality widget improvements — freshness status and cleaner display
+- Mobile app: Map centers on user location with permission request on first use
+- Mobile app: Rich gas station callout on map with prices and brand details
+- Mobile app: 7-day forecast hi/lo pairs, full-bleed weather hero with bridge photo
+- Mobile app: City Council widget with recap detail modal
+- Mobile app: Markdown rendering in council recap article body
+
+### Fixed
+- Mobile app: Gas station callout shows regular/diesel prices correctly
+- Mobile app: Diesel-only stations hidden from map layer
+- Mobile app: Transit widget normalizes occupancy and schedule adherence fields, hides bogus schedule badges
+- Mobile app: Forecast icons now reflect actual conditions instead of always showing sun
+- Mobile app: All widgets use `dataUpdatedAt` for accurate Live/Stale freshness status
+
 ## [0.9.24] - 2026-02-27
 
 ### Changed

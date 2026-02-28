@@ -16,6 +16,25 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.9.25',
+    date: '2026-02-28',
+    added: [
+      'Mobile app: Expo push notification support with server-side token storage and receipt polling',
+      'Mobile app: Alerts screen — subscribe to weather, traffic, and other alert types from the app',
+      'Mobile app: Air quality widget with freshness status',
+      'Mobile app: Map centers on user location with permission request',
+      'Mobile app: Rich gas station callout with prices and brand details',
+      'Mobile app: 7-day forecast hi/lo pairs and full-bleed weather hero',
+      'Mobile app: City Council widget with recap detail modal and markdown rendering',
+    ],
+    fixed: [
+      'Mobile app: Gas station callout prices and diesel-only station filtering',
+      'Mobile app: Transit widget occupancy/schedule normalization and bogus badge hiding',
+      'Mobile app: Forecast icons now reflect actual weather conditions',
+      'Mobile app: All widgets use dataUpdatedAt for accurate Live/Stale status',
+    ],
+  },
+  {
     version: '0.9.24',
     date: '2026-02-27',
     changed: [

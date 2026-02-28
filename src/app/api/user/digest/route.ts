@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { start } from 'workflow/api'
-import { getCurrentUser } from '@/lib/auth/server'
+import { getCurrentUser, getCurrentUserFromRequest } from '@/lib/auth/server'
 import { isDatabaseConfigured } from '@/lib/db'
 import {
   getLatestDigest,
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
 
   try {
     // Auth check
-    const user = await getCurrentUser()
+    const user = await getCurrentUserFromRequest(request)
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -253,7 +253,7 @@ export async function PATCH(request: NextRequest) {
 
   try {
     // Auth check - require admin
-    const user = await getCurrentUser()
+    const user = await getCurrentUserFromRequest(request)
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -302,7 +302,7 @@ export async function DELETE(request: NextRequest) {
 
   try {
     // Auth check - require admin
-    const user = await getCurrentUser()
+    const user = await getCurrentUserFromRequest(request)
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

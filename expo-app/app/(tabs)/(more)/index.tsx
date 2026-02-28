@@ -240,6 +240,14 @@ export default function MoreScreen() {
             />
           }
         />
+        {isAuthenticated && (
+          <MenuItem
+            sfSymbol="bell.badge"
+            label="Alert Subscriptions"
+            subtitle="Weather, river, air quality, traffic"
+            onPress={() => router.push('/(tabs)/(more)/alerts')}
+          />
+        )}
       </MenuSection>
 
       {/* Data Sources Section */}

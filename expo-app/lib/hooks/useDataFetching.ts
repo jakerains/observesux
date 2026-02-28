@@ -3,8 +3,8 @@
  * Mirrors the web app's SWR-based hooks
  */
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { fetcher, endpoints, refreshIntervals } from '../api';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { fetcher, authenticatedFetcher, authenticatedMutator, endpoints, refreshIntervals, userEndpoints } from '../api';
 import { useSettings } from '../contexts/SettingsContext';
 import type {
   ApiResponse,
@@ -23,6 +23,11 @@ import type {
   PowerOutage,
   DigestResponse,
   CouncilResponse,
+  AlertSubscriptionsResponse,
+  PreferencesResponse,
+  WatchlistResponse,
+  WatchlistItemType,
+  AirQualityHistoryResponse,
 } from '../types';
 
 /**
@@ -154,6 +159,18 @@ export function useAirQuality() {
 }
 
 /**
+ * Air quality 24h history hook
+ */
+export function useAirQualityHistory() {
+  return useQuery({
+    queryKey: ['air-quality', 'history'],
+    queryFn: () => fetcher<AirQualityHistoryResponse>(endpoints.airQualityHistory),
+    staleTime: 5 * 60 * 1000,  // history data changes slowly
+    refetchInterval: 5 * 60 * 1000,
+  });
+}
+
+/**
  * River levels hook
  */
 export function useRivers() {
@@ -263,4 +280,113 @@ export function getDataStatus(
 
   // Show stale if data is older than 3x the refresh interval
   return age > refreshInterval * 3 ? 'stale' : 'live';
+}
+
+/**
+ * Alert subscriptions hook (requires auth)
+ */
+export function useAlertSubscriptions(token: string | null) {
+  return useQuery({
+    queryKey: ['user', 'alerts'],
+    queryFn: () => authenticatedFetcher<AlertSubscriptionsResponse>(userEndpoints.alertSubscriptions, token!),
+    enabled: !!token,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+/**
+ * User preferences hook (requires auth)
+ */
+export function useUserPreferences(token: string | null) {
+  return useQuery({
+    queryKey: ['user', 'preferences'],
+    queryFn: () => authenticatedFetcher<PreferencesResponse>(userEndpoints.preferences, token!),
+    enabled: !!token,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+/**
+ * Watchlist hook (requires auth)
+ */
+export function useWatchlist(token: string | null, type?: WatchlistItemType) {
+  const endpoint = type
+    ? `${userEndpoints.watchlist}?type=${type}`
+    : userEndpoints.watchlist;
+  return useQuery({
+    queryKey: ['user', 'watchlist', type],
+    queryFn: () => authenticatedFetcher<WatchlistResponse>(endpoint, token!),
+    enabled: !!token,
+    staleTime: 2 * 60 * 1000,
+  });
+}
+
+/**
+ * Upsert alert subscription mutation
+ */
+export function useUpsertAlertSubscription(token: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { alertType: string; config: Record<string, unknown>; enabled?: boolean }) =>
+      authenticatedMutator(userEndpoints.alertSubscriptions, token!, 'POST', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user', 'alerts'] });
+    },
+  });
+}
+
+/**
+ * Toggle alert subscription mutation
+ */
+export function useToggleAlertSubscription(token: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { alertType: string; enabled: boolean }) =>
+      authenticatedMutator(userEndpoints.alertSubscriptions, token!, 'PATCH', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user', 'alerts'] });
+    },
+  });
+}
+
+/**
+ * Update user preferences mutation
+ */
+export function useUpdatePreferences(token: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { theme?: string; widgetSettings?: Record<string, unknown> }) =>
+      authenticatedMutator(userEndpoints.preferences, token!, 'PATCH', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user', 'preferences'] });
+    },
+  });
+}
+
+/**
+ * Add watchlist item mutation
+ */
+export function useAddWatchlistItem(token: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { itemType: string; itemId: string; itemName: string; itemMetadata?: Record<string, unknown> }) =>
+      authenticatedMutator(userEndpoints.watchlist, token!, 'POST', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user', 'watchlist'] });
+    },
+  });
+}
+
+/**
+ * Remove watchlist item mutation
+ */
+export function useRemoveWatchlistItem(token: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { itemType: string; itemId: string }) =>
+      authenticatedMutator(userEndpoints.watchlist, token!, 'DELETE', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user', 'watchlist'] });
+    },
+  });
 }

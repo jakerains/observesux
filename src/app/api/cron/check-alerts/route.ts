@@ -8,6 +8,7 @@ import {
   type AlertType
 } from '@/lib/db/alerts'
 import { sendPushToUser, type PushPayload } from '@/lib/push/send'
+import { sendExpoPushToUser, type ExpoPushPayload } from '@/lib/push/send-expo'
 import {
   matchesWeatherAlert,
   matchesRiverAlert,
@@ -152,9 +153,19 @@ async function checkWeatherAlerts(baseUrl: string): Promise<{ checked: number; m
 
           if (!alreadyTriggered) {
             const payload = createAlertNotificationPayload('weather', alert)
-            const pushResult = await sendPushToUser(sub.userId, payload as PushPayload)
-
-            if (pushResult.sent > 0) {
+            const expoPayload: ExpoPushPayload = {
+              title: payload.title,
+              body: payload.body,
+              data: { url: (payload as any).url, tag: (payload as any).tag },
+              sound: 'default',
+              priority: 'high',
+            }
+            const [webResult, expoResult] = await Promise.all([
+              sendPushToUser(sub.userId, payload as PushPayload),
+              sendExpoPushToUser(sub.userId, expoPayload),
+            ])
+            const anySent = webResult.sent > 0 || expoResult.sent > 0
+            if (anySent) {
               notified++
               await recordTriggeredAlert(sub.userId, 'weather', sourceId, alert as unknown as Record<string, unknown>)
             }
@@ -215,9 +226,19 @@ async function checkRiverAlerts(baseUrl: string): Promise<{ checked: number; mat
 
           if (!alreadyTriggered) {
             const payload = createAlertNotificationPayload('river', reading)
-            const pushResult = await sendPushToUser(sub.userId, payload as PushPayload)
-
-            if (pushResult.sent > 0) {
+            const expoPayload: ExpoPushPayload = {
+              title: payload.title,
+              body: payload.body,
+              data: { url: (payload as any).url, tag: (payload as any).tag },
+              sound: 'default',
+              priority: 'high',
+            }
+            const [webResult, expoResult] = await Promise.all([
+              sendPushToUser(sub.userId, payload as PushPayload),
+              sendExpoPushToUser(sub.userId, expoPayload),
+            ])
+            const anySent = webResult.sent > 0 || expoResult.sent > 0
+            if (anySent) {
               notified++
               await recordTriggeredAlert(sub.userId, 'river', sourceId, reading as unknown as Record<string, unknown>)
             }
@@ -269,9 +290,19 @@ async function checkAirQualityAlerts(baseUrl: string): Promise<{ checked: number
 
         if (!alreadyTriggered) {
           const payload = createAlertNotificationPayload('air_quality', reading)
-          const pushResult = await sendPushToUser(sub.userId, payload as PushPayload)
-
-          if (pushResult.sent > 0) {
+          const expoPayload: ExpoPushPayload = {
+            title: payload.title,
+            body: payload.body,
+            data: { url: (payload as any).url, tag: (payload as any).tag },
+            sound: 'default',
+            priority: 'high',
+          }
+          const [webResult, expoResult] = await Promise.all([
+            sendPushToUser(sub.userId, payload as PushPayload),
+            sendExpoPushToUser(sub.userId, expoPayload),
+          ])
+          const anySent = webResult.sent > 0 || expoResult.sent > 0
+          if (anySent) {
             notified++
             await recordTriggeredAlert(sub.userId, 'air_quality', sourceId, reading as unknown as Record<string, unknown>)
           }
@@ -331,9 +362,19 @@ async function checkTrafficAlerts(baseUrl: string): Promise<{ checked: number; m
 
           if (!alreadyTriggered) {
             const payload = createAlertNotificationPayload('traffic', incident)
-            const pushResult = await sendPushToUser(sub.userId, payload as PushPayload)
-
-            if (pushResult.sent > 0) {
+            const expoPayload: ExpoPushPayload = {
+              title: payload.title,
+              body: payload.body,
+              data: { url: (payload as any).url, tag: (payload as any).tag },
+              sound: 'default',
+              priority: 'high',
+            }
+            const [webResult, expoResult] = await Promise.all([
+              sendPushToUser(sub.userId, payload as PushPayload),
+              sendExpoPushToUser(sub.userId, expoPayload),
+            ])
+            const anySent = webResult.sent > 0 || expoResult.sent > 0
+            if (anySent) {
               notified++
               await recordTriggeredAlert(sub.userId, 'traffic', sourceId, incident as unknown as Record<string, unknown>)
             }
