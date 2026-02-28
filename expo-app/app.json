@@ -64,6 +64,13 @@
     "newArchEnabled": true,
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "7177e8d6-7bd1-4995-80e8-5286ee3b0720"
+      }
+    },
+    "owner": "siouxlandonline"
   }
 }
