@@ -8,6 +8,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Brand } from '@/constants/BrandColors';
 import { WeatherWidget } from '@/components/widgets/WeatherWidget';
 import { DigestWidget } from '@/components/widgets/DigestWidget';
@@ -62,19 +63,17 @@ export default function HomeScreen() {
         </View>
       </ScrollView>
 
-      {/* Fixed blur over the status bar / Dynamic Island area */}
-      <BlurView
-        intensity={80}
-        tint="dark"
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: insets.top,
-        }}
+      {/* Fixed blur over the status bar / Dynamic Island area with soft fade */}
+      <View
+        style={{ position: 'absolute', top: 0, left: 0, right: 0 }}
         pointerEvents="none"
-      />
+      >
+        <BlurView intensity={80} tint="dark" style={{ height: insets.top }} />
+        <LinearGradient
+          colors={['rgba(18,9,5,0.75)', 'transparent']}
+          style={{ height: 28 }}
+        />
+      </View>
     </View>
   );
 }
