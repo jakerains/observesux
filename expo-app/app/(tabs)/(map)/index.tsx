@@ -300,35 +300,159 @@ export default function MapScreen() {
           ))}
 
         {activeLayers.has('gas') &&
-          gasStations.map((station) => (
-            <Marker
-              key={`gas-${station.id}`}
-              coordinate={{ latitude: station.latitude, longitude: station.longitude }}
-              title={station.name}
-              description={(() => {
-                const p = station.prices;
-                const regularPrice = Array.isArray(p)
-                  ? p.find((x) => x.fuelType?.toLowerCase() === 'regular')?.price
-                  : (p as Record<string, number>).regular;
-                return regularPrice ? `Regular: $${regularPrice.toFixed(2)}` : (station.streetAddress || station.address || '');
-              })()}
-            >
-              <View
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: 14,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderWidth: 2,
-                  borderColor: '#ffffff',
-                  backgroundColor: '#f59e0b',
-                }}
+          gasStations.map((station) => {
+            // Normalise prices to [{label, price, color}]
+            const rawPrices = station.prices;
+            const fuelColors: Record<string, string> = {
+              regular: '#22c55e',
+              midgrade: '#3b82f6',
+              mid: '#3b82f6',
+              'mid-grade': '#3b82f6',
+              premium: '#8b5cf6',
+              diesel: '#f59e0b',
+              e85: '#14b8a6',
+            };
+            const fuelLabels: Record<string, string> = {
+              regular: 'Regular',
+              midgrade: 'Mid',
+              mid: 'Mid',
+              'mid-grade': 'Mid',
+              premium: 'Premium',
+              diesel: 'Diesel',
+              e85: 'E85',
+            };
+            const priceList: { label: string; price: number; color: string }[] = Array.isArray(rawPrices)
+              ? (rawPrices as { fuelType: string; price: number }[]).map((p) => {
+                  const key = p.fuelType?.toLowerCase().replace(/\s+/g, '') ?? '';
+                  return {
+                    label: fuelLabels[key] ?? p.fuelType,
+                    price: p.price,
+                    color: fuelColors[key] ?? '#9ca3af',
+                  };
+                })
+              : Object.entries(rawPrices as Record<string, number>).map(([k, v]) => ({
+                  label: fuelLabels[k.toLowerCase()] ?? k,
+                  price: v,
+                  color: fuelColors[k.toLowerCase()] ?? '#9ca3af',
+                }));
+
+            const stationName = (station as any).brandName || station.name || 'Gas Station';
+            const address = (station as any).streetAddress || station.address || '';
+
+            return (
+              <Marker
+                key={`gas-${station.id}`}
+                coordinate={{ latitude: station.latitude, longitude: station.longitude }}
               >
-                <Image source="sf:fuelpump.fill" style={{ width: 14, height: 14 }} tintColor="#fff" />
-              </View>
-            </Marker>
-          ))}
+                <View
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 14,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderWidth: 2,
+                    borderColor: '#ffffff',
+                    backgroundColor: '#f59e0b',
+                  }}
+                >
+                  <Image source="sf:fuelpump.fill" style={{ width: 14, height: 14 }} tintColor="#fff" />
+                </View>
+                <Callout tooltip>
+                  <View
+                    style={{
+                      width: 220,
+                      borderRadius: 14,
+                      borderCurve: 'continuous',
+                      overflow: 'hidden',
+                      backgroundColor: colorScheme === 'dark' ? '#1c1c1e' : '#ffffff',
+                      boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+                    }}
+                  >
+                    {/* Header */}
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 8,
+                        padding: 12,
+                        paddingBottom: 10,
+                        backgroundColor: colorScheme === 'dark' ? '#2c1a0e' : '#fff8f0',
+                        borderBottomWidth: StyleSheet.hairlineWidth,
+                        borderBottomColor: colorScheme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+                      }}
+                    >
+                      <View
+                        style={{
+                          width: 30,
+                          height: 30,
+                          borderRadius: 8,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          backgroundColor: '#f59e0b',
+                        }}
+                      >
+                        <Image source="sf:fuelpump.fill" style={{ width: 15, height: 15 }} tintColor="#fff" />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text
+                          numberOfLines={1}
+                          style={{
+                            fontSize: 13,
+                            fontWeight: '700',
+                            color: colorScheme === 'dark' ? '#ffffff' : '#000000',
+                          }}
+                        >
+                          {stationName}
+                        </Text>
+                        {!!address && (
+                          <Text
+                            numberOfLines={1}
+                            style={{
+                              fontSize: 11,
+                              color: colorScheme === 'dark' ? '#8e8e93' : '#6b7280',
+                              marginTop: 1,
+                            }}
+                          >
+                            {address}
+                          </Text>
+                        )}
+                      </View>
+                    </View>
+
+                    {/* Price grid */}
+                    <View style={{ padding: 10, gap: 6 }}>
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                        {priceList.map(({ label, price, color }) => (
+                          <View
+                            key={label}
+                            style={{
+                              flex: 1,
+                              minWidth: 60,
+                              alignItems: 'center',
+                              paddingVertical: 8,
+                              paddingHorizontal: 4,
+                              borderRadius: 10,
+                              backgroundColor: colorScheme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
+                              borderWidth: 1,
+                              borderColor: `${color}44`,
+                            }}
+                          >
+                            <Text style={{ fontSize: 10, fontWeight: '600', color, marginBottom: 3, textTransform: 'uppercase', letterSpacing: 0.3 }}>
+                              {label}
+                            </Text>
+                            <Text style={{ fontSize: 16, fontWeight: '800', color: colorScheme === 'dark' ? '#ffffff' : '#000000', lineHeight: 18 }}>
+                              ${price.toFixed(2)}
+                            </Text>
+                          </View>
+                        ))}
+                      </View>
+                    </View>
+                  </View>
+                </Callout>
+              </Marker>
+            );
+          })}
 
         {activeLayers.has('traffic') &&
           trafficEvents.map((event) => (
