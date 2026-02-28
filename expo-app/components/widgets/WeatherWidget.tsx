@@ -2,6 +2,7 @@
  * Weather Widget - Hero section with gradient sky and glass stat chips
  */
 
+import { useState } from 'react';
 import { View, Pressable, Text, PlatformColor } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Image } from 'expo-image';
@@ -11,6 +12,7 @@ import * as Haptics from 'expo-haptics';
 import {
   useWeather,
   useWeatherAlerts,
+  useWeatherForecast,
   getDataStatus,
 } from '@/lib/hooks/useDataFetching';
 import { refreshIntervals } from '@/lib/api';
@@ -111,12 +113,15 @@ function StatChip({
 
 export function WeatherWidget() {
   const router = useRouter();
+  const [forecastExpanded, setForecastExpanded] = useState(false);
   const { data, isLoading, isError, refetch, isFetching } = useWeather();
   const { data: alertsData } = useWeatherAlerts();
+  const { data: forecastData } = useWeatherForecast();
 
   const weather = data?.data;
   const alerts = Array.isArray(alertsData?.data) ? alertsData.data : [];
   const hasAlerts = alerts.length > 0;
+  const forecast = Array.isArray(forecastData?.data) ? forecastData.data : [];
 
   const status = getDataStatus(
     data?.timestamp,
@@ -216,22 +221,13 @@ export function WeatherWidget() {
                 </Text>
               )}
             </View>
-            <Pressable
-              onPress={() => {
-                if (process.env.EXPO_OS === 'ios') {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }
-                router.push('/(tabs)/(weather)');
-              }}
-              style={{ alignItems: 'center', gap: 6 }}
-            >
+            <View style={{ alignItems: 'center', gap: 6 }}>
               <Image
                 source={`sf:${sfSymbol}`}
                 style={{ width: 72, height: 72 }}
                 tintColor={Brand.amber}
               />
-              <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>Full Forecast →</Text>
-            </Pressable>
+            </View>
           </View>
 
           {/* Stat chips */}
@@ -248,6 +244,72 @@ export function WeatherWidget() {
               <StatChip icon="eye.fill" label="Visibility" value={`${weather.visibility?.toFixed?.(0) ?? '—'} mi`} />
             )}
           </View>
+
+          {/* 7-Day Forecast Toggle */}
+          {forecast.length > 0 && (
+            <>
+              <Pressable
+                onPress={() => {
+                  if (process.env.EXPO_OS === 'ios') {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }
+                  setForecastExpanded((v) => !v);
+                }}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginTop: 16,
+                  gap: 6,
+                  paddingVertical: 8,
+                }}
+              >
+                <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.65)', fontWeight: '500' }}>
+                  7-Day Forecast
+                </Text>
+                <Image
+                  source={`sf:chevron.${forecastExpanded ? 'up' : 'down'}`}
+                  style={{ width: 12, height: 12 }}
+                  tintColor="rgba(255,255,255,0.45)"
+                />
+              </Pressable>
+
+              {forecastExpanded && (
+                <View style={{ gap: 0, marginTop: 4 }}>
+                  {forecast.slice(0, 7).map((day, i) => (
+                    <View
+                      key={`${day.name}-${i}`}
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        paddingVertical: 10,
+                        borderTopWidth: 0.5,
+                        borderTopColor: 'rgba(255,255,255,0.1)',
+                      }}
+                    >
+                      <Text style={{ width: 60, fontSize: 13, fontWeight: '500', color: 'rgba(255,255,255,0.85)' }}>
+                        {day.name?.length > 6 ? day.name.slice(0, 3) : day.name}
+                      </Text>
+                      <Image
+                        source={`sf:${day.isDaytime ? 'sun.max.fill' : 'moon.stars.fill'}`}
+                        style={{ width: 18, height: 18, marginRight: 8 }}
+                        tintColor={Brand.amber}
+                      />
+                      <Text
+                        numberOfLines={1}
+                        style={{ flex: 1, fontSize: 12, color: 'rgba(255,255,255,0.5)' }}
+                      >
+                        {day.shortForecast}
+                      </Text>
+                      <Text style={{ fontSize: 16, fontWeight: '700', color: '#ffffff', marginLeft: 8 }}>
+                        {day.temperature}°
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </>
+          )}
         </LinearGradient>
       </View>
     </DashboardCard>
