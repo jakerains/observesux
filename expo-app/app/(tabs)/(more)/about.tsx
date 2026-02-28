@@ -4,7 +4,7 @@
  */
 
 import { View, Text, Pressable, PlatformColor, Linking, Image } from 'react-native';
-import { SymbolView, type SymbolViewProps } from 'expo-symbols';
+import { Image as ExpoImage } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import Constants from 'expo-constants';
 
@@ -20,7 +20,7 @@ interface LinkItemProps {
 }
 
 function LinkItem({ sfSymbol, label, subtitle, onPress, tintColor }: LinkItemProps) {
-  const iconColor = tintColor || PlatformColor('systemBlue');
+  const iconColor = tintColor || '#e69c3a';
 
   return (
     <Pressable
@@ -49,7 +49,7 @@ function LinkItem({ sfSymbol, label, subtitle, onPress, tintColor }: LinkItemPro
           backgroundColor: PlatformColor('tertiarySystemFill'),
         }}
       >
-        <SymbolView name={sfSymbol as SymbolViewProps['name']} tintColor={iconColor} size={20} />
+        <ExpoImage source={`sf:${sfSymbol}`} style={{ width: 20, height: 20 }} tintColor={iconColor} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={{ fontWeight: '500', color: PlatformColor('label') }}>{label}</Text>
@@ -59,7 +59,7 @@ function LinkItem({ sfSymbol, label, subtitle, onPress, tintColor }: LinkItemPro
           </Text>
         )}
       </View>
-      <SymbolView name="chevron.right" tintColor={PlatformColor('tertiaryLabel')} size={16} />
+      <ExpoImage source="sf:chevron.right" style={{ width: 16, height: 16 }} tintColor={PlatformColor('tertiaryLabel')} />
     </Pressable>
   );
 }
@@ -73,7 +73,7 @@ export default function AboutScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: PlatformColor('systemBackground') }}>
+    <View style={{ flex: 1, backgroundColor: '#120905' }}>
       {/* App Header */}
       <View style={{ alignItems: 'center', paddingVertical: 32 }}>
         <View
@@ -124,7 +124,7 @@ export default function AboutScreen() {
           marginHorizontal: 16,
           borderRadius: 12,
           overflow: 'hidden',
-          backgroundColor: PlatformColor('secondarySystemBackground'),
+          backgroundColor: '#1f130c',
         }}
       >
         <LinkItem
@@ -170,7 +170,7 @@ export default function AboutScreen() {
           marginHorizontal: 16,
           borderRadius: 12,
           overflow: 'hidden',
-          backgroundColor: PlatformColor('secondarySystemBackground'),
+          backgroundColor: '#1f130c',
           padding: 16,
         }}
       >

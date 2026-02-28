@@ -3,9 +3,10 @@
  */
 
 import { View, ScrollView, Text, PlatformColor } from 'react-native';
-import { SymbolView, type SymbolViewProps } from 'expo-symbols';
+import { Image } from 'expo-image';
 import { useWeather, useAirQuality, useTransit } from '@/lib/hooks/useDataFetching';
 import { Skeleton } from './LoadingState';
+import { Brand } from '@/constants/BrandColors';
 
 interface StatItemProps {
   sfSymbol: string;
@@ -24,14 +25,13 @@ function StatItem({ sfSymbol, label, value, tintColor }: StatItemProps) {
         paddingHorizontal: 14,
         borderRadius: 10,
         borderCurve: 'continuous',
-        backgroundColor: PlatformColor('secondarySystemBackground'),
+        backgroundColor: Brand.card,
       }}
     >
-      <SymbolView
-        name={sfSymbol as SymbolViewProps['name']}
-        tintColor={tintColor || PlatformColor('systemBlue')}
-        size={18}
-        style={{ marginRight: 8 }}
+      <Image
+        source={`sf:${sfSymbol}`}
+        style={{ width: 18, height: 18, marginRight: 8 }}
+        tintColor={tintColor || Brand.amber}
       />
       <View>
         <Text

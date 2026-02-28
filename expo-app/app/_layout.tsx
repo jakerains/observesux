@@ -10,8 +10,8 @@ import { PlatformColor } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { AuthProvider, SettingsProvider, useAuth } from '../lib/contexts';
-import { configureNotifications } from '../lib/notifications';
+import { AuthProvider, SettingsProvider, useAuth, useSettings } from '../lib/contexts';
+import { configureNotifications, registerForPushNotifications, registerPushTokenWithServer } from '../lib/notifications';
 
 // Prevent the splash screen from auto-hiding before assets load
 SplashScreen.preventAutoHideAsync();
@@ -32,21 +32,41 @@ const queryClient = new QueryClient({
 });
 
 /**
+ * Inner component that handles push token re-registration on sign-in.
+ * Rendered inside SettingsProvider so it can access useSettings().
+ */
+function PushTokenReregistrar({ token, isAuthenticated }: { token: string | null; isAuthenticated: boolean }) {
+  const { settings } = useSettings();
+
+  useEffect(() => {
+    if (!isAuthenticated || !token || !settings.notificationsEnabled) return;
+    registerForPushNotifications().then(pushToken => {
+      if (pushToken) {
+        registerPushTokenWithServer(pushToken, token);
+      }
+    });
+  }, [isAuthenticated]); // Only re-run when auth state changes
+
+  return null;
+}
+
+/**
  * Inner layout with access to auth context for passing token to settings
  */
 function RootLayoutInner() {
-  const { token } = useAuth();
+  const { token, isAuthenticated } = useAuth();
 
   const headerOptions = {
-    headerStyle: { backgroundColor: '#000000' },
+    headerStyle: { backgroundColor: '#170d08' },
     headerShadowVisible: false,
     headerBackButtonDisplayMode: 'minimal' as const,
-    headerTintColor: '#ffffff',
-    headerTitleStyle: { color: '#ffffff', fontSize: 17, fontWeight: '600' as const },
+    headerTintColor: '#e69c3a',
+    headerTitleStyle: { color: '#ece3d6', fontSize: 17, fontWeight: '600' as const },
   };
 
   return (
     <SettingsProvider authToken={token}>
+      <PushTokenReregistrar token={token} isAuthenticated={isAuthenticated} />
       <StatusBar style="light" />
       <Stack screenOptions={headerOptions}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -82,6 +102,17 @@ function RootLayoutInner() {
           }}
         />
         <Stack.Screen
+          name="council/[id]"
+          options={{
+            title: 'Council Recap',
+            presentation: 'formSheet',
+            sheetGrabberVisible: true,
+            sheetAllowedDetents: [0.85, 1.0],
+            sheetExpandsWhenScrolledToEdge: false,
+            headerShown: true,
+          }}
+        />
+        <Stack.Screen
           name="auth/callback"
           options={{
             title: '',
@@ -100,7 +131,7 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: PlatformColor('systemBackground') }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#120905' }}>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <RootLayoutInner />

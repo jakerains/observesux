@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sql, isDatabaseConfigured } from '@/lib/db'
-import { getCurrentUser } from '@/lib/auth/server'
+import { getCurrentUserFromRequest } from '@/lib/auth/server'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,13 +18,13 @@ interface PushSubscriptionJSON {
  * GET /api/user/push-subscription
  * Get current user's push subscriptions
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   if (!isDatabaseConfigured()) {
     return NextResponse.json({ error: 'Database not configured' }, { status: 500 })
   }
 
   try {
-    const user = await getCurrentUser()
+    const user = await getCurrentUserFromRequest(request)
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const user = await getCurrentUser()
+    const user = await getCurrentUserFromRequest(request)
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -108,7 +108,7 @@ export async function DELETE(request: NextRequest) {
   }
 
   try {
-    const user = await getCurrentUser()
+    const user = await getCurrentUserFromRequest(request)
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

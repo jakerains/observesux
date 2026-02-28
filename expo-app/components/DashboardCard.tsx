@@ -4,9 +4,10 @@
  */
 
 import { View, Pressable, ActivityIndicator, Text, PlatformColor } from 'react-native';
-import { SymbolView, type SymbolViewProps } from 'expo-symbols';
+import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import type { DataStatus } from '@/lib/types';
+import { Brand } from '@/constants/BrandColors';
 
 interface DashboardCardProps {
   title: string;
@@ -63,7 +64,7 @@ export function DashboardCard({
         borderRadius: 12,
         borderCurve: 'continuous',
         overflow: 'hidden',
-        backgroundColor: PlatformColor('secondarySystemBackground'),
+        backgroundColor: Brand.card,
       }}
     >
       {/* Header */}
@@ -75,16 +76,15 @@ export function DashboardCard({
           paddingHorizontal: 16,
           paddingVertical: 12,
           borderBottomWidth: 0.5,
-          borderBottomColor: PlatformColor('separator'),
+          borderBottomColor: Brand.separator,
         }}
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
           {sfSymbol && (
-            <SymbolView
-              name={sfSymbol as SymbolViewProps['name']}
+            <Image
+              source={`sf:${sfSymbol}`}
+              style={{ width: 18, height: 18, marginRight: 8 }}
               tintColor={PlatformColor('label')}
-              size={18}
-              style={{ marginRight: 8 }}
             />
           )}
           <Text
@@ -132,7 +132,7 @@ export function DashboardCard({
               {isRefreshing ? (
                 <ActivityIndicator size="small" color={PlatformColor('secondaryLabel')} />
               ) : (
-                <SymbolView name="arrow.clockwise" tintColor={PlatformColor('secondaryLabel')} size={18} />
+                <Image source="sf:arrow.clockwise" style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel')} />
               )}
             </Pressable>
           )}
@@ -144,7 +144,7 @@ export function DashboardCard({
               style={{ padding: 4 }}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <SymbolView name="arrow.up.left.and.arrow.down.right" tintColor={PlatformColor('secondaryLabel')} size={18} />
+              <Image source="sf:arrow.up.left.and.arrow.down.right" style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel')} />
             </Pressable>
           )}
         </View>

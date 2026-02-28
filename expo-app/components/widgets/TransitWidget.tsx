@@ -3,7 +3,7 @@
  */
 
 import { View, Pressable, Text, PlatformColor } from 'react-native';
-import { SymbolView } from 'expo-symbols';
+import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { useTransit, getDataStatus } from '@/lib/hooks/useDataFetching';
 import { refreshIntervals } from '@/lib/api';
@@ -45,7 +45,8 @@ function OccupancyBadge({ occupancy }: { occupancy?: Bus['occupancy'] }) {
 }
 
 function ScheduleBadge({ adherence }: { adherence?: number }) {
-  if (adherence === undefined) return null;
+  // Hide badge for undefined or clearly bogus values (>120 min = bad backend data)
+  if (adherence === undefined || Math.abs(adherence) > 120) return null;
 
   let label: string;
   let color: string;
@@ -107,17 +108,17 @@ function BusRow({ bus, onPress }: BusRowProps) {
           alignItems: 'center',
           justifyContent: 'center',
           marginRight: 12,
-          backgroundColor: bus.routeColor || PlatformColor('systemBlue'),
+          backgroundColor: bus.routeColor || '#e69c3a',
         }}
       >
         <Text style={{ color: '#ffffff', fontSize: 12, fontWeight: '700' }}>
-          {bus.routeName?.split(' ')[0] || bus.routeId}
+          {bus.routeId}
         </Text>
       </View>
 
       <View style={{ flex: 1, marginRight: 8 }}>
         <Text numberOfLines={1} style={{ fontWeight: '500', color: PlatformColor('label') }}>
-          {bus.routeName || `Route ${bus.routeId}`}
+          {bus.routeName?.trim() || `Route ${bus.routeId}`}
         </Text>
         {bus.nextStop && (
           <Text numberOfLines={1} style={{ color: PlatformColor('secondaryLabel') }}>
@@ -135,17 +136,24 @@ function BusRow({ bus, onPress }: BusRowProps) {
 }
 
 export function TransitWidget() {
-  const { data, isLoading, isError, refetch, isFetching } = useTransit();
+  const { data, isLoading, isError, refetch, isFetching, dataUpdatedAt } = useTransit();
 
-  const buses = Array.isArray(data?.data) ? data.data : [];
+  // Transit API returns { buses: [...], routes: [...] } at top level — no data wrapper
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const raw = data as any;
+  const VALID_OCCUPANCY = ['EMPTY', 'MANY_SEATS', 'FEW_SEATS', 'STANDING', 'CRUSHED', 'FULL'];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const buses: Bus[] = Array.isArray(raw?.buses) ? raw.buses.map((b: any) => ({
+    ...b,
+    // API returns scheduleAdherence as a string ("unknown"); use minutesOffSchedule (number)
+    scheduleAdherence: typeof b.minutesOffSchedule === 'number' ? b.minutesOffSchedule : undefined,
+    // API uses occupancyStatus; only map if it's a valid enum value
+    occupancy: VALID_OCCUPANCY.includes(b.occupancyStatus) ? b.occupancyStatus : undefined,
+  })) : [];
   const activeBuses = buses.slice(0, 5); // Show top 5 buses
 
-  const status = getDataStatus(
-    data?.timestamp,
-    refreshIntervals.transit,
-    isLoading,
-    isError
-  );
+  const fetchedAt = dataUpdatedAt ? new Date(dataUpdatedAt).toISOString() : undefined;
+  const status = getDataStatus(fetchedAt, refreshIntervals.transit, isLoading, isError);
 
   if (isLoading) {
     return (
@@ -178,7 +186,7 @@ export function TransitWidget() {
     >
       {activeBuses.length === 0 ? (
         <View style={{ alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-          <SymbolView name="bus" tintColor={PlatformColor('tertiaryLabel')} size={32} />
+          <Image source="sf:bus" style={{ width: 32, height: 32 }} tintColor={PlatformColor('tertiaryLabel')} />
           <Text style={{ marginTop: 8, color: PlatformColor('secondaryLabel') }}>
             No active buses
           </Text>
@@ -186,7 +194,7 @@ export function TransitWidget() {
       ) : (
         <View style={{ gap: 8 }}>
           {activeBuses.map((bus) => (
-            <BusRow key={bus.id} bus={bus} />
+            <BusRow key={bus.vehicleId} bus={bus} />
           ))}
 
           {buses.length > 5 && (

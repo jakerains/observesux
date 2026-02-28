@@ -93,8 +93,10 @@ export async function GET() {
 
   const observation = observationResult
 
-  // Store observation to database for historical tracking (non-blocking)
+  // Compute feelsLike from apparent_temperature (windChill) / heatIndex / temperature fallback
   const feelsLike = observation.windChill ?? observation.heatIndex ?? observation.temperature
+
+  // Store observation to database for historical tracking (non-blocking)
   storeWeatherObservation({
     temperature: observation.temperature,
     feelsLike,
@@ -109,7 +111,7 @@ export async function GET() {
   }).catch(() => {})
 
   const response: ApiResponse<WeatherObservation> & { airportTemp: number | null } = {
-    data: observation,
+    data: { ...observation, feelsLike },
     timestamp: new Date(),
     source: 'open-meteo',
     airportTemp,

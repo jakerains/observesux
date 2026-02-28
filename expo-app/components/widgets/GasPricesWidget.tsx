@@ -4,7 +4,7 @@
 
 import { useState } from 'react';
 import { View, Pressable, Text, PlatformColor } from 'react-native';
-import { SymbolView } from 'expo-symbols';
+import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { useGasPrices, getDataStatus } from '@/lib/hooks/useDataFetching';
 import { refreshIntervals } from '@/lib/api';
@@ -81,9 +81,24 @@ function StationRow({ station, fuelType, isLowest }: StationRowProps) {
 
 export function GasPricesWidget() {
   const [selectedFuel, setSelectedFuel] = useState<FuelType>('regular');
-  const { data, isLoading, isError, refetch, isFetching } = useGasPrices();
+  const { data, isLoading, isError, refetch, isFetching, dataUpdatedAt } = useGasPrices();
 
-  const stations = Array.isArray(data?.data) ? data.data : [];
+  // API returns { data: { stations: [...], stats: {} } }
+  // Each station has prices as [{fuelType: "Regular", price: 2.23}] array
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rawData = data?.data as any;
+  const rawStations: any[] = Array.isArray(rawData?.stations) ? rawData.stations : [];
+  const stations: GasStation[] = rawStations.map((s) => ({
+    id: String(s.id),
+    name: s.brandName || s.name || 'Unknown',
+    address: s.streetAddress || s.address || '',
+    latitude: s.latitude,
+    longitude: s.longitude,
+    lastUpdated: '',
+    prices: Array.isArray(s.prices)
+      ? Object.fromEntries(s.prices.map((p: { fuelType: string; price: number }) => [p.fuelType.toLowerCase(), p.price]))
+      : (s.prices || {}),
+  }));
 
   // Sort stations by selected fuel price
   const sortedStations = [...stations]
@@ -93,12 +108,8 @@ export function GasPricesWidget() {
 
   const lowestPrice = sortedStations[0]?.prices[selectedFuel];
 
-  const status = getDataStatus(
-    data?.timestamp,
-    refreshIntervals.gasPrices,
-    isLoading,
-    isError
-  );
+  const fetchedAt = dataUpdatedAt ? new Date(dataUpdatedAt).toISOString() : undefined;
+  const status = getDataStatus(fetchedAt, refreshIntervals.gasPrices, isLoading, isError);
 
   if (isLoading) {
     return (
@@ -148,7 +159,7 @@ export function GasPricesWidget() {
               borderCurve: 'continuous',
               alignItems: 'center',
               backgroundColor: selectedFuel === fuel.key
-                ? PlatformColor('systemBlue')
+                ? '#e69c3a'
                 : PlatformColor('tertiarySystemFill'),
             }}
           >
@@ -168,7 +179,7 @@ export function GasPricesWidget() {
       {/* Station List */}
       {sortedStations.length === 0 ? (
         <View style={{ alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-          <SymbolView name="fuelpump" tintColor={PlatformColor('tertiaryLabel')} size={32} />
+          <Image source="sf:fuelpump" style={{ width: 32, height: 32 }} tintColor={PlatformColor('tertiaryLabel')} />
           <Text style={{ marginTop: 8, color: PlatformColor('secondaryLabel') }}>
             No prices available
           </Text>

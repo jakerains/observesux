@@ -4,7 +4,7 @@
  */
 
 import { View, Text, Pressable, PlatformColor } from 'react-native';
-import { SymbolView, type SymbolViewProps } from 'expo-symbols';
+import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { useSettings, type Settings } from '../../../lib/contexts';
 
@@ -46,7 +46,7 @@ function ThemeOption({ label, description, sfSymbol, isSelected, onSelect }: The
           marginRight: 14,
         }}
       >
-        <SymbolView name={sfSymbol as SymbolViewProps['name']} tintColor={PlatformColor('systemBlue')} size={22} />
+        <Image source={`sf:${sfSymbol}`} style={{ width: 22, height: 22 }} tintColor={'#e69c3a'} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={{ fontSize: 17, color: PlatformColor('label') }}>{label}</Text>
@@ -55,7 +55,7 @@ function ThemeOption({ label, description, sfSymbol, isSelected, onSelect }: The
         </Text>
       </View>
       {isSelected && (
-        <SymbolView name="checkmark" tintColor={PlatformColor('systemBlue')} size={20} />
+        <Image source="sf:checkmark" style={{ width: 20, height: 20 }} tintColor={'#e69c3a'} />
       )}
     </Pressable>
   );
@@ -86,13 +86,13 @@ export default function AppearanceScreen() {
   ];
 
   return (
-    <View style={{ flex: 1, backgroundColor: PlatformColor('systemBackground') }}>
+    <View style={{ flex: 1, backgroundColor: '#120905' }}>
       <View
         style={{
           margin: 16,
           borderRadius: 12,
           overflow: 'hidden',
-          backgroundColor: PlatformColor('secondarySystemBackground'),
+          backgroundColor: '#1f130c',
         }}
       >
         {themes.map((theme) => (

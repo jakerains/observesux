@@ -5,7 +5,7 @@
 import { View, ScrollView, Text, PlatformColor } from 'react-native';
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { SymbolView } from 'expo-symbols';
+import { Image } from 'expo-image';
 import { format } from 'date-fns';
 import { useWeatherAlerts } from '@/lib/hooks/useDataFetching';
 import { LoadingSpinner } from '@/components/LoadingState';
@@ -28,7 +28,7 @@ export default function AlertDetailScreen() {
   const title = alert?.event ?? 'Alert';
 
   return (
-    <View style={{ flex: 1, backgroundColor: PlatformColor('systemBackground') }}>
+    <View style={{ flex: 1, backgroundColor: '#120905' }}>
       <Stack.Screen
         options={{
           title,
@@ -38,8 +38,8 @@ export default function AlertDetailScreen() {
       {isLoading ? (
         <LoadingSpinner message="Loading alert..." />
       ) : !alert ? (
-        <View style={{ flex: 1, backgroundColor: PlatformColor('systemBackground'), justifyContent: 'center', alignItems: 'center' }}>
-          <SymbolView name="exclamationmark.circle" tintColor={PlatformColor('tertiaryLabel')} size={64} />
+        <View style={{ flex: 1, backgroundColor: '#120905', justifyContent: 'center', alignItems: 'center' }}>
+          <Image source="sf:exclamationmark.circle" style={{ width: 64, height: 64 }} tintColor={PlatformColor('tertiaryLabel')} />
           <Text style={{ marginTop: 16, color: PlatformColor('secondaryLabel') }}>
             Alert not found
           </Text>
@@ -64,10 +64,10 @@ export default function AlertDetailScreen() {
               backgroundColor: severityColors[alert.severity]?.bg || severityColors.Unknown.bg,
             }}
           >
-            <SymbolView
-              name="exclamationmark.triangle.fill"
+            <Image
+              source="sf:exclamationmark.triangle.fill"
+              style={{ width: 20, height: 20 }}
               tintColor={severityColors[alert.severity]?.text || severityColors.Unknown.text}
-              size={20}
             />
             <Text
               style={{
@@ -92,11 +92,11 @@ export default function AlertDetailScreen() {
               borderCurve: 'continuous',
               padding: 16,
               marginBottom: 20,
-              backgroundColor: PlatformColor('secondarySystemBackground'),
+              backgroundColor: '#1f130c',
             }}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <SymbolView name="clock" tintColor={PlatformColor('secondaryLabel')} size={18} />
+              <Image source="sf:clock" style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel')} />
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 12, color: PlatformColor('secondaryLabel') }}>Onset</Text>
                 <Text style={{ fontWeight: '500', color: PlatformColor('label') }}>
@@ -106,7 +106,7 @@ export default function AlertDetailScreen() {
             </View>
             <View style={{ height: 0.5, backgroundColor: PlatformColor('separator'), marginVertical: 12 }} />
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <SymbolView name="timer" tintColor={PlatformColor('secondaryLabel')} size={18} />
+              <Image source="sf:timer" style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel')} />
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 12, color: PlatformColor('secondaryLabel') }}>Expires</Text>
                 <Text style={{ fontWeight: '500', color: PlatformColor('label') }}>
@@ -119,7 +119,7 @@ export default function AlertDetailScreen() {
           {/* Area */}
           <View style={{ marginBottom: 20 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-              <SymbolView name="location" tintColor={PlatformColor('systemBlue')} size={18} />
+              <Image source="sf:location" style={{ width: 18, height: 18 }} tintColor={'#e69c3a'} />
               <Text style={{ fontSize: 15, fontWeight: '600', color: PlatformColor('label') }}>Affected Area</Text>
             </View>
             <Text selectable style={{ color: PlatformColor('secondaryLabel'), lineHeight: 20 }}>{alert.areaDesc}</Text>
@@ -128,7 +128,7 @@ export default function AlertDetailScreen() {
           {/* Description */}
           <View style={{ marginBottom: 20 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-              <SymbolView name="doc.text" tintColor={PlatformColor('systemBlue')} size={18} />
+              <Image source="sf:doc.text" style={{ width: 18, height: 18 }} tintColor={'#e69c3a'} />
               <Text style={{ fontSize: 15, fontWeight: '600', color: PlatformColor('label') }}>Description</Text>
             </View>
             <Text selectable style={{ color: PlatformColor('secondaryLabel'), lineHeight: 22 }}>{alert.description}</Text>
@@ -138,7 +138,7 @@ export default function AlertDetailScreen() {
           {alert.instruction && (
             <View style={{ marginBottom: 20 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                <SymbolView name="shield.checkered" tintColor={PlatformColor('systemBlue')} size={18} />
+                <Image source="sf:shield.checkered" style={{ width: 18, height: 18 }} tintColor={'#e69c3a'} />
                 <Text style={{ fontSize: 15, fontWeight: '600', color: PlatformColor('label') }}>Safety Instructions</Text>
               </View>
               <View
@@ -151,7 +151,7 @@ export default function AlertDetailScreen() {
                   borderColor: 'rgba(59, 130, 246, 0.3)',
                 }}
               >
-                <Text selectable style={{ color: PlatformColor('systemBlue'), lineHeight: 20 }}>{alert.instruction}</Text>
+                <Text selectable style={{ color: '#e69c3a', lineHeight: 20 }}>{alert.instruction}</Text>
               </View>
             </View>
           )}

@@ -5,7 +5,7 @@ export default function MapLayout() {
     <Stack
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: '#000000' },
+        contentStyle: { backgroundColor: '#120905' },
       }}
     >
       <Stack.Screen name="index" />

@@ -5,12 +5,14 @@
 
 import { View, ScrollView, Text } from 'react-native';
 import { useLocalSearchParams, Stack } from 'expo-router';
+import { MarkdownText } from '@/components/MarkdownText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { SymbolView, type SymbolViewProps } from 'expo-symbols';
+import { Image } from 'expo-image';
 import { useQuery } from '@tanstack/react-query';
 import { fetcher, endpoints } from '@/lib/api';
 import { LoadingSpinner } from '@/components/LoadingState';
 import type { Digest } from '@/lib/types';
+import { Brand } from '@/constants/BrandColors';
 
 type DigestEdition = 'morning' | 'midday' | 'evening';
 
@@ -70,7 +72,7 @@ export default function DigestDetailScreen() {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#1c1c1e' }}>
+      <View style={{ flex: 1, backgroundColor: Brand.background }}>
         <Stack.Screen options={{ title }} />
         <LoadingSpinner message="Loading digest..." />
       </View>
@@ -79,10 +81,10 @@ export default function DigestDetailScreen() {
 
   if (!digest) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#1c1c1e', justifyContent: 'center', alignItems: 'center' }}>
+      <View style={{ flex: 1, backgroundColor: Brand.background, justifyContent: 'center', alignItems: 'center' }}>
         <Stack.Screen options={{ title: 'Siouxland Digest' }} />
-        <SymbolView name="newspaper" tintColor="#8e8e93" size={64} />
-        <Text style={{ marginTop: 16, color: '#8e8e93' }}>Digest not found</Text>
+        <Image source="sf:newspaper" style={{ width: 64, height: 64 }} tintColor="#8e8e93" />
+        <Text style={{ marginTop: 16, color: Brand.muted }}>Digest not found</Text>
       </View>
     );
   }
@@ -93,7 +95,7 @@ export default function DigestDetailScreen() {
     .filter(Boolean);
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#1c1c1e' }}>
+    <View style={{ flex: 1, backgroundColor: Brand.background }}>
       <Stack.Screen options={{ title }} />
       <ScrollView
         style={{ flex: 1 }}
@@ -108,7 +110,7 @@ export default function DigestDetailScreen() {
             flexDirection: 'row',
             alignItems: 'center',
             gap: 6,
-            backgroundColor: '#3a3a3c',
+            backgroundColor: Brand.secondary,
             paddingHorizontal: 10,
             paddingVertical: 6,
             borderRadius: 8,
@@ -116,12 +118,12 @@ export default function DigestDetailScreen() {
             marginBottom: 16,
           }}
         >
-          <SymbolView
-            name={(edition ? editionIcons[edition] : 'newspaper.fill') as SymbolViewProps['name']}
+          <Image
+            source={`sf:${edition ? editionIcons[edition] : 'newspaper.fill'}`}
+            style={{ width: 16, height: 16 }}
             tintColor="#0a84ff"
-            size={16}
           />
-          <Text style={{ fontSize: 14, fontWeight: '600', color: '#0a84ff' }}>
+          <Text style={{ fontSize: 14, fontWeight: '600', color: Brand.amber }}>
             {edition ? editionLabels[edition] : 'Digest'}
           </Text>
         </View>
@@ -129,27 +131,27 @@ export default function DigestDetailScreen() {
         {/* Date and Time */}
         <View
           style={{
-            backgroundColor: '#2c2c2e',
+            backgroundColor: Brand.card,
             borderRadius: 12,
             padding: 16,
             marginBottom: 20,
           }}
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <SymbolView name="calendar" tintColor="#8e8e93" size={18} />
+            <Image source="sf:calendar" style={{ width: 18, height: 18 }} tintColor="#8e8e93" />
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 12, color: '#636366' }}>Date</Text>
-              <Text style={{ fontWeight: '500', color: '#ffffff' }}>
+              <Text style={{ fontSize: 12, color: Brand.muted }}>Date</Text>
+              <Text style={{ fontWeight: '500', color: Brand.foreground }}>
                 {formatDigestDate(digest.date)}
               </Text>
             </View>
           </View>
-          <View style={{ height: 0.5, backgroundColor: '#48484a', marginVertical: 12 }} />
+          <View style={{ height: 0.5, backgroundColor: Brand.separator, marginVertical: 12 }} />
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <SymbolView name="clock" tintColor="#8e8e93" size={18} />
+            <Image source="sf:clock" style={{ width: 18, height: 18 }} tintColor="#8e8e93" />
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 12, color: '#636366' }}>Generated at</Text>
-              <Text style={{ fontWeight: '500', color: '#ffffff' }}>
+              <Text style={{ fontSize: 12, color: Brand.muted }}>Generated at</Text>
+              <Text style={{ fontWeight: '500', color: Brand.foreground }}>
                 {formatCreatedTime(digest.createdAt)}
               </Text>
             </View>
@@ -160,21 +162,21 @@ export default function DigestDetailScreen() {
         {digest.summary && (
           <View style={{ marginBottom: 20 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-              <SymbolView name="text.quote" tintColor="#0a84ff" size={18} />
-              <Text style={{ fontSize: 15, fontWeight: '600', color: '#ffffff' }}>Summary</Text>
+              <Image source="sf:text.quote" style={{ width: 18, height: 18 }} tintColor="#0a84ff" />
+              <Text style={{ fontSize: 15, fontWeight: '600', color: Brand.foreground }}>Summary</Text>
             </View>
             <View
               style={{
-                backgroundColor: '#3a3a3c',
+                backgroundColor: Brand.secondary,
                 borderRadius: 10,
                 padding: 14,
                 borderLeftWidth: 3,
-                borderLeftColor: '#0a84ff',
+                borderLeftColor: Brand.amber,
               }}
             >
-              <Text style={{ fontSize: 15, lineHeight: 22, fontStyle: 'italic', color: '#ebebf5' }}>
+              <MarkdownText style={{ fontSize: 15, lineHeight: 22, fontStyle: 'italic', color: Brand.foreground }}>
                 {digest.summary}
-              </Text>
+              </MarkdownText>
             </View>
           </View>
         )}
@@ -182,14 +184,14 @@ export default function DigestDetailScreen() {
         {/* Full Content */}
         <View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-            <SymbolView name="doc.richtext" tintColor="#0a84ff" size={18} />
-            <Text style={{ fontSize: 15, fontWeight: '600', color: '#ffffff' }}>Full Digest</Text>
+            <Image source="sf:doc.richtext" style={{ width: 18, height: 18 }} tintColor="#0a84ff" />
+            <Text style={{ fontSize: 15, fontWeight: '600', color: Brand.foreground }}>Full Digest</Text>
           </View>
           <View style={{ gap: 12 }}>
             {contentBlocks.map((block, index) => (
-              <Text key={`${digest.id}-block-${index}`} style={{ fontSize: 15, lineHeight: 24, color: '#ffffff' }}>
+              <MarkdownText key={`${digest.id}-block-${index}`} style={{ fontSize: 15, lineHeight: 24, color: Brand.foreground }}>
                 {block}
-              </Text>
+              </MarkdownText>
             ))}
           </View>
         </View>
@@ -200,11 +202,11 @@ export default function DigestDetailScreen() {
             marginTop: 24,
             paddingTop: 16,
             borderTopWidth: 0.5,
-            borderTopColor: '#48484a',
+            borderTopColor: Brand.separator,
             alignItems: 'center',
           }}
         >
-          <Text style={{ fontSize: 12, color: '#636366' }}>
+          <Text style={{ fontSize: 12, color: Brand.muted }}>
             Generated by AI for the Siouxland community
           </Text>
         </View>

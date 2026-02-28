@@ -64,8 +64,8 @@ interface LoadingSpinnerProps {
 
 export function LoadingSpinner({ size = 'large', message }: LoadingSpinnerProps) {
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: PlatformColor('systemBackground') }}>
-      <ActivityIndicator size={size} color={PlatformColor('systemBlue')} />
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: '#120905' }}>
+      <ActivityIndicator size={size} color={'#e69c3a'} />
       {message && (
         <Text style={{ marginTop: 12, color: PlatformColor('secondaryLabel') }}>{message}</Text>
       )}

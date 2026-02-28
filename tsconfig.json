@@ -48,5 +48,6 @@
     "expo-app",
     "ios",
     "android"
-  ]
+  ],
+  "extends": "expo/tsconfig.base"
 }

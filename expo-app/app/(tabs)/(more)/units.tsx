@@ -4,7 +4,7 @@
  */
 
 import { View, Text, Pressable, PlatformColor } from 'react-native';
-import { SymbolView } from 'expo-symbols';
+import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { useSettings, type Settings } from '../../../lib/contexts';
 
@@ -34,7 +34,7 @@ function Option({ label, isSelected, onSelect }: OptionProps) {
     >
       <Text style={{ fontSize: 17, color: PlatformColor('label') }}>{label}</Text>
       {isSelected && (
-        <SymbolView name="checkmark" tintColor={PlatformColor('systemBlue')} size={20} />
+        <Image source="sf:checkmark" style={{ width: 20, height: 20 }} tintColor={'#e69c3a'} />
       )}
     </Pressable>
   );
@@ -72,13 +72,13 @@ export default function UnitsScreen() {
   ];
 
   return (
-    <View style={{ flex: 1, backgroundColor: PlatformColor('systemBackground'), padding: 16 }}>
+    <View style={{ flex: 1, backgroundColor: '#120905', padding: 16 }}>
       <SectionHeader title="TEMPERATURE" />
       <View
         style={{
           borderRadius: 12,
           overflow: 'hidden',
-          backgroundColor: PlatformColor('secondarySystemBackground'),
+          backgroundColor: '#1f130c',
         }}
       >
         {temperatureUnits.map((unit) => (
@@ -96,7 +96,7 @@ export default function UnitsScreen() {
         style={{
           borderRadius: 12,
           overflow: 'hidden',
-          backgroundColor: PlatformColor('secondarySystemBackground'),
+          backgroundColor: '#1f130c',
         }}
       >
         {distanceUnits.map((unit) => (

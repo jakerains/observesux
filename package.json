@@ -1,6 +1,6 @@
 {
   "name": "siouxland-online",
-  "version": "0.9.24",
+  "version": "0.9.25",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -48,6 +48,7 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "expo": "~54.0.32",
+    "expo-server-sdk": "^6.0.0",
     "framer-motion": "^12.27.0",
     "hls.js": "^1.6.15",
     "jszip": "^3.10.1",

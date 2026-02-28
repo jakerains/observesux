@@ -1,10 +1,10 @@
 import { View, Text, PlatformColor } from 'react-native'
-import { SymbolView, type SymbolViewProps } from 'expo-symbols'
+import { Image } from 'expo-image'
 import type { ToolStatus } from './utils'
 
 interface ToolCardBaseProps {
   title: string
-  icon: SymbolViewProps['name']
+  icon: string
   status?: ToolStatus
   error?: string
   children?: React.ReactNode
@@ -25,14 +25,14 @@ export function ToolCardBase({ title, icon, status = 'normal', error, children }
         borderRadius: 12,
         borderCurve: 'continuous',
         padding: 12,
-        backgroundColor: PlatformColor('secondarySystemBackground'),
+        backgroundColor: '#1f130c',
         borderWidth: 0.5,
         borderColor: PlatformColor('separator'),
         gap: 8,
       }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <SymbolView name={icon} tintColor={PlatformColor('systemBlue')} size={18} />
+        <Image source={`sf:${icon}`} style={{ width: 18, height: 18 }} tintColor={'#e69c3a'} />
         <Text style={{ fontSize: 13, fontWeight: '600', color: PlatformColor('label'), flex: 1 }}>
           {title}
         </Text>

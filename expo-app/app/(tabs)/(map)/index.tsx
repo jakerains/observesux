@@ -2,15 +2,14 @@
  * Map Screen - Interactive map with cameras, buses, traffic
  */
 
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useCallback } from 'react';
 import { View, Pressable, ScrollView, Text, PlatformColor, useColorScheme, StyleSheet } from 'react-native';
-import MapView, { Marker, Callout, PROVIDER_DEFAULT, Region } from 'react-native-maps';
+import MapView, { Marker, Callout, PROVIDER_DEFAULT, Region, type UserLocationChangeEvent } from 'react-native-maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Image } from 'expo-image';
-import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import * as Haptics from 'expo-haptics';
-import { useCameras, useTransit, useTrafficEvents } from '@/lib/hooks/useDataFetching';
+import { useCameras, useTransit, useTrafficEvents, useGasPrices } from '@/lib/hooks/useDataFetching';
 
 const SIOUX_CITY_CENTER: Region = {
   latitude: 42.4963,
@@ -19,7 +18,7 @@ const SIOUX_CITY_CENTER: Region = {
   longitudeDelta: 0.15,
 };
 
-type LayerType = 'cameras' | 'buses' | 'traffic';
+type LayerType = 'cameras' | 'buses' | 'traffic' | 'gas';
 
 function LayerToggle({
   sfSymbol,
@@ -49,11 +48,11 @@ function LayerToggle({
         paddingVertical: 8,
         borderRadius: 20,
         gap: 6,
-        backgroundColor: active ? PlatformColor('systemBlue') : PlatformColor('secondarySystemBackground'),
+        backgroundColor: active ? '#e69c3a' : '#1f130c',
         boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
       }}
     >
-      <SymbolView name={sfSymbol as SymbolViewProps['name']} tintColor={active ? '#fff' : PlatformColor('label')} size={18} />
+      <Image source={`sf:${sfSymbol}`} style={{ width: 18, height: 18 }} tintColor={active ? '#fff' : PlatformColor('label')} />
       <Text style={{ fontSize: 12, fontWeight: active ? '600' : '400', color: active ? '#fff' : PlatformColor('label') }}>
         {label}
       </Text>
@@ -66,10 +65,10 @@ function LayerToggle({
             alignItems: 'center',
             justifyContent: 'center',
             paddingHorizontal: 4,
-            backgroundColor: active ? '#fff' : PlatformColor('systemBlue'),
+            backgroundColor: active ? '#fff' : '#e69c3a',
           }}
         >
-          <Text style={{ fontSize: 10, fontWeight: '600', color: active ? PlatformColor('systemBlue') : '#fff' }}>
+          <Text style={{ fontSize: 10, fontWeight: '600', color: active ? '#e69c3a' : '#fff' }}>
             {count}
           </Text>
         </View>
@@ -85,14 +84,34 @@ export default function MapScreen() {
   const router = useRouter();
 
   const [activeLayers, setActiveLayers] = useState<Set<LayerType>>(new Set(['cameras', 'buses']));
+  const [locationTracking, setLocationTracking] = useState(false);
+  const userCoords = useRef<{ latitude: number; longitude: number } | null>(null);
 
   const { data: camerasData } = useCameras();
   const { data: transitData } = useTransit();
   const { data: trafficData } = useTrafficEvents();
+  const { data: gasData } = useGasPrices();
 
   const cameras = Array.isArray(camerasData?.data) ? camerasData.data : [];
-  const buses = Array.isArray(transitData?.data) ? transitData.data : [];
+
+  // Transit API returns { buses: [...], routes: [...] } at top level — no data wrapper
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const raw = transitData as any;
+  const buses: {
+    vehicleId: string; routeId: string; routeName: string; routeColor: string;
+    latitude: number; longitude: number; heading: number; nextStop: string;
+  }[] = Array.isArray(raw?.buses) ? raw.buses : [];
+
   const trafficEvents = Array.isArray(trafficData?.data) ? trafficData.data : [];
+
+  // Gas API returns { data: { stations: [...], stats: {} } }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rawGas = gasData?.data as any;
+  const gasStations: {
+    id: string|number; brandName?: string; name?: string; streetAddress?: string;
+    address?: string; latitude: number; longitude: number;
+    prices: { fuelType: string; price: number }[] | Record<string, number>;
+  }[] = Array.isArray(rawGas) ? rawGas : Array.isArray(rawGas?.stations) ? rawGas.stations : [];
 
   const toggleLayer = (layer: LayerType) => {
     setActiveLayers((prev) => {
@@ -106,12 +125,28 @@ export default function MapScreen() {
     });
   };
 
-  const resetMapView = () => {
+  const onUserLocationChange = useCallback((e: UserLocationChangeEvent) => {
+    const coord = e.nativeEvent?.coordinate;
+    if (coord) {
+      userCoords.current = { latitude: coord.latitude, longitude: coord.longitude };
+    }
+  }, []);
+
+  const centerOnUser = useCallback(() => {
     if (process.env.EXPO_OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    mapRef.current?.animateToRegion(SIOUX_CITY_CENTER, 500);
-  };
+    if (userCoords.current) {
+      setLocationTracking(true);
+      mapRef.current?.animateToRegion(
+        { ...userCoords.current, latitudeDelta: 0.02, longitudeDelta: 0.02 },
+        500
+      );
+    } else {
+      // Location not yet available — still animate to Sioux City
+      mapRef.current?.animateToRegion(SIOUX_CITY_CENTER, 500);
+    }
+  }, []);
 
   const mapStyle = useMemo(() => {
     if (colorScheme === 'dark') {
@@ -127,7 +162,7 @@ export default function MapScreen() {
   }, [colorScheme]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: PlatformColor('systemBackground') }}>
+    <View style={{ flex: 1, backgroundColor: '#120905' }}>
       <MapView
         ref={mapRef}
         style={{ flex: 1 }}
@@ -136,6 +171,7 @@ export default function MapScreen() {
         showsUserLocation
         showsMyLocationButton={false}
         showsCompass={false}
+        onUserLocationChange={onUserLocationChange}
         customMapStyle={mapStyle}
       >
         {activeLayers.has('cameras') &&
@@ -156,7 +192,7 @@ export default function MapScreen() {
                   backgroundColor: '#3b82f6',
                 }}
               >
-                <SymbolView name="video.fill" tintColor="#fff" size={14} />
+                <Image source="sf:video.fill" style={{ width: 14, height: 14 }} tintColor="#fff" />
               </View>
               <Callout
                 tooltip
@@ -209,7 +245,7 @@ export default function MapScreen() {
                           gap: 4,
                         }}
                       >
-                        <SymbolView name="video.fill" tintColor="#ffffff" size={10} />
+                        <Image source="sf:video.fill" style={{ width: 10, height: 10 }} tintColor="#ffffff" />
                         <Text style={{ color: '#ffffff', fontSize: 9, fontWeight: '600' }}>VIDEO</Text>
                       </View>
                     )}
@@ -248,7 +284,7 @@ export default function MapScreen() {
                       >
                         Tap for full view
                       </Text>
-                      <SymbolView name="chevron.right" tintColor="#3b82f6" size={10} style={{ marginLeft: 2 }} />
+                      <Image source="sf:chevron.right" style={{ width: 10, height: 10, marginLeft: 2 }} tintColor="#3b82f6" />
                     </View>
                   </View>
                 </View>
@@ -259,7 +295,7 @@ export default function MapScreen() {
         {activeLayers.has('buses') &&
           buses.map((bus) => (
             <Marker
-              key={`bus-${bus.id}`}
+              key={`bus-${bus.vehicleId}`}
               coordinate={{ latitude: bus.latitude, longitude: bus.longitude }}
               title={bus.routeName || `Route ${bus.routeId}`}
               description={bus.nextStop ? `Next: ${bus.nextStop}` : undefined}
@@ -277,10 +313,170 @@ export default function MapScreen() {
                   backgroundColor: bus.routeColor || '#22c55e',
                 }}
               >
-                <SymbolView name="bus.fill" tintColor="#fff" size={12} />
+                <Image source="sf:bus.fill" style={{ width: 12, height: 12 }} tintColor="#fff" />
               </View>
             </Marker>
           ))}
+
+        {activeLayers.has('gas') &&
+          gasStations.map((station) => {
+            // Normalise prices to [{label, price, color}]
+            const rawPrices = station.prices;
+            const fuelColors: Record<string, string> = {
+              regular: '#22c55e',
+              midgrade: '#3b82f6',
+              mid: '#3b82f6',
+              'mid-grade': '#3b82f6',
+              premium: '#8b5cf6',
+              diesel: '#f59e0b',
+              e85: '#14b8a6',
+            };
+            const fuelLabels: Record<string, string> = {
+              regular: 'Regular',
+              midgrade: 'Mid',
+              mid: 'Mid',
+              'mid-grade': 'Mid',
+              premium: 'Premium',
+              diesel: 'Diesel',
+              e85: 'E85',
+            };
+            const priceList: { label: string; price: number; color: string }[] = Array.isArray(rawPrices)
+              ? (rawPrices as { fuelType: string; price: number }[]).map((p) => {
+                  const key = p.fuelType?.toLowerCase().replace(/\s+/g, '') ?? '';
+                  return {
+                    label: fuelLabels[key] ?? p.fuelType,
+                    price: p.price,
+                    color: fuelColors[key] ?? '#9ca3af',
+                  };
+                })
+              : Object.entries(rawPrices as Record<string, number>).map(([k, v]) => ({
+                  label: fuelLabels[k.toLowerCase()] ?? k,
+                  price: v,
+                  color: fuelColors[k.toLowerCase()] ?? '#9ca3af',
+                }));
+
+            // Skip stations with no gasoline prices (diesel-only stations)
+            const GAS_FUEL_TYPES = new Set(['regular', 'midgrade', 'mid', 'mid-grade', 'premium', 'e85']);
+            const hasGas = priceList.some(({ label }) => GAS_FUEL_TYPES.has(label.toLowerCase()));
+            if (!hasGas) return null;
+
+            const stationName = (station as any).brandName || station.name || 'Gas Station';
+            const address = (station as any).streetAddress || station.address || '';
+
+            return (
+              <Marker
+                key={`gas-${station.id}`}
+                coordinate={{ latitude: station.latitude, longitude: station.longitude }}
+              >
+                <View
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 14,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderWidth: 2,
+                    borderColor: '#ffffff',
+                    backgroundColor: '#f59e0b',
+                  }}
+                >
+                  <Image source="sf:fuelpump.fill" style={{ width: 14, height: 14 }} tintColor="#fff" />
+                </View>
+                <Callout tooltip>
+                  <View
+                    style={{
+                      width: 220,
+                      borderRadius: 14,
+                      borderCurve: 'continuous',
+                      overflow: 'hidden',
+                      backgroundColor: colorScheme === 'dark' ? '#1c1c1e' : '#ffffff',
+                      boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+                    }}
+                  >
+                    {/* Header */}
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 8,
+                        padding: 12,
+                        paddingBottom: 10,
+                        backgroundColor: colorScheme === 'dark' ? '#2c1a0e' : '#fff8f0',
+                        borderBottomWidth: StyleSheet.hairlineWidth,
+                        borderBottomColor: colorScheme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+                      }}
+                    >
+                      <View
+                        style={{
+                          width: 30,
+                          height: 30,
+                          borderRadius: 8,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          backgroundColor: '#f59e0b',
+                        }}
+                      >
+                        <Image source="sf:fuelpump.fill" style={{ width: 15, height: 15 }} tintColor="#fff" />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text
+                          numberOfLines={1}
+                          style={{
+                            fontSize: 13,
+                            fontWeight: '700',
+                            color: colorScheme === 'dark' ? '#ffffff' : '#000000',
+                          }}
+                        >
+                          {stationName}
+                        </Text>
+                        {!!address && (
+                          <Text
+                            numberOfLines={1}
+                            style={{
+                              fontSize: 11,
+                              color: colorScheme === 'dark' ? '#8e8e93' : '#6b7280',
+                              marginTop: 1,
+                            }}
+                          >
+                            {address}
+                          </Text>
+                        )}
+                      </View>
+                    </View>
+
+                    {/* Price grid */}
+                    <View style={{ padding: 10, gap: 6 }}>
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                        {priceList.map(({ label, price, color }) => (
+                          <View
+                            key={label}
+                            style={{
+                              flex: 1,
+                              minWidth: 60,
+                              alignItems: 'center',
+                              paddingVertical: 8,
+                              paddingHorizontal: 4,
+                              borderRadius: 10,
+                              backgroundColor: colorScheme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
+                              borderWidth: 1,
+                              borderColor: `${color}44`,
+                            }}
+                          >
+                            <Text style={{ fontSize: 10, fontWeight: '600', color, marginBottom: 3, textTransform: 'uppercase', letterSpacing: 0.3 }}>
+                              {label}
+                            </Text>
+                            <Text style={{ fontSize: 16, fontWeight: '800', color: colorScheme === 'dark' ? '#ffffff' : '#000000', lineHeight: 18 }}>
+                              ${price.toFixed(2)}
+                            </Text>
+                          </View>
+                        ))}
+                      </View>
+                    </View>
+                  </View>
+                </Callout>
+              </Marker>
+            );
+          })}
 
         {activeLayers.has('traffic') &&
           trafficEvents.map((event) => (
@@ -303,7 +499,7 @@ export default function MapScreen() {
                     event.severity === 'critical' ? '#ef4444' : event.severity === 'major' ? '#f97316' : '#f59e0b',
                 }}
               >
-                <SymbolView name="exclamationmark.triangle.fill" tintColor="#fff" size={14} />
+                <Image source="sf:exclamationmark.triangle.fill" style={{ width: 14, height: 14 }} tintColor="#fff" />
               </View>
             </Marker>
           ))}
@@ -333,24 +529,55 @@ export default function MapScreen() {
             onPress={() => toggleLayer('traffic')}
             count={trafficEvents.length}
           />
+          <LayerToggle
+            sfSymbol="fuelpump.fill"
+            label="Gas"
+            active={activeLayers.has('gas')}
+            onPress={() => toggleLayer('gas')}
+            count={gasStations.length}
+          />
         </ScrollView>
       </View>
 
       {/* Map Controls */}
-      <View style={{ position: 'absolute', right: 16, bottom: insets.bottom + 100 }}>
+      <View style={{ position: 'absolute', right: 16, bottom: insets.bottom + 100, gap: 10 }}>
+        {/* Center on user location */}
         <Pressable
-          onPress={resetMapView}
+          onPress={centerOnUser}
           style={{
             width: 44,
             height: 44,
             borderRadius: 22,
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: PlatformColor('secondarySystemBackground'),
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+            backgroundColor: locationTracking ? '#e69c3a' : '#1f130c',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
           }}
         >
-          <SymbolView name="location.fill" tintColor={PlatformColor('systemBlue')} size={22} />
+          <Image
+            source={locationTracking ? 'sf:location.fill' : 'sf:location'}
+            style={{ width: 22, height: 22 }}
+            tintColor={locationTracking ? '#ffffff' : '#e69c3a'}
+          />
+        </Pressable>
+        {/* Reset to Sioux City */}
+        <Pressable
+          onPress={() => {
+            if (process.env.EXPO_OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setLocationTracking(false);
+            mapRef.current?.animateToRegion(SIOUX_CITY_CENTER, 500);
+          }}
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: 22,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: '#1f130c',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+          }}
+        >
+          <Image source="sf:arrow.counterclockwise" style={{ width: 20, height: 20 }} tintColor="#e69c3a" />
         </Pressable>
       </View>
     </View>

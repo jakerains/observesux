@@ -4,7 +4,7 @@
 
 import { useCallback } from 'react';
 import { View, ScrollView, Pressable, Linking, Switch, Text, PlatformColor, Alert } from 'react-native';
-import { SymbolView, type SymbolViewProps } from 'expo-symbols';
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Constants from 'expo-constants';
@@ -32,7 +32,7 @@ function MenuItem({
   rightElement,
   tintColor,
 }: MenuItemProps) {
-  const iconColor = tintColor || PlatformColor('systemBlue');
+  const iconColor = tintColor || '#e69c3a';
 
   const content = (
     <View
@@ -55,7 +55,7 @@ function MenuItem({
           backgroundColor: PlatformColor('tertiarySystemFill'),
         }}
       >
-        <SymbolView name={sfSymbol as SymbolViewProps['name']} tintColor={iconColor} size={20} />
+        <Image source={`sf:${sfSymbol}`} style={{ width: 20, height: 20 }} tintColor={iconColor} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={{ fontWeight: '500', color: PlatformColor('label') }}>{label}</Text>
@@ -65,7 +65,7 @@ function MenuItem({
           </Text>
         )}
       </View>
-      {rightElement || (onPress && <SymbolView name="chevron.right" tintColor={PlatformColor('tertiaryLabel')} size={16} />)}
+      {rightElement || (onPress && <Image source="sf:chevron.right" style={{ width: 16, height: 16 }} tintColor={PlatformColor('tertiaryLabel')} />)}
     </View>
   );
 
@@ -113,7 +113,7 @@ function MenuSection({
           borderRadius: 12,
           borderCurve: 'continuous',
           overflow: 'hidden',
-          backgroundColor: PlatformColor('secondarySystemBackground'),
+          backgroundColor: '#1f130c',
         }}
       >
         {children}
@@ -207,7 +207,7 @@ export default function MoreScreen() {
 
   return (
     <ScrollView
-      style={{ backgroundColor: PlatformColor('systemBackground') }}
+      style={{ backgroundColor: '#120905' }}
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={{ padding: 16 }}
     >
@@ -240,6 +240,14 @@ export default function MoreScreen() {
             />
           }
         />
+        {isAuthenticated && (
+          <MenuItem
+            sfSymbol="bell.badge"
+            label="Alert Subscriptions"
+            subtitle="Weather, river, air quality, traffic"
+            onPress={() => router.push('/(tabs)/(more)/alerts')}
+          />
+        )}
       </MenuSection>
 
       {/* Data Sources Section */}
