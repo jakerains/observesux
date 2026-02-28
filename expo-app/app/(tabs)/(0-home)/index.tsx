@@ -7,6 +7,7 @@ import { ScrollView, RefreshControl, View } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BlurView } from 'expo-blur';
 import { Brand } from '@/constants/BrandColors';
 import { WeatherWidget } from '@/components/widgets/WeatherWidget';
 import { DigestWidget } from '@/components/widgets/DigestWidget';
@@ -32,25 +33,48 @@ export default function HomeScreen() {
   }, [queryClient]);
 
   return (
-    <ScrollView
-      style={{ backgroundColor: Brand.background }}
-      contentInsetAdjustmentBehavior="automatic"
-      contentContainerStyle={{ padding: 16, paddingTop: insets.top + 16, gap: 12 }}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
-    >
-      <QuickStatsBar />
+    <View style={{ flex: 1, backgroundColor: Brand.background }}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 16, gap: 12 }}
+        scrollIndicatorInsets={{ top: insets.top }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            progressViewOffset={insets.top}
+          />
+        }
+      >
+        {/* Spacer so content starts below the blur */}
+        <View style={{ height: insets.top }} />
 
-      <View style={{ gap: 12 }}>
-        <WeatherWidget />
-        <DigestWidget />
-        <AirQualityWidget />
-        <GasPricesWidget />
-        <TransitWidget />
-        <CouncilWidget />
-        <NewsWidget />
-      </View>
-    </ScrollView>
+        <QuickStatsBar />
+
+        <View style={{ gap: 12 }}>
+          <WeatherWidget />
+          <DigestWidget />
+          <AirQualityWidget />
+          <GasPricesWidget />
+          <TransitWidget />
+          <CouncilWidget />
+          <NewsWidget />
+        </View>
+      </ScrollView>
+
+      {/* Fixed blur over the status bar / Dynamic Island area */}
+      <BlurView
+        intensity={80}
+        tint="dark"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: insets.top,
+        }}
+        pointerEvents="none"
+      />
+    </View>
   );
 }
