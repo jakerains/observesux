@@ -91,9 +91,25 @@ export default function MapScreen() {
   const { data: gasData } = useGasPrices();
 
   const cameras = Array.isArray(camerasData?.data) ? camerasData.data : [];
-  const buses = Array.isArray(transitData?.data) ? transitData.data : [];
+
+  // Transit API returns { buses: [...], routes: [...] } at top level — no data wrapper
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const raw = transitData as any;
+  const buses: {
+    vehicleId: string; routeId: string; routeName: string; routeColor: string;
+    latitude: number; longitude: number; heading: number; nextStop: string;
+  }[] = Array.isArray(raw?.buses) ? raw.buses : [];
+
   const trafficEvents = Array.isArray(trafficData?.data) ? trafficData.data : [];
-  const gasStations = Array.isArray(gasData?.data) ? gasData.data : [];
+
+  // Gas API returns { data: { stations: [...], stats: {} } }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rawGas = gasData?.data as any;
+  const gasStations: {
+    id: string|number; brandName?: string; name?: string; streetAddress?: string;
+    address?: string; latitude: number; longitude: number;
+    prices: { fuelType: string; price: number }[] | Record<string, number>;
+  }[] = Array.isArray(rawGas) ? rawGas : Array.isArray(rawGas?.stations) ? rawGas.stations : [];
 
   const toggleLayer = (layer: LayerType) => {
     setActiveLayers((prev) => {
@@ -260,7 +276,7 @@ export default function MapScreen() {
         {activeLayers.has('buses') &&
           buses.map((bus) => (
             <Marker
-              key={`bus-${bus.id}`}
+              key={`bus-${bus.vehicleId}`}
               coordinate={{ latitude: bus.latitude, longitude: bus.longitude }}
               title={bus.routeName || `Route ${bus.routeId}`}
               description={bus.nextStop ? `Next: ${bus.nextStop}` : undefined}
@@ -289,7 +305,13 @@ export default function MapScreen() {
               key={`gas-${station.id}`}
               coordinate={{ latitude: station.latitude, longitude: station.longitude }}
               title={station.name}
-              description={station.prices.regular ? `Regular: $${station.prices.regular.toFixed(2)}` : station.address}
+              description={(() => {
+                const p = station.prices;
+                const regularPrice = Array.isArray(p)
+                  ? p.find((x) => x.fuelType?.toLowerCase() === 'regular')?.price
+                  : (p as Record<string, number>).regular;
+                return regularPrice ? `Regular: $${regularPrice.toFixed(2)}` : (station.streetAddress || station.address || '');
+              })()}
             >
               <View
                 style={{

@@ -137,7 +137,10 @@ function BusRow({ bus, onPress }: BusRowProps) {
 export function TransitWidget() {
   const { data, isLoading, isError, refetch, isFetching } = useTransit();
 
-  const buses = Array.isArray(data?.data) ? data.data : [];
+  // Transit API returns { buses: [...], routes: [...] } at top level — no data wrapper
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const raw = data as any;
+  const buses: Bus[] = Array.isArray(raw?.buses) ? raw.buses : [];
   const activeBuses = buses.slice(0, 5); // Show top 5 buses
 
   const status = getDataStatus(
