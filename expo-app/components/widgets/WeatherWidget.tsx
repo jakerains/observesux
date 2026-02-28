@@ -184,7 +184,7 @@ export function WeatherWidget() {
             <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.65)', letterSpacing: 0.5, marginBottom: 4 }}>
               Sioux City, Iowa
             </Text>
-            <Text style={{ fontSize: 96, fontWeight: '800', color: '#ffffff', lineHeight: 104 }}>
+            <Text style={{ fontSize: 96, fontWeight: '200', color: '#ffffff', lineHeight: 104 }}>
               {Math.round(weather.temperature)}°
             </Text>
             <Text style={{ fontSize: 18, color: 'rgba(255,255,255,0.85)', marginTop: 4 }}>
@@ -208,9 +208,8 @@ export function WeatherWidget() {
             )}
           </View>
 
-          {/* 7-Day Forecast Toggle */}
-          {forecast.length > 0 && (
-            <>
+          {/* 7-Day Forecast Toggle — always visible */}
+          <>
               <Pressable
                 onPress={() => {
                   if (process.env.EXPO_OS === 'ios') {
@@ -278,8 +277,7 @@ export function WeatherWidget() {
                   ))}
                 </View>
               )}
-            </>
-          )}
+          </>
         </LinearGradient>
       </ImageBackground>
     </View>
