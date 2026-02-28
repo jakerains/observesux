@@ -189,7 +189,7 @@ export function TransitWidget() {
       ) : (
         <View style={{ gap: 8 }}>
           {activeBuses.map((bus) => (
-            <BusRow key={bus.id} bus={bus} />
+            <BusRow key={bus.vehicleId} bus={bus} />
           ))}
 
           {buses.length > 5 && (
