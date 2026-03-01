@@ -21,6 +21,7 @@ export interface Settings {
   notifyAirQuality: boolean;
   notifyTraffic: boolean;
   notifyDigest: boolean;
+  notifyCouncilMeeting: boolean;
 }
 
 // Default settings
@@ -35,6 +36,7 @@ export const DEFAULT_SETTINGS: Settings = {
   notifyAirQuality: true,
   notifyTraffic: true,
   notifyDigest: true,
+  notifyCouncilMeeting: true,
 };
 
 // Context type

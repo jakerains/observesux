@@ -17,7 +17,7 @@ import { Brand } from '@/constants/BrandColors';
 import { API_BASE_URL } from '@/lib/api';
 
 interface NotificationTypeConfig {
-  key: 'notifyWeather' | 'notifyRiver' | 'notifyAirQuality' | 'notifyTraffic' | 'notifyDigest';
+  key: 'notifyWeather' | 'notifyRiver' | 'notifyAirQuality' | 'notifyTraffic' | 'notifyDigest' | 'notifyCouncilMeeting';
   label: string;
   description: string;
   sfSymbol: string;
@@ -59,6 +59,13 @@ const NOTIFICATION_TYPES: NotificationTypeConfig[] = [
     description: 'Morning, Midday & Evening — three times daily',
     sfSymbol: 'newspaper.fill',
     tintColor: '#8b5cf6',
+  },
+  {
+    key: 'notifyCouncilMeeting',
+    label: 'City Council Meetings',
+    description: 'New meeting recap available with AI summary',
+    sfSymbol: 'building.columns.fill',
+    tintColor: '#0ea5e9',
   },
 ];
 
@@ -122,6 +129,7 @@ async function syncWithServer(prefs: {
   notifyAirQuality: boolean;
   notifyTraffic: boolean;
   notifyDigest: boolean;
+  notifyCouncilMeeting: boolean;
 }): Promise<void> {
   try {
     const [deviceId, token] = await Promise.all([getDeviceId(), getExpoPushToken()]);
@@ -157,6 +165,7 @@ export default function NotificationsScreen() {
     notifyAirQuality: settings.notifyAirQuality,
     notifyTraffic: settings.notifyTraffic,
     notifyDigest: settings.notifyDigest,
+    notifyCouncilMeeting: settings.notifyCouncilMeeting,
   };
 
   const handleMasterToggle = async (enabled: boolean) => {

@@ -2,7 +2,7 @@
  * Cameras Screen - Traffic camera grid
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, memo } from 'react';
 import {
   View,
   ScrollView,
@@ -13,24 +13,26 @@ import {
   PlatformColor,
   useWindowDimensions,
 } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, useFocusEffect } from 'expo-router';
 import { Image } from 'expo-image';
 import { useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { useCameras } from '@/lib/hooks/useDataFetching';
 import { Skeleton } from '@/components/LoadingState';
+import { appendCacheBuster } from '@/lib/api';
 import type { TrafficCamera } from '@/lib/types';
 
 const COLUMN_COUNT = 2;
 const SPACING = 12;
 
-function CameraCard({ camera }: { camera: TrafficCamera }) {
+const CameraCard = memo(function CameraCard({ camera, cacheKey }: { camera: TrafficCamera; cacheKey: number }) {
   const { width } = useWindowDimensions();
   const cardWidth = (width - SPACING * 3) / COLUMN_COUNT;
   const cardHeight = cardWidth * 0.75;
   const [imageError, setImageError] = useState(false);
 
   const hasLiveStream = !!camera.streamUrl;
+  const snapshotUri = appendCacheBuster(camera.snapshotUrl, cacheKey);
 
   return (
     <Link
@@ -39,7 +41,7 @@ function CameraCard({ camera }: { camera: TrafficCamera }) {
         params: {
           id: camera.id,
           name: camera.name,
-          imageUrl: camera.snapshotUrl,
+          imageUrl: snapshotUri,
           streamUrl: camera.streamUrl || '',
         },
       }}
@@ -74,7 +76,7 @@ function CameraCard({ camera }: { camera: TrafficCamera }) {
             </View>
           ) : (
             <Image
-              source={{ uri: camera.snapshotUrl }}
+              source={{ uri: snapshotUri }}
               style={{ width: '100%', height: '100%' }}
               contentFit="cover"
               transition={200}
@@ -156,7 +158,7 @@ function CameraCard({ camera }: { camera: TrafficCamera }) {
       </Pressable>
     </Link>
   );
-}
+});
 
 function CameraCardSkeleton() {
   const { width } = useWindowDimensions();
@@ -185,18 +187,33 @@ function CameraCardSkeleton() {
 export default function CamerasScreen() {
   const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
+  const [cacheKey, setCacheKey] = useState(() => Date.now());
+  const [showLiveOnly, setShowLiveOnly] = useState(false);
+
+  // Refresh images and camera list on every tab visit (skip the very first — useQuery handles it)
+  useFocusEffect(
+    useCallback(() => {
+      const query = queryClient.getQueryState(['cameras']);
+      if (!query?.dataUpdatedAt) return;
+      setCacheKey(Date.now());
+      queryClient.invalidateQueries({ queryKey: ['cameras'] });
+    }, [queryClient])
+  );
 
   const { data, isLoading, isError, refetch } = useCameras();
   const cameras = Array.isArray(data?.data) ? data.data : [];
+  const liveCameras = cameras.filter((c) => !!c.streamUrl);
+  const filteredCameras = showLiveOnly ? liveCameras : cameras;
 
   const onRefresh = useCallback(async () => {
     if (process.env.EXPO_OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     setRefreshing(true);
-    await queryClient.invalidateQueries({ queryKey: ['cameras'] });
-    setTimeout(() => setRefreshing(false), 500);
-  }, [queryClient]);
+    setCacheKey(Date.now());
+    await refetch();
+    setRefreshing(false);
+  }, [refetch]);
 
   if (isLoading) {
     return (
@@ -243,8 +260,8 @@ export default function CamerasScreen() {
 
   return (
     <FlatList
-      data={cameras}
-      renderItem={({ item }) => <CameraCard camera={item} />}
+      data={filteredCameras}
+      renderItem={({ item }) => <CameraCard camera={item} cacheKey={cacheKey} />}
       keyExtractor={(item) => item.id}
       numColumns={COLUMN_COUNT}
       style={{ backgroundColor: '#120905' }}
@@ -255,9 +272,51 @@ export default function CamerasScreen() {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
       ListHeaderComponent={
-        <Text style={{ marginBottom: 8, color: PlatformColor('secondaryLabel') }}>
-          {cameras.length} cameras available
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+          <Text style={{ color: PlatformColor('secondaryLabel'), fontSize: 13 }}>
+            {filteredCameras.length} {showLiveOnly ? 'live' : 'cameras available'}
+          </Text>
+          {liveCameras.length > 0 && (
+            <Pressable
+              onPress={() => {
+                if (process.env.EXPO_OS === 'ios') {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }
+                setShowLiveOnly((v) => !v);
+              }}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 5,
+                paddingHorizontal: 10,
+                paddingVertical: 5,
+                borderRadius: 20,
+                backgroundColor: showLiveOnly ? '#ef4444' : 'rgba(239,68,68,0.15)',
+                borderWidth: 1,
+                borderColor: showLiveOnly ? '#ef4444' : 'rgba(239,68,68,0.4)',
+              }}
+            >
+              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: showLiveOnly ? '#fff' : '#ef4444' }} />
+              <Text style={{ color: showLiveOnly ? '#fff' : '#ef4444', fontSize: 12, fontWeight: '600' }}>
+                Live ({liveCameras.length})
+              </Text>
+            </Pressable>
+          )}
+        </View>
+      }
+      ListEmptyComponent={
+        showLiveOnly ? (
+          <View style={{ alignItems: 'center', paddingTop: 40, gap: 12 }}>
+            <Image source="sf:video.slash" style={{ width: 36, height: 36 }} tintColor={PlatformColor('tertiaryLabel')} />
+            <Text style={{ color: PlatformColor('secondaryLabel'), fontSize: 14 }}>No live cameras available</Text>
+            <Pressable
+              onPress={() => setShowLiveOnly(false)}
+              style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: '#e69c3a' }}
+            >
+              <Text style={{ color: '#fff', fontWeight: '600', fontSize: 13 }}>Show all cameras</Text>
+            </Pressable>
+          </View>
+        ) : null
       }
     />
   );

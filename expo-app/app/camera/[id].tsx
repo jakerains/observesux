@@ -5,6 +5,7 @@
 import { useState, useEffect } from 'react';
 import { View, Pressable, Text, PlatformColor, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams, Stack } from 'expo-router';
+import { appendCacheBuster } from '@/lib/api';
 import { Image } from 'expo-image';
 import { WebView } from 'react-native-webview';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -49,10 +50,7 @@ export default function CameraDetailScreen() {
     setTimeout(() => setIsRefreshing(false), 1000);
   };
 
-  // Add cache-busting to the URL
-  const refreshedImageUrl = imageUrl
-    ? `${imageUrl}${imageUrl.includes('?') ? '&' : '?'}t=${imageKey}`
-    : '';
+  const refreshedImageUrl = imageUrl ? appendCacheBuster(imageUrl, imageKey) : '';
 
   // HTML for native iOS HLS playback - iOS Safari supports HLS natively
   // Using source element with type for better compatibility

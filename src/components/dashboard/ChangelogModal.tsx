@@ -16,6 +16,21 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.10.1',
+    date: '2026-03-01',
+    added: [
+      'Admin push test panel with separate Browser, All Devices, and Both channel buttons',
+    ],
+    changed: [
+      'Alerts page simplified to browser push only — account-based cards removed',
+      'Council Meetings notification type added to mobile notifications settings',
+      'Camera grid memoized and refreshes snapshots on each tab visit',
+    ],
+    fixed: [
+      'VAPID keys stored with trailing newline — re-uploaded clean; fixes browser push on live site',
+    ],
+  },
+  {
     version: '0.10.0',
     date: '2026-03-01',
     added: [

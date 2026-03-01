@@ -129,3 +129,10 @@ export const refreshIntervals = {
   digest: 60 * 1000, // 1 minute
   council: 30 * 60 * 1000, // 30 minutes — meetings happen every 2 weeks
 } as const;
+
+/**
+ * Append a cache-busting query param to a URL, handling both plain and already-parameterized URLs.
+ */
+export function appendCacheBuster(url: string, key: string | number): string {
+  return `${url}${url.includes('?') ? '&' : '?'}_cb=${key}`;
+}

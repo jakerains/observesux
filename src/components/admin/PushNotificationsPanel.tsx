@@ -48,8 +48,8 @@ export function PushNotificationsPanel() {
   const [statsLoading, setStatsLoading] = useState(true)
   const [statsError, setStatsError] = useState<string | null>(null)
 
-  const [testLoading, setTestLoading] = useState(false)
-  const [testResult, setTestResult] = useState<{ sent: number; failed: number } | null>(null)
+  const [testingChannel, setTestingChannel] = useState<'web' | 'expo' | 'both' | 'device' | null>(null)
+  const [testResult, setTestResult] = useState<{ channel: 'web' | 'expo' | 'both' | 'device'; web: { sent: number; failed: number }; expo: { sent: number; failed: number }; device: { sent: number; failed: number }; total: { sent: number; failed: number } } | null>(null)
   const [testError, setTestError] = useState<string | null>(null)
 
   const [alertCheckLoading, setAlertCheckLoading] = useState(false)
@@ -71,19 +71,19 @@ export function PushNotificationsPanel() {
 
   useEffect(() => { fetchStats() }, [fetchStats])
 
-  const sendTestNotification = async () => {
-    setTestLoading(true)
+  const sendTestNotification = async (channel: 'web' | 'expo' | 'both' | 'device') => {
+    setTestingChannel(channel)
     setTestResult(null)
     setTestError(null)
     try {
-      const res = await fetch('/api/admin/push/test', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ channel: 'both' }) })
+      const res = await fetch('/api/admin/push/test', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ channel }) })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed')
-      setTestResult(data.total)
+      setTestResult({ channel, web: data.web, expo: data.expo, device: data.device, total: data.total })
     } catch (err) {
       setTestError(err instanceof Error ? err.message : 'Unknown error')
     } finally {
-      setTestLoading(false)
+      setTestingChannel(null)
     }
   }
 
@@ -216,20 +216,40 @@ export function PushNotificationsPanel() {
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              Sends a test push to your web browser and Expo subscriptions.
+              Sends a test push to your own subscriptions. Choose which channel to test.
             </p>
-            <Button onClick={sendTestNotification} disabled={testLoading} size="sm">
-              {testLoading ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Bell className="h-4 w-4 mr-2" />
-              )}
-              Send Test
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={() => sendTestNotification('web')} disabled={testingChannel !== null} size="sm" variant="outline">
+                {testingChannel === 'web' ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Globe className="h-4 w-4 mr-2 text-blue-500" />}
+                Browser
+              </Button>
+              <Button onClick={() => sendTestNotification('device')} disabled={testingChannel !== null} size="sm" variant="outline">
+                {testingChannel === 'device' ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Smartphone className="h-4 w-4 mr-2 text-orange-500" />}
+                All Devices
+              </Button>
+              <Button onClick={() => sendTestNotification('both')} disabled={testingChannel !== null} size="sm">
+                {testingChannel === 'both' ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Bell className="h-4 w-4 mr-2" />}
+                Both
+              </Button>
+            </div>
             {testResult && (
-              <div className="flex items-center gap-2 text-sm">
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
-                <span>Sent: {testResult.sent} · Failed: {testResult.failed}</span>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-sm text-green-600">
+                  <CheckCircle2 className="h-4 w-4" />
+                  <span>Test sent</span>
+                </div>
+                {(testResult.channel === 'web' || testResult.channel === 'both') && (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Globe className="h-3 w-3" />
+                    <span>Browser — sent: {testResult.web.sent} · failed: {testResult.web.failed}</span>
+                  </div>
+                )}
+                {testResult.channel === 'device' && (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Smartphone className="h-3 w-3" />
+                    <span>All Devices — sent: {testResult.device.sent} · failed: {testResult.device.failed}</span>
+                  </div>
+                )}
               </div>
             )}
             {testError && (

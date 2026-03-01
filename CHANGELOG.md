@@ -5,6 +5,21 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.1] - 2026-03-01
+
+### Added
+- Admin push test panel now has separate buttons for Browser, All Devices (anonymous mobile), and Both channels
+- `getAllActiveDeviceTokens` — blasts test push to every active anonymous device subscription
+
+### Changed
+- Alerts page simplified to browser push only — account-based alert subscription cards removed (no sign-in on web)
+- Admin "Digest" nav label restored in mobile bottom nav; Bell icon in header provides alerts access
+- Camera grid now memoized and refreshes snapshots on each tab visit via `useFocusEffect`
+- Council Meetings notification type added to mobile notifications settings screen
+
+### Fixed
+- VAPID keys stored with trailing `\n` via `echo` pipe — re-uploaded with `printf` to Vercel; fixes "Vapid public key must be URL safe Base64" error
+
 ## [0.10.0] - 2026-03-01
 
 ### Added

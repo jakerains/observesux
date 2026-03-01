@@ -107,6 +107,19 @@ export async function getDeviceTokensForType(
 }
 
 /**
+ * Get all active device tokens regardless of notification preferences.
+ * Used for admin test blasts.
+ */
+export async function getAllActiveDeviceTokens(): Promise<Array<{ deviceId: string; expoPushToken: string }>> {
+  const result = await sql`
+    SELECT device_id as "deviceId", expo_push_token as "expoPushToken"
+    FROM device_push_subscriptions
+    WHERE is_active = true
+  `
+  return result as Array<{ deviceId: string; expoPushToken: string }>
+}
+
+/**
  * Check if an alert has already been sent to a device (deduplication).
  */
 export async function hasDeviceAlertBeenTriggered(
