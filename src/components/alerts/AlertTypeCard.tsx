@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
 import { Badge } from '@/components/ui/badge'
-import { Loader2, Cloud, Droplets, Wind, Car } from 'lucide-react'
+import { Loader2, Cloud, Droplets, Wind, Car, Landmark } from 'lucide-react'
 import type { AlertType } from '@/lib/db/alerts'
 
 interface AlertTypeCardProps {
@@ -42,6 +42,11 @@ const ALERT_INFO: Record<AlertType, {
     title: 'Traffic Incidents',
     description: 'Major traffic incidents and road closures',
     icon: Car
+  },
+  council_meeting: {
+    title: 'Council Meetings',
+    description: 'Notifications when new council meeting recaps are available',
+    icon: Landmark
   }
 }
 

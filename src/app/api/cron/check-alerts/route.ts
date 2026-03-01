@@ -13,7 +13,14 @@ import {
   recordDeviceTriggeredAlert,
   cleanupOldDeviceTriggeredAlerts,
 } from '@/lib/db/device-push'
+import {
+  getBrowserSubscriptionsForType,
+  hasBrowserAlertBeenTriggered,
+  recordBrowserTriggeredAlert,
+  cleanupOldBrowserTriggeredAlerts,
+} from '@/lib/db/browser-push'
 import { sendPushToUser, type PushPayload } from '@/lib/push/send'
+import { sendBrowserPushToSubscribers } from '@/lib/push/send-browser'
 import { sendExpoPushToUser, sendExpoPushToTokens, type ExpoPushPayload } from '@/lib/push/send-expo'
 import {
   matchesWeatherAlert,
@@ -77,14 +84,15 @@ export async function GET(request: NextRequest) {
     results.air_quality = airQualityResult
     results.traffic = trafficResult
 
-    // Cleanup old triggered alerts (both auth and device)
-    const [cleanedUp, deviceCleanedUp] = await Promise.all([
+    // Cleanup old triggered alerts (auth, device, and browser)
+    const [cleanedUp, deviceCleanedUp, browserCleanedUp] = await Promise.all([
       cleanupOldTriggeredAlerts(),
       cleanupOldDeviceTriggeredAlerts(),
+      cleanupOldBrowserTriggeredAlerts(),
     ])
 
     const totalNotified = Object.values(results).reduce((sum, r) => sum + r.notified, 0)
-    console.log(`[Check Alerts Cron] Complete: ${totalNotified} notifications sent, ${cleanedUp + deviceCleanedUp} old alerts cleaned`)
+    console.log(`[Check Alerts Cron] Complete: ${totalNotified} notifications sent, ${cleanedUp + deviceCleanedUp + browserCleanedUp} old alerts cleaned`)
 
     return NextResponse.json({
       success: true,
@@ -153,6 +161,8 @@ async function checkWeatherAlerts(baseUrl: string): Promise<{ checked: number; m
     const subscriptions = await getEnabledSubscriptionsByType('weather')
     // Get anonymous device subscribers
     const deviceSubs = await getDeviceTokensForType('weather')
+    // Get anonymous browser subscribers
+    const browserSubs = await getBrowserSubscriptionsForType('weather')
 
     for (const alert of alerts) {
       const sourceId = getAlertSourceId('weather', alert)
@@ -195,6 +205,20 @@ async function checkWeatherAlerts(baseUrl: string): Promise<{ checked: number; m
       }
       if (pendingDeviceTokens.length > 0) {
         const result = await sendExpoPushToTokens(pendingDeviceTokens, expoPayload)
+        notified += result.sent
+      }
+
+      // Anonymous browser push
+      const pendingBrowserSubs = []
+      for (const sub of browserSubs) {
+        const alreadyTriggered = await hasBrowserAlertBeenTriggered(sub.browserId, 'weather', sourceId)
+        if (!alreadyTriggered) {
+          pendingBrowserSubs.push(sub)
+          await recordBrowserTriggeredAlert(sub.browserId, 'weather', sourceId)
+        }
+      }
+      if (pendingBrowserSubs.length > 0) {
+        const result = await sendBrowserPushToSubscribers(pendingBrowserSubs, payload as PushPayload)
         notified += result.sent
       }
     }
@@ -241,6 +265,7 @@ async function checkRiverAlerts(baseUrl: string): Promise<{ checked: number; mat
 
     const subscriptions = await getEnabledSubscriptionsByType('river')
     const deviceSubs = await getDeviceTokensForType('river')
+    const browserSubs = await getBrowserSubscriptionsForType('river')
 
     for (const reading of alertReadings) {
       const sourceId = getAlertSourceId('river', reading)
@@ -282,6 +307,20 @@ async function checkRiverAlerts(baseUrl: string): Promise<{ checked: number; mat
         const result = await sendExpoPushToTokens(pendingDeviceTokens, expoPayload)
         notified += result.sent
       }
+
+      // Anonymous browser push
+      const pendingBrowserSubs = []
+      for (const sub of browserSubs) {
+        const alreadyTriggered = await hasBrowserAlertBeenTriggered(sub.browserId, 'river', sourceId)
+        if (!alreadyTriggered) {
+          pendingBrowserSubs.push(sub)
+          await recordBrowserTriggeredAlert(sub.browserId, 'river', sourceId)
+        }
+      }
+      if (pendingBrowserSubs.length > 0) {
+        const result = await sendBrowserPushToSubscribers(pendingBrowserSubs, payload as PushPayload)
+        notified += result.sent
+      }
     }
   } catch (error) {
     console.error('[River Alerts] Error:', error)
@@ -318,6 +357,7 @@ async function checkAirQualityAlerts(baseUrl: string): Promise<{ checked: number
 
     const subscriptions = await getEnabledSubscriptionsByType('air_quality')
     const deviceSubs = await getDeviceTokensForType('air_quality')
+    const browserSubs = await getBrowserSubscriptionsForType('air_quality')
     const sourceId = getAlertSourceId('air_quality', reading)
     const payload = createAlertNotificationPayload('air_quality', reading)
     const expoPayload: ExpoPushPayload = {
@@ -356,6 +396,20 @@ async function checkAirQualityAlerts(baseUrl: string): Promise<{ checked: number
       }
       if (pendingDeviceTokens.length > 0) {
         const result = await sendExpoPushToTokens(pendingDeviceTokens, expoPayload)
+        notified += result.sent
+      }
+
+      // Anonymous browser push
+      const pendingBrowserSubs = []
+      for (const sub of browserSubs) {
+        const alreadyTriggered = await hasBrowserAlertBeenTriggered(sub.browserId, 'air_quality', sourceId)
+        if (!alreadyTriggered) {
+          pendingBrowserSubs.push(sub)
+          await recordBrowserTriggeredAlert(sub.browserId, 'air_quality', sourceId)
+        }
+      }
+      if (pendingBrowserSubs.length > 0) {
+        const result = await sendBrowserPushToSubscribers(pendingBrowserSubs, payload as PushPayload)
         notified += result.sent
       }
     }
@@ -402,6 +456,7 @@ async function checkTrafficAlerts(baseUrl: string): Promise<{ checked: number; m
 
     const subscriptions = await getEnabledSubscriptionsByType('traffic')
     const deviceSubs = await getDeviceTokensForType('traffic')
+    const browserSubs = await getBrowserSubscriptionsForType('traffic')
 
     for (const incident of incidents) {
       const sourceId = getAlertSourceId('traffic', incident)
@@ -431,7 +486,7 @@ async function checkTrafficAlerts(baseUrl: string): Promise<{ checked: number; m
         }
       }
 
-      // All device subscribers get major/critical traffic incidents
+      // All device and browser subscribers get major/critical traffic incidents
       if (['major', 'critical'].includes(incident.severity ?? '')) {
         const pendingDeviceTokens: string[] = []
         for (const dev of deviceSubs) {
@@ -443,6 +498,20 @@ async function checkTrafficAlerts(baseUrl: string): Promise<{ checked: number; m
         }
         if (pendingDeviceTokens.length > 0) {
           const result = await sendExpoPushToTokens(pendingDeviceTokens, expoPayload)
+          notified += result.sent
+        }
+
+        // Anonymous browser push
+        const pendingBrowserSubs = []
+        for (const sub of browserSubs) {
+          const alreadyTriggered = await hasBrowserAlertBeenTriggered(sub.browserId, 'traffic', sourceId)
+          if (!alreadyTriggered) {
+            pendingBrowserSubs.push(sub)
+            await recordBrowserTriggeredAlert(sub.browserId, 'traffic', sourceId)
+          }
+        }
+        if (pendingBrowserSubs.length > 0) {
+          const result = await sendBrowserPushToSubscribers(pendingBrowserSubs, payload as PushPayload)
           notified += result.sent
         }
       }

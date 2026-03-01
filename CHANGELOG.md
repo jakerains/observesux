@@ -5,6 +5,24 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0] - 2026-03-01
+
+### Added
+- Anonymous browser push notifications — no account required; enable from the Bell icon in the header or the Alerts page
+- Per-type browser push preferences (weather, river, air quality, traffic, digest, council meetings) stored in localStorage and synced to server
+- Admin Notifications panel — live subscription stats across all 4 push channels (web, Expo, device, browser) plus test-send and manual alert-check tools
+- New DB tables: `browser_push_subscriptions` and `browser_triggered_alerts` for anonymous browser push dedup
+
+### Changed
+- Web app now runs in full anonymous mode — no sign-in prompt or button shown to guests (mirrors mobile app behavior)
+- Removed "Free Accounts!" tooltip from the dashboard header
+- "Digest" replaced by "Alerts" in mobile bottom nav — Bell icon in header provides quick access to notification settings
+- Alert check cron now sends to anonymous browser subscribers in addition to authenticated and device subscribers
+
+### Fixed
+- `feelsLike` field missing from `WeatherObservation` type (was breaking build)
+- `council_meeting` missing from `ALERT_INFO` and `DEFAULT_CONFIGS` in alert components (was breaking build)
+
 ## [0.9.26] - 2026-02-28
 
 ### Changed

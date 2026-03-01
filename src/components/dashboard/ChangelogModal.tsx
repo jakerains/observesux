@@ -16,6 +16,24 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.10.0',
+    date: '2026-03-01',
+    added: [
+      'Anonymous browser push notifications — no account required; enable from the Bell icon in the header or Alerts page',
+      'Per-type browser push preferences (weather, river, air quality, traffic, digest, council meetings)',
+      'Admin Notifications panel — live subscription stats across all push channels plus test-send and manual alert-check tools',
+    ],
+    changed: [
+      'Web app now runs in full anonymous mode — no sign-in prompt shown to guests (mirrors mobile app)',
+      'Removed "Free Accounts!" tooltip from the dashboard header',
+      'Alert check cron now sends to anonymous browser subscribers alongside authenticated and device subscribers',
+    ],
+    fixed: [
+      'feelsLike field missing from WeatherObservation type',
+      'council_meeting missing from alert component configs',
+    ],
+  },
+  {
     version: '0.9.26',
     date: '2026-02-28',
     changed: [

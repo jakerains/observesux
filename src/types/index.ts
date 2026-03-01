@@ -62,6 +62,7 @@ export interface WeatherObservation {
   conditions: string
   icon?: string
   dewpoint: number | null
+  feelsLike?: number | null
   heatIndex?: number | null
   windChill?: number | null
   rawData?: unknown

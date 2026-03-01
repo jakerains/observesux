@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { User, LogOut, Settings, Bell, Star, Newspaper } from 'lucide-react'
+import { User, LogOut, Settings, Bell, Star, Newspaper, BellRing } from 'lucide-react'
 import { useSession, signOut } from '@/lib/auth/client'
 import { cn } from '@/lib/utils'
 import { SettingsModal } from '@/components/dashboard/SettingsModal'
@@ -36,16 +36,13 @@ export function UserMenu() {
     )
   }
 
-  // Not logged in - show sign in button
+  // Not logged in - show a Bell icon linking to /account/alerts (anonymous browser push opt-in)
   if (!session?.user) {
     return (
-      <Button
-        variant="ghost"
-        size="sm"
-        className="h-8 px-3 text-sm"
-        asChild
-      >
-        <a href="/auth/sign-in">Sign in</a>
+      <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+        <a href="/account/alerts" aria-label="Notification settings">
+          <BellRing className="h-4 w-4" />
+        </a>
       </Button>
     )
   }
