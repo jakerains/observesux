@@ -221,9 +221,9 @@ export default function DigestDetailScreen() {
                 borderLeftColor: Brand.amber,
               }}
             >
-              <Text style={{ fontSize: 15, lineHeight: 23, fontStyle: 'italic', color: Brand.foreground }}>
+              <MarkdownText style={{ fontSize: 15, lineHeight: 23, fontStyle: 'italic', color: Brand.foreground }}>
                 {digest.summary}
-              </Text>
+              </MarkdownText>
             </View>
           </View>
         )}
