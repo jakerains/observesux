@@ -20,6 +20,7 @@ interface RegisterBody {
   notifyAirQuality: boolean
   notifyTraffic: boolean
   notifyDigest: boolean
+  notifyCouncilMeeting: boolean
 }
 
 export async function POST(request: NextRequest) {
@@ -34,7 +35,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
-  const { deviceId, expoPushToken, platform, notifyWeather, notifyRiver, notifyAirQuality, notifyTraffic, notifyDigest } = body
+  const { deviceId, expoPushToken, platform, notifyWeather, notifyRiver, notifyAirQuality, notifyTraffic, notifyDigest, notifyCouncilMeeting } = body
 
   if (!deviceId || typeof deviceId !== 'string') {
     return NextResponse.json({ error: 'deviceId is required' }, { status: 400 })
@@ -58,6 +59,7 @@ export async function POST(request: NextRequest) {
       notifyAirQuality: notifyAirQuality ?? true,
       notifyTraffic: notifyTraffic ?? true,
       notifyDigest: notifyDigest ?? true,
+      notifyCouncilMeeting: notifyCouncilMeeting ?? true,
     })
 
     return NextResponse.json({ success: true, id: subscription.id })

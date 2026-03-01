@@ -21,6 +21,8 @@ import {
 import { generateEmbedding } from '@/lib/ai/embeddings'
 import { isDatabaseConfigured } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth/server'
+import { getDeviceTokensForType, hasDeviceAlertBeenTriggered, recordDeviceTriggeredAlert } from '@/lib/db/device-push'
+import { sendExpoPushToTokens, type ExpoPushPayload } from '@/lib/push/send-expo'
 import type { TranscriptSegment } from '@/types/council-meetings'
 
 export const dynamic = 'force-dynamic'
@@ -198,6 +200,37 @@ async function processVideo(
   await storeMeetingResults(meeting.id, recap, rawTranscript, chunks.length)
 
   return 'completed'
+}
+
+/**
+ * Send push notifications to all devices subscribed to council meeting alerts.
+ * Uses videoId as the deduplication key — one notification per unique meeting.
+ */
+async function sendCouncilMeetingNotification(videoId: string, title: string): Promise<void> {
+  const deviceSubs = await getDeviceTokensForType('council_meeting')
+  if (deviceSubs.length === 0) return
+
+  const payload: ExpoPushPayload = {
+    title: 'New Council Meeting Available',
+    body: title,
+    data: { url: '/council' },
+    sound: 'default',
+    priority: 'normal',
+  }
+
+  const pendingTokens: string[] = []
+  for (const dev of deviceSubs) {
+    const alreadyTriggered = await hasDeviceAlertBeenTriggered(dev.deviceId, 'council_meeting', videoId)
+    if (!alreadyTriggered) {
+      pendingTokens.push(dev.expoPushToken)
+      await recordDeviceTriggeredAlert(dev.deviceId, 'council_meeting', videoId)
+    }
+  }
+
+  if (pendingTokens.length > 0) {
+    const result = await sendExpoPushToTokens(pendingTokens, payload)
+    console.log(`[Council Ingest] Sent council meeting notification: ${result.sent} sent, ${result.failed} failed`)
+  }
 }
 
 /**
@@ -768,6 +801,11 @@ export async function POST(request: NextRequest) {
                 videoId: video.videoId,
                 status: 'completed',
               })
+
+              // Send push notifications to devices subscribed to council meeting alerts
+              sendCouncilMeetingNotification(video.videoId, video.title).catch(err =>
+                console.error('[Council Ingest] Failed to send council meeting notification:', err)
+              )
             } else {
               noCaptions++
             }
