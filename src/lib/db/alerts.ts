@@ -1,6 +1,6 @@
 import { sql, isDatabaseConfigured } from '../db'
 
-export type AlertType = 'weather' | 'river' | 'air_quality' | 'traffic'
+export type AlertType = 'weather' | 'river' | 'air_quality' | 'traffic' | 'council_meeting'
 
 export interface AlertSubscription {
   id: string

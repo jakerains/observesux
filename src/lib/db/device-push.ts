@@ -11,6 +11,7 @@ export interface DevicePushSubscription {
   notifyAirQuality: boolean
   notifyTraffic: boolean
   notifyDigest: boolean
+  notifyCouncilMeeting: boolean
   createdAt: string
   updatedAt: string
 }
@@ -28,38 +29,41 @@ export async function upsertDevicePushSubscription(params: {
   notifyAirQuality: boolean
   notifyTraffic: boolean
   notifyDigest: boolean
+  notifyCouncilMeeting: boolean
 }): Promise<DevicePushSubscription> {
   const result = await sql`
     INSERT INTO device_push_subscriptions
       (device_id, expo_push_token, platform, is_active,
-       notify_weather, notify_river, notify_air_quality, notify_traffic, notify_digest)
+       notify_weather, notify_river, notify_air_quality, notify_traffic, notify_digest, notify_council_meeting)
     VALUES
       (${params.deviceId}, ${params.expoPushToken}, ${params.platform}, true,
        ${params.notifyWeather}, ${params.notifyRiver}, ${params.notifyAirQuality},
-       ${params.notifyTraffic}, ${params.notifyDigest})
+       ${params.notifyTraffic}, ${params.notifyDigest}, ${params.notifyCouncilMeeting})
     ON CONFLICT (device_id) DO UPDATE SET
-      expo_push_token   = EXCLUDED.expo_push_token,
-      platform          = EXCLUDED.platform,
-      is_active         = true,
-      notify_weather    = EXCLUDED.notify_weather,
-      notify_river      = EXCLUDED.notify_river,
-      notify_air_quality = EXCLUDED.notify_air_quality,
-      notify_traffic    = EXCLUDED.notify_traffic,
-      notify_digest     = EXCLUDED.notify_digest,
-      updated_at        = NOW()
+      expo_push_token        = EXCLUDED.expo_push_token,
+      platform               = EXCLUDED.platform,
+      is_active              = true,
+      notify_weather         = EXCLUDED.notify_weather,
+      notify_river           = EXCLUDED.notify_river,
+      notify_air_quality     = EXCLUDED.notify_air_quality,
+      notify_traffic         = EXCLUDED.notify_traffic,
+      notify_digest          = EXCLUDED.notify_digest,
+      notify_council_meeting = EXCLUDED.notify_council_meeting,
+      updated_at             = NOW()
     RETURNING
       id,
-      device_id         as "deviceId",
-      expo_push_token   as "expoPushToken",
+      device_id              as "deviceId",
+      expo_push_token        as "expoPushToken",
       platform,
-      is_active         as "isActive",
-      notify_weather    as "notifyWeather",
-      notify_river      as "notifyRiver",
-      notify_air_quality as "notifyAirQuality",
-      notify_traffic    as "notifyTraffic",
-      notify_digest     as "notifyDigest",
-      created_at        as "createdAt",
-      updated_at        as "updatedAt"
+      is_active              as "isActive",
+      notify_weather         as "notifyWeather",
+      notify_river           as "notifyRiver",
+      notify_air_quality     as "notifyAirQuality",
+      notify_traffic         as "notifyTraffic",
+      notify_digest          as "notifyDigest",
+      notify_council_meeting as "notifyCouncilMeeting",
+      created_at             as "createdAt",
+      updated_at             as "updatedAt"
   `
   return result[0] as DevicePushSubscription
 }
@@ -79,7 +83,7 @@ export async function deactivateDevicePushToken(token: string): Promise<void> {
  * Get all active device tokens that want a specific notification type.
  */
 export async function getDeviceTokensForType(
-  type: 'weather' | 'river' | 'air_quality' | 'traffic' | 'digest'
+  type: 'weather' | 'river' | 'air_quality' | 'traffic' | 'digest' | 'council_meeting'
 ): Promise<Array<{ deviceId: string; expoPushToken: string }>> {
   // Dynamic column selection based on type
   const colMap = {
@@ -88,6 +92,7 @@ export async function getDeviceTokensForType(
     air_quality: sql`notify_air_quality`,
     traffic: sql`notify_traffic`,
     digest: sql`notify_digest`,
+    council_meeting: sql`notify_council_meeting`,
   } as const
 
   const col = colMap[type]
