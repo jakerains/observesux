@@ -103,6 +103,23 @@ export async function getBrowserSubscriptionsForType(
 }
 
 /**
+ * Get all active browser subscriptions regardless of preferences.
+ * Used for admin test blasts.
+ */
+export async function getAllActiveBrowserSubscriptions(): Promise<Array<{ browserId: string; endpoint: string; p256dh: string; authKey: string }>> {
+  const result = await sql`
+    SELECT
+      browser_id as "browserId",
+      endpoint,
+      p256dh,
+      auth_key as "authKey"
+    FROM browser_push_subscriptions
+    WHERE is_active = true
+  `
+  return result as Array<{ browserId: string; endpoint: string; p256dh: string; authKey: string }>
+}
+
+/**
  * Deactivate a browser subscription by endpoint (e.g. on 410/404 error).
  */
 export async function deactivateBrowserPushSubscription(endpoint: string): Promise<void> {

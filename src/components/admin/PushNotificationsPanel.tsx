@@ -91,10 +91,7 @@ export function PushNotificationsPanel() {
     setAlertCheckLoading(true)
     setAlertCheckResult(null)
     try {
-      const cronSecret = process.env.NEXT_PUBLIC_CRON_SECRET
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-      if (cronSecret) headers['Authorization'] = `Bearer ${cronSecret}`
-      const res = await fetch('/api/cron/check-alerts', { method: 'POST', headers })
+      const res = await fetch('/api/admin/push/run-check', { method: 'POST' })
       setAlertCheckResult(await res.json())
     } catch (err) {
       setAlertCheckResult({ success: false, error: err instanceof Error ? err.message : 'Unknown error' })

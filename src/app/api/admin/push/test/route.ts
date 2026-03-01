@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth/server'
 import { isDatabaseConfigured } from '@/lib/db'
-import { sendPushToUser, type PushPayload } from '@/lib/push/send'
+import { type PushPayload } from '@/lib/push/send'
+import { sendBrowserPushToSubscribers } from '@/lib/push/send-browser'
 import { sendExpoPushToUser, sendExpoPushToTokens, type ExpoPushPayload } from '@/lib/push/send-expo'
 import { getAllActiveDeviceTokens } from '@/lib/db/device-push'
+import { getAllActiveBrowserSubscriptions } from '@/lib/db/browser-push'
 
 export const dynamic = 'force-dynamic'
 
@@ -52,9 +54,12 @@ export async function POST(request: NextRequest) {
     let webSent = 0, webFailed = 0, expoSent = 0, expoFailed = 0, deviceSent = 0, deviceFailed = 0
 
     if (channel === 'web' || channel === 'both') {
-      const webResult = await sendPushToUser(userId, webPayload)
-      webSent = webResult.sent
-      webFailed = webResult.failed
+      const browserSubs = await getAllActiveBrowserSubscriptions()
+      if (browserSubs.length > 0) {
+        const webResult = await sendBrowserPushToSubscribers(browserSubs, webPayload)
+        webSent = webResult.sent
+        webFailed = webResult.failed
+      }
     }
 
     if (channel === 'expo' || channel === 'both') {
