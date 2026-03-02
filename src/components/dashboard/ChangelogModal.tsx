@@ -16,6 +16,19 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.11.0',
+    date: '2026-03-01',
+    added: [
+      'Automation Logs admin panel — new tab showing live cron job run history with status, duration, and result JSON',
+      'cron_runs database table with per-job indexes (90-day auto-prune)',
+      'Six cron routes instrumented: gas prices, alert checks, digest, events, council ingestion, Expo receipts',
+      'Per-job summary cards with status dots, schedules, and last-run times; clickable to filter the run table',
+    ],
+    fixed: [
+      'Admin tab URL param validation now includes automation-logs — previously silently fell back to chat-logs',
+    ],
+  },
+  {
     version: '0.10.1',
     date: '2026-03-01',
     added: [

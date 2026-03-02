@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sql, isDatabaseConfigured } from '@/lib/db'
 import { scrapeGasPrices, type ScrapedGasStation } from '@/lib/fetchers/gasbuddy'
+import { logCronRun } from '@/lib/db/historical'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300 // Allow up to 5 minutes for scraping (Pro plan)
@@ -39,6 +40,8 @@ export async function GET(request: NextRequest) {
     )
   }
 
+  const startedAt = new Date()
+
   try {
     console.log('[Gas Prices Cron] Starting gas price scrape...')
 
@@ -47,6 +50,7 @@ export async function GET(request: NextRequest) {
 
     if (stations.length === 0) {
       console.warn('[Gas Prices Cron] No stations returned from scraper')
+      await logCronRun('gas-prices', 'skipped', startedAt, { stationsScraped: 0, pricesInserted: 0 })
       return NextResponse.json({
         success: false,
         message: 'No stations found',
@@ -78,6 +82,13 @@ export async function GET(request: NextRequest) {
 
     console.log(`[Gas Prices Cron] Complete: ${stations.length} stations, ${totalPricesInserted} prices`)
 
+    await logCronRun('gas-prices', 'success', startedAt, {
+      stationsScraped: stations.length,
+      newStations,
+      pricesInserted: totalPricesInserted,
+      geocoded: geocodedCount,
+    })
+
     return NextResponse.json({
       success: true,
       stationsScraped: stations.length,
@@ -88,6 +99,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('[Gas Prices Cron] Error:', error)
+    await logCronRun('gas-prices', 'error', startedAt, undefined, error instanceof Error ? error.message : 'Unknown error')
     return NextResponse.json(
       {
         success: false,

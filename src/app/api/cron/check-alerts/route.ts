@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isDatabaseConfigured } from '@/lib/db'
+import { logCronRun } from '@/lib/db/historical'
 import {
   getEnabledSubscriptionsByType,
   hasAlertBeenTriggered,
@@ -67,6 +68,7 @@ export async function GET(request: NextRequest) {
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
   const results: Record<string, { checked: number; matched: number; notified: number }> = {}
+  const startedAt = new Date()
 
   try {
     console.log('[Check Alerts Cron] Starting alert check...')
@@ -94,6 +96,14 @@ export async function GET(request: NextRequest) {
     const totalNotified = Object.values(results).reduce((sum, r) => sum + r.notified, 0)
     console.log(`[Check Alerts Cron] Complete: ${totalNotified} notifications sent, ${cleanedUp + deviceCleanedUp + browserCleanedUp} old alerts cleaned`)
 
+    await logCronRun('check-alerts', 'success', startedAt, {
+      totalNotified,
+      weather: weatherResult.notified,
+      river: riverResult.notified,
+      airQuality: airQualityResult.notified,
+      traffic: trafficResult.notified,
+    })
+
     return NextResponse.json({
       success: true,
       results,
@@ -102,6 +112,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('[Check Alerts Cron] Error:', error)
+    await logCronRun('check-alerts', 'error', startedAt, undefined, error instanceof Error ? error.message : 'Unknown error')
     return NextResponse.json(
       {
         success: false,

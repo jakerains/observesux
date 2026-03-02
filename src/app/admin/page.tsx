@@ -41,6 +41,7 @@ import {
   CalendarDays,
   Landmark,
   Bell,
+  Timer,
 } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
@@ -71,6 +72,7 @@ import { ChatMarkdown } from '@/components/dashboard/ChatMarkdown'
 import { RagAdmin } from '@/components/rag/RagAdmin'
 import { UsersPanel } from '@/components/admin/UsersPanel'
 import { CouncilIngestPanel } from '@/components/admin/CouncilIngestPanel'
+import { CronLogsPanel } from '@/components/admin/CronLogsPanel'
 import { PushNotificationsPanel } from '@/components/admin/PushNotificationsPanel'
 import {
   SUGGESTION_CATEGORIES,
@@ -2105,7 +2107,7 @@ function EventsPanel() {
 }
 
 // Valid admin tab values
-const ADMIN_TABS = ['chat-logs', 'users', 'knowledge-base', 'suggestions', 'events', 'digest', 'council', 'notifications', 'tools'] as const
+const ADMIN_TABS = ['chat-logs', 'users', 'knowledge-base', 'suggestions', 'events', 'digest', 'council', 'notifications', 'automation-logs', 'tools'] as const
 type AdminTab = typeof ADMIN_TABS[number]
 
 // Main Admin Page (wrapped with Suspense for useSearchParams)
@@ -2216,6 +2218,10 @@ function AdminPageContent() {
               <Bell className="h-4 w-4" />
               Notifications
             </TabsTrigger>
+            <TabsTrigger value="automation-logs" className="flex items-center gap-2">
+              <Timer className="h-4 w-4" />
+              Automation
+            </TabsTrigger>
             <TabsTrigger value="tools" className="flex items-center gap-2">
               <Wrench className="h-4 w-4" />
               Tools
@@ -2252,6 +2258,10 @@ function AdminPageContent() {
 
           <TabsContent value="notifications">
             <PushNotificationsPanel />
+          </TabsContent>
+
+          <TabsContent value="automation-logs">
+            <CronLogsPanel />
           </TabsContent>
 
           <TabsContent value="tools">

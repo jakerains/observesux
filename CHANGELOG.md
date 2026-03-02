@@ -5,6 +5,19 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0] - 2026-03-01
+
+### Added
+- Automation Logs admin panel — new "Automation" tab in the admin UI showing a live table of all cron job runs
+- `cron_runs` database table with per-job indexes for efficient history queries
+- `logCronRun()` DB helper that records job name, status, duration, result JSON, and error message; auto-prunes rows older than 90 days
+- Six cron routes instrumented: gas-prices, check-alerts, digest, events, ingest-meetings, check-expo-receipts
+- `GET /api/admin/cron-logs` endpoint returning paginated run history and per-job summary (latest run per job)
+- Summary cards in Automation panel — one per job with status dot, schedule, last-run time, and duration; clickable to filter the run table
+
+### Fixed
+- Admin tab URL param validation now includes `automation-logs` — previously the tab silently fell back to chat-logs, preventing the panel from ever mounting
+
 ## [0.10.1] - 2026-03-01
 
 ### Added

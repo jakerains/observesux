@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isDatabaseConfigured } from '@/lib/db'
+import { logCronRun } from '@/lib/db/historical'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
@@ -32,6 +33,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Database not configured' }, { status: 500 })
   }
 
+  const startedAt = new Date()
+
   try {
     console.log('[Council Cron] Triggering council meeting ingestion')
 
@@ -61,7 +64,7 @@ export async function GET(request: NextRequest) {
 
     const decoder = new TextDecoder()
     let buffer = ''
-    let finalResult = null
+    let finalResult: Record<string, unknown> | null = null
 
     while (true) {
       const { done, value } = await reader.read()
@@ -78,6 +81,17 @@ export async function GET(request: NextRequest) {
 
     console.log('[Council Cron] Ingestion complete:', finalResult)
 
+    if (finalResult) {
+      await logCronRun('ingest-meetings', 'success', startedAt, {
+        processed: finalResult.processed,
+        skipped: finalResult.skipped,
+        failed: finalResult.failed,
+        noCaptions: finalResult.noCaptions,
+      })
+    } else {
+      await logCronRun('ingest-meetings', 'error', startedAt, undefined, 'Stream ended without complete event')
+    }
+
     return NextResponse.json({
       success: true,
       result: finalResult,
@@ -85,6 +99,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('[Council Cron] Error:', error)
+    await logCronRun('ingest-meetings', 'error', startedAt, undefined, error instanceof Error ? error.message : 'Unknown error')
     return NextResponse.json(
       {
         success: false,

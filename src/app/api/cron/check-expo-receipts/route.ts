@@ -6,6 +6,7 @@ import {
   deactivateExpoPushToken,
   cleanupOldExpoPushReceipts,
 } from '@/lib/db/expo-push'
+import { logCronRun } from '@/lib/db/historical'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 30
@@ -26,12 +27,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  const startedAt = new Date()
+
   try {
     // Get pending receipts older than 30 minutes
     const pendingReceipts = await getPendingExpoPushReceipts(30)
 
     if (pendingReceipts.length === 0) {
       const cleaned = await cleanupOldExpoPushReceipts()
+      await logCronRun('check-expo-receipts', 'skipped', startedAt, { checked: 0, ok: 0, errors: 0, deactivated: 0, cleaned })
       return NextResponse.json({ checked: 0, ok: 0, errors: 0, deactivated: 0, cleaned })
     }
 
@@ -70,6 +74,8 @@ export async function GET(request: NextRequest) {
 
     const cleaned = await cleanupOldExpoPushReceipts()
 
+    await logCronRun('check-expo-receipts', 'success', startedAt, { checked, ok: okCount, errors: errorCount, deactivated, cleaned })
+
     return NextResponse.json({
       success: true,
       checked,
@@ -81,6 +87,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('[Expo Receipt Check] Error:', error)
+    await logCronRun('check-expo-receipts', 'error', startedAt, undefined, error instanceof Error ? error.message : 'Unknown error')
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }

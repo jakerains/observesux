@@ -246,6 +246,32 @@ export async function getRecentAlerts(days: number = 7) {
   }
 }
 
+// Log a cron job run
+export async function logCronRun(
+  jobName: string,
+  status: 'success' | 'error' | 'skipped',
+  startedAt: Date,
+  result?: Record<string, unknown>,
+  errorMessage?: string
+): Promise<void> {
+  if (!isDatabaseConfigured()) return
+  const durationMs = Date.now() - startedAt.getTime()
+  try {
+    await sql`
+      INSERT INTO cron_runs (job_name, status, started_at, duration_ms, result, error_message)
+      VALUES (${jobName}, ${status}, ${startedAt.toISOString()}, ${durationMs},
+              ${result ? JSON.stringify(result) : null}, ${errorMessage ?? null})
+    `
+    // Keep table bounded — prune rows older than 90 days for this job
+    await sql`
+      DELETE FROM cron_runs
+      WHERE job_name = ${jobName} AND started_at < NOW() - INTERVAL '90 days'
+    `
+  } catch {
+    // Never throw — logging must not break the cron job
+  }
+}
+
 // Log system health
 export async function logSystemHealth(service: string, status: 'success' | 'error' | 'timeout', responseTimeMs?: number, errorMessage?: string) {
   if (!isDatabaseConfigured()) return

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { fetchCommunityEvents } from '@/lib/fetchers/events'
+import { logCronRun } from '@/lib/db/historical'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60 // Allow up to 60 seconds for Firecrawl scraping
@@ -31,26 +32,33 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  const startedAt = new Date()
+
   try {
     console.log('[Events Cron] Starting weekly events scrape...')
-    const startTime = Date.now()
 
     // Force refresh to scrape fresh data from all sources
     const result = await fetchCommunityEvents(true)
 
-    const duration = Date.now() - startTime
+    const durationMs = Date.now() - startedAt.getTime()
 
-    console.log(`[Events Cron] Complete: ${result.events.length} events in ${duration}ms`)
+    console.log(`[Events Cron] Complete: ${result.events.length} events in ${durationMs}ms`)
+
+    await logCronRun('events', 'success', startedAt, {
+      eventsScraped: result.events.length,
+      durationMs,
+    })
 
     return NextResponse.json({
       success: true,
       eventsScraped: result.events.length,
       sources: countBySource(result.events),
-      durationMs: duration,
+      durationMs,
       timestamp: new Date().toISOString()
     })
   } catch (error) {
     console.error('[Events Cron] Error:', error)
+    await logCronRun('events', 'error', startedAt, undefined, error instanceof Error ? error.message : 'Unknown error')
     return NextResponse.json(
       {
         success: false,

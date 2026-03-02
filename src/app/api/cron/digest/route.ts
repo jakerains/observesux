@@ -3,6 +3,7 @@ import { start } from 'workflow/api'
 import { digestWorkflow } from '@/../workflows/digest-workflow'
 import { isDatabaseConfigured } from '@/lib/db'
 import { getCurrentEdition } from '@/lib/digest/types'
+import { logCronRun } from '@/lib/db/historical'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60 // Allow up to 60 seconds for starting the workflow
@@ -38,6 +39,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Database not configured' }, { status: 500 })
   }
 
+  const startedAt = new Date()
+
   try {
     // Auto-detect the current edition based on time of day
     const edition = getCurrentEdition()
@@ -48,6 +51,8 @@ export async function GET(request: NextRequest) {
 
     console.log(`[Digest Cron] Workflow started with run ID: ${run.runId}`)
 
+    await logCronRun('digest', 'success', startedAt, { edition, workflowRunId: run.runId })
+
     return NextResponse.json({
       success: true,
       edition,
@@ -57,6 +62,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('[Digest Cron] Error starting workflow:', error)
+    await logCronRun('digest', 'error', startedAt, undefined, error instanceof Error ? error.message : 'Unknown error')
     return NextResponse.json(
       {
         success: false,
