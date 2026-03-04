@@ -20,6 +20,8 @@ import { isDatabaseConfigured } from '@/lib/db'
 import { getCurrentEdition, type DigestEdition, type DigestData } from '@/lib/digest/types'
 import { getDeviceTokensForType } from '@/lib/db/device-push'
 import { sendExpoPushToTokens } from '@/lib/push/send-expo'
+import { getBrowserSubscriptionsForType, deactivateBrowserPushSubscription } from '@/lib/db/browser-push'
+import { sendPushNotification } from '@/lib/push/send'
 
 export interface DigestWorkflowInput {
   edition?: DigestEdition
@@ -173,6 +175,58 @@ async function sendDigestPushStep(params: {
 }
 
 /**
+ * Send push notifications to browser (web push) subscribers who want digest alerts.
+ */
+async function sendDigestBrowserPushStep(params: {
+  edition: DigestEdition
+  digestId: string
+}): Promise<{ sent: number; failed: number }> {
+  "use step"
+
+  const editionLabels: Record<DigestEdition, string> = {
+    morning: '☀️ Morning Digest',
+    midday: '🌤 Midday Digest',
+    evening: '🌙 Evening Digest',
+  }
+
+  try {
+    const subs = await getBrowserSubscriptionsForType('digest')
+    if (subs.length === 0) return { sent: 0, failed: 0 }
+
+    let sent = 0
+    let failed = 0
+
+    for (const sub of subs) {
+      const result = await sendPushNotification(
+        { endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.authKey },
+        {
+          title: editionLabels[params.edition] ?? 'Siouxland Digest',
+          body: 'Your Siouxland update is ready — tap to read.',
+          tag: `digest-${params.edition}`,
+          url: `/digest/${params.digestId}`,
+        }
+      )
+
+      if (result.success) {
+        sent++
+      } else {
+        failed++
+        // Deactivate expired/invalid subscriptions (410 Gone or 404)
+        if (result.statusCode === 410 || result.statusCode === 404) {
+          await deactivateBrowserPushSubscription(sub.endpoint)
+        }
+      }
+    }
+
+    console.log(`[Digest Workflow] Browser push sent: ${sent} delivered, ${failed} failed`)
+    return { sent, failed }
+  } catch (error) {
+    console.error('[Digest Workflow] Failed to send browser digest push:', error)
+    return { sent: 0, failed: 0 }
+  }
+}
+
+/**
  * Prune old digests (wrapped in a step for workflow compatibility)
  */
 async function pruneOldDigestsStep(daysToKeep: number): Promise<void> {
@@ -275,9 +329,10 @@ export async function digestWorkflow(
       }
     }
 
-    // Send push notifications to device subscribers (only for published digests)
+    // Send push notifications to all subscribers (only for published digests)
     if (!draft) {
       await sendDigestPushStep({ edition, digestId: savedDigest.id })
+      await sendDigestBrowserPushStep({ edition, digestId: savedDigest.id })
     }
 
     // Prune old digests (as a step so it works in workflow context)
