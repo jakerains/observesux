@@ -1,5 +1,6 @@
-import { generateText } from 'ai'
+import { generateText, generateObject } from 'ai'
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
+import { z } from 'zod'
 import Firecrawl from '@mendable/firecrawl-js'
 import { SUX_PERSONALITY } from '@/lib/ai/sux-personality'
 import type { TranscriptSegment, CouncilMeetingRecap } from '@/types/council-meetings'
@@ -295,8 +296,17 @@ function cleanTranscriptText(text: string): string {
     .trim()
 }
 
+const RecapSchema = z.object({
+  summary: z.string().describe('A concise 2-4 sentence overview of the meeting\'s key business. Used as a preview on the dashboard widget.'),
+  article: z.string().describe('A thorough, engaging blog-post style write-up of the meeting (800-2000 words) as SUX speaking directly to Siouxland residents, using markdown headings (##).'),
+  decisions: z.array(z.string()).describe('Specific decisions made, votes taken, or ordinances passed/discussed. Include vote counts if mentioned.'),
+  topics: z.array(z.string()).describe('Major topics/agenda items discussed.'),
+  publicComments: z.array(z.string()).describe('Notable public comments or citizen concerns raised.'),
+})
+
 /**
  * Generate a structured meeting recap using Claude via OpenRouter.
+ * Uses generateObject with a Zod schema to guarantee valid structured output.
  * Sonnet 4.5 supports ~200K tokens (~600K chars), so most transcripts fit in a single call.
  * Only falls back to staged summarization for exceptionally long transcripts.
  */
@@ -309,12 +319,6 @@ export async function generateMeetingRecap(rawTranscript: string): Promise<Counc
 
 Your job right now is to make a city council meeting transparent and accessible to everyday people. You write blog-post style recaps addressed directly to Siouxland residents.
 
-Given a transcript (or summary of sections), produce a structured JSON recap with these fields:
-
-1. **summary**: A concise 2-4 sentence overview of the meeting's key business. This is used as a preview on the dashboard widget.
-
-2. **article**: A thorough, engaging blog-post style write-up of the meeting (800-2000 words). Write it as SUX speaking directly to Siouxland residents. Use plain English — no jargon, no legalese. Structure it with clear sections using markdown headings (##). Explain what decisions mean for residents: how will this affect their taxes, neighborhood, commute, utilities, etc.? Include context where helpful. Address readers directly when appropriate ("here's what this means for you," "if you live near..."). Lead with the most impactful items. End with any upcoming actions residents should know about (next votes, public comment opportunities, deadlines). Sign off briefly — just "— SUX" is the most authentic. No generic taglines like "Stay safe out there" or lengthy closings. IMPORTANT: Do NOT guess or state how long the meeting was (e.g. "a four-hour meeting") — you only have the transcript text, not the meeting duration. Stick to what you can see in the transcript.
-
 **Editorial voice guidance** — these are critical for maintaining the SUX blog personality consistently:
 - **Be opinionated.** Don't just report what happened; tell residents what matters and why. Have a take. If something's frustrating, say so. If a project is overdue, note it.
 - **Write like a blogger, not a journalist.** Use editorial asides, dry observations, and natural reactions. If a councilmember grilled someone, say they "didn't mince words." If infrastructure is aging, call it "the unglamorous work that keeps basements from flooding."
@@ -322,22 +326,9 @@ Given a transcript (or summary of sections), produce a structured JSON recap wit
 - **Vary your opening.** Don't default to "Hey Siouxland" every time. Never use time-of-day greetings like "Good morning, Siouxland" — these are blog posts, not broadcasts, and readers could be reading at any time. Sometimes jump straight into the story. Sometimes lead with the most interesting thing that happened.
 - **Add editorial commentary.** After reporting facts, add a sentence about what it actually means for people. "That's a start." "Expect pushback." "This one's worth watching."
 
-3. **decisions**: An array of specific decisions made, votes taken, or ordinances passed/discussed. Include vote counts if mentioned.
+For the article field: structure it with clear sections using markdown headings (##). Explain what decisions mean for residents: how will this affect their taxes, neighborhood, commute, utilities, etc.? Lead with the most impactful items. End with any upcoming actions residents should know about. Sign off briefly — just "— SUX". IMPORTANT: Do NOT guess or state how long the meeting was — you only have the transcript text, not the meeting duration.
 
-4. **topics**: An array of major topics/agenda items discussed.
-
-5. **publicComments**: An array of notable public comments or citizen concerns raised.
-
-Respond ONLY with valid JSON in this exact format:
-{
-  "summary": "...",
-  "article": "...",
-  "decisions": ["...", "..."],
-  "topics": ["...", "..."],
-  "publicComments": ["...", "..."]
-}
-
-If a section has no entries, use an empty array []. Focus on substance over procedure.`
+If a section has no entries, use an empty array. Focus on substance over procedure.`
 
   // Staged summarization only for exceptionally long transcripts (>600K chars / ~150K tokens)
   if (rawTranscript.length > 600000) {
@@ -349,7 +340,7 @@ If a section has no entries, use an empty array []. Focus on substance over proc
       sections.push(rawTranscript.slice(i, i + sectionSize))
     }
 
-    // Summarize each section
+    // Summarize each section (free-form text summaries)
     const sectionSummaries: string[] = []
     for (let i = 0; i < sections.length; i++) {
       console.log(`[Council Recap] Summarizing section ${i + 1}/${sections.length}`)
@@ -362,57 +353,27 @@ If a section has no entries, use an empty array []. Focus on substance over proc
       sectionSummaries.push(result.text)
     }
 
-    // Combine and generate final recap
+    // Combine and generate final structured recap
     const combinedSummary = sectionSummaries.join('\n\n---\n\n')
-    const result = await generateText({
+    const result = await generateObject({
       model: openrouter('anthropic/claude-sonnet-4.5'),
+      schema: RecapSchema,
       system: RECAP_SYSTEM_PROMPT,
       prompt: `Here are detailed summaries of different sections of a city council meeting:\n\n${combinedSummary}`,
       maxOutputTokens: 8000,
     })
 
-    return parseRecapResponse(result.text)
+    return result.object
   }
 
   // Direct generation — send full transcript in one call
-  const result = await generateText({
+  const result = await generateObject({
     model: openrouter('anthropic/claude-sonnet-4.5'),
+    schema: RecapSchema,
     system: RECAP_SYSTEM_PROMPT,
     prompt: rawTranscript,
     maxOutputTokens: 8000,
   })
 
-  return parseRecapResponse(result.text)
-}
-
-/**
- * Parse the AI response into a CouncilMeetingRecap, with fallback handling
- */
-function parseRecapResponse(text: string): CouncilMeetingRecap {
-  try {
-    // Try to extract JSON from the response (may have markdown code fences)
-    const jsonMatch = text.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) {
-      throw new Error('No JSON found in response')
-    }
-
-    const parsed = JSON.parse(jsonMatch[0])
-    return {
-      summary: parsed.summary || 'Meeting recap generated but summary extraction failed.',
-      article: parsed.article || '',
-      decisions: Array.isArray(parsed.decisions) ? parsed.decisions : [],
-      topics: Array.isArray(parsed.topics) ? parsed.topics : [],
-      publicComments: Array.isArray(parsed.publicComments) ? parsed.publicComments : [],
-    }
-  } catch (error) {
-    console.error('[Council Recap] Failed to parse recap JSON:', error)
-    // Fallback: use the raw text as the summary
-    return {
-      summary: text.slice(0, 500),
-      article: '',
-      decisions: [],
-      topics: [],
-      publicComments: [],
-    }
-  }
+  return result.object
 }

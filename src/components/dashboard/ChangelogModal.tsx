@@ -16,6 +16,24 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.12.0',
+    date: '2026-03-04',
+    added: [
+      'Dynamic sitemap with council meeting URLs for better SEO',
+      'OpenGraph image generation for council meeting pages',
+      'Section metadata layouts for council, digest, and events pages',
+    ],
+    changed: [
+      'Council recap generation now uses structured output (Zod schema) — no more raw JSON showing in widget',
+      'Security headers added to all routes (X-Frame-Options, CSP, Referrer-Policy)',
+      'Council meeting detail pages now include NewsArticle + BreadcrumbList JSON-LD structured data',
+    ],
+    fixed: [
+      'Council widget and recap pages showing raw JSON instead of rendered content',
+      'JSONB recap field parsing in all DB read paths',
+    ],
+  },
+  {
     version: '0.11.0',
     date: '2026-03-01',
     added: [

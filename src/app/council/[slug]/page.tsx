@@ -17,16 +17,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     }
   }
 
-  const formattedDate = meeting.meetingDate
-    ? new Date(meeting.meetingDate + 'T12:00:00').toLocaleDateString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        timeZone: 'America/Chicago',
-      })
-    : 'Recent Meeting'
-
   const title = `${meeting.title} | Siouxland Online`
   const description = meeting.recap.summary
 
@@ -62,5 +52,52 @@ export default async function CouncilPostPage({ params }: PageProps) {
   const { slug } = await params
   const meeting = await getMeetingBySlug(slug)
 
-  return <CouncilPostClient meeting={meeting} />
+  const articleSchema = meeting?.recap
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'NewsArticle',
+        headline: meeting.title,
+        description: meeting.recap.summary,
+        datePublished: meeting.publishedAt || meeting.createdAt,
+        dateModified: meeting.updatedAt,
+        author: {
+          '@type': 'Organization',
+          name: 'SUX - Siouxland AI Assistant',
+          url: 'https://siouxland.online',
+        },
+        publisher: {
+          '@id': 'https://siouxland.online/#organization',
+        },
+        mainEntityOfPage: {
+          '@type': 'WebPage',
+          '@id': `https://siouxland.online/council/${slug}`,
+        },
+      }
+    : null
+
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://siouxland.online' },
+      { '@type': 'ListItem', position: 2, name: 'Council Recaps', item: 'https://siouxland.online/council' },
+      { '@type': 'ListItem', position: 3, name: meeting?.title ?? 'Meeting', item: `https://siouxland.online/council/${slug}` },
+    ],
+  }
+
+  return (
+    <>
+      {articleSchema && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+        />
+      )}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+      <CouncilPostClient meeting={meeting} />
+    </>
+  )
 }

@@ -25,7 +25,9 @@ function mapRowToMeeting(row: Record<string, unknown>): CouncilMeeting {
     videoUrl: row.video_url as string | null,
     channelId: row.channel_id as string | null,
     transcriptRaw: row.transcript_raw as string | null,
-    recap: row.recap as CouncilMeetingRecap | null,
+    recap: row.recap
+      ? (typeof row.recap === 'string' ? JSON.parse(row.recap) : row.recap as CouncilMeetingRecap)
+      : null,
     status: row.status as CouncilMeetingStatus,
     errorMessage: row.error_message as string | null,
     chunkCount: (row.chunk_count as number) || 0,
@@ -513,7 +515,9 @@ export async function getMeetingVersions(meetingId: string): Promise<MeetingVers
       id: row.id as string,
       meetingId: row.meeting_id as string,
       version: row.version as number,
-      recap: row.recap as CouncilMeetingRecap | null,
+      recap: row.recap
+        ? (typeof row.recap === 'string' ? JSON.parse(row.recap) : row.recap as CouncilMeetingRecap)
+        : null,
       transcriptRaw: row.transcript_raw as string | null,
       chunkCount: (row.chunk_count as number) || 0,
       createdAt: (row.created_at as Date).toISOString(),

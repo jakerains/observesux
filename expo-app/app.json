@@ -13,6 +13,7 @@
       "backgroundColor": "#000000"
     },
     "ios": {
+      "icon": "./assets/siouxlandonline.icon",
       "supportsTablet": true,
       "bundleIdentifier": "com.siouxland.online",
       "config": {

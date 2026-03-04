@@ -5,6 +5,23 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.0] - 2026-03-04
+
+### Added
+- Dynamic sitemap with council meeting URLs for SEO
+- OpenGraph image generation for council meeting pages (`opengraph-image.tsx`)
+- Section metadata layouts for council, digest, and events pages
+- iOS icon asset added to Expo app config
+
+### Changed
+- Council meeting recap generation now uses `generateObject` with a Zod schema — eliminates fragile regex JSON parsing that caused raw JSON to appear in the widget
+- Security headers added to all routes: `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`
+- Council meeting detail page now includes structured data (NewsArticle + BreadcrumbList JSON-LD schemas)
+
+### Fixed
+- Council widget and recap pages showing raw JSON instead of rendered content when AI response had unescaped characters in the article field
+- JSONB recap field now correctly parsed in all DB read paths (handles both string and object forms)
+
 ## [0.11.0] - 2026-03-01
 
 ### Added

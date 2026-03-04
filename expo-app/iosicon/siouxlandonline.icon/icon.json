@@ -1,0 +1,50 @@
+{
+  "fill" : {
+    "linear-gradient" : [
+      "display-p3:0.58824,0.34902,0.18039,1.00000",
+      "display-p3:0.18824,0.12157,0.08235,1.00000"
+    ]
+  },
+  "groups" : [
+    {
+      "layers" : [
+        {
+          "image-name" : "siouxlandbridge-solo2.png",
+          "name" : "siouxlandbridge-solo2",
+          "position" : {
+            "scale" : 0.8,
+            "translation-in-points" : [
+              0.296875,
+              39.375
+            ]
+          }
+        },
+        {
+          "image-name" : "siouxlandbridge-missingbridge.png",
+          "name" : "siouxlandbridge-missingbridge",
+          "position" : {
+            "scale" : 1.05,
+            "translation-in-points" : [
+              6.328125,
+              -3.453125
+            ]
+          }
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "circles" : [
+      "watchOS"
+    ],
+    "squares" : "shared"
+  }
+}

@@ -63,9 +63,18 @@ const nextConfig: NextConfig = {
   // Empty turbopack config to allow dev mode (Serwist is disabled in dev anyway)
   turbopack: {},
 
-  // Security headers for PWA
+  // Security headers for PWA and general security
   async headers() {
     return [
+      {
+        source: '/(.*)',
+        headers: [
+          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+        ],
+      },
       {
         source: '/sw.js',
         headers: [
