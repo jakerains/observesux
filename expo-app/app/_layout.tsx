@@ -6,12 +6,12 @@
 import { useEffect } from 'react';
 import { Stack } from 'expo-router/stack';
 import { StatusBar } from 'expo-status-bar';
-import { PlatformColor } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { AuthProvider, SettingsProvider, useAuth } from '../lib/contexts';
+import { AuthProvider, SettingsProvider, useAuth, useSettings } from '../lib/contexts';
 import { configureNotifications } from '../lib/notifications';
+import { NotificationPromptModal } from '../components/NotificationPromptModal';
 
 // Prevent the splash screen from auto-hiding before assets load
 SplashScreen.preventAutoHideAsync();
@@ -32,10 +32,10 @@ const queryClient = new QueryClient({
 });
 
 /**
- * Inner layout with access to auth context for passing token to settings
+ * Innermost layout — consumes SettingsContext (must be inside SettingsProvider)
  */
-function RootLayoutInner() {
-  const { token } = useAuth();
+function AppShell() {
+  const { updateSetting } = useSettings();
 
   const headerOptions = {
     headerStyle: { backgroundColor: '#170d08' },
@@ -46,7 +46,7 @@ function RootLayoutInner() {
   };
 
   return (
-    <SettingsProvider authToken={token}>
+    <>
       <StatusBar style="light" />
       <Stack screenOptions={headerOptions}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -92,8 +92,24 @@ function RootLayoutInner() {
             headerShown: true,
           }}
         />
-
       </Stack>
+      <NotificationPromptModal
+        onDismiss={(enabled) => {
+          if (enabled) updateSetting('notificationsEnabled', true);
+        }}
+      />
+    </>
+  );
+}
+
+/**
+ * Middle layer — reads auth token and provides SettingsContext
+ */
+function RootLayoutInner() {
+  const { token } = useAuth();
+  return (
+    <SettingsProvider authToken={token}>
+      <AppShell />
     </SettingsProvider>
   );
 }

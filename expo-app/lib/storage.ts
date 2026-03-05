@@ -10,6 +10,7 @@ export const STORAGE_KEYS = {
   SETTINGS: 'app_settings',
   AUTH_USER: 'auth_user',
   ONBOARDING_COMPLETE: 'onboarding_complete',
+  NOTIFICATION_PROMPT_SHOWN: 'notification_prompt_shown',
 } as const;
 
 /**
