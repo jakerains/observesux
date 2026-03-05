@@ -37,26 +37,40 @@ interface FeedConfig {
 }
 
 // RSS feed URLs for Sioux City area news
+// Direct local sources are listed first so they win deduplication over the Google News aggregator.
+// Note: KTIV, KWIT, KMEG/KPTH, Nebraska Public Media all return 404 as of 2026-03.
 const NEWS_FEEDS: FeedConfig[] = [
   {
-    // Google News RSS for Sioux City
-    url: 'https://news.google.com/rss/search?q=Sioux+City+Iowa&hl=en-US&gl=US&ceid=US:en',
-    source: 'Google News',
-    fallbackUrl: 'https://news.google.com/search?q=Sioux%20City%20Iowa',
-    isGoogleNews: true
-  },
-  {
-    // Siouxland Proud / KCAU9
-    url: 'https://www.siouxlandproud.com/feed/',
-    source: 'Siouxland Proud',
-    fallbackUrl: 'https://www.siouxlandproud.com/news/local-news/'
+    // KCAU9 (formerly siouxlandproud.com — 308 permanently redirected here)
+    url: 'https://www.kcau9.com/feed/',
+    source: 'KCAU9',
+    fallbackUrl: 'https://www.kcau9.com/news/'
   },
   {
     // Sioux City Journal - local news category
     url: 'https://siouxcityjournal.com/search/?f=rss&t=article&c=news/local&l=25&s=start_time&sd=desc',
     source: 'Sioux City Journal',
     fallbackUrl: 'https://siouxcityjournal.com/news/local/'
-  }
+  },
+  {
+    // Sioux City Journal - sports
+    url: 'https://siouxcityjournal.com/search/?f=rss&t=article&c=sports&l=15&s=start_time&sd=desc',
+    source: 'Sioux City Journal',
+    fallbackUrl: 'https://siouxcityjournal.com/sports/'
+  },
+  {
+    // Sioux City Journal - business
+    url: 'https://siouxcityjournal.com/search/?f=rss&t=article&c=business&l=15&s=start_time&sd=desc',
+    source: 'Sioux City Journal',
+    fallbackUrl: 'https://siouxcityjournal.com/business/'
+  },
+  {
+    // Google News RSS for Sioux City — listed last so direct local sources win deduplication
+    url: 'https://news.google.com/rss/search?q=Sioux+City+Iowa&hl=en-US&gl=US&ceid=US:en',
+    source: 'Google News',
+    fallbackUrl: 'https://news.google.com/search?q=Sioux%20City%20Iowa',
+    isGoogleNews: true
+  },
 ]
 
 // Parse various date formats commonly found in RSS feeds
@@ -291,7 +305,7 @@ export async function fetchLocalNews(): Promise<NewsItem[]> {
     return false
   })
 
-  // Sort by breaking news first, then by date, and take top 20
+  // Sort by breaking news first, then by date, and take top 30
   return deduped
     .sort((a, b) => {
       // Breaking news first
@@ -300,5 +314,5 @@ export async function fetchLocalNews(): Promise<NewsItem[]> {
       // Then by date
       return b.pubDate.getTime() - a.pubDate.getTime()
     })
-    .slice(0, 20)
+    .slice(0, 30)
 }

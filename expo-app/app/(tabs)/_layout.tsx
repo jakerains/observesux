@@ -7,6 +7,8 @@ import { NativeTabs } from 'expo-router/unstable-native-tabs';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const suxIcon = require('../../assets/sux-icon.png');
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const suxIconSelected = require('../../assets/sux-icon-selected.png');
 
 export default function TabLayout() {
   return (
@@ -23,7 +25,10 @@ export default function TabLayout() {
         <NativeTabs.Trigger.Label>Map</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="(sux)">
-        <NativeTabs.Trigger.Icon src={suxIcon} renderingMode="original" />
+        <NativeTabs.Trigger.Icon
+          src={{ default: suxIcon, selected: suxIconSelected }}
+          renderingMode="original"
+        />
         <NativeTabs.Trigger.Label>SUX</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="(cameras)">

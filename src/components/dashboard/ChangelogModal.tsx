@@ -16,6 +16,22 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.12.1',
+    date: '2026-03-05',
+    added: [
+      'Sioux City Journal sports and business RSS feeds as additional news sources',
+      'SUX tab icon now has a distinct selected state in the Expo app',
+    ],
+    changed: [
+      'News fetcher now pulls from 5 feeds: KCAU9, SCJ local/sports/business, and Google News',
+      'Fixed KCAU9 feed URL — siouxlandproud.com permanently moved to kcau9.com',
+      'Local sources now win deduplication over Google News aggregated versions',
+      'News result cap increased from 20 to 30 items',
+      'News API route refactored to import from shared fetcher (eliminated ~300 lines of duplicate code)',
+    ],
+    fixed: [],
+  },
+  {
     version: '0.12.0',
     date: '2026-03-04',
     added: [

@@ -5,6 +5,20 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.1] - 2026-03-05
+
+### Added
+- Sioux City Journal sports and business RSS feeds as additional news sources
+- SUX tab icon now has a distinct selected state in the Expo app
+
+### Changed
+- News fetcher now has 5 feeds (was 3): KCAU9, SCJ local/sports/business, Google News
+- Fixed KCAU9 feed URL (siouxlandproud.com permanently redirected to kcau9.com)
+- Google News moved last in feed order so direct local sources win deduplication
+- News result cap increased from 20 to 30 items
+- News API route refactored to import from shared fetcher (eliminated ~300 lines of duplicated code)
+- Expo app bumped to 1.0.4
+
 ## [0.12.0] - 2026-03-04
 
 ### Added
