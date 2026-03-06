@@ -75,6 +75,7 @@ export function EarthquakeWidget() {
 
   const earthquakes = earthquakeData?.data || []
   const lastUpdated = earthquakeData?.timestamp ? new Date(earthquakeData.timestamp) : undefined
+  const weekAgo = (lastUpdated?.getTime() ?? 0) - 7 * 24 * 60 * 60 * 1000
   const status = error
     ? 'error'
     : isLoading
@@ -89,10 +90,9 @@ export function EarthquakeWidget() {
   )
 
   // Get significant earthquakes (M3+) in the last 7 days
-  const recentSignificant = earthquakes.filter(eq => {
-    const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
-    return new Date(eq.time).getTime() > weekAgo && eq.magnitude >= 3
-  })
+  const recentSignificant = earthquakes.filter(
+    (eq) => new Date(eq.time).getTime() > weekAgo && eq.magnitude >= 3
+  )
 
   if (isLoading) {
     return (

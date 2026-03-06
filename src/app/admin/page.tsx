@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo, Suspense } from 'react'
+import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { format, formatDistanceToNow } from 'date-fns'
 import {
@@ -16,7 +16,6 @@ import {
   Calendar,
   Zap,
   TrendingUp,
-  Lock,
   Loader2,
   Database,
   Settings,
@@ -144,7 +143,7 @@ function AccessDenied({ reason }: { reason: 'not-logged-in' | 'not-admin' }) {
         <CardContent className="space-y-3">
           {reason === 'not-logged-in' ? (
             <Button asChild className="w-full">
-              <a href="/auth/sign-in">Sign In</a>
+              <Link href="/auth/sign-in">Sign In</Link>
             </Button>
           ) : (
             <p className="text-xs text-center text-muted-foreground">

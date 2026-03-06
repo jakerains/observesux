@@ -224,7 +224,7 @@ export default function SignInScreen() {
           {/* Sign Up Link */}
           <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 16 }}>
             <Text style={{ color: PlatformColor('secondaryLabel'), fontSize: 15 }}>
-              Don't have an account?{' '}
+              Don&apos;t have an account?{' '}
             </Text>
             <Pressable onPress={goToSignUp}>
               <Text style={{ color: PlatformColor('systemBlue'), fontSize: 15, fontWeight: '600' }}>

@@ -9,7 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { useTransit } from '@/lib/hooks/useDataFetching'
 import { useTransitSelection } from '@/lib/contexts/TransitContext'
 import { useDashboardLayout } from '@/lib/contexts/DashboardLayoutContext'
-import { Bus, Clock, MapPin, Route, Circle, ChevronRight, ChevronUp, ChevronDown, Map, Navigation, RefreshCw, Users, Timer } from 'lucide-react'
+import { Bus, MapPin, Route, Circle, ChevronRight, ChevronUp, ChevronDown, Map, Navigation, RefreshCw, Users, Timer } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { cn } from '@/lib/utils'
 import type { BusPosition, TransitRoute, OccupancyStatus, ScheduleAdherence } from '@/types'
@@ -111,13 +111,16 @@ function TripProgress({ progress, compact = false }: {
 
 interface BusRowProps {
   bus: BusPosition
+  referenceTime?: number
   onClick?: () => void
   isSelected?: boolean
   compact?: boolean
 }
 
-function BusRow({ bus, onClick, isSelected, compact = false }: BusRowProps) {
-  const timeSinceUpdate = Math.floor((Date.now() - new Date(bus.timestamp).getTime()) / 1000)
+function BusRow({ bus, referenceTime, onClick, isSelected, compact = false }: BusRowProps) {
+  const timeSinceUpdate = Math.floor(
+    Math.max(0, (referenceTime ?? new Date(bus.timestamp).getTime()) - new Date(bus.timestamp).getTime()) / 1000
+  )
   const isStale = timeSinceUpdate > 120
 
   return (
@@ -406,6 +409,7 @@ export function TransitWidget() {
               <BusRow
                 key={bus.vehicleId}
                 bus={bus}
+                referenceTime={lastUpdated?.getTime()}
                 onClick={() => handleBusClick(bus)}
                 isSelected={selectedBusId === bus.vehicleId}
                 compact={isExpanded}

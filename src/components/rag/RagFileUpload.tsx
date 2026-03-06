@@ -46,7 +46,7 @@ function parseMarkdown(content: string, filename: string): ParsedEntry[] {
   const title = headingMatch ? headingMatch[1].trim() : filename.replace(/\.md$/i, '')
 
   // Remove the first heading from content if found
-  let bodyContent = headingMatch
+  const bodyContent = headingMatch
     ? content.replace(/^#\s+.+\n*/m, '').trim()
     : content.trim()
 
@@ -116,7 +116,6 @@ function parseJson(content: string, filename: string): ParsedEntry[] {
     if (!title || !content) {
       // If we can't find standard fields, try to use the whole object
       if (typeof item === 'object' && Object.keys(item).length > 0) {
-        const autoTitle = Object.keys(item)[0]
         const autoContent = JSON.stringify(item, null, 2)
         entries.push({
           title: `Entry from ${filename}`,

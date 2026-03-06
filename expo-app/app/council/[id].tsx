@@ -2,7 +2,7 @@
  * City Council Meeting Recap - Detail Modal
  */
 
-import { View, ScrollView, Text, PlatformColor, Pressable, Linking } from 'react-native';
+import { View, ScrollView, Text, Pressable, Linking } from 'react-native';
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
@@ -37,7 +37,7 @@ export default function CouncilDetailScreen() {
     return (
       <View style={{ flex: 1, backgroundColor: Brand.background, justifyContent: 'center', alignItems: 'center' }}>
         <Stack.Screen options={{ title: 'Council Recap' }} />
-        <Image source="sf:exclamationmark.circle" style={{ width: 48, height: 48 }} tintColor={Brand.amber} />
+        <Image source="sf:exclamationmark.circle" alt="" style={{ width: 48, height: 48 }} tintColor={Brand.amber} />
         <Text style={{ marginTop: 12, color: Brand.foreground, fontSize: 15 }}>Failed to load</Text>
       </View>
     );
@@ -49,7 +49,7 @@ export default function CouncilDetailScreen() {
     return (
       <View style={{ flex: 1, backgroundColor: Brand.background, justifyContent: 'center', alignItems: 'center' }}>
         <Stack.Screen options={{ title: 'Council Recap' }} />
-        <Image source="sf:building.columns" style={{ width: 48, height: 48 }} tintColor={Brand.amber} />
+        <Image source="sf:building.columns" alt="" style={{ width: 48, height: 48 }} tintColor={Brand.amber} />
         <Text style={{ marginTop: 12, color: Brand.foreground, fontSize: 15 }}>Meeting not found</Text>
         <Text style={{ marginTop: 4, color: Brand.muted, fontSize: 12 }}>ID: {String(id)}</Text>
       </View>
@@ -83,7 +83,7 @@ export default function CouncilDetailScreen() {
       >
         {!!dateLabel && (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 14 }}>
-            <Image source="sf:calendar" style={{ width: 14, height: 14 }} tintColor={Brand.amber} />
+            <Image source="sf:calendar" alt="" style={{ width: 14, height: 14 }} tintColor={Brand.amber} />
             <Text style={{ fontSize: 13, color: Brand.amber, fontWeight: '500' }}>{dateLabel}</Text>
           </View>
         )}
@@ -152,7 +152,7 @@ export default function CouncilDetailScreen() {
             onPress={() => Linking.openURL(meeting.videoUrl!)}
             style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 12, backgroundColor: Brand.card, borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.1)', marginTop: 8 }}
           >
-            <Image source="sf:play.rectangle.fill" style={{ width: 20, height: 20 }} tintColor={Brand.amber} />
+            <Image source="sf:play.rectangle.fill" alt="" style={{ width: 20, height: 20 }} tintColor={Brand.amber} />
             <Text style={{ fontWeight: '600', color: Brand.amber }}>Watch on YouTube</Text>
           </Pressable>
         )}
@@ -164,7 +164,7 @@ export default function CouncilDetailScreen() {
 function SectionHeader({ icon, title }: { icon: string; title: string }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-      <Image source={`sf:${icon}`} style={{ width: 18, height: 18 }} tintColor={Brand.amber} />
+      <Image source={`sf:${icon}`} alt="" style={{ width: 18, height: 18 }} tintColor={Brand.amber} />
       <Text style={{ fontSize: 15, fontWeight: '600', color: Brand.foreground }}>{title}</Text>
     </View>
   );

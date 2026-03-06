@@ -10,13 +10,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useCameras } from '@/lib/hooks/useDataFetching'
-import { Camera, Video, Maximize2, RefreshCw, MapPin, Filter } from 'lucide-react'
+import { Camera, Video, Maximize2, RefreshCw, MapPin } from 'lucide-react'
 import type { TrafficCamera } from '@/types'
 import { getDataFreshness } from '@/lib/utils/dataFreshness'
 
 interface CameraCardProps {
   camera: TrafficCamera
   onExpand: (camera: TrafficCamera) => void
+}
+
+function getCameraSnapshotSrc(snapshotUrl: string, cacheKey?: number) {
+  return cacheKey === undefined ? snapshotUrl : `${snapshotUrl}?v=${cacheKey}`
 }
 
 function CameraCard({ camera, onExpand }: CameraCardProps) {
@@ -39,7 +43,7 @@ function CameraCard({ camera, onExpand }: CameraCardProps) {
         {camera.snapshotUrl && !imageError ? (
           <Image
             key={imageKey}
-            src={`${camera.snapshotUrl}?t=${Date.now()}`}
+            src={getCameraSnapshotSrc(camera.snapshotUrl, imageKey)}
             alt={camera.name}
             fill
             className="object-cover"
@@ -130,7 +134,7 @@ function CameraModal({ camera, onClose }: CameraModalProps) {
               <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
                 {camera.snapshotUrl ? (
                   <Image
-                    src={`${camera.snapshotUrl}?t=${Date.now()}`}
+                    src={getCameraSnapshotSrc(camera.snapshotUrl)}
                     alt={camera.name}
                     fill
                     className="object-contain"
@@ -168,7 +172,7 @@ function CameraModal({ camera, onClose }: CameraModalProps) {
         {!camera.streamUrl && camera.snapshotUrl && (
           <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
             <Image
-              src={`${camera.snapshotUrl}?t=${Date.now()}`}
+              src={getCameraSnapshotSrc(camera.snapshotUrl)}
               alt={camera.name}
               fill
               className="object-contain"

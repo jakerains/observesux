@@ -6,7 +6,6 @@ import {
   hasAlertBeenTriggered,
   recordTriggeredAlert,
   cleanupOldTriggeredAlerts,
-  type AlertType
 } from '@/lib/db/alerts'
 import {
   getDeviceTokensForType,
@@ -50,6 +49,16 @@ function verifyCronRequest(request: NextRequest): boolean {
   const isDev = process.env.NODE_ENV === 'development'
 
   return isVercelCron || hasValidSecret || isDev
+}
+
+function buildExpoAlertData(payload: PushPayload): Record<string, unknown> | undefined {
+  const data = {
+    ...(payload.data ?? {}),
+    ...(payload.url ? { url: payload.url } : {}),
+    ...(payload.tag ? { tag: payload.tag } : {}),
+  }
+
+  return Object.keys(data).length > 0 ? data : undefined
 }
 
 /**
@@ -181,7 +190,7 @@ async function checkWeatherAlerts(baseUrl: string): Promise<{ checked: number; m
       const expoPayload: ExpoPushPayload = {
         title: payload.title,
         body: payload.body,
-        data: { url: (payload as any).url, tag: (payload as any).tag },
+        data: buildExpoAlertData(payload),
         sound: 'default',
         priority: 'high',
       }
@@ -284,7 +293,7 @@ async function checkRiverAlerts(baseUrl: string): Promise<{ checked: number; mat
       const expoPayload: ExpoPushPayload = {
         title: payload.title,
         body: payload.body,
-        data: { url: (payload as any).url, tag: (payload as any).tag },
+        data: buildExpoAlertData(payload),
         sound: 'default',
         priority: 'high',
       }
@@ -374,7 +383,7 @@ async function checkAirQualityAlerts(baseUrl: string): Promise<{ checked: number
     const expoPayload: ExpoPushPayload = {
       title: payload.title,
       body: payload.body,
-      data: { url: (payload as any).url, tag: (payload as any).tag },
+      data: buildExpoAlertData(payload),
       sound: 'default',
       priority: 'high',
     }
@@ -475,7 +484,7 @@ async function checkTrafficAlerts(baseUrl: string): Promise<{ checked: number; m
       const expoPayload: ExpoPushPayload = {
         title: payload.title,
         body: payload.body,
-        data: { url: (payload as any).url, tag: (payload as any).tag },
+        data: buildExpoAlertData(payload),
         sound: 'default',
         priority: 'high',
       }

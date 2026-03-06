@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { BellRing } from 'lucide-react'
 
@@ -11,9 +12,9 @@ import { BellRing } from 'lucide-react'
 export function UserMenu() {
   return (
     <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-      <a href="/account/alerts" aria-label="Notification settings">
+      <Link href="/account/alerts" aria-label="Notification settings">
         <BellRing className="h-4 w-4" />
-      </a>
+      </Link>
     </Button>
   )
 }

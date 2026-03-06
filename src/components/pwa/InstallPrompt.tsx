@@ -12,36 +12,35 @@ interface BeforeInstallPromptEvent extends Event {
 export function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
   const [showPrompt, setShowPrompt] = useState(false)
-  const [isIOS, setIsIOS] = useState(false)
-  const [isStandalone, setIsStandalone] = useState(false)
-  const [dismissed, setDismissed] = useState(false)
+  const [isIOS] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) && !('MSStream' in window)
+  })
+  const [isStandalone] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return window.matchMedia('(display-mode: standalone)').matches
+  })
+  const [dismissed, setDismissed] = useState(() => {
+    if (typeof window === 'undefined') return false
 
-  useEffect(() => {
-    // Don't show on auth pages or when opened from mobile app
     const isAuthPage = window.location.pathname.startsWith('/auth')
     const isMobileApp = new URLSearchParams(window.location.search).get('mobile') === 'true'
     if (isAuthPage || isMobileApp) {
-      setDismissed(true)
-      return
+      return true
     }
 
-    // Check if already installed as PWA
-    const standalone = window.matchMedia('(display-mode: standalone)').matches
-    setIsStandalone(standalone)
-
-    // Check if iOS
-    const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !('MSStream' in window)
-    setIsIOS(iOS)
-
-    // Check if user previously dismissed the prompt
     const wasDismissed = localStorage.getItem('pwa-install-dismissed')
-    if (wasDismissed) {
-      const dismissedTime = parseInt(wasDismissed, 10)
-      // Show again after 30 days
-      if (Date.now() - dismissedTime < 30 * 24 * 60 * 60 * 1000) {
-        setDismissed(true)
-        return
-      }
+    if (!wasDismissed) {
+      return false
+    }
+
+    const dismissedTime = parseInt(wasDismissed, 10)
+    return Date.now() - dismissedTime < 30 * 24 * 60 * 60 * 1000
+  })
+
+  useEffect(() => {
+    if (dismissed || isStandalone) {
+      return
     }
 
     // Listen for the beforeinstallprompt event
@@ -62,7 +61,7 @@ export function InstallPrompt() {
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstall)
     }
-  }, [])
+  }, [dismissed, isStandalone])
 
   const handleInstall = async () => {
     if (!deferredPrompt) return

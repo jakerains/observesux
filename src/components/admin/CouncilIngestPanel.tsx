@@ -1200,6 +1200,7 @@ export function CouncilIngestPanel() {
 
       {/* Upload Transcript Modal */}
       <TranscriptUploadModal
+        key={uploadPrefill?.videoId ?? 'manual'}
         open={uploadModalOpen}
         onOpenChange={(open) => {
           setUploadModalOpen(open)

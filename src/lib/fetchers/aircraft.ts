@@ -37,7 +37,7 @@ function bearingTo(lat1: number, lon1: number, lat2: number, lon2: number): numb
   const x =
     Math.cos(toRad(lat1)) * Math.sin(toRad(lat2)) -
     Math.sin(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.cos(dLon)
-  let brng = Math.atan2(y, x) * (180 / Math.PI)
+  const brng = Math.atan2(y, x) * (180 / Math.PI)
   return (brng + 360) % 360
 }
 

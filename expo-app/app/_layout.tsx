@@ -4,13 +4,19 @@
  */
 
 import { useEffect } from 'react';
-import { Stack } from 'expo-router/stack';
+import * as Notifications from 'expo-notifications';
+import { Stack, useRouter, type Href } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AuthProvider, SettingsProvider, useAuth, useSettings } from '../lib/contexts';
-import { configureNotifications } from '../lib/notifications';
+import {
+  addNotificationResponseListener,
+  configureNotifications,
+  getLastNotificationResponse,
+  getNotificationNavigationPathFromResponse,
+} from '../lib/notifications';
 import { NotificationPromptModal } from '../components/NotificationPromptModal';
 
 // Prevent the splash screen from auto-hiding before assets load
@@ -36,6 +42,45 @@ const queryClient = new QueryClient({
  */
 function AppShell() {
   const { updateSetting } = useSettings();
+  const router = useRouter();
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const handleNotificationResponse = async (response: Notifications.NotificationResponse | null) => {
+      if (!response || response.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER) {
+        return;
+      }
+
+      const path = getNotificationNavigationPathFromResponse(response);
+      if (!path) {
+        return;
+      }
+
+      router.push(path as Href);
+
+      try {
+        await Notifications.clearLastNotificationResponseAsync();
+      } catch (error) {
+        console.warn('Failed to clear last notification response:', error);
+      }
+    };
+
+    void getLastNotificationResponse().then((response) => {
+      if (isMounted) {
+        void handleNotificationResponse(response);
+      }
+    });
+
+    const subscription = addNotificationResponseListener((response) => {
+      void handleNotificationResponse(response);
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.remove();
+    };
+  }, [router]);
 
   const headerOptions = {
     headerStyle: { backgroundColor: '#170d08' },

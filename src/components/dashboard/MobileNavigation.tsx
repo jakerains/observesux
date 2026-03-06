@@ -32,18 +32,17 @@ const NAV_ITEMS: NavItem[] = [
 ]
 
 export function MobileNavigation() {
-  const [activeSection, setActiveSection] = useState('weather')
+  const [scrollActiveSection, setScrollActiveSection] = useState('weather')
   const { openChat } = useChatSheet()
   const router = useRouter()
   const pathname = usePathname()
 
   // Check if we're on the digest page
   const isOnDigestPage = pathname === '/digest'
+  const activeSection = isOnDigestPage ? 'digest' : scrollActiveSection
 
   useEffect(() => {
-    // If on digest page, always show digest as active
     if (isOnDigestPage) {
-      setActiveSection('digest')
       return
     }
 
@@ -67,7 +66,7 @@ export function MobileNavigation() {
       }, null as { id: string; top: number } | null)
 
       if (visible) {
-        setActiveSection(visible.id)
+        setScrollActiveSection(visible.id)
       }
     }
 

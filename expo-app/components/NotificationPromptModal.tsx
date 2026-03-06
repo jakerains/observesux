@@ -8,14 +8,13 @@
  * so the user can still grant later from More → Notifications.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Modal,
   View,
   Text,
   Pressable,
   Animated,
-  PlatformColor,
   StyleSheet,
 } from 'react-native';
 import { Image } from 'expo-image';
@@ -88,8 +87,8 @@ interface Props {
 export function NotificationPromptModal({ onDismiss }: Props) {
   const [visible, setVisible] = useState(false);
   const [loading, setLoading] = useState(false);
-  const slideAnim = useRef(new Animated.Value(300)).current;
-  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const [slideAnim] = useState(() => new Animated.Value(300));
+  const [fadeAnim] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
     // Check if we've shown this before; show after a brief delay
@@ -106,7 +105,7 @@ export function NotificationPromptModal({ onDismiss }: Props) {
       }
     });
     return () => clearTimeout(timer);
-  }, []);
+  }, [fadeAnim, slideAnim]);
 
   const markShown = () => setStorageItem(STORAGE_KEYS.NOTIFICATION_PROMPT_SHOWN, true);
 
@@ -163,7 +162,7 @@ export function NotificationPromptModal({ onDismiss }: Props) {
           {/* Header icon */}
           <View style={styles.iconRow}>
             <View style={styles.iconBadge}>
-              <Image source="sf:bell.badge.fill" style={{ width: 32, height: 32 }} tintColor={Brand.amber} />
+              <Image source="sf:bell.badge.fill" alt="" style={{ width: 32, height: 32 }} tintColor={Brand.amber} />
             </View>
           </View>
 
@@ -177,7 +176,7 @@ export function NotificationPromptModal({ onDismiss }: Props) {
             {ALERT_TYPES.map((t) => (
               <View key={t.symbol} style={styles.typeRow}>
                 <View style={[styles.typeIconBadge, { backgroundColor: t.color + '22' }]}>
-                  <Image source={`sf:${t.symbol}`} style={{ width: 16, height: 16 }} tintColor={t.color} />
+                  <Image source={`sf:${t.symbol}`} alt="" style={{ width: 16, height: 16 }} tintColor={t.color} />
                 </View>
                 <Text style={styles.typeLabel}>{t.label}</Text>
               </View>

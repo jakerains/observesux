@@ -48,7 +48,7 @@ interface SettingsContextType {
   resetSettings: () => Promise<void>;
 }
 
-const SettingsContext = createContext<SettingsContextType | null>(null);
+export const SettingsContext = createContext<SettingsContextType | null>(null);
 
 // Provider props
 interface SettingsProviderProps {

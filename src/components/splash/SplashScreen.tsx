@@ -9,7 +9,6 @@ interface SplashScreenProps {
 }
 
 export function SplashScreen({ onComplete }: SplashScreenProps) {
-  const [progress, setProgress] = useState(0)
   const [isVisible, setIsVisible] = useState(true)
   const [isFading, setIsFading] = useState(false)
 
@@ -21,49 +20,33 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
   const { data: airQuality, isLoading: airQualityLoading } = useAirQuality()
   const { data: trafficEvents, isLoading: trafficLoading } = useTrafficEvents()
 
-  // Calculate progress based on loaded data sources
+  const sources = [
+    { loaded: !!weather, loading: weatherLoading },
+    { loaded: !!cameras, loading: camerasLoading },
+    { loaded: !!rivers, loading: riversLoading },
+    { loaded: !!transit, loading: transitLoading },
+    { loaded: !!airQuality, loading: airQualityLoading },
+    { loaded: !!trafficEvents, loading: trafficLoading },
+  ]
+  const loadedCount = sources.filter((source) => source.loaded).length
+  const totalSources = sources.length
+  const progress = Math.min(10 + (loadedCount / totalSources) * 90, 100)
+
   useEffect(() => {
-    const sources = [
-      { loaded: !!weather, loading: weatherLoading },
-      { loaded: !!cameras, loading: camerasLoading },
-      { loaded: !!rivers, loading: riversLoading },
-      { loaded: !!transit, loading: transitLoading },
-      { loaded: !!airQuality, loading: airQualityLoading },
-      { loaded: !!trafficEvents, loading: trafficLoading },
-    ]
-
-    const loadedCount = sources.filter(s => s.loaded).length
-    const totalSources = sources.length
-
-    // Calculate percentage (add some base progress for initial load feel)
-    const baseProgress = 10
-    const dataProgress = (loadedCount / totalSources) * 90
-    const newProgress = Math.min(baseProgress + dataProgress, 100)
-
-    setProgress(newProgress)
-
-    // All sources loaded - start fade out
     if (loadedCount === totalSources) {
       // Small delay to show 100% before fading
-      setTimeout(() => {
+      const fadeTimer = setTimeout(() => {
         setIsFading(true)
         // After fade animation completes, hide completely
-        setTimeout(() => {
+        const hideTimer = setTimeout(() => {
           setIsVisible(false)
           onComplete?.()
         }, 500)
+        return () => clearTimeout(hideTimer)
       }, 300)
+      return () => clearTimeout(fadeTimer)
     }
-  }, [weather, cameras, rivers, transit, airQuality, trafficEvents, weatherLoading, camerasLoading, riversLoading, transitLoading, airQualityLoading, trafficLoading, onComplete])
-
-  // Animate progress smoothly
-  useEffect(() => {
-    // Start with initial progress animation
-    const timer = setTimeout(() => {
-      setProgress(prev => Math.max(prev, 10))
-    }, 100)
-    return () => clearTimeout(timer)
-  }, [])
+  }, [loadedCount, totalSources, onComplete])
 
   if (!isVisible) return null
 

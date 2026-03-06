@@ -63,6 +63,103 @@ async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T |
   }
 }
 
+type CouncilSearchResult = {
+  content: string;
+  meetingTitle: string;
+  meetingDate: string | null;
+  youtubeLink: string;
+  similarity: number;
+};
+
+type NewsItem = {
+  title: string;
+  description?: string;
+  link: string;
+  pubDate: string;
+  source: string;
+};
+
+const SEARCH_STOP_WORDS = new Set([
+  'a', 'about', 'an', 'and', 'any', 'are', 'around', 'at', 'be', 'been', 'being',
+  'but', 'by', 'can', 'city', 'council', 'did', 'do', 'for', 'from', 'going', 'happening',
+  'how', 'i', 'if', 'in', 'into', 'is', 'it', 'its', 'just', 'know', 'latest', 'me',
+  'meeting', 'meetings', 'new', 'news', 'of', 'on', 'or', 'recent', 'regarding', 's',
+  'said', 'should', 'something', 'tell', 'that', 'the', 'there', 'these', 'they', 'this',
+  'to', 'us', 'was', 'what', 'whats', 'when', 'where', 'with', 'you',
+]);
+
+function normalizeSearchText(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/['’]/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function extractSearchTerms(query: string): string[] {
+  return normalizeSearchText(query)
+    .split(' ')
+    .filter(term => term.length > 2 && !SEARCH_STOP_WORDS.has(term));
+}
+
+function buildCouncilSearchQueries(query: string): string[] {
+  const normalizedQuery = query.trim();
+  const terms = extractSearchTerms(query);
+  const topicQuery = terms.join(' ').trim();
+  const variants = [
+    normalizedQuery,
+    terms.length <= 2 && topicQuery ? `${topicQuery} city council` : '',
+    terms.length <= 2 && topicQuery ? `${topicQuery} budget` : '',
+    topicQuery && topicQuery !== normalizedQuery ? topicQuery : '',
+  ];
+
+  return Array.from(
+    new Set(
+      variants
+        .map(value => value.trim())
+        .filter(Boolean)
+    )
+  );
+}
+
+function mergeCouncilResults(resultSets: CouncilSearchResult[][]): CouncilSearchResult[] {
+  const merged = new Map<string, CouncilSearchResult>();
+
+  for (const results of resultSets) {
+    for (const result of results) {
+      const key = `${result.youtubeLink}-${result.content.slice(0, 80)}`;
+      const existing = merged.get(key);
+      if (!existing || result.similarity > existing.similarity) {
+        merged.set(key, result);
+      }
+    }
+  }
+
+  return Array.from(merged.values())
+    .sort((a, b) => b.similarity - a.similarity)
+    .slice(0, 5);
+}
+
+function scoreNewsItem(item: NewsItem, terms: string[], normalizedQuery: string): number {
+  const title = normalizeSearchText(item.title);
+  const description = normalizeSearchText(item.description || '');
+  const combined = `${title} ${description}`.trim();
+
+  let score = 0;
+
+  if (normalizedQuery && combined.includes(normalizedQuery)) {
+    score += 10;
+  }
+
+  for (const term of terms) {
+    if (title.includes(term)) score += 4;
+    if (description.includes(term)) score += 2;
+  }
+
+  return score;
+}
+
 export const chatTools = {
   getCitySummary: tool({
     description: 'Get a comprehensive summary of current conditions in Sioux City including weather, river levels, air quality, traffic incidents, and any anomalies or alerts. Use this for general "what\'s happening" questions.',
@@ -157,6 +254,42 @@ export const chatTools = {
         return { error: 'Unable to fetch news at this time' };
       }
       return data;
+    },
+  }),
+
+  searchLocalNews: tool({
+    description: 'Search recent Siouxland news for a specific local topic, policy, project, or controversy. Use this for questions like "what is going on with the library", "what happened with the budget", or "what has been reported about council plans".',
+    inputSchema: z.object({
+      query: z.string().describe('The local topic to search for in recent news coverage'),
+    }),
+    execute: async ({ query }) => {
+      const data = await fetchApi<{ data?: NewsItem[] }>('/api/news');
+      const newsItems = data?.data ?? [];
+      const terms = extractSearchTerms(query);
+      const normalizedQuery = normalizeSearchText(query);
+
+      const matches = newsItems
+        .map(item => ({
+          ...item,
+          score: scoreNewsItem(item, terms, normalizedQuery),
+        }))
+        .filter(item => item.score > 0)
+        .sort((a, b) => b.score - a.score || new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime())
+        .slice(0, 5);
+
+      if (matches.length === 0) {
+        return { message: 'No recent local news matches found for this topic.' };
+      }
+
+      return {
+        results: matches.map(item => ({
+          title: item.title,
+          source: item.source,
+          publishedAt: item.pubDate,
+          link: item.link,
+          summary: item.description || '',
+        })),
+      };
     },
   }),
 
@@ -284,34 +417,39 @@ export const chatTools = {
   }),
 
   searchCouncilMeetings: tool({
-    description: 'Search Sioux City Council meeting transcripts for discussions, decisions, votes, ordinances, public hearings, and zoning issues. Returns relevant excerpts with YouTube timestamp links to the exact moment in the meeting video. Use for questions about what the city council discussed, voted on, or decided.',
+    description: 'Search Sioux City Council meeting transcripts for discussions, decisions, votes, ordinances, public hearings, budget items, and project debates. Returns relevant excerpts with YouTube timestamp links to the exact moment in the meeting video. For topic questions, pass a descriptive query like "library budget cuts city council" instead of a single noun.',
     inputSchema: z.object({
       query: z.string().describe('The search query about council meeting content'),
       dateFrom: z.string().optional().describe('Optional start date filter (YYYY-MM-DD)'),
       dateTo: z.string().optional().describe('Optional end date filter (YYYY-MM-DD)'),
     }),
     execute: async ({ query, dateFrom, dateTo }) => {
-      const data = await fetchApi<{
-        results: Array<{
-          content: string
-          meetingTitle: string
-          meetingDate: string | null
-          youtubeLink: string
-          similarity: number
-        }>
-      }>(
-        '/api/council-meetings/search',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query, dateFrom, dateTo, limit: 5 }),
-        }
+      const queryVariants = buildCouncilSearchQueries(query);
+      const searches = await Promise.all(
+        queryVariants.map((candidateQuery) =>
+          fetchApi<{ results: CouncilSearchResult[] }>(
+            '/api/council-meetings/search',
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ query: candidateQuery, dateFrom, dateTo, limit: 5 }),
+            }
+          )
+        )
       );
-      if (!data || !data.results || data.results.length === 0) {
+
+      const results = mergeCouncilResults(
+        searches
+          .map(result => result?.results ?? [])
+          .filter(result => result.length > 0)
+      );
+
+      if (results.length === 0) {
         return { message: 'No relevant council meeting discussions found for this query.' };
       }
+
       return {
-        results: data.results.map(r => ({
+        results: results.map(r => ({
           meetingTitle: r.meetingTitle,
           meetingDate: r.meetingDate,
           excerpt: r.content,

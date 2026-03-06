@@ -15,7 +15,6 @@ import {
   Calendar,
 } from 'lucide-react'
 import { ToolCardWrapper } from './ToolCardWrapper'
-import { cn } from '@/lib/utils'
 import { format, isToday, isTomorrow } from 'date-fns'
 import type { ToolCardProps } from './types'
 import type { WeatherForecast, HourlyWeatherForecast, ForecastPeriod, ApiResponse } from '@/types'
@@ -52,6 +51,11 @@ function getWeatherIcon(conditions: string, isDaytime: boolean = true) {
   return isDaytime ? Cloud : CloudMoon
 }
 
+function renderWeatherIcon(conditions: string, className: string, isDaytime: boolean = true) {
+  const IconComponent = getWeatherIcon(conditions, isDaytime)
+  return <IconComponent className={className} />
+}
+
 function formatDayName(date: Date): string {
   if (isToday(date)) return 'Today'
   if (isTomorrow(date)) return 'Tomorrow'
@@ -64,13 +68,12 @@ interface DayForecastProps {
 }
 
 function DayForecast({ period, nightPeriod }: DayForecastProps) {
-  const Icon = getWeatherIcon(period.shortForecast, period.isDaytime)
   const dayName = formatDayName(new Date(period.startTime))
 
   return (
     <div className="flex flex-col items-center gap-1 min-w-[52px] text-center">
       <span className="text-xs font-medium">{dayName}</span>
-      <Icon className="h-5 w-5 text-muted-foreground" />
+      {renderWeatherIcon(period.shortForecast, 'h-5 w-5 text-muted-foreground', period.isDaytime)}
       <div className="text-xs">
         <span className="font-semibold">{period.temperature}°</span>
         {nightPeriod && (

@@ -4,7 +4,7 @@
  * Registers push token anonymously with the backend on enable/change.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, Switch, ScrollView, Pressable, Linking, PlatformColor, Alert } from 'react-native';
 import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
@@ -237,7 +237,7 @@ export default function NotificationsScreen() {
             marginBottom: 20,
           }}
         >
-          <Image source="sf:exclamationmark.triangle.fill" style={{ width: 18, height: 18 }} tintColor="#ef4444" />
+          <Image source="sf:exclamationmark.triangle.fill" alt="" style={{ width: 18, height: 18 }} tintColor="#ef4444" />
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: 14, fontWeight: '600', color: '#ef4444' }}>
               Notifications blocked in Settings
@@ -246,7 +246,7 @@ export default function NotificationsScreen() {
               Tap to open device Settings and enable notifications for this app.
             </Text>
           </View>
-          <Image source="sf:arrow.up.right" style={{ width: 12, height: 12 }} tintColor="#ef4444" />
+          <Image source="sf:arrow.up.right" alt="" style={{ width: 12, height: 12 }} tintColor="#ef4444" />
         </Pressable>
       )}
 
@@ -277,6 +277,7 @@ export default function NotificationsScreen() {
           >
             <Image
               source={`sf:${masterEnabled ? 'bell.badge.fill' : 'bell.slash'}`}
+              alt=""
               style={{ width: 20, height: 20 }}
               tintColor={masterEnabled ? Brand.amber : Brand.muted}
             />
@@ -337,6 +338,7 @@ export default function NotificationsScreen() {
                 >
                   <Image
                     source={`sf:${type.sfSymbol}`}
+                    alt=""
                     style={{ width: 20, height: 20 }}
                     tintColor={type.tintColor}
                   />

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback, useMemo, useEffect } from 'react'
+import { useState, useRef, useCallback, useMemo } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -66,26 +66,17 @@ export function TranscriptUploadModal({
   meetings = [],
   prefillData = null,
 }: TranscriptUploadModalProps) {
-  const [selectedMeetingId, setSelectedMeetingId] = useState<string>('')
-  const [title, setTitle] = useState('')
-  const [meetingDate, setMeetingDate] = useState('')
-  const [videoId, setVideoId] = useState('')
+  const [selectedMeetingId, setSelectedMeetingId] = useState<string>(
+    () => (prefillData ? 'new' : '')
+  )
+  const [title, setTitle] = useState(() => prefillData?.title ?? '')
+  const [meetingDate, setMeetingDate] = useState(() => prefillData?.meetingDate ?? '')
+  const [videoId, setVideoId] = useState(() => prefillData?.videoId ?? '')
   const [transcript, setTranscript] = useState('')
   const [fileName, setFileName] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [errors, setErrors] = useState<ValidationErrors>({})
   const fileInputRef = useRef<HTMLInputElement>(null)
-
-  // Apply prefill data when the modal opens with prefill values
-  useEffect(() => {
-    if (open && prefillData) {
-      setTitle(prefillData.title)
-      setVideoId(prefillData.videoId)
-      setMeetingDate(prefillData.meetingDate || '')
-      setSelectedMeetingId('new')
-      setErrors({})
-    }
-  }, [open, prefillData])
 
   // Group meetings by status for the dropdown
   const groupedMeetings = useMemo(() => {

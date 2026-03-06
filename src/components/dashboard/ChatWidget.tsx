@@ -133,6 +133,27 @@ function ChatWidgetInner() {
     FIXED_QUESTION,
     ...getRandomQuestions(3),
   ])
+  const [sessionId, setSessionId] = useState<string | null>(() => {
+    if (typeof window === 'undefined') {
+      return null
+    }
+
+    let stored = sessionStorage.getItem(SESSION_STORAGE_KEY)
+    if (!stored) {
+      stored = generateUUID()
+      sessionStorage.setItem(SESSION_STORAGE_KEY, stored)
+    }
+
+    return stored
+  })
+  const [deviceInfo] = useState<ReturnType<typeof getDeviceInfo> | null>(() => {
+    if (typeof window === 'undefined') {
+      return null
+    }
+
+    return getDeviceInfo()
+  })
+  const [shouldSendDeviceInfo, setShouldSendDeviceInfo] = useState(true)
 
   // Swipe-to-close gesture handling for mobile
   const touchStartY = useRef<number | null>(null)
@@ -161,45 +182,17 @@ function ChatWidgetInner() {
     touchCurrentY.current = null
   }, [closeChat])
 
-  // Session tracking state - using refs for stable references in transport
-  const sessionIdRef = useRef<string | null>(null)
-  const lastLoggedIndexRef = useRef<number>(-1)
-  const deviceInfoRef = useRef<ReturnType<typeof getDeviceInfo> | null>(null)
-  const deviceInfoSentRef = useRef(false)
-
-  // Load or create session ID on mount + capture device info
-  useEffect(() => {
-    let stored = sessionStorage.getItem(SESSION_STORAGE_KEY)
-    if (!stored) {
-      // Generate a new session ID client-side
-      stored = generateUUID()
-      sessionStorage.setItem(SESSION_STORAGE_KEY, stored)
-    }
-    sessionIdRef.current = stored
-
-    const storedIndex = sessionStorage.getItem(MESSAGE_INDEX_KEY)
-    if (storedIndex) lastLoggedIndexRef.current = parseInt(storedIndex, 10)
-
-    // Capture device info for analytics
-    deviceInfoRef.current = getDeviceInfo()
-  }, [])
-
   // Create transport with dynamic body that includes session tracking
   const transport = useMemo(() => new DefaultChatTransport({
     api: '/api/chat',
     body: () => {
-      // Only send device info once per session (on first message)
-      const includeDeviceInfo = !deviceInfoSentRef.current && deviceInfoRef.current
-      if (includeDeviceInfo) {
-        deviceInfoSentRef.current = true
-      }
       return {
-        sessionId: sessionIdRef.current,
-        lastLoggedMessageIndex: lastLoggedIndexRef.current,
-        ...(includeDeviceInfo && { deviceInfo: deviceInfoRef.current }),
+        sessionId,
+        lastLoggedMessageIndex: Number(sessionStorage.getItem(MESSAGE_INDEX_KEY) ?? -1),
+        ...(shouldSendDeviceInfo && deviceInfo ? { deviceInfo } : {}),
       }
     },
-  }), [])
+  }), [sessionId, shouldSendDeviceInfo, deviceInfo])
 
   const {
     messages,
@@ -220,7 +213,6 @@ function ChatWidgetInner() {
   // Update the last logged message index when messages change (for deduplication)
   useEffect(() => {
     if (messages.length > 0 && status === 'ready') {
-      lastLoggedIndexRef.current = messages.length - 1
       sessionStorage.setItem(MESSAGE_INDEX_KEY, String(messages.length - 1))
     }
   }, [messages.length, status])
@@ -277,6 +269,9 @@ function ChatWidgetInner() {
     setInput('')
     track('chat_message_sent', { messageLength: message.length })
     await sendMessage({ text: message })
+    if (shouldSendDeviceInfo) {
+      setShouldSendDeviceInfo(false)
+    }
   }
 
   // Handle suggested question click
@@ -284,6 +279,9 @@ function ChatWidgetInner() {
     if (isLoading) return
     track('chat_suggested_question', { question })
     await sendMessage({ text: question })
+    if (shouldSendDeviceInfo) {
+      setShouldSendDeviceInfo(false)
+    }
   }
 
   // Clear chat history and start a new session
@@ -291,11 +289,12 @@ function ChatWidgetInner() {
     track('chat_cleared', { messageCount: messages.length })
     setMessages([])
     // Clear session to start fresh
-    sessionIdRef.current = null
-    lastLoggedIndexRef.current = -1
-    deviceInfoSentRef.current = false // Reset so new session gets device info
     sessionStorage.removeItem(SESSION_STORAGE_KEY)
     sessionStorage.removeItem(MESSAGE_INDEX_KEY)
+    const newSessionId = generateUUID()
+    sessionStorage.setItem(SESSION_STORAGE_KEY, newSessionId)
+    setSessionId(newSessionId)
+    setShouldSendDeviceInfo(true)
     // Randomize suggested questions
     setSuggestedQuestions([FIXED_QUESTION, ...getRandomQuestions(3)])
   }

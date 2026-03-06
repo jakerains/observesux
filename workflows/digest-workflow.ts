@@ -161,7 +161,12 @@ async function sendDigestPushStep(params: {
     const result = await sendExpoPushToTokens(tokens, {
       title: editionLabels[params.edition] ?? 'Siouxland Digest',
       body: 'Your Siouxland update is ready — tap to read.',
-      data: { url: `/digest/${params.digestId}`, tag: `digest-${params.edition}` },
+      data: {
+        type: 'digest',
+        digestId: params.digestId,
+        url: `/digest/${params.digestId}`,
+        tag: `digest-${params.edition}`,
+      },
       sound: 'default',
       priority: 'normal',
     })

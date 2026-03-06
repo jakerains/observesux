@@ -49,6 +49,13 @@ const SCANNER_FEEDS: ScannerFeed[] = [
   }
 ]
 
+const AUDIO_BARS = Array.from({ length: 12 }, (_, index) => ({
+  key: index,
+  height: `${8 + ((index * 7) % 24)}px`,
+  animationDelay: `${index * 0.1}s`,
+  animationDuration: `${0.5 + ((index % 4) * 0.15)}s`,
+}))
+
 // Generate stream URL via our proxy API
 function getStreamUrl(feedId: string): string {
   return `/api/scanner/stream?feed=${feedId}`
@@ -208,8 +215,6 @@ function AudioPlayer({ feed, isActive }: AudioPlayerProps) {
     if (!isActive && audio) {
       audio.pause()
       audio.src = '' // Clear source to prevent AbortError
-      setIsPlaying(false)
-      setStatus('idle')
     }
   }, [isActive])
 
@@ -309,14 +314,14 @@ function AudioPlayer({ feed, isActive }: AudioPlayerProps) {
       {/* Audio Visualization Placeholder (when playing) */}
       {status === 'playing' && (
         <div className="flex items-center justify-center gap-1 h-8">
-          {[...Array(12)].map((_, i) => (
+          {AUDIO_BARS.map((bar) => (
             <div
-              key={i}
+              key={bar.key}
               className="w-1 bg-primary rounded-full animate-pulse"
               style={{
-                height: `${Math.random() * 24 + 8}px`,
-                animationDelay: `${i * 0.1}s`,
-                animationDuration: `${0.5 + Math.random() * 0.5}s`
+                height: bar.height,
+                animationDelay: bar.animationDelay,
+                animationDuration: bar.animationDuration,
               }}
             />
           ))}

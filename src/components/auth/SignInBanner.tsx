@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
+import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { X, Star, Bell } from 'lucide-react'
@@ -13,30 +14,28 @@ export function SignInBanner() {
   const { data: session, isPending } = useSession()
   const pathname = usePathname()
   const isAuthRoute = pathname?.startsWith('/auth')
-  const [isDismissed, setIsDismissed] = useState(true) // Start hidden to avoid flash
-  const [isVisible, setIsVisible] = useState(false)
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  useEffect(() => {
-    // Only check after mounted and session is loaded, and never on auth pages
-    if (!mounted || isPending || isAuthRoute) return
-
-    // If user is logged in, don't show
-    if (session?.user) return
-
-    // Check if user has dismissed the banner
-    const dismissed = localStorage.getItem(BANNER_DISMISSED_KEY)
-    if (!dismissed) {
-      setIsDismissed(false)
-      // Delay showing banner for smooth appearance
-      const timer = setTimeout(() => setIsVisible(true), 2000)
-      return () => clearTimeout(timer)
+  const hydrated = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  )
+  const [isDismissed, setIsDismissed] = useState(() => {
+    if (typeof window === 'undefined') {
+      return true
     }
-  }, [mounted, isPending, session])
+
+    return localStorage.getItem(BANNER_DISMISSED_KEY) === 'true'
+  })
+  const [isVisible, setIsVisible] = useState(false)
+
+  useEffect(() => {
+    if (!hydrated || isPending || isAuthRoute || session?.user || isDismissed) {
+      return
+    }
+
+    const timer = setTimeout(() => setIsVisible(true), 2000)
+    return () => clearTimeout(timer)
+  }, [hydrated, isPending, isAuthRoute, session, isDismissed])
 
   const handleDismiss = () => {
     setIsVisible(false)
@@ -47,8 +46,7 @@ export function SignInBanner() {
     }, 300)
   }
 
-  // Don't render anything until mounted to avoid hydration issues
-  if (!mounted || isPending || session?.user || isDismissed || isAuthRoute) {
+  if (!hydrated || isPending || session?.user || isDismissed || isAuthRoute) {
     return null
   }
 
@@ -84,7 +82,7 @@ export function SignInBanner() {
                 className="h-8 px-3 bg-primary-foreground text-primary hover:bg-primary-foreground/90"
                 asChild
               >
-                <a href="/auth/sign-in">Sign in</a>
+                <Link href="/auth/sign-in">Sign in</Link>
               </Button>
               <Button
                 variant="ghost"

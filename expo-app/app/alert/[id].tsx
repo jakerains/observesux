@@ -39,7 +39,7 @@ export default function AlertDetailScreen() {
         <LoadingSpinner message="Loading alert..." />
       ) : !alert ? (
         <View style={{ flex: 1, backgroundColor: '#120905', justifyContent: 'center', alignItems: 'center' }}>
-          <Image source="sf:exclamationmark.circle" style={{ width: 64, height: 64 }} tintColor={PlatformColor('tertiaryLabel')} />
+          <Image source="sf:exclamationmark.circle" alt="" style={{ width: 64, height: 64 }} tintColor={PlatformColor('tertiaryLabel')} />
           <Text style={{ marginTop: 16, color: PlatformColor('secondaryLabel') }}>
             Alert not found
           </Text>
@@ -66,6 +66,7 @@ export default function AlertDetailScreen() {
           >
             <Image
               source="sf:exclamationmark.triangle.fill"
+              alt=""
               style={{ width: 20, height: 20 }}
               tintColor={severityColors[alert.severity]?.text || severityColors.Unknown.text}
             />
@@ -96,7 +97,7 @@ export default function AlertDetailScreen() {
             }}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <Image source="sf:clock" style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel')} />
+              <Image source="sf:clock" alt="" style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel')} />
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 12, color: PlatformColor('secondaryLabel') }}>Onset</Text>
                 <Text style={{ fontWeight: '500', color: PlatformColor('label') }}>
@@ -106,7 +107,7 @@ export default function AlertDetailScreen() {
             </View>
             <View style={{ height: 0.5, backgroundColor: PlatformColor('separator'), marginVertical: 12 }} />
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <Image source="sf:timer" style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel')} />
+              <Image source="sf:timer" alt="" style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel')} />
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 12, color: PlatformColor('secondaryLabel') }}>Expires</Text>
                 <Text style={{ fontWeight: '500', color: PlatformColor('label') }}>
@@ -119,7 +120,7 @@ export default function AlertDetailScreen() {
           {/* Area */}
           <View style={{ marginBottom: 20 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-              <Image source="sf:location" style={{ width: 18, height: 18 }} tintColor={'#e69c3a'} />
+              <Image source="sf:location" alt="" style={{ width: 18, height: 18 }} tintColor={'#e69c3a'} />
               <Text style={{ fontSize: 15, fontWeight: '600', color: PlatformColor('label') }}>Affected Area</Text>
             </View>
             <Text selectable style={{ color: PlatformColor('secondaryLabel'), lineHeight: 20 }}>{alert.areaDesc}</Text>
@@ -128,7 +129,7 @@ export default function AlertDetailScreen() {
           {/* Description */}
           <View style={{ marginBottom: 20 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-              <Image source="sf:doc.text" style={{ width: 18, height: 18 }} tintColor={'#e69c3a'} />
+              <Image source="sf:doc.text" alt="" style={{ width: 18, height: 18 }} tintColor={'#e69c3a'} />
               <Text style={{ fontSize: 15, fontWeight: '600', color: PlatformColor('label') }}>Description</Text>
             </View>
             <Text selectable style={{ color: PlatformColor('secondaryLabel'), lineHeight: 22 }}>{alert.description}</Text>
@@ -138,7 +139,7 @@ export default function AlertDetailScreen() {
           {alert.instruction && (
             <View style={{ marginBottom: 20 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                <Image source="sf:shield.checkered" style={{ width: 18, height: 18 }} tintColor={'#e69c3a'} />
+                <Image source="sf:shield.checkered" alt="" style={{ width: 18, height: 18 }} tintColor={'#e69c3a'} />
                 <Text style={{ fontSize: 15, fontWeight: '600', color: PlatformColor('label') }}>Safety Instructions</Text>
               </View>
               <View

@@ -1,7 +1,7 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import { Suspense, useState, useCallback, useEffect } from 'react'
+import { Suspense, useState, useCallback, useEffect, useSyncExternalStore } from 'react'
 import { useSWRConfig } from 'swr'
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader'
 import { AlertBanner } from '@/components/dashboard/AlertBanner'
@@ -91,15 +91,18 @@ const CameraGrid = dynamic(
 function DashboardContent() {
   const { mutate } = useSWRConfig()
   const [isRefreshing, setIsRefreshing] = useState(false)
-  const [showSplash, setShowSplash] = useState(true)
-
-  // Check if we've shown splash recently (within session)
-  useEffect(() => {
-    const splashShown = sessionStorage.getItem('splash-shown')
-    if (splashShown) {
-      setShowSplash(false)
+  const hydrated = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  )
+  const [showSplash, setShowSplash] = useState(() => {
+    if (typeof window === 'undefined') {
+      return false
     }
-  }, [])
+
+    return !sessionStorage.getItem('splash-shown')
+  })
 
   // Handle hash navigation (e.g., from /digest clicking on Map)
   useEffect(() => {
@@ -139,7 +142,7 @@ function DashboardContent() {
   return (
     <div className="min-h-screen pb-24 md:pb-16">
       {/* Splash Screen */}
-      {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
+      {hydrated && showSplash && <SplashScreen onComplete={handleSplashComplete} />}
 
       {/* Alert Banner - Top priority, always visible */}
       <AlertBanner />

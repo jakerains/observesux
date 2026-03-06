@@ -58,15 +58,6 @@ function getForecastIcon(forecast: string, isDaytime: boolean) {
   return isDaytime ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />
 }
 
-function getAQIClass(aqi: number): string {
-  if (aqi <= 50) return 'aqi-good'
-  if (aqi <= 100) return 'aqi-moderate'
-  if (aqi <= 150) return 'aqi-sensitive'
-  if (aqi <= 200) return 'aqi-unhealthy'
-  if (aqi <= 300) return 'aqi-very-unhealthy'
-  return 'aqi-hazardous'
-}
-
 function getAQILabel(aqi: number): string {
   if (aqi <= 50) return 'Good'
   if (aqi <= 100) return 'Moderate'
@@ -74,16 +65,6 @@ function getAQILabel(aqi: number): string {
   if (aqi <= 200) return 'Unhealthy'
   if (aqi <= 300) return 'Very Unhealthy'
   return 'Hazardous'
-}
-
-function getFloodStatusColor(stage: string): string {
-  switch (stage) {
-    case 'major': return 'text-purple-600 dark:text-purple-400'
-    case 'moderate': return 'text-rose-600 dark:text-rose-400'
-    case 'minor': return 'text-orange-600 dark:text-orange-400'
-    case 'action': return 'text-amber-600 dark:text-amber-400'
-    default: return 'text-emerald-600 dark:text-emerald-400'
-  }
 }
 
 export function CurrentConditionsHero() {
@@ -247,7 +228,7 @@ export function CurrentConditionsHero() {
             {/* Today's Detailed Forecast - at top */}
             {forecast[0]?.detailedForecast && (
               <div className="mb-4 p-3 rounded-xl bg-white/10 backdrop-blur-sm">
-                <span className="text-xs opacity-70 block mb-1">Today's Forecast</span>
+                <span className="text-xs opacity-70 block mb-1">Today&apos;s Forecast</span>
                 <p className="text-sm leading-relaxed opacity-90">{forecast[0].detailedForecast}</p>
               </div>
             )}
@@ -298,7 +279,7 @@ export function CurrentConditionsHero() {
               {weather.pressure !== null && (
                 <div className="flex flex-col items-center p-3 rounded-xl bg-white/10 backdrop-blur-sm">
                   <span className="text-xs opacity-70 mb-1">Pressure</span>
-                  <span className="text-lg font-semibold">{weather.pressure.toFixed(2)}"</span>
+                  <span className="text-lg font-semibold">{weather.pressure.toFixed(2)}&quot;</span>
                 </div>
               )}
               {weather.windGust && (

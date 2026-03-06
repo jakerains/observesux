@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useSyncExternalStore, ReactNode } from 'react'
 
 // Widget definitions with default settings
 export interface WidgetConfig {
@@ -37,6 +37,46 @@ export const DEFAULT_WIDGETS: WidgetConfig[] = [
 
 const STORAGE_KEY = 'sioux-city-dashboard-layout'
 
+function getStoredDashboardLayout(): { widgets?: WidgetConfig[]; order?: string[] } | null {
+  if (typeof window === 'undefined') {
+    return null
+  }
+
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    return stored ? JSON.parse(stored) : null
+  } catch (error) {
+    console.error('Failed to load dashboard layout:', error)
+    return null
+  }
+}
+
+function getInitialWidgets(): WidgetConfig[] {
+  const storedLayout = getStoredDashboardLayout()
+  if (!storedLayout?.widgets || !Array.isArray(storedLayout.widgets)) {
+    return DEFAULT_WIDGETS
+  }
+
+  return DEFAULT_WIDGETS.map((defaultWidget) => {
+    const storedWidget = storedLayout.widgets?.find((widget) => widget.id === defaultWidget.id)
+    return storedWidget
+      ? { ...defaultWidget, enabled: storedWidget.enabled, size: storedWidget.size || defaultWidget.size }
+      : defaultWidget
+  })
+}
+
+function getInitialWidgetOrder(): string[] {
+  const storedLayout = getStoredDashboardLayout()
+  if (!storedLayout?.order || !Array.isArray(storedLayout.order)) {
+    return DEFAULT_WIDGETS.map((widget) => widget.id)
+  }
+
+  const allIds = DEFAULT_WIDGETS.map((widget) => widget.id)
+  const validOrder = storedLayout.order.filter((id) => allIds.includes(id))
+  const missingIds = allIds.filter((id) => !validOrder.includes(id))
+  return [...validOrder, ...missingIds]
+}
+
 interface DashboardLayoutContextType {
   widgets: WidgetConfig[]
   widgetOrder: string[]
@@ -51,37 +91,13 @@ interface DashboardLayoutContextType {
 const DashboardLayoutContext = createContext<DashboardLayoutContextType | null>(null)
 
 export function DashboardLayoutProvider({ children }: { children: ReactNode }) {
-  const [widgets, setWidgets] = useState<WidgetConfig[]>(DEFAULT_WIDGETS)
-  const [widgetOrder, setWidgetOrderState] = useState<string[]>(DEFAULT_WIDGETS.map(w => w.id))
-  const [isHydrated, setIsHydrated] = useState(false)
-
-  // Load from localStorage on mount
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY)
-      if (stored) {
-        const parsed = JSON.parse(stored)
-        if (parsed.widgets && Array.isArray(parsed.widgets)) {
-          // Merge stored settings with defaults (in case new widgets were added)
-          const mergedWidgets = DEFAULT_WIDGETS.map(defaultWidget => {
-            const storedWidget = parsed.widgets.find((w: WidgetConfig) => w.id === defaultWidget.id)
-            return storedWidget ? { ...defaultWidget, enabled: storedWidget.enabled, size: storedWidget.size || defaultWidget.size } : defaultWidget
-          })
-          setWidgets(mergedWidgets)
-        }
-        if (parsed.order && Array.isArray(parsed.order)) {
-          // Ensure all widget IDs are present in order
-          const allIds = DEFAULT_WIDGETS.map(w => w.id)
-          const validOrder = parsed.order.filter((id: string) => allIds.includes(id))
-          const missingIds = allIds.filter(id => !validOrder.includes(id))
-          setWidgetOrderState([...validOrder, ...missingIds])
-        }
-      }
-    } catch (error) {
-      console.error('Failed to load dashboard layout:', error)
-    }
-    setIsHydrated(true)
-  }, [])
+  const [widgets, setWidgets] = useState<WidgetConfig[]>(() => getInitialWidgets())
+  const [widgetOrder, setWidgetOrderState] = useState<string[]>(() => getInitialWidgetOrder())
+  const isHydrated = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  )
 
   // Save to localStorage when settings change
   useEffect(() => {

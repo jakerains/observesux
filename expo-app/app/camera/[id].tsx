@@ -14,8 +14,7 @@ import * as Haptics from 'expo-haptics';
 type ViewMode = 'snapshot' | 'live';
 
 export default function CameraDetailScreen() {
-  const { id, name, imageUrl, streamUrl } = useLocalSearchParams<{
-    id: string;
+  const { name, imageUrl, streamUrl } = useLocalSearchParams<{
     name: string;
     imageUrl: string;
     streamUrl?: string;
@@ -115,7 +114,7 @@ export default function CameraDetailScreen() {
                 {isRefreshing ? (
                   <ActivityIndicator size="small" color={'#e69c3a'} />
                 ) : (
-                  <Image source="sf:arrow.clockwise" style={{ width: 22, height: 22 }} tintColor={'#e69c3a'} />
+                  <Image source="sf:arrow.clockwise" alt="" style={{ width: 22, height: 22 }} tintColor={'#e69c3a'} />
                 )}
               </Pressable>
             ) : null,
@@ -135,7 +134,7 @@ export default function CameraDetailScreen() {
                 backgroundColor: '#1f130c',
               }}
             >
-              <Image source="sf:video.slash" style={{ width: 64, height: 64 }} tintColor={PlatformColor('tertiaryLabel')} />
+              <Image source="sf:video.slash" alt="" style={{ width: 64, height: 64 }} tintColor={PlatformColor('tertiaryLabel')} />
               <Text style={{ marginTop: 16, marginBottom: 20, color: PlatformColor('secondaryLabel') }}>
                 Unable to load camera feed
               </Text>
@@ -156,6 +155,7 @@ export default function CameraDetailScreen() {
             <Image
               key={imageKey}
               source={{ uri: refreshedImageUrl }}
+              alt={typeof name === 'string' ? name : 'Traffic camera'}
               style={{ width: width, height: width * 0.75 }}
               contentFit="contain"
               transition={200}
@@ -191,7 +191,7 @@ export default function CameraDetailScreen() {
                   backgroundColor: '#1f130c',
                 }}
               >
-                <Image source="sf:video.slash" style={{ width: 64, height: 64 }} tintColor={PlatformColor('tertiaryLabel')} />
+                <Image source="sf:video.slash" alt="" style={{ width: 64, height: 64 }} tintColor={PlatformColor('tertiaryLabel')} />
                 <Text style={{ marginTop: 16, marginBottom: 8, color: PlatformColor('label'), fontWeight: '600' }}>
                   Stream Unavailable
                 </Text>
@@ -270,6 +270,7 @@ export default function CameraDetailScreen() {
             >
               <Image
                 source="sf:photo"
+                alt=""
                 style={{ width: 16, height: 16 }}
                 tintColor={viewMode === 'snapshot' ? PlatformColor('label') : PlatformColor('secondaryLabel')}
               />
@@ -298,6 +299,7 @@ export default function CameraDetailScreen() {
             >
               <Image
                 source="sf:video.fill"
+                alt=""
                 style={{ width: 16, height: 16 }}
                 tintColor={viewMode === 'live' ? '#ef4444' : PlatformColor('secondaryLabel')}
               />

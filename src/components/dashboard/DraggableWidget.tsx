@@ -3,7 +3,7 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { GripVertical } from 'lucide-react'
-import { ReactNode, useState, useEffect } from 'react'
+import { ReactNode, useSyncExternalStore } from 'react'
 
 interface DraggableWidgetProps {
   id: string
@@ -12,7 +12,11 @@ interface DraggableWidgetProps {
 }
 
 export function DraggableWidget({ id, children, className = '' }: DraggableWidgetProps) {
-  const [isMounted, setIsMounted] = useState(false)
+  const isMounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  )
 
   const {
     attributes,
@@ -22,11 +26,6 @@ export function DraggableWidget({ id, children, className = '' }: DraggableWidge
     transition,
     isDragging,
   } = useSortable({ id })
-
-  // Only enable drag functionality after hydration
-  useEffect(() => {
-    setIsMounted(true)
-  }, [])
 
   const style = isMounted ? {
     transform: CSS.Transform.toString(transform),

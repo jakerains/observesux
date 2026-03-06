@@ -10,6 +10,7 @@ import { useRouter } from 'expo-router';
 import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { useCameras, useTransit, useTrafficEvents, useGasPrices } from '@/lib/hooks/useDataFetching';
+import type { Bus, GasStation } from '@/lib/types';
 
 const SIOUX_CITY_CENTER: Region = {
   latitude: 42.4963,
@@ -52,7 +53,7 @@ function LayerToggle({
         boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
       }}
     >
-      <Image source={`sf:${sfSymbol}`} style={{ width: 18, height: 18 }} tintColor={active ? '#fff' : PlatformColor('label')} />
+      <Image source={`sf:${sfSymbol}`} alt="" style={{ width: 18, height: 18 }} tintColor={active ? '#fff' : PlatformColor('label')} />
       <Text style={{ fontSize: 12, fontWeight: active ? '600' : '400', color: active ? '#fff' : PlatformColor('label') }}>
         {label}
       </Text>
@@ -94,9 +95,7 @@ export default function MapScreen() {
 
   const cameras = Array.isArray(camerasData?.data) ? camerasData.data : [];
 
-  // Transit API returns { buses: [...], routes: [...] } at top level — no data wrapper
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const raw = transitData as any;
+  const raw = transitData as { buses?: Bus[] } | undefined;
   const buses: {
     vehicleId: string; routeId: string; routeName: string; routeColor: string;
     latitude: number; longitude: number; heading: number; nextStop: string;
@@ -104,9 +103,7 @@ export default function MapScreen() {
 
   const trafficEvents = Array.isArray(trafficData?.data) ? trafficData.data : [];
 
-  // Gas API returns { data: { stations: [...], stats: {} } }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const rawGas = gasData?.data as any;
+  const rawGas = gasData?.data as GasStation[] | { stations?: GasStation[] } | undefined;
   const gasStations: {
     id: string|number; brandName?: string; name?: string; streetAddress?: string;
     address?: string; latitude: number; longitude: number;
@@ -192,7 +189,7 @@ export default function MapScreen() {
                   backgroundColor: '#3b82f6',
                 }}
               >
-                <Image source="sf:video.fill" style={{ width: 14, height: 14 }} tintColor="#fff" />
+                <Image source="sf:video.fill" alt="" style={{ width: 14, height: 14 }} tintColor="#fff" />
               </View>
               <Callout
                 tooltip
@@ -225,6 +222,7 @@ export default function MapScreen() {
                   <View style={{ position: 'relative' }}>
                     <Image
                       source={{ uri: camera.snapshotUrl }}
+                      alt={camera.name}
                       style={{ width: 200, height: 120 }}
                       contentFit="cover"
                       transition={200}
@@ -245,7 +243,7 @@ export default function MapScreen() {
                           gap: 4,
                         }}
                       >
-                        <Image source="sf:video.fill" style={{ width: 10, height: 10 }} tintColor="#ffffff" />
+                        <Image source="sf:video.fill" alt="" style={{ width: 10, height: 10 }} tintColor="#ffffff" />
                         <Text style={{ color: '#ffffff', fontSize: 9, fontWeight: '600' }}>VIDEO</Text>
                       </View>
                     )}
@@ -284,7 +282,7 @@ export default function MapScreen() {
                       >
                         Tap for full view
                       </Text>
-                      <Image source="sf:chevron.right" style={{ width: 10, height: 10, marginLeft: 2 }} tintColor="#3b82f6" />
+                      <Image source="sf:chevron.right" alt="" style={{ width: 10, height: 10, marginLeft: 2 }} tintColor="#3b82f6" />
                     </View>
                   </View>
                 </View>
@@ -313,7 +311,7 @@ export default function MapScreen() {
                   backgroundColor: bus.routeColor || '#22c55e',
                 }}
               >
-                <Image source="sf:bus.fill" style={{ width: 12, height: 12 }} tintColor="#fff" />
+                <Image source="sf:bus.fill" alt="" style={{ width: 12, height: 12 }} tintColor="#fff" />
               </View>
             </Marker>
           ))}
@@ -360,8 +358,8 @@ export default function MapScreen() {
             const hasGas = priceList.some(({ label }) => GAS_FUEL_TYPES.has(label.toLowerCase()));
             if (!hasGas) return null;
 
-            const stationName = (station as any).brandName || station.name || 'Gas Station';
-            const address = (station as any).streetAddress || station.address || '';
+            const stationName = station.brandName || station.name || 'Gas Station';
+            const address = station.streetAddress || station.address || '';
 
             return (
               <Marker
@@ -380,7 +378,7 @@ export default function MapScreen() {
                     backgroundColor: '#f59e0b',
                   }}
                 >
-                  <Image source="sf:fuelpump.fill" style={{ width: 14, height: 14 }} tintColor="#fff" />
+                  <Image source="sf:fuelpump.fill" alt="" style={{ width: 14, height: 14 }} tintColor="#fff" />
                 </View>
                 <Callout tooltip>
                   <View
@@ -416,7 +414,7 @@ export default function MapScreen() {
                           backgroundColor: '#f59e0b',
                         }}
                       >
-                        <Image source="sf:fuelpump.fill" style={{ width: 15, height: 15 }} tintColor="#fff" />
+                        <Image source="sf:fuelpump.fill" alt="" style={{ width: 15, height: 15 }} tintColor="#fff" />
                       </View>
                       <View style={{ flex: 1 }}>
                         <Text
@@ -499,7 +497,7 @@ export default function MapScreen() {
                     event.severity === 'critical' ? '#ef4444' : event.severity === 'major' ? '#f97316' : '#f59e0b',
                 }}
               >
-                <Image source="sf:exclamationmark.triangle.fill" style={{ width: 14, height: 14 }} tintColor="#fff" />
+                <Image source="sf:exclamationmark.triangle.fill" alt="" style={{ width: 14, height: 14 }} tintColor="#fff" />
               </View>
             </Marker>
           ))}
@@ -556,6 +554,7 @@ export default function MapScreen() {
         >
           <Image
             source={locationTracking ? 'sf:location.fill' : 'sf:location'}
+            alt=""
             style={{ width: 22, height: 22 }}
             tintColor={locationTracking ? '#ffffff' : '#e69c3a'}
           />
@@ -577,7 +576,7 @@ export default function MapScreen() {
             boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
           }}
         >
-          <Image source="sf:arrow.counterclockwise" style={{ width: 20, height: 20 }} tintColor="#e69c3a" />
+          <Image source="sf:arrow.counterclockwise" alt="" style={{ width: 20, height: 20 }} tintColor="#e69c3a" />
         </Pressable>
       </View>
     </View>

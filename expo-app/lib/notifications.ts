@@ -9,6 +9,8 @@ import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import { API_BASE_URL } from './api';
 
+type NotificationData = Record<string, unknown> | null | undefined;
+
 /**
  * Configure notification handler
  * Call this in your root layout
@@ -157,4 +159,53 @@ export function addNotificationResponseListener(
  */
 export async function getLastNotificationResponse(): Promise<Notifications.NotificationResponse | null> {
   return await Notifications.getLastNotificationResponseAsync();
+}
+
+function normalizeNotificationPath(path: string): string | null {
+  const trimmed = path.trim();
+  if (!trimmed) return null;
+
+  if (/^https?:\/\//i.test(trimmed)) {
+    try {
+      const url = new URL(trimmed);
+      return normalizeNotificationPath(`${url.pathname}${url.search}${url.hash}`);
+    } catch {
+      return null;
+    }
+  }
+
+  return trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+}
+
+function getStringValue(data: NotificationData, key: string): string | null {
+  const value = data?.[key];
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
+}
+
+export function getNotificationNavigationPath(data: NotificationData): string | null {
+  const directUrl = getStringValue(data, 'url') ?? getStringValue(data, 'pathname');
+  if (directUrl) {
+    return normalizeNotificationPath(directUrl);
+  }
+
+  const type = getStringValue(data, 'type');
+  const digestId = getStringValue(data, 'digestId');
+  const meetingId = getStringValue(data, 'meetingId');
+
+  if (type === 'digest' && digestId) {
+    return `/digest/${digestId}`;
+  }
+
+  if (type === 'council_meeting' && meetingId) {
+    return `/council/${meetingId}`;
+  }
+
+  return null;
+}
+
+export function getNotificationNavigationPathFromResponse(
+  response: Notifications.NotificationResponse | null
+): string | null {
+  const data = response?.notification.request.content.data as NotificationData;
+  return getNotificationNavigationPath(data);
 }

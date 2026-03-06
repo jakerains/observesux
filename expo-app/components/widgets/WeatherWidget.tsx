@@ -18,13 +18,16 @@ import {
 } from '@/lib/hooks/useDataFetching';
 import { refreshIntervals } from '@/lib/api';
 import { Brand } from '@/constants/BrandColors';
+import morningBridge from '@/assets/siouxlandbridge-morning.jpeg';
+import noonBridge from '@/assets/siouxlandbridge-noon.jpeg';
+import eveningBridge from '@/assets/siouxlandbridge-evening.jpeg';
+import nightBridge from '@/assets/siouxlandbridge-night.jpeg';
 
-// Bridge photos keyed by time of day — Metro requires static require() calls
 const BRIDGE_IMAGES = {
-  morning: require('@/assets/siouxlandbridge-morning.jpeg'),
-  noon:    require('@/assets/siouxlandbridge-noon.jpeg'),
-  evening: require('@/assets/siouxlandbridge-evening.jpeg'),
-  night:   require('@/assets/siouxlandbridge-night.jpeg'),
+  morning: morningBridge,
+  noon: noonBridge,
+  evening: eveningBridge,
+  night: nightBridge,
 } as const;
 
 type TimeOfDay = keyof typeof BRIDGE_IMAGES;
@@ -108,7 +111,7 @@ function StatChip({ icon, label, value }: { icon: string; label: string; value: 
         borderColor: 'rgba(255,255,255,0.18)',
       }}
     >
-      <Image source={`sf:${icon}`} style={{ width: 20, height: 20 }} tintColor={Brand.amber} />
+      <Image source={`sf:${icon}`} alt="" style={{ width: 20, height: 20 }} tintColor={Brand.amber} />
       <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: 0.6 }}>
         {label}
       </Text>
@@ -127,9 +130,10 @@ export function WeatherWidget() {
   const weather = data?.data;
   const alerts = Array.isArray(alertsData?.data) ? alertsData.data : [];
   const hasAlerts = alerts.length > 0;
-  // API returns { data: { forecast: { periods: [...] } } }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const rawForecast = forecastData?.data as any;
+  const rawForecast = forecastData?.data as
+    | { forecast?: { periods?: unknown[] } }
+    | unknown[]
+    | undefined;
   const forecast = Array.isArray(rawForecast?.forecast?.periods)
     ? rawForecast.forecast.periods
     : Array.isArray(rawForecast)
@@ -210,6 +214,7 @@ export function WeatherWidget() {
               </Text>
               <Image
                 source="sf:arrow.clockwise"
+                alt=""
                 style={{ width: 10, height: 10 }}
                 tintColor={isFetching ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.4)'}
               />
@@ -239,11 +244,11 @@ export function WeatherWidget() {
                 borderColor: 'rgba(245, 158, 11, 0.6)',
               }}
             >
-              <Image source="sf:exclamationmark.triangle.fill" style={{ width: 14, height: 14 }} tintColor="#f59e0b" />
+              <Image source="sf:exclamationmark.triangle.fill" alt="" style={{ width: 14, height: 14 }} tintColor="#f59e0b" />
               <Text numberOfLines={1} style={{ flex: 1, fontSize: 12, fontWeight: '500', color: '#f59e0b' }}>
                 {alerts[0].event}
               </Text>
-              <Image source="sf:chevron.right" style={{ width: 10, height: 10 }} tintColor="#f59e0b" />
+              <Image source="sf:chevron.right" alt="" style={{ width: 10, height: 10 }} tintColor="#f59e0b" />
             </Pressable>
           )}
 
@@ -305,6 +310,7 @@ export function WeatherWidget() {
               </Text>
               <Image
                 source={`sf:chevron.${forecastExpanded ? 'up' : 'down'}`}
+                alt=""
                 style={{ width: 13, height: 13 }}
                 tintColor="rgba(255,255,255,0.6)"
               />
@@ -339,6 +345,7 @@ export function WeatherWidget() {
                       </Text>
                       <Image
                         source={`sf:${getForecastIcon(day.shortForecast)}`}
+                        alt=""
                         style={{ width: 18, height: 18, marginRight: 10 }}
                         tintColor={Brand.amber}
                       />

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useSyncExternalStore } from 'react'
 import Link from 'next/link'
 import {
   CalendarDays,
@@ -331,7 +331,7 @@ function SubmitEventDialog() {
               Sign in to submit events to the community calendar.
             </p>
             <Button asChild>
-              <a href="/auth/sign-in">Sign In</a>
+              <Link href="/auth/sign-in">Sign In</Link>
             </Button>
           </div>
         ) : submitted ? (
@@ -478,12 +478,13 @@ export default function EventsPage() {
   const [sourceFilter, setSourceFilter] = useState('all')
   const [datePreset, setDatePreset] = useState('all')
   const [viewMode, setViewMode] = useState<ViewMode>('list')
-  const [mounted, setMounted] = useState(false)
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  )
 
-  // Defer Radix UI components until after hydration to prevent ID mismatch
-  useEffect(() => { setMounted(true) }, [])
-
-  const allEvents = eventsData?.data?.events || []
+  const allEvents = useMemo(() => eventsData?.data?.events || [], [eventsData?.data?.events])
 
   // Apply filters
   const filteredEvents = useMemo(() => {

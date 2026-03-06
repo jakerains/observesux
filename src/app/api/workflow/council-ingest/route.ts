@@ -206,14 +206,22 @@ async function processVideo(
  * Send push notifications to all devices subscribed to council meeting alerts.
  * Uses videoId as the deduplication key — one notification per unique meeting.
  */
-async function sendCouncilMeetingNotification(videoId: string, title: string): Promise<void> {
+async function sendCouncilMeetingNotification(
+  meetingId: string,
+  videoId: string,
+  title: string
+): Promise<void> {
   const deviceSubs = await getDeviceTokensForType('council_meeting')
   if (deviceSubs.length === 0) return
 
   const payload: ExpoPushPayload = {
     title: 'New Council Meeting Available',
     body: title,
-    data: { url: '/council' },
+    data: {
+      type: 'council_meeting',
+      meetingId,
+      url: `/council/${meetingId}`,
+    },
     sound: 'default',
     priority: 'normal',
   }
@@ -253,7 +261,7 @@ export async function POST(request: NextRequest) {
   let force = false
   let singleVideoId: string | null = null
   let mode: 'full' | 'recap_only' | 'upload' | 'add_only' = 'full'
-  let videoMeta: { title?: string; publishedAt?: string } = {}
+  const videoMeta: { title?: string; publishedAt?: string } = {}
   let uploadData: { transcript?: string; title?: string; meetingDate?: string; videoId?: string } = {}
   try {
     const body = await request.json()
@@ -803,7 +811,7 @@ export async function POST(request: NextRequest) {
               })
 
               // Send push notifications to devices subscribed to council meeting alerts
-              sendCouncilMeetingNotification(video.videoId, video.title).catch(err =>
+              sendCouncilMeetingNotification(meeting.id, video.videoId, video.title).catch(err =>
                 console.error('[Council Ingest] Failed to send council meeting notification:', err)
               )
             } else {

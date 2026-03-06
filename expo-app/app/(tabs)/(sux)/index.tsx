@@ -348,7 +348,7 @@ export default function SuxScreen() {
           const chunk = decoder.decode(value, { stream: true });
           processSseChunk(chunk);
         }
-      } catch (streamError) {
+      } catch {
         // Streaming failed - try to read full response
         console.log('Streaming not supported, reading full response');
         const fullText = await response.text();
@@ -425,6 +425,7 @@ export default function SuxScreen() {
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <Image
               source={suxImage}
+              alt="SUX mascot"
               style={{ width: 36, height: 36, borderRadius: 18 }}
               accessibilityLabel="SUX mascot"
             />
@@ -462,6 +463,7 @@ export default function SuxScreen() {
             <View style={{ alignItems: 'center', paddingVertical: 40 }}>
               <Image
                 source={suxImage}
+                alt="SUX mascot"
                 style={{ width: 100, height: 100, marginBottom: 16 }}
                 accessibilityLabel="SUX mascot"
               />
@@ -474,7 +476,7 @@ export default function SuxScreen() {
                   paddingHorizontal: 20,
                 }}
               >
-                Hey there! I'm SUX, your Siouxland Assistant. Ask me anything about Sioux City!
+                Hey there! I&apos;m SUX, your Siouxland Assistant. Ask me anything about Sioux City!
               </Text>
               <Text
                 style={{

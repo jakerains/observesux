@@ -50,3 +50,4 @@ public/swe-worker-*.js.map
 # Remotion
 /remotion/
 .firecrawl/
+.claude/

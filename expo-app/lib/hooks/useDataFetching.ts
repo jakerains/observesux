@@ -5,7 +5,8 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetcher, authenticatedFetcher, authenticatedMutator, endpoints, refreshIntervals, userEndpoints } from '../api';
-import { useSettings } from '../contexts/SettingsContext';
+import { useContext } from 'react';
+import { DEFAULT_SETTINGS, SettingsContext } from '../contexts/SettingsContext';
 import type {
   ApiResponse,
   WeatherObservation,
@@ -34,13 +35,9 @@ import type {
  * Hook to get the effective refresh interval with user's multiplier applied
  */
 function useRefreshInterval(baseInterval: number): number {
-  try {
-    const { settings } = useSettings();
-    return baseInterval * settings.refreshMultiplier;
-  } catch {
-    // If settings context is not available, use base interval
-    return baseInterval;
-  }
+  const settingsContext = useContext(SettingsContext);
+  const refreshMultiplier = settingsContext?.settings.refreshMultiplier ?? DEFAULT_SETTINGS.refreshMultiplier;
+  return baseInterval * refreshMultiplier;
 }
 
 /**

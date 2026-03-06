@@ -47,6 +47,11 @@ function getWeatherIcon(conditions: string, isDaytime: boolean = true) {
   return isDaytime ? Cloud : CloudMoon
 }
 
+function renderWeatherIcon(conditions: string, className: string, isDaytime: boolean = true) {
+  const IconComponent = getWeatherIcon(conditions, isDaytime)
+  return <IconComponent className={className} />
+}
+
 function getConditionsEmoji(conditions: string): string {
   const lower = conditions.toLowerCase()
   if (lower.includes('thunder')) return '⛈️'
@@ -84,7 +89,6 @@ export function WeatherCard({ data, error, state }: ToolCardProps<WeatherToolOut
     )
   }
 
-  const WeatherIcon = getWeatherIcon(weather.conditions || '')
   const feelsLike = weather.windChill ?? weather.heatIndex ?? weather.temperature
   const hasWindGustWarning = weather.windGust && weather.windGust > 25
 
@@ -99,7 +103,7 @@ export function WeatherCard({ data, error, state }: ToolCardProps<WeatherToolOut
       {/* Main display: temp + conditions */}
       <div className="flex items-center gap-3 mb-3">
         <div className="flex items-center gap-2">
-          <WeatherIcon className="h-8 w-8 text-muted-foreground" />
+          {renderWeatherIcon(weather.conditions || '', 'h-8 w-8 text-muted-foreground')}
           <span className="text-3xl">{getConditionsEmoji(weather.conditions || '')}</span>
         </div>
         <div>

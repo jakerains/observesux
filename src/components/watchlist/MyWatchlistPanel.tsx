@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -147,7 +148,7 @@ export function MyWatchlistPanel() {
         </CardHeader>
         <CardContent>
           <Button asChild>
-            <a href="/auth/sign-in">Sign in to Start Saving</a>
+            <Link href="/auth/sign-in">Sign in to Start Saving</Link>
           </Button>
         </CardContent>
       </Card>

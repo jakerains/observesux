@@ -130,7 +130,7 @@ export function RagAdmin({ hideHeader = false }: RagAdminProps) {
               <h1 className="text-2xl font-bold">Knowledge Base</h1>
             </div>
             <p className="text-muted-foreground ml-11">
-              Manage RAG entries that enhance the chat assistant's knowledge
+              Manage RAG entries that enhance the chat assistant&apos;s knowledge
             </p>
           </div>
         </div>
@@ -193,7 +193,7 @@ export function RagAdmin({ hideHeader = false }: RagAdminProps) {
           <div className="rounded-xl border bg-card p-6">
             <h2 className="text-lg font-semibold mb-4">Add Knowledge Entry</h2>
             <p className="text-sm text-muted-foreground mb-6">
-              Create a new entry to enhance the assistant's knowledge about Sioux City.
+              Create a new entry to enhance the assistant&apos;s knowledge about Sioux City.
               The content will be automatically embedded for semantic search.
             </p>
             <RagEntryForm onSuccess={handleEntryCreated} />

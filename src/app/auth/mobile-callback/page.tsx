@@ -1,6 +1,7 @@
 'use client'
 
 import { Suspense, useEffect, useState } from 'react'
+import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 
 /**
@@ -47,12 +48,12 @@ function MobileCallbackContent() {
           <div className="text-6xl">⚠️</div>
           <h1 className="text-xl font-semibold text-foreground">Sign In Error</h1>
           <p className="text-muted-foreground">{error}</p>
-          <a
+          <Link
             href="/auth/sign-in"
             className="inline-block px-4 py-2 bg-primary text-primary-foreground rounded-lg"
           >
             Try Again
-          </a>
+          </Link>
         </div>
       </div>
     )

@@ -31,14 +31,15 @@ import {
   Cloudy,
   Snowflake,
   Moon,
-  CloudMoon
+  CloudMoon,
+  type LucideIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getDataFreshness } from '@/lib/utils/dataFreshness'
 import { format, isToday, isTomorrow } from 'date-fns'
 import type { ForecastPeriod, HourlyForecast, WeatherAlert } from '@/types'
 
-function getWeatherIcon(conditions: string, isDaytime: boolean = true) {
+function getWeatherIcon(conditions: string, isDaytime: boolean = true): LucideIcon {
   const lower = conditions.toLowerCase()
 
   // Precipitation types
@@ -70,6 +71,11 @@ function getWeatherIcon(conditions: string, isDaytime: boolean = true) {
   return isDaytime ? Cloud : CloudMoon
 }
 
+function renderWeatherIcon(conditions: string, className: string, isDaytime: boolean = true) {
+  const IconComponent = getWeatherIcon(conditions, isDaytime)
+  return <IconComponent className={className} />
+}
+
 function getSeverityColor(severity: string) {
   switch (severity) {
     case 'Extreme': return 'bg-red-600 text-white'
@@ -87,13 +93,12 @@ function formatDayName(date: Date): string {
 }
 
 function HourlyForecastItem({ hour }: { hour: HourlyForecast }) {
-  const Icon = getWeatherIcon(hour.shortForecast, hour.isDaytime)
   const time = format(new Date(hour.startTime), 'ha')
 
   return (
     <div className="flex flex-col items-center gap-1 min-w-[60px] p-2">
       <span className="text-xs text-muted-foreground">{time}</span>
-      <Icon className="h-5 w-5 text-muted-foreground" />
+      {renderWeatherIcon(hour.shortForecast, 'h-5 w-5 text-muted-foreground', hour.isDaytime)}
       <span className="text-sm font-medium">{hour.temperature}°</span>
       {hour.probabilityOfPrecipitation !== null && hour.probabilityOfPrecipitation > 0 && (
         <span className="text-xs text-blue-400 flex items-center gap-0.5">
@@ -106,13 +111,12 @@ function HourlyForecastItem({ hour }: { hour: HourlyForecast }) {
 }
 
 function DayForecastItem({ period, isNight }: { period: ForecastPeriod; isNight?: ForecastPeriod }) {
-  const DayIcon = getWeatherIcon(period.shortForecast, period.isDaytime)
   const dayName = formatDayName(new Date(period.startTime))
 
   return (
     <div className="flex items-center justify-between py-3 border-b border-border/50 last:border-0">
       <div className="flex items-center gap-3 flex-1">
-        <DayIcon className="h-8 w-8 text-muted-foreground shrink-0" />
+        {renderWeatherIcon(period.shortForecast, 'h-8 w-8 text-muted-foreground shrink-0', period.isDaytime)}
         <div className="flex flex-col min-w-0">
           <span className="font-medium text-sm">{dayName}</span>
           <span className="text-xs text-muted-foreground truncate max-w-[180px]">
@@ -169,7 +173,6 @@ export function WeatherWidget() {
     : weatherLoading
       ? 'loading'
       : getDataFreshness({ lastUpdated, refreshInterval })
-  const WeatherIcon = weather ? getWeatherIcon(weather.conditions) : Cloud
 
   const handleToggleExpand = () => {
     setWidgetSize('weather', isExpanded ? 'small' : 'large')
@@ -281,7 +284,7 @@ export function WeatherWidget() {
       {/* Main Weather Display */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
-          <WeatherIcon className="h-12 w-12 text-muted-foreground" />
+          {renderWeatherIcon(weather?.conditions || 'Cloudy', 'h-12 w-12 text-muted-foreground')}
           <div>
             <div className="text-4xl font-bold">
               {weather?.temperature !== null ? `${Math.round(weather?.temperature || 0)}°` : '--°'}
