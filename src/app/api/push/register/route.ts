@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isDatabaseConfigured } from '@/lib/db'
 import { upsertDevicePushSubscription } from '@/lib/db/device-push'
-import Expo from 'expo-server-sdk'
+import { isValidExpoPushToken } from '@/lib/push/send-expo'
 
 export const dynamic = 'force-dynamic'
 
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'deviceId is required' }, { status: 400 })
   }
 
-  if (!expoPushToken || !Expo.isExpoPushToken(expoPushToken)) {
+  if (!expoPushToken || !isValidExpoPushToken(expoPushToken)) {
     return NextResponse.json({ error: 'Invalid Expo push token' }, { status: 400 })
   }
 

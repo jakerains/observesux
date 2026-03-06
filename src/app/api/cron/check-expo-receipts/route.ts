@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import Expo from 'expo-server-sdk'
 import {
   getPendingExpoPushReceipts,
   updateExpoPushReceiptStatus,
@@ -7,11 +6,10 @@ import {
   cleanupOldExpoPushReceipts,
 } from '@/lib/db/expo-push'
 import { logCronRun } from '@/lib/db/historical'
+import { chunkExpoPushReceiptIds, getExpoPushReceipts } from '@/lib/push/send-expo'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 30
-
-const expo = new Expo()
 
 function verifyCronRequest(request: NextRequest): boolean {
   const isVercelCron = request.headers.get('x-vercel-cron') === '1'
@@ -43,10 +41,10 @@ export async function GET(request: NextRequest) {
 
     // Chunk receipt IDs (max 300 per request)
     const receiptIds = pendingReceipts.map(r => r.receiptId)
-    const chunks = expo.chunkPushNotificationReceiptIds(receiptIds)
+    const chunks = chunkExpoPushReceiptIds(receiptIds)
 
     for (const chunk of chunks) {
-      const receipts = await expo.getPushNotificationReceiptsAsync(chunk)
+      const receipts = await getExpoPushReceipts(chunk)
 
       for (const receiptId of chunk) {
         const receipt = receipts[receiptId]
