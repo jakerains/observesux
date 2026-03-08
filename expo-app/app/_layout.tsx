@@ -9,6 +9,7 @@ import { Stack, useRouter, useRootNavigationState, type Href } from 'expo-router
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AuthProvider, SettingsProvider, useAuth, useSettings } from '../lib/contexts';
 import {
@@ -120,6 +121,19 @@ function AppShell() {
     headerTitleStyle: { color: '#ece3d6', fontSize: 17, fontWeight: '600' as const },
   };
 
+  const detailModalOptions = Platform.OS === 'ios'
+    ? {
+        presentation: 'modal' as const,
+        headerShown: true,
+      }
+    : {
+        presentation: 'formSheet' as const,
+        sheetGrabberVisible: true,
+        sheetAllowedDetents: [0.85, 1.0],
+        sheetExpandsWhenScrolledToEdge: false,
+        headerShown: true,
+      };
+
   return (
     <>
       <StatusBar style="light" />
@@ -149,22 +163,14 @@ function AppShell() {
           name="digest/[id]"
           options={{
             title: 'Siouxland Digest',
-            presentation: 'formSheet',
-            sheetGrabberVisible: true,
-            sheetAllowedDetents: [0.85, 1.0],
-            sheetExpandsWhenScrolledToEdge: false,
-            headerShown: true,
+            ...detailModalOptions,
           }}
         />
         <Stack.Screen
           name="council/[id]"
           options={{
             title: 'Council Recap',
-            presentation: 'formSheet',
-            sheetGrabberVisible: true,
-            sheetAllowedDetents: [0.85, 1.0],
-            sheetExpandsWhenScrolledToEdge: false,
-            headerShown: true,
+            ...detailModalOptions,
           }}
         />
       </Stack>

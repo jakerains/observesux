@@ -3,16 +3,16 @@
  * Shows the full AI-generated community digest
  */
 
-import { useCallback, useRef } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { View, ScrollView, Text, Pressable } from 'react-native';
 import { useLocalSearchParams, Stack, useFocusEffect } from 'expo-router';
 import { MarkdownText } from '@/components/MarkdownText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetcher, endpoints } from '@/lib/api';
 import { LoadingSpinner } from '@/components/LoadingState';
-import type { Digest } from '@/lib/types';
+import type { DigestResponse } from '@/lib/types';
 import { Brand } from '@/constants/BrandColors';
 
 type DigestEdition = 'morning' | 'midday' | 'evening';
@@ -152,17 +152,27 @@ export default function DigestDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
+  const queryClient = useQueryClient();
+  const digestId = useMemo(() => Array.isArray(id) ? id[0] : id, [id]);
+  const cachedDigestResponse = queryClient.getQueryData<DigestResponse>(['digest']);
+  const cachedDigest = cachedDigestResponse?.digest;
+  const cachedDigestUpdatedAt = queryClient.getQueryState(['digest'])?.dataUpdatedAt;
 
   // Reset scroll position every time the sheet is presented (including reopen)
   useFocusEffect(useCallback(() => {
     scrollRef.current?.scrollTo({ y: 0, animated: false });
   }, []));
 
-  // Share the same query key as the widget so this modal reads from already-warm cache.
-  // The widget always navigates here with the latest digest id, so the cached data matches.
+  // Read the requested digest by route id, but warm the first render from the widget cache
+  // when it already contains the same record.
   const { data, isPending, isError, refetch } = useQuery({
-    queryKey: ['digest'],
-    queryFn: () => fetcher<{ digest: Digest | null }>(endpoints.digest),
+    queryKey: ['digest', 'detail', digestId],
+    enabled: !!digestId,
+    queryFn: () => fetcher<DigestResponse>(`${endpoints.digest}?id=${digestId}`),
+    initialData: cachedDigest?.id === digestId
+      ? { digest: cachedDigest, available: true }
+      : undefined,
+    initialDataUpdatedAt: cachedDigest?.id === digestId ? cachedDigestUpdatedAt : undefined,
   });
 
   const digest = data?.digest;
@@ -170,7 +180,7 @@ export default function DigestDetailScreen() {
   const editionLabel = edition ? editionLabels[edition] : 'Siouxland Digest';
   const editionIcon = edition ? editionIcons[edition] : 'newspaper.fill';
 
-  if (isPending) {
+  if (!digestId || isPending) {
     return (
       <View style={{ flex: 1, backgroundColor: Brand.background }}>
         <Stack.Screen options={{ title: editionLabel }} />
@@ -205,7 +215,7 @@ export default function DigestDetailScreen() {
       <ScrollView
         ref={scrollRef}
         style={{ flex: 1 }}
-        contentInsetAdjustmentBehavior="never"
+        contentInsetAdjustmentBehavior="automatic"
         scrollIndicatorInsets={{ bottom: insets.bottom }}
         removeClippedSubviews={false}
         contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 32 }}

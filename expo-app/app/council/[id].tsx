@@ -2,12 +2,12 @@
  * City Council Meeting Recap - Detail Modal
  */
 
-import { useCallback, useRef } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { View, ScrollView, Text, Pressable, Linking } from 'react-native';
 import { useLocalSearchParams, Stack, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetcher, endpoints } from '@/lib/api';
 import { LoadingSpinner } from '@/components/LoadingState';
 import { MarkdownText } from '@/components/MarkdownText';
@@ -18,20 +18,28 @@ export default function CouncilDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
+  const queryClient = useQueryClient();
+  const meetingId = useMemo(() => Array.isArray(id) ? id[0] : id, [id]);
+  const cachedCouncilResponse = queryClient.getQueryData<CouncilResponse>(['council']);
+  const cachedCouncilUpdatedAt = queryClient.getQueryState(['council'])?.dataUpdatedAt;
+  const cachedMeeting = cachedCouncilResponse?.meetings?.find((m) => String(m.id) === String(meetingId));
 
   // Reset scroll position every time the sheet is presented (including reopen)
   useFocusEffect(useCallback(() => {
     scrollRef.current?.scrollTo({ y: 0, animated: false });
   }, []));
 
-  // Share the same query key as the widget so this modal reads from already-warm cache.
-  // isPending is only true when the widget itself hasn't loaded yet (rare).
+  // Resolve the requested meeting by route id, but reuse the widget's cached response
+  // when it already contains the requested meeting for an instant first paint.
   const { data, isPending, isError, refetch } = useQuery({
-    queryKey: ['council'],
+    queryKey: ['council', 'detail', meetingId],
     queryFn: () => fetcher<CouncilResponse>(endpoints.council),
+    enabled: !!meetingId,
+    initialData: cachedMeeting ? cachedCouncilResponse : undefined,
+    initialDataUpdatedAt: cachedMeeting ? cachedCouncilUpdatedAt : undefined,
   });
 
-  if (isPending) {
+  if (!meetingId || isPending) {
     return (
       <View style={{ flex: 1, backgroundColor: Brand.background }}>
         <Stack.Screen options={{ title: 'Council Recap' }} />
@@ -56,7 +64,7 @@ export default function CouncilDetailScreen() {
     );
   }
 
-  const meeting = (data.meetings ?? []).find((m) => String(m.id) === String(id));
+  const meeting = (data.meetings ?? []).find((m) => String(m.id) === String(meetingId));
 
   if (!meeting) {
     return (
@@ -92,7 +100,7 @@ export default function CouncilDetailScreen() {
       <ScrollView
         ref={scrollRef}
         style={{ flex: 1 }}
-        contentInsetAdjustmentBehavior="never"
+        contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 32 }}
       >
         {!!dateLabel && (
