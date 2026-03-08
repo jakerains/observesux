@@ -192,7 +192,7 @@ export function GasPricesWidget() {
       {/* Station List */}
       {sortedStations.length === 0 ? (
         <View style={{ alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-          <Image source="sf:fuelpump" style={{ width: 32, height: 32 }} tintColor={PlatformColor('tertiaryLabel')} />
+          <Image source="sf:fuelpump" style={{ width: 32, height: 32 }} tintColor={PlatformColor('tertiaryLabel') as unknown as string} />
           <Text style={{ marginTop: 8, color: PlatformColor('secondaryLabel') }}>
             No prices available
           </Text>

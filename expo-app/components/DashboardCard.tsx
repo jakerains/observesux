@@ -84,7 +84,7 @@ export function DashboardCard({
             <Image
               source={`sf:${sfSymbol}`}
               style={{ width: 18, height: 18, marginRight: 8 }}
-              tintColor={PlatformColor('label')}
+              tintColor={PlatformColor('label') as unknown as string}
             />
           )}
           <Text
@@ -132,7 +132,7 @@ export function DashboardCard({
               {isRefreshing ? (
                 <ActivityIndicator size="small" color={PlatformColor('secondaryLabel')} />
               ) : (
-                <Image source="sf:arrow.clockwise" style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel')} />
+                <Image source="sf:arrow.clockwise" style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel') as unknown as string} />
               )}
             </Pressable>
           )}
@@ -144,7 +144,7 @@ export function DashboardCard({
               style={{ padding: 4 }}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Image source="sf:arrow.up.left.and.arrow.down.right" style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel')} />
+              <Image source="sf:arrow.up.left.and.arrow.down.right" style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel') as unknown as string} />
             </Pressable>
           )}
         </View>

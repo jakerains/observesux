@@ -133,7 +133,7 @@ export default function SignInScreen() {
                 paddingHorizontal: 16,
               }}
             >
-              <Image source="sf:envelope.fill" style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel')} />
+              <Image source="sf:envelope.fill" style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel') as unknown as string} />
               <TextInput
                 value={email}
                 onChangeText={setEmail}
@@ -175,7 +175,7 @@ export default function SignInScreen() {
                 paddingHorizontal: 16,
               }}
             >
-              <Image source="sf:lock.fill" style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel')} />
+              <Image source="sf:lock.fill" style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel') as unknown as string} />
               <TextInput
                 value={password}
                 onChangeText={setPassword}
@@ -194,7 +194,7 @@ export default function SignInScreen() {
                 }}
               />
               <Pressable onPress={() => setShowPassword(!showPassword)}>
-                <Image source={`sf:${showPassword ? 'eye.slash.fill' : 'eye.fill'}`} style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel')} />
+                <Image source={`sf:${showPassword ? 'eye.slash.fill' : 'eye.fill'}`} style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel') as unknown as string} />
               </Pressable>
             </View>
           </View>

@@ -18,13 +18,16 @@ export default function CouncilDetailScreen() {
   const insets = useSafeAreaInsets();
 
   // Fetch independently — don't rely on widget cache
-  const { data, isLoading, isError } = useQuery({
+  // isPending covers both: fetching for first time AND disabled query (id not yet available).
+  // In TanStack Query v5, isLoading = isPending && isFetching, which is false when enabled=false
+  // even though there's no data — so we must use isPending here.
+  const { data, isPending, isError, refetch } = useQuery({
     queryKey: ['council', 'detail', id],
     queryFn: () => fetcher<CouncilResponse>(endpoints.council),
     enabled: !!id,
   });
 
-  if (isLoading) {
+  if (!id || isPending) {
     return (
       <View style={{ flex: 1, backgroundColor: Brand.background }}>
         <Stack.Screen options={{ title: 'Council Recap' }} />
@@ -39,6 +42,12 @@ export default function CouncilDetailScreen() {
         <Stack.Screen options={{ title: 'Council Recap' }} />
         <Image source="sf:exclamationmark.circle" alt="" style={{ width: 48, height: 48 }} tintColor={Brand.amber} />
         <Text style={{ marginTop: 12, color: Brand.foreground, fontSize: 15 }}>Failed to load</Text>
+        <Pressable
+          onPress={() => refetch()}
+          style={{ marginTop: 12, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 8, backgroundColor: Brand.secondary }}
+        >
+          <Text style={{ color: Brand.amber, fontWeight: '600' }}>Try Again</Text>
+        </Pressable>
       </View>
     );
   }

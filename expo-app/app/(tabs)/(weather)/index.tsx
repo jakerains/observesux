@@ -14,6 +14,7 @@ import {
   useWeatherForecast,
   useWeatherAlerts,
 } from '@/lib/hooks/useDataFetching';
+import { WeatherForecastDay } from '@/lib/types';
 import { LoadingSpinner, Skeleton } from '@/components/LoadingState';
 
 export default function WeatherScreen() {
@@ -160,7 +161,7 @@ export default function WeatherScreen() {
               overflow: 'hidden',
             }}
           >
-            {forecast.slice(0, 14).map((day, index) => (
+            {(forecast as WeatherForecastDay[]).slice(0, 14).map((day: WeatherForecastDay, index: number) => (
               <View
                 key={`${day.name}-${index}`}
                 style={{

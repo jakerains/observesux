@@ -59,7 +59,7 @@ function LinkItem({ sfSymbol, label, subtitle, onPress, tintColor }: LinkItemPro
           </Text>
         )}
       </View>
-      <ExpoImage source="sf:chevron.right" style={{ width: 16, height: 16 }} tintColor={PlatformColor('tertiaryLabel')} />
+      <ExpoImage source="sf:chevron.right" style={{ width: 16, height: 16 }} tintColor={PlatformColor('tertiaryLabel') as unknown as string} />
     </Pressable>
   );
 }

@@ -72,7 +72,7 @@ const CameraCard = memo(function CameraCard({ camera, cacheKey }: { camera: Traf
                 backgroundColor: PlatformColor('tertiarySystemBackground'),
               }}
             >
-              <Image source="sf:video.slash" style={{ width: 32, height: 32 }} tintColor={PlatformColor('tertiaryLabel')} />
+              <Image source="sf:video.slash" style={{ width: 32, height: 32 }} tintColor={PlatformColor('tertiaryLabel') as unknown as string} />
             </View>
           ) : (
             <Image
@@ -238,7 +238,7 @@ export default function CamerasScreen() {
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={{ flexGrow: 1, alignItems: 'center', justifyContent: 'center', padding: 24 }}
       >
-        <Image source="sf:video.slash" style={{ width: 48, height: 48 }} tintColor={PlatformColor('tertiaryLabel')} />
+        <Image source="sf:video.slash" style={{ width: 48, height: 48 }} tintColor={PlatformColor('tertiaryLabel') as unknown as string} />
         <Text style={{ marginTop: 12, color: PlatformColor('secondaryLabel') }}>
           Unable to load cameras
         </Text>
@@ -307,7 +307,7 @@ export default function CamerasScreen() {
       ListEmptyComponent={
         showLiveOnly ? (
           <View style={{ alignItems: 'center', paddingTop: 40, gap: 12 }}>
-            <Image source="sf:video.slash" style={{ width: 36, height: 36 }} tintColor={PlatformColor('tertiaryLabel')} />
+            <Image source="sf:video.slash" style={{ width: 36, height: 36 }} tintColor={PlatformColor('tertiaryLabel') as unknown as string} />
             <Text style={{ color: PlatformColor('secondaryLabel'), fontSize: 14 }}>No live cameras available</Text>
             <Pressable
               onPress={() => setShowLiveOnly(false)}

@@ -17,6 +17,7 @@ import {
   getDataStatus,
 } from '@/lib/hooks/useDataFetching';
 import { refreshIntervals } from '@/lib/api';
+import type { WeatherForecastDay } from '@/lib/types';
 import { Brand } from '@/constants/BrandColors';
 import morningBridge from '@/assets/siouxlandbridge-morning.jpeg';
 import noonBridge from '@/assets/siouxlandbridge-noon.jpeg';
@@ -134,11 +135,12 @@ export function WeatherWidget() {
     | { forecast?: { periods?: unknown[] } }
     | unknown[]
     | undefined;
-  const forecast = Array.isArray(rawForecast?.forecast?.periods)
-    ? rawForecast.forecast.periods
-    : Array.isArray(rawForecast)
-    ? rawForecast
-    : [];
+  const forecast: WeatherForecastDay[] =
+    !Array.isArray(rawForecast) && Array.isArray(rawForecast?.forecast?.periods)
+      ? (rawForecast as { forecast: { periods: WeatherForecastDay[] } }).forecast.periods
+      : Array.isArray(rawForecast)
+      ? (rawForecast as WeatherForecastDay[])
+      : [];
   const fetchedAt = dataUpdatedAt ? new Date(dataUpdatedAt).toISOString() : undefined;
   const status = getDataStatus(fetchedAt, refreshIntervals.weather, isLoading, isError);
 

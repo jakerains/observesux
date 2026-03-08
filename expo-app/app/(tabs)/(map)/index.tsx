@@ -53,7 +53,7 @@ function LayerToggle({
         boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
       }}
     >
-      <Image source={`sf:${sfSymbol}`} alt="" style={{ width: 18, height: 18 }} tintColor={active ? '#fff' : PlatformColor('label')} />
+      <Image source={`sf:${sfSymbol}`} alt="" style={{ width: 18, height: 18 }} tintColor={active ? '#fff' : PlatformColor('label') as unknown as string} />
       <Text style={{ fontSize: 12, fontWeight: active ? '600' : '400', color: active ? '#fff' : PlatformColor('label') }}>
         {label}
       </Text>
@@ -98,7 +98,7 @@ export default function MapScreen() {
   const raw = transitData as { buses?: Bus[] } | undefined;
   const buses: {
     vehicleId: string; routeId: string; routeName: string; routeColor: string;
-    latitude: number; longitude: number; heading: number; nextStop: string;
+    latitude: number; longitude: number; heading: number; nextStop?: string;
   }[] = Array.isArray(raw?.buses) ? raw.buses : [];
 
   const trafficEvents = Array.isArray(trafficData?.data) ? trafficData.data : [];

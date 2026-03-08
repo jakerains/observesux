@@ -75,7 +75,7 @@ function NewsRow({ item }: NewsRowProps) {
         </View>
       </View>
 
-      <Image source="sf:chevron.right" style={{ width: 16, height: 16, marginLeft: 4 }} tintColor={PlatformColor('tertiaryLabel')} />
+      <Image source="sf:chevron.right" style={{ width: 16, height: 16, marginLeft: 4 }} tintColor={PlatformColor('tertiaryLabel') as unknown as string} />
     </Pressable>
   );
 }
@@ -120,7 +120,7 @@ export function NewsWidget() {
     >
       {displayNews.length === 0 ? (
         <View style={{ alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-          <Image source="sf:newspaper" style={{ width: 32, height: 32 }} tintColor={PlatformColor('tertiaryLabel')} />
+          <Image source="sf:newspaper" style={{ width: 32, height: 32 }} tintColor={PlatformColor('tertiaryLabel') as unknown as string} />
           <Text style={{ marginTop: 8, color: PlatformColor('secondaryLabel') }}>
             No news available
           </Text>

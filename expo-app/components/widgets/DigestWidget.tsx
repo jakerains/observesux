@@ -86,7 +86,7 @@ export function DigestWidget() {
           <Image
             source="sf:newspaper"
             style={{ width: 40, height: 40 }}
-            tintColor={PlatformColor('tertiaryLabel')}
+            tintColor={PlatformColor('tertiaryLabel') as unknown as string}
           />
           <Text
             style={{
@@ -117,7 +117,7 @@ export function DigestWidget() {
               <Image
                 source={`sf:${edition ? editionIcons[edition] : 'newspaper.fill'}`}
                 style={{ width: 12, height: 12 }}
-                tintColor={PlatformColor('secondaryLabel')}
+                tintColor={PlatformColor('secondaryLabel') as unknown as string}
               />
               <Text
                 style={{

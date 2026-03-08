@@ -157,7 +157,7 @@ export default function SignUpScreen() {
                 paddingHorizontal: 16,
               }}
             >
-              <Image source="sf:person.fill" alt="" style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel')} />
+              <Image source="sf:person.fill" alt="" style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel') as unknown as string} />
               <TextInput
                 value={name}
                 onChangeText={setName}
@@ -198,7 +198,7 @@ export default function SignUpScreen() {
                 paddingHorizontal: 16,
               }}
             >
-              <Image source="sf:envelope.fill" alt="" style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel')} />
+              <Image source="sf:envelope.fill" alt="" style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel') as unknown as string} />
               <TextInput
                 value={email}
                 onChangeText={setEmail}
@@ -240,7 +240,7 @@ export default function SignUpScreen() {
                 paddingHorizontal: 16,
               }}
             >
-              <Image source="sf:lock.fill" alt="" style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel')} />
+              <Image source="sf:lock.fill" alt="" style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel') as unknown as string} />
               <TextInput
                 value={password}
                 onChangeText={setPassword}
@@ -259,7 +259,7 @@ export default function SignUpScreen() {
                 }}
               />
               <Pressable onPress={() => setShowPassword(!showPassword)}>
-                <Image source={`sf:${showPassword ? 'eye.slash.fill' : 'eye.fill'}`} alt="" style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel')} />
+                <Image source={`sf:${showPassword ? 'eye.slash.fill' : 'eye.fill'}`} alt="" style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel') as unknown as string} />
               </Pressable>
             </View>
           </View>
@@ -285,7 +285,7 @@ export default function SignUpScreen() {
                 paddingHorizontal: 16,
               }}
             >
-              <Image source="sf:lock.fill" alt="" style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel')} />
+              <Image source="sf:lock.fill" alt="" style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel') as unknown as string} />
               <TextInput
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}

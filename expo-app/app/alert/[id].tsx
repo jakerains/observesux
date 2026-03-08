@@ -39,7 +39,7 @@ export default function AlertDetailScreen() {
         <LoadingSpinner message="Loading alert..." />
       ) : !alert ? (
         <View style={{ flex: 1, backgroundColor: '#120905', justifyContent: 'center', alignItems: 'center' }}>
-          <Image source="sf:exclamationmark.circle" alt="" style={{ width: 64, height: 64 }} tintColor={PlatformColor('tertiaryLabel')} />
+          <Image source="sf:exclamationmark.circle" alt="" style={{ width: 64, height: 64 }} tintColor={PlatformColor('tertiaryLabel') as unknown as string} />
           <Text style={{ marginTop: 16, color: PlatformColor('secondaryLabel') }}>
             Alert not found
           </Text>
@@ -97,7 +97,7 @@ export default function AlertDetailScreen() {
             }}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <Image source="sf:clock" alt="" style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel')} />
+              <Image source="sf:clock" alt="" style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel') as unknown as string} />
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 12, color: PlatformColor('secondaryLabel') }}>Onset</Text>
                 <Text style={{ fontWeight: '500', color: PlatformColor('label') }}>
@@ -107,7 +107,7 @@ export default function AlertDetailScreen() {
             </View>
             <View style={{ height: 0.5, backgroundColor: PlatformColor('separator'), marginVertical: 12 }} />
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <Image source="sf:timer" alt="" style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel')} />
+              <Image source="sf:timer" alt="" style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel') as unknown as string} />
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 12, color: PlatformColor('secondaryLabel') }}>Expires</Text>
                 <Text style={{ fontWeight: '500', color: PlatformColor('label') }}>

@@ -59,7 +59,7 @@ function MenuItem({
           </Text>
         )}
       </View>
-      {rightElement || (onPress && <Image source="sf:chevron.right" style={{ width: 16, height: 16 }} tintColor={PlatformColor('tertiaryLabel')} />)}
+      {rightElement || (onPress && <Image source="sf:chevron.right" style={{ width: 16, height: 16 }} tintColor={PlatformColor('tertiaryLabel') as unknown as string} />)}
     </View>
   );
 
@@ -162,7 +162,7 @@ export default function MoreScreen() {
                   backgroundColor: settings.notificationsEnabled ? '#22c55e' : '#6b7280',
                 }}
               />
-              <Image source="sf:chevron.right" style={{ width: 16, height: 16 }} tintColor={PlatformColor('tertiaryLabel')} />
+              <Image source="sf:chevron.right" style={{ width: 16, height: 16 }} tintColor={PlatformColor('tertiaryLabel') as unknown as string} />
             </View>
           }
         />

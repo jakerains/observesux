@@ -134,7 +134,7 @@ export default function CameraDetailScreen() {
                 backgroundColor: '#1f130c',
               }}
             >
-              <Image source="sf:video.slash" alt="" style={{ width: 64, height: 64 }} tintColor={PlatformColor('tertiaryLabel')} />
+              <Image source="sf:video.slash" alt="" style={{ width: 64, height: 64 }} tintColor={PlatformColor('tertiaryLabel') as unknown as string} />
               <Text style={{ marginTop: 16, marginBottom: 20, color: PlatformColor('secondaryLabel') }}>
                 Unable to load camera feed
               </Text>
@@ -191,7 +191,7 @@ export default function CameraDetailScreen() {
                   backgroundColor: '#1f130c',
                 }}
               >
-                <Image source="sf:video.slash" alt="" style={{ width: 64, height: 64 }} tintColor={PlatformColor('tertiaryLabel')} />
+                <Image source="sf:video.slash" alt="" style={{ width: 64, height: 64 }} tintColor={PlatformColor('tertiaryLabel') as unknown as string} />
                 <Text style={{ marginTop: 16, marginBottom: 8, color: PlatformColor('label'), fontWeight: '600' }}>
                   Stream Unavailable
                 </Text>
@@ -272,7 +272,7 @@ export default function CameraDetailScreen() {
                 source="sf:photo"
                 alt=""
                 style={{ width: 16, height: 16 }}
-                tintColor={viewMode === 'snapshot' ? PlatformColor('label') : PlatformColor('secondaryLabel')}
+                tintColor={viewMode === 'snapshot' ? PlatformColor('label') as unknown as string : PlatformColor('secondaryLabel') as unknown as string}
               />
               <Text
                 style={{
@@ -301,7 +301,7 @@ export default function CameraDetailScreen() {
                 source="sf:video.fill"
                 alt=""
                 style={{ width: 16, height: 16 }}
-                tintColor={viewMode === 'live' ? '#ef4444' : PlatformColor('secondaryLabel')}
+                tintColor={viewMode === 'live' ? '#ef4444' : PlatformColor('secondaryLabel') as unknown as string}
               />
               <Text
                 style={{

@@ -3,7 +3,7 @@
  * Shows the full AI-generated community digest
  */
 
-import { View, ScrollView, Text } from 'react-native';
+import { View, ScrollView, Text, Pressable } from 'react-native';
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { MarkdownText } from '@/components/MarkdownText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -151,7 +151,7 @@ export default function DigestDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
 
-  const { data, isLoading } = useQuery({
+  const { data, isPending, isError, refetch } = useQuery({
     queryKey: ['digest', id],
     queryFn: () => fetcher<{ digest: Digest | null }>(`${endpoints.digest}?id=${id}`),
     enabled: !!id,
@@ -162,7 +162,10 @@ export default function DigestDetailScreen() {
   const editionLabel = edition ? editionLabels[edition] : 'Siouxland Digest';
   const editionIcon = edition ? editionIcons[edition] : 'newspaper.fill';
 
-  if (isLoading) {
+  // isPending covers both: fetching for first time AND disabled query (id not yet available).
+  // In TanStack Query v5, isLoading = isPending && isFetching, which is false when enabled=false
+  // even though there's no data — so we must use isPending here.
+  if (!id || isPending) {
     return (
       <View style={{ flex: 1, backgroundColor: Brand.background }}>
         <Stack.Screen options={{ title: editionLabel }} />
@@ -171,12 +174,22 @@ export default function DigestDetailScreen() {
     );
   }
 
-  if (!digest) {
+  if (isError || !digest) {
     return (
       <View style={{ flex: 1, backgroundColor: Brand.background, justifyContent: 'center', alignItems: 'center' }}>
         <Stack.Screen options={{ title: 'Siouxland Digest' }} />
         <Image source="sf:newspaper" style={{ width: 64, height: 64 }} tintColor="#8e8e93" />
-        <Text style={{ marginTop: 16, color: Brand.muted }}>Digest not found</Text>
+        <Text style={{ marginTop: 16, color: Brand.muted }}>
+          {isError ? 'Failed to load digest' : 'Digest not found'}
+        </Text>
+        {isError && (
+          <Pressable
+            onPress={() => refetch()}
+            style={{ marginTop: 12, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 8, backgroundColor: Brand.secondary }}
+          >
+            <Text style={{ color: Brand.amber, fontWeight: '600' }}>Try Again</Text>
+          </Pressable>
+        )}
       </View>
     );
   }
