@@ -248,7 +248,7 @@ export function NotificationPromptModal({ onDismiss }: Props) {
 
               <Text style={styles.title}>Notifications are off</Text>
               <Text style={styles.subtitle}>
-                To receive Siouxland alerts, enable notifications for this app in your iPhone's Settings.
+                To receive Siouxland alerts, enable notifications for this app in your iPhone settings.
               </Text>
 
               <Text style={styles.settingsHint}>

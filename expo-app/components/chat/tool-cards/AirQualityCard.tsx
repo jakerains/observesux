@@ -1,4 +1,4 @@
-import { View, Text, PlatformColor } from 'react-native'
+import { Text, PlatformColor } from 'react-native'
 import { ToolCardBase } from './ToolCardBase'
 import { unwrapData, type ToolStatus } from './utils'
 

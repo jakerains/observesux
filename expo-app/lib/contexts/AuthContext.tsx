@@ -71,7 +71,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
-  const verifyAndRefreshUser = async (authToken: string) => {
+  const clearAuthState = useCallback(async () => {
+    setToken(null);
+    setUser(null);
+    await SecureStore.deleteItemAsync(AUTH_TOKEN_KEY);
+    await SecureStore.deleteItemAsync(USER_KEY);
+  }, []);
+
+  const verifyAndRefreshUser = useCallback(async (authToken: string) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/user/profile`, {
         headers: {
@@ -94,14 +101,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Network error - keep using cached user data
       console.log('Could not verify auth token:', error);
     }
-  };
-
-  const clearAuthState = async () => {
-    setToken(null);
-    setUser(null);
-    await SecureStore.deleteItemAsync(AUTH_TOKEN_KEY);
-    await SecureStore.deleteItemAsync(USER_KEY);
-  };
+  }, [clearAuthState]);
 
   const signIn = useCallback(async (newToken: string) => {
     setToken(newToken);
@@ -109,7 +109,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     // Fetch user profile
     await verifyAndRefreshUser(newToken);
-  }, []);
+  }, [verifyAndRefreshUser]);
 
   const signOut = useCallback(async () => {
     // Optionally notify server
@@ -127,13 +127,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
 
     await clearAuthState();
-  }, [token]);
+  }, [token, clearAuthState]);
 
   const refreshUser = useCallback(async () => {
     if (token) {
       await verifyAndRefreshUser(token);
     }
-  }, [token]);
+  }, [token, verifyAndRefreshUser]);
 
   return (
     <AuthContext.Provider

@@ -121,7 +121,7 @@ export function SettingsProvider({ children, authToken }: SettingsProviderProps)
     }
   };
 
-  const pushToServer = async (newSettings: Settings) => {
+  const pushToServer = useCallback(async (newSettings: Settings) => {
     if (!authToken) return;
 
     try {
@@ -141,7 +141,7 @@ export function SettingsProvider({ children, authToken }: SettingsProviderProps)
       // Silently fail - local settings are saved
       console.log('Could not push settings to server:', error);
     }
-  };
+  }, [authToken]);
 
   const updateSetting = useCallback(async <K extends keyof Settings>(
     key: K,
@@ -151,20 +151,20 @@ export function SettingsProvider({ children, authToken }: SettingsProviderProps)
     setSettings(newSettings);
     await saveSettings(newSettings);
     await pushToServer(newSettings);
-  }, [settings, authToken]);
+  }, [settings, pushToServer]);
 
   const updateSettings = useCallback(async (partial: Partial<Settings>) => {
     const newSettings = { ...settings, ...partial };
     setSettings(newSettings);
     await saveSettings(newSettings);
     await pushToServer(newSettings);
-  }, [settings, authToken]);
+  }, [settings, pushToServer]);
 
   const resetSettings = useCallback(async () => {
     setSettings(DEFAULT_SETTINGS);
     await saveSettings(DEFAULT_SETTINGS);
     await pushToServer(DEFAULT_SETTINGS);
-  }, [authToken]);
+  }, [pushToServer]);
 
   return (
     <SettingsContext.Provider

@@ -134,7 +134,6 @@ function MiniTrendChart({ values, color }: { values: number[]; color: string }) 
     y: H - pad - ((v - min) / range) * (H - pad * 2),
   }));
 
-  const linePts = pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
   const areaPath =
     `M0,${H} L${pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' L')} L${W},${H} Z`;
 

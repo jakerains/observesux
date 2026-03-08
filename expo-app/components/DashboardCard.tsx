@@ -24,7 +24,6 @@ export function DashboardCard({
   title,
   sfSymbol,
   status = 'live',
-  lastUpdated,
   onRefresh,
   onExpand,
   isRefreshing,
