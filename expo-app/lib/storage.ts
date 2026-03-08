@@ -11,6 +11,7 @@ export const STORAGE_KEYS = {
   AUTH_USER: 'auth_user',
   ONBOARDING_COMPLETE: 'onboarding_complete',
   NOTIFICATION_PROMPT_SHOWN: 'notification_prompt_shown',
+  NOTIFICATION_SNOOZE_UNTIL: 'notification_snooze_until',
 } as const;
 
 /**

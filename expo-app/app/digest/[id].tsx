@@ -3,8 +3,9 @@
  * Shows the full AI-generated community digest
  */
 
+import { useCallback, useRef } from 'react';
 import { View, ScrollView, Text, Pressable } from 'react-native';
-import { useLocalSearchParams, Stack } from 'expo-router';
+import { useLocalSearchParams, Stack, useFocusEffect } from 'expo-router';
 import { MarkdownText } from '@/components/MarkdownText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
@@ -150,11 +151,18 @@ function DigestBody({ text }: { text: string }) {
 export default function DigestDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
+  const scrollRef = useRef<ScrollView>(null);
 
+  // Reset scroll position every time the sheet is presented (including reopen)
+  useFocusEffect(useCallback(() => {
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+  }, []));
+
+  // Share the same query key as the widget so this modal reads from already-warm cache.
+  // The widget always navigates here with the latest digest id, so the cached data matches.
   const { data, isPending, isError, refetch } = useQuery({
-    queryKey: ['digest', id],
-    queryFn: () => fetcher<{ digest: Digest | null }>(`${endpoints.digest}?id=${id}`),
-    enabled: !!id,
+    queryKey: ['digest'],
+    queryFn: () => fetcher<{ digest: Digest | null }>(endpoints.digest),
   });
 
   const digest = data?.digest;
@@ -162,10 +170,7 @@ export default function DigestDetailScreen() {
   const editionLabel = edition ? editionLabels[edition] : 'Siouxland Digest';
   const editionIcon = edition ? editionIcons[edition] : 'newspaper.fill';
 
-  // isPending covers both: fetching for first time AND disabled query (id not yet available).
-  // In TanStack Query v5, isLoading = isPending && isFetching, which is false when enabled=false
-  // even though there's no data — so we must use isPending here.
-  if (!id || isPending) {
+  if (isPending) {
     return (
       <View style={{ flex: 1, backgroundColor: Brand.background }}>
         <Stack.Screen options={{ title: editionLabel }} />
@@ -198,8 +203,9 @@ export default function DigestDetailScreen() {
     <View style={{ flex: 1, backgroundColor: Brand.background }}>
       <Stack.Screen options={{ title: editionLabel }} />
       <ScrollView
+        ref={scrollRef}
         style={{ flex: 1 }}
-        contentInsetAdjustmentBehavior="automatic"
+        contentInsetAdjustmentBehavior="never"
         scrollIndicatorInsets={{ bottom: insets.bottom }}
         removeClippedSubviews={false}
         contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 32 }}

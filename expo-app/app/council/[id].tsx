@@ -2,8 +2,9 @@
  * City Council Meeting Recap - Detail Modal
  */
 
+import { useCallback, useRef } from 'react';
 import { View, ScrollView, Text, Pressable, Linking } from 'react-native';
-import { useLocalSearchParams, Stack } from 'expo-router';
+import { useLocalSearchParams, Stack, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { useQuery } from '@tanstack/react-query';
@@ -16,18 +17,21 @@ import type { CouncilResponse } from '@/lib/types';
 export default function CouncilDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
+  const scrollRef = useRef<ScrollView>(null);
 
-  // Fetch independently — don't rely on widget cache
-  // isPending covers both: fetching for first time AND disabled query (id not yet available).
-  // In TanStack Query v5, isLoading = isPending && isFetching, which is false when enabled=false
-  // even though there's no data — so we must use isPending here.
+  // Reset scroll position every time the sheet is presented (including reopen)
+  useFocusEffect(useCallback(() => {
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+  }, []));
+
+  // Share the same query key as the widget so this modal reads from already-warm cache.
+  // isPending is only true when the widget itself hasn't loaded yet (rare).
   const { data, isPending, isError, refetch } = useQuery({
-    queryKey: ['council', 'detail', id],
+    queryKey: ['council'],
     queryFn: () => fetcher<CouncilResponse>(endpoints.council),
-    enabled: !!id,
   });
 
-  if (!id || isPending) {
+  if (isPending) {
     return (
       <View style={{ flex: 1, backgroundColor: Brand.background }}>
         <Stack.Screen options={{ title: 'Council Recap' }} />
@@ -86,8 +90,9 @@ export default function CouncilDetailScreen() {
     <View style={{ flex: 1, backgroundColor: Brand.background }}>
       <Stack.Screen options={{ title: 'Council Recap' }} />
       <ScrollView
+        ref={scrollRef}
         style={{ flex: 1 }}
-        contentInsetAdjustmentBehavior="automatic"
+        contentInsetAdjustmentBehavior="never"
         contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 32 }}
       >
         {!!dateLabel && (

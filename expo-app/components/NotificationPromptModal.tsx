@@ -1,11 +1,14 @@
 /**
  * NotificationPromptModal
  *
- * One-time in-app prompt shown on first launch asking users to enable push
- * notifications. Appears after a short delay so the app feels loaded. Tapping
- * "Turn On Notifications" triggers the real OS permission dialog, then registers
- * the device token with the server. "Maybe Later" dismisses without asking the OS
- * so the user can still grant later from More → Notifications.
+ * In-app prompt asking users to enable push notifications. Shown on first
+ * launch (after a short delay) and re-shown after 3 days if the user tapped
+ * "Not Now". Permanently dismissed once the user makes an OS-level decision.
+ *
+ * Three outcomes:
+ *  1. Allow → OS grants → register token with server, permanently dismiss
+ *  2. Allow → OS denies → show "Open Settings" state, permanently dismiss
+ *  3. Not Now → snooze for 3 days, prompt again on next qualifying launch
  */
 
 import { useEffect, useState } from 'react';
@@ -16,6 +19,7 @@ import {
   Pressable,
   Animated,
   StyleSheet,
+  Linking,
 } from 'react-native';
 import { Image } from 'expo-image';
 import * as Notifications from 'expo-notifications';
@@ -26,6 +30,9 @@ import * as Haptics from 'expo-haptics';
 import { Brand } from '@/constants/BrandColors';
 import { API_BASE_URL } from '@/lib/api';
 import { getStorageItem, setStorageItem, STORAGE_KEYS } from '@/lib/storage';
+
+const SNOOZE_DAYS = 3;
+const SNOOZE_MS = SNOOZE_DAYS * 24 * 60 * 60 * 1000;
 
 const ALERT_TYPES = [
   { symbol: 'cloud.bolt.fill', color: '#f59e0b', label: 'Severe weather warnings' },
@@ -79,6 +86,28 @@ async function registerWithServer(): Promise<void> {
   }
 }
 
+/** Permanently dismiss — user made a real OS-level decision */
+const markPermanentlyDismissed = () =>
+  setStorageItem(STORAGE_KEYS.NOTIFICATION_PROMPT_SHOWN, true);
+
+/** Snooze — user tapped "Not Now", try again in SNOOZE_DAYS days */
+const snooze = () =>
+  setStorageItem(STORAGE_KEYS.NOTIFICATION_SNOOZE_UNTIL, Date.now() + SNOOZE_MS);
+
+async function shouldShowPrompt(): Promise<boolean> {
+  // Permanently dismissed (user already made an OS decision)
+  const shown = await getStorageItem<boolean>(STORAGE_KEYS.NOTIFICATION_PROMPT_SHOWN);
+  if (shown) return false;
+
+  // Check if currently snoozed
+  const snoozeUntil = await getStorageItem<number>(STORAGE_KEYS.NOTIFICATION_SNOOZE_UNTIL);
+  if (snoozeUntil && Date.now() < snoozeUntil) return false;
+
+  return true;
+}
+
+type ModalState = 'prompt' | 'denied';
+
 interface Props {
   /** Called after the prompt is dismissed (either accepted or skipped) */
   onDismiss: (enabled: boolean) => void;
@@ -87,14 +116,14 @@ interface Props {
 export function NotificationPromptModal({ onDismiss }: Props) {
   const [visible, setVisible] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [modalState, setModalState] = useState<ModalState>('prompt');
   const [slideAnim] = useState(() => new Animated.Value(300));
   const [fadeAnim] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
-    // Check if we've shown this before; show after a brief delay
     let timer: ReturnType<typeof setTimeout>;
-    getStorageItem<boolean>(STORAGE_KEYS.NOTIFICATION_PROMPT_SHOWN).then((shown) => {
-      if (!shown) {
+    shouldShowPrompt().then((show) => {
+      if (show) {
         timer = setTimeout(() => {
           setVisible(true);
           Animated.parallel([
@@ -107,15 +136,12 @@ export function NotificationPromptModal({ onDismiss }: Props) {
     return () => clearTimeout(timer);
   }, [fadeAnim, slideAnim]);
 
-  const markShown = () => setStorageItem(STORAGE_KEYS.NOTIFICATION_PROMPT_SHOWN, true);
-
   const handleAllow = async () => {
     if (process.env.EXPO_OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
     setLoading(true);
 
-    // Request OS permission
     const { status: existing } = await Notifications.getPermissionsAsync();
     let finalStatus = existing;
     if (existing !== 'granted') {
@@ -125,17 +151,30 @@ export function NotificationPromptModal({ onDismiss }: Props) {
 
     if (finalStatus === 'granted') {
       await registerWithServer();
+      await markPermanentlyDismissed();
+      dismiss(true);
+    } else {
+      // OS returned denied — user either denied now, or had denied previously.
+      // Show the Settings redirect state instead of silently closing.
+      await markPermanentlyDismissed();
+      setLoading(false);
+      setModalState('denied');
     }
-
-    await markShown();
-    dismiss(finalStatus === 'granted');
   };
 
-  const handleLater = async () => {
+  const handleNotNow = async () => {
     if (process.env.EXPO_OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    await markShown();
+    await snooze();
+    dismiss(false);
+  };
+
+  const handleOpenSettings = async () => {
+    if (process.env.EXPO_OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    await Linking.openSettings();
     dismiss(false);
   };
 
@@ -145,6 +184,7 @@ export function NotificationPromptModal({ onDismiss }: Props) {
       Animated.timing(fadeAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
     ]).start(() => {
       setVisible(false);
+      setModalState('prompt');
       onDismiss(enabled);
     });
   };
@@ -156,47 +196,78 @@ export function NotificationPromptModal({ onDismiss }: Props) {
       <Animated.View style={[styles.backdrop, { opacity: fadeAnim }]} />
 
       <View style={styles.sheetContainer} pointerEvents="box-none">
-        <Animated.View
-          style={[styles.sheet, { transform: [{ translateY: slideAnim }] }]}
-        >
-          {/* Header icon */}
-          <View style={styles.iconRow}>
-            <View style={styles.iconBadge}>
-              <Image source="sf:bell.badge.fill" alt="" style={{ width: 32, height: 32 }} tintColor={Brand.amber} />
-            </View>
-          </View>
+        <Animated.View style={[styles.sheet, { transform: [{ translateY: slideAnim }] }]}>
 
-          <Text style={styles.title}>Stay in the loop on Siouxland</Text>
-          <Text style={styles.subtitle}>
-            Get real-time alerts the moment something happens in Sioux City — no refreshing needed.
-          </Text>
-
-          {/* Alert type list */}
-          <View style={styles.typeList}>
-            {ALERT_TYPES.map((t) => (
-              <View key={t.symbol} style={styles.typeRow}>
-                <View style={[styles.typeIconBadge, { backgroundColor: t.color + '22' }]}>
-                  <Image source={`sf:${t.symbol}`} alt="" style={{ width: 16, height: 16 }} tintColor={t.color} />
+          {modalState === 'prompt' ? (
+            <>
+              {/* Header icon */}
+              <View style={styles.iconRow}>
+                <View style={styles.iconBadge}>
+                  <Image source="sf:bell.badge.fill" alt="" style={{ width: 32, height: 32 }} tintColor={Brand.amber} />
                 </View>
-                <Text style={styles.typeLabel}>{t.label}</Text>
               </View>
-            ))}
-          </View>
 
-          {/* CTA */}
-          <Pressable
-            style={({ pressed }) => [styles.allowBtn, pressed && { opacity: 0.85 }]}
-            onPress={handleAllow}
-            disabled={loading}
-          >
-            <Text style={styles.allowBtnText}>
-              {loading ? 'Enabling…' : 'Turn On Notifications'}
-            </Text>
-          </Pressable>
+              <Text style={styles.title}>Stay in the loop on Siouxland</Text>
+              <Text style={styles.subtitle}>
+                Get real-time alerts the moment something happens in Sioux City. Most users get fewer than 5 notifications a day — no noise, just what matters.
+              </Text>
 
-          <Pressable onPress={handleLater} style={styles.laterBtn} disabled={loading}>
-            <Text style={styles.laterBtnText}>Maybe Later</Text>
-          </Pressable>
+              <View style={styles.typeList}>
+                {ALERT_TYPES.map((t) => (
+                  <View key={t.symbol} style={styles.typeRow}>
+                    <View style={[styles.typeIconBadge, { backgroundColor: t.color + '22' }]}>
+                      <Image source={`sf:${t.symbol}`} alt="" style={{ width: 16, height: 16 }} tintColor={t.color} />
+                    </View>
+                    <Text style={styles.typeLabel}>{t.label}</Text>
+                  </View>
+                ))}
+              </View>
+
+              <Pressable
+                style={({ pressed }) => [styles.allowBtn, pressed && { opacity: 0.85 }]}
+                onPress={handleAllow}
+                disabled={loading}
+              >
+                <Text style={styles.allowBtnText}>
+                  {loading ? 'Enabling…' : 'Turn On Notifications'}
+                </Text>
+              </Pressable>
+
+              <Pressable onPress={handleNotNow} style={styles.laterBtn} disabled={loading}>
+                <Text style={styles.laterBtnText}>Not Now</Text>
+              </Pressable>
+            </>
+          ) : (
+            <>
+              {/* Denied state — redirect to Settings */}
+              <View style={styles.iconRow}>
+                <View style={[styles.iconBadge, styles.iconBadgeDenied]}>
+                  <Image source="sf:bell.slash.fill" alt="" style={{ width: 32, height: 32 }} tintColor={Brand.muted} />
+                </View>
+              </View>
+
+              <Text style={styles.title}>Notifications are off</Text>
+              <Text style={styles.subtitle}>
+                To receive Siouxland alerts, enable notifications for this app in your iPhone's Settings.
+              </Text>
+
+              <Text style={styles.settingsHint}>
+                Settings → Siouxland Online → Notifications → Allow
+              </Text>
+
+              <Pressable
+                style={({ pressed }) => [styles.allowBtn, pressed && { opacity: 0.85 }]}
+                onPress={handleOpenSettings}
+              >
+                <Text style={styles.allowBtnText}>Open Settings</Text>
+              </Pressable>
+
+              <Pressable onPress={() => dismiss(false)} style={styles.laterBtn}>
+                <Text style={styles.laterBtnText}>Maybe Later</Text>
+              </Pressable>
+            </>
+          )}
+
         </Animated.View>
       </View>
     </Modal>
@@ -230,6 +301,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(230,156,58,0.15)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  iconBadgeDenied: {
+    backgroundColor: 'rgba(255,255,255,0.07)',
   },
   title: {
     fontSize: 22,
@@ -265,6 +339,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#d4c8b8',
     fontWeight: '500',
+  },
+  settingsHint: {
+    fontSize: 13,
+    color: Brand.amber,
+    textAlign: 'center',
+    marginBottom: 24,
+    fontWeight: '500',
+    letterSpacing: 0.2,
   },
   allowBtn: {
     backgroundColor: Brand.amber,

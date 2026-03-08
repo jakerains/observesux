@@ -3,9 +3,9 @@
  * Sets up providers and global configuration
  */
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import * as Notifications from 'expo-notifications';
-import { Stack, useRouter, type Href } from 'expo-router';
+import { Stack, useRouter, useRootNavigationState, type Href } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -13,6 +13,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AuthProvider, SettingsProvider, useAuth, useSettings } from '../lib/contexts';
 import {
   addNotificationResponseListener,
+  clearLastNotificationResponse,
   configureNotifications,
   getLastNotificationResponse,
   getNotificationNavigationPathFromResponse,
@@ -43,44 +44,73 @@ const queryClient = new QueryClient({
 function AppShell() {
   const { updateSetting } = useSettings();
   const router = useRouter();
+  const navigationState = useRootNavigationState();
+  const navigationReady = !!navigationState?.key;
+  const navigationReadyRef = useRef(false);
+  const pendingPathRef = useRef<string | null>(null);
+  const handledRef = useRef(false);
 
+  useEffect(() => { navigationReadyRef.current = navigationReady; }, [navigationReady]);
+
+  // Handle notification taps that arrive while the app is running
   useEffect(() => {
-    let isMounted = true;
-
     const handleNotificationResponse = async (response: Notifications.NotificationResponse | null) => {
       if (!response || response.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER) {
         return;
       }
 
       const path = getNotificationNavigationPathFromResponse(response);
-      if (!path) {
-        return;
-      }
+      if (!path) return;
 
-      router.push(path as Href);
-
-      try {
-        await Notifications.clearLastNotificationResponseAsync();
-      } catch (error) {
-        console.warn('Failed to clear last notification response:', error);
+      if (navigationReadyRef.current) {
+        router.push(path as Href);
+        await clearLastNotificationResponse();
+      } else {
+        // Navigator not ready yet (cold start) — store path and navigate once it is
+        pendingPathRef.current = path;
       }
     };
-
-    void getLastNotificationResponse().then((response) => {
-      if (isMounted) {
-        void handleNotificationResponse(response);
-      }
-    });
 
     const subscription = addNotificationResponseListener((response) => {
       void handleNotificationResponse(response);
     });
 
     return () => {
-      isMounted = false;
       subscription.remove();
     };
   }, [router]);
+
+  // On cold start: check for a notification that launched the app, then navigate once ready
+  useEffect(() => {
+    if (!navigationReady || handledRef.current) return;
+
+    const checkInitialNotification = async () => {
+      // Navigate any path queued before the navigator was ready
+      if (pendingPathRef.current) {
+        router.push(pendingPathRef.current as Href);
+        pendingPathRef.current = null;
+        handledRef.current = true;
+        await clearLastNotificationResponse();
+        return;
+      }
+
+      // Check if the app was cold-started by tapping a notification
+      const response = await getLastNotificationResponse();
+      if (!response || response.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER) {
+        handledRef.current = true;
+        return;
+      }
+
+      const path = getNotificationNavigationPathFromResponse(response);
+      handledRef.current = true;
+      if (!path) return;
+
+      router.push(path as Href);
+      await clearLastNotificationResponse();
+    };
+
+    void checkInitialNotification();
+  }, [navigationReady, router]);
 
   const headerOptions = {
     headerStyle: { backgroundColor: '#170d08' },

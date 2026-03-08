@@ -23,7 +23,37 @@ pnpm prebuild           # Generate native iOS/Android projects
 eas build --platform ios --profile development   # Development build
 eas build --platform ios --profile production    # Production build
 eas submit --platform ios                        # Submit to App Store
+
+# OTA Updates (JS-only changes — no App Store review needed)
+eas update --branch production --message "description of change"
+eas update --branch preview --message "description of change"   # Test before prod
 ```
+
+## Deploying Changes — Full Build vs OTA Update
+
+**Always check this before deploying.** A full EAS build takes time and requires App Store review for production. An OTA update ships in minutes.
+
+### Use `eas update` (OTA) when the change is JS-only:
+- Component/screen changes (`.tsx`, `.ts` files in `app/`, `components/`, `lib/`)
+- Bug fixes in existing logic
+- API endpoint or data fetching changes
+- Navigation/routing changes (Expo Router JS layer)
+- Style/layout changes
+
+### Requires a full `eas build` when:
+- Adding or removing a **native package** (anything that modifies `ios/` or `android/` via `expo prebuild`)
+- Changes to `app.json` plugins (e.g., adding `expo-camera`, `expo-location`)
+- Changes to native config: permissions, entitlements, bundle ID, splash screen
+- Upgrading the **Expo SDK** version
+- Any change to `package.json` that installs a package with native code
+
+**When in doubt:** check if the new package has an `ios/` or `android/` directory, or uses an `app.json` plugin — if yes, it needs a build.
+
+### EAS Update setup (already configured)
+- `expo-updates` is installed and configured in `app.json`
+- `runtimeVersion` uses `"appVersion"` policy — OTA updates only reach devices on the same app version
+- Channels: `production` (App Store users), `preview` (internal TestFlight), `development`
+- App checks for updates on every launch (`checkAutomatically: ON_LOAD`)
 
 ## Architecture
 

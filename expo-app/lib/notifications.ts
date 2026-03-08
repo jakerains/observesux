@@ -209,3 +209,14 @@ export function getNotificationNavigationPathFromResponse(
   const data = response?.notification.request.content.data as NotificationData;
   return getNotificationNavigationPath(data);
 }
+
+/**
+ * Clear the last notification response (swallows errors)
+ */
+export async function clearLastNotificationResponse(): Promise<void> {
+  try {
+    await Notifications.clearLastNotificationResponseAsync();
+  } catch (error) {
+    console.warn('Failed to clear last notification response:', error);
+  }
+}
