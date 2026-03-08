@@ -16,6 +16,19 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.12.2',
+    date: '2026-03-08',
+    changed: [
+      'Expo app release version is now 1.0.4 so the shipped mobile fixes and runtime metadata stay aligned',
+      'Synced the Expo app pnpm lockfile with package.json, which fixes EAS production builds failing during dependency install',
+      'Cleaned Expo app lint/config noise and hook dependency warnings for a clean release check',
+    ],
+    fixed: [
+      'Digest and council detail modals in the Expo app now reliably render on first open and when reopened',
+      'iOS production builds no longer fail on EAS because of the stale Expo app lockfile',
+    ],
+  },
+  {
     version: '0.12.1',
     date: '2026-03-05',
     added: [

@@ -5,6 +5,17 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.2] - 2026-03-08
+
+### Changed
+- Expo app release version is now 1.0.4 to match the shipped mobile fixes and OTA/runtime metadata
+- Synced the Expo app pnpm lockfile with `package.json`, so EAS production builds no longer fail during the install dependencies phase
+- Cleaned Expo app lint/config noise and hook dependency warnings for a clean release check
+
+### Fixed
+- Digest and council detail modals in the Expo app now reliably render on first open and when reopened
+- iOS production builds no longer fail on EAS because of the stale Expo app lockfile
+
 ## [0.12.1] - 2026-03-05
 
 ### Added
