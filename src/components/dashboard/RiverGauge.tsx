@@ -3,7 +3,6 @@
 import { DashboardCard } from './DashboardCard'
 import { RefreshAction } from './RefreshAction'
 import { MiniTrendChart } from './MiniTrendChart'
-import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useRivers } from '@/lib/hooks/useDataFetching'

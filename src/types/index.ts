@@ -231,6 +231,56 @@ export function getAQIColor(category: AQICategory): string {
   return colors[category]
 }
 
+export function getAQIEmoji(category: AQICategory): string {
+  switch (category) {
+    case 'Good': return '😊'
+    case 'Moderate': return '🙂'
+    case 'Unhealthy for Sensitive Groups': return '😐'
+    case 'Unhealthy': return '😷'
+    case 'Very Unhealthy': return '🤢'
+    case 'Hazardous': return '☠️'
+    default: return '❓'
+  }
+}
+
+export function getAQIDescription(category: AQICategory): string {
+  switch (category) {
+    case 'Good':
+      return 'Air quality is satisfactory, and air pollution poses little or no risk.'
+    case 'Moderate':
+      return 'Air quality is acceptable. However, there may be a risk for some people.'
+    case 'Unhealthy for Sensitive Groups':
+      return 'Members of sensitive groups may experience health effects.'
+    case 'Unhealthy':
+      return 'Some members of the general public may experience health effects.'
+    case 'Very Unhealthy':
+      return 'Health alert: The risk of health effects is increased for everyone.'
+    case 'Hazardous':
+      return 'Health warning of emergency conditions: everyone is more likely to be affected.'
+    default:
+      return 'Air quality data unavailable.'
+  }
+}
+
+export function getAQIShortDescription(category: AQICategory): string {
+  switch (category) {
+    case 'Good':
+      return 'Air quality is satisfactory'
+    case 'Moderate':
+      return 'Acceptable; some risk for sensitive individuals'
+    case 'Unhealthy for Sensitive Groups':
+      return 'Sensitive groups may experience effects'
+    case 'Unhealthy':
+      return 'General public may experience effects'
+    case 'Very Unhealthy':
+      return 'Health alert: increased risk for everyone'
+    case 'Hazardous':
+      return 'Health warning: emergency conditions'
+    default:
+      return 'Air quality data unavailable'
+  }
+}
+
 // ============================================
 // Transit
 // ============================================

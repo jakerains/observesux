@@ -1,19 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCurrentUser } from '@/lib/auth/server'
+import { isAdminWithUser } from '@/lib/auth/server'
 import { listUsers } from '@/lib/db/users'
 import { isDatabaseConfigured } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
-
-/**
- * Check if current user is an admin
- */
-async function isAdmin(): Promise<{ isAdmin: boolean; userId?: string }> {
-  const user = await getCurrentUser()
-  if (!user) return { isAdmin: false }
-  const isAdminUser = (user as { role?: string }).role === 'admin'
-  return { isAdmin: isAdminUser, userId: user.id }
-}
 
 /**
  * GET /api/admin/users
@@ -26,7 +16,7 @@ async function isAdmin(): Promise<{ isAdmin: boolean; userId?: string }> {
  * - offset: number (default: 0)
  */
 export async function GET(request: NextRequest) {
-  const { isAdmin: isAdminUser } = await isAdmin()
+  const { isAdmin: isAdminUser } = await isAdminWithUser()
 
   if (!isAdminUser) {
     return NextResponse.json(

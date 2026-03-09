@@ -1,30 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { fetchCommunityEvents } from '@/lib/fetchers/events'
 import { logCronRun } from '@/lib/db/historical'
+import { verifyCronRequest } from '@/lib/utils/cron-auth'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60 // Allow up to 60 seconds for Firecrawl scraping
-
-/**
- * Cron endpoint to scrape community events and update database cache
- * Runs weekly on Sundays at 6:00 AM UTC (midnight Central) via Vercel Cron
- *
- * GET /api/cron/events
- */
-function verifyCronRequest(request: NextRequest): boolean {
-  // Method 1: Vercel cron sends this header automatically
-  const isVercelCron = request.headers.get('x-vercel-cron') === '1'
-
-  // Method 2: Check CRON_SECRET if configured (for manual testing)
-  const authHeader = request.headers.get('authorization')
-  const cronSecret = process.env.CRON_SECRET
-  const hasValidSecret = cronSecret && authHeader === `Bearer ${cronSecret}`
-
-  // Method 3: Allow in development
-  const isDev = process.env.NODE_ENV === 'development'
-
-  return isVercelCron || hasValidSecret || isDev
-}
 
 export async function GET(request: NextRequest) {
   if (!verifyCronRequest(request)) {

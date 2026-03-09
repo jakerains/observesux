@@ -5,6 +5,16 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.3] - 2026-03-09
+
+### Changed
+- Dashboard status checks now load faster and use less bandwidth — results are cached for 15 seconds instead of re-checking every time
+- The radar map no longer fetches RainViewer data in the background when you're using the default NWS radar view
+- Cleaned up unused pieces throughout the app for a slightly smaller download
+
+### Fixed
+- Removed duplicate code across 15+ pages that was doing the same thing in slightly different ways — everything now shares one copy
+
 ## [0.12.2] - 2026-03-08
 
 ### Changed

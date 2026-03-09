@@ -1,22 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isDatabaseConfigured } from '@/lib/db'
 import { logCronRun } from '@/lib/db/historical'
+import { verifyCronRequest } from '@/lib/utils/cron-auth'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
-
-/**
- * Verify the request is from Vercel Cron or authorized
- */
-function verifyCronRequest(request: NextRequest): boolean {
-  const isVercelCron = request.headers.get('x-vercel-cron') === '1'
-  const authHeader = request.headers.get('authorization')
-  const cronSecret = process.env.CRON_SECRET
-  const hasValidSecret = cronSecret && authHeader === `Bearer ${cronSecret}`
-  const isDev = process.env.NODE_ENV === 'development'
-
-  return isVercelCron || hasValidSecret || isDev
-}
 
 /**
  * GET /api/cron/ingest-meetings

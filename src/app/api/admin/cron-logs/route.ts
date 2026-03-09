@@ -1,14 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCurrentUser } from '@/lib/auth/server'
+import { isAdmin } from '@/lib/auth/server'
 import { sql, isDatabaseConfigured } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
-
-async function isAdmin(): Promise<boolean> {
-  const user = await getCurrentUser()
-  if (!user) return false
-  return (user as { role?: string }).role === 'admin'
-}
 
 /**
  * GET /api/admin/cron-logs

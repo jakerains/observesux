@@ -1,21 +1,15 @@
 import { NextResponse } from 'next/server'
-import { getCurrentUser } from '@/lib/auth/server'
+import { isAdminWithUser } from '@/lib/auth/server'
 import { isDatabaseConfigured, sql } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
-
-async function isAdmin(): Promise<{ isAdmin: boolean; userId?: string }> {
-  const user = await getCurrentUser()
-  if (!user) return { isAdmin: false }
-  return { isAdmin: (user as { role?: string }).role === 'admin', userId: user.id }
-}
 
 /**
  * GET /api/admin/push/stats
  * Returns subscription counts across all push channels.
  */
 export async function GET() {
-  const { isAdmin: isAdminUser } = await isAdmin()
+  const { isAdmin: isAdminUser } = await isAdminWithUser()
   if (!isAdminUser) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }

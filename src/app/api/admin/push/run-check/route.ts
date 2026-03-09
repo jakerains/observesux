@@ -1,13 +1,7 @@
 import { NextResponse } from 'next/server'
-import { getCurrentUser } from '@/lib/auth/server'
+import { isAdmin } from '@/lib/auth/server'
 
 export const dynamic = 'force-dynamic'
-
-async function isAdmin(): Promise<boolean> {
-  const user = await getCurrentUser()
-  if (!user) return false
-  return (user as { role?: string }).role === 'admin'
-}
 
 /**
  * POST /api/admin/push/run-check

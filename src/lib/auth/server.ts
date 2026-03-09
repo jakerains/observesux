@@ -106,3 +106,22 @@ export async function requireAuthFromRequest(request: Request) {
 export async function getSession() {
   return neonAuth()
 }
+
+/**
+ * Check if the current user has admin role
+ */
+export async function isAdmin(): Promise<boolean> {
+  const user = await getCurrentUser()
+  if (!user) return false
+  return (user as { role?: string }).role === 'admin'
+}
+
+/**
+ * Check if the current user is admin, returning user info
+ */
+export async function isAdminWithUser(): Promise<{ isAdmin: boolean; userId?: string }> {
+  const user = await getCurrentUser()
+  if (!user) return { isAdmin: false }
+  const admin = (user as { role?: string }).role === 'admin'
+  return { isAdmin: admin, userId: (user as { id?: string }).id }
+}

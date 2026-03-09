@@ -4,22 +4,10 @@ import { digestWorkflow } from '@/../workflows/digest-workflow'
 import { isDatabaseConfigured } from '@/lib/db'
 import { getCurrentEdition } from '@/lib/digest/types'
 import { logCronRun } from '@/lib/db/historical'
+import { verifyCronRequest } from '@/lib/utils/cron-auth'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60 // Allow up to 60 seconds for starting the workflow
-
-/**
- * Verify the request is from Vercel Cron or authorized
- */
-function verifyCronRequest(request: NextRequest): boolean {
-  const isVercelCron = request.headers.get('x-vercel-cron') === '1'
-  const authHeader = request.headers.get('authorization')
-  const cronSecret = process.env.CRON_SECRET
-  const hasValidSecret = cronSecret && authHeader === `Bearer ${cronSecret}`
-  const isDev = process.env.NODE_ENV === 'development'
-
-  return isVercelCron || hasValidSecret || isDev
-}
 
 /**
  * GET /api/cron/digest

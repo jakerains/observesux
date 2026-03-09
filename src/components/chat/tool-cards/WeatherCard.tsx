@@ -1,56 +1,16 @@
 import {
   Cloud,
-  CloudRain,
-  CloudSnow,
-  Sun,
-  CloudSun,
   Wind,
   Droplets,
   Thermometer,
   Eye,
-  CloudDrizzle,
-  CloudFog,
-  CloudLightning,
-  Cloudy,
-  Snowflake,
-  Moon,
-  CloudMoon,
 } from 'lucide-react'
 import { ToolCardWrapper } from './ToolCardWrapper'
+import { renderWeatherIcon } from '@/lib/utils/weatherIcons'
 import type { ToolCardProps } from './types'
 import type { WeatherObservation, ApiResponse } from '@/types'
 
 type WeatherToolOutput = ApiResponse<WeatherObservation> | { error: string }
-
-function getWeatherIcon(conditions: string, isDaytime: boolean = true) {
-  const lower = conditions.toLowerCase()
-
-  if (lower.includes('thunder') || lower.includes('lightning')) return CloudLightning
-  if (lower.includes('rain') && lower.includes('snow')) return CloudSnow
-  if (lower.includes('drizzle')) return CloudDrizzle
-  if (lower.includes('rain') || lower.includes('shower')) return CloudRain
-  if (lower.includes('snow') || lower.includes('flurr')) return CloudSnow
-  if (lower.includes('sleet') || lower.includes('ice') || lower.includes('freezing')) return Snowflake
-  if (lower.includes('fog') || lower.includes('mist') || lower.includes('haze')) return CloudFog
-  if (lower.includes('overcast')) return Cloudy
-  if (lower.includes('mostly cloudy') || lower.includes('considerable cloud')) {
-    return isDaytime ? Cloudy : CloudMoon
-  }
-  if (lower.includes('partly') || lower.includes('scattered')) {
-    return isDaytime ? CloudSun : CloudMoon
-  }
-  if (lower.includes('cloud')) return isDaytime ? Cloud : CloudMoon
-  if (lower.includes('clear') || lower.includes('sunny') || lower.includes('fair')) {
-    return isDaytime ? Sun : Moon
-  }
-
-  return isDaytime ? Cloud : CloudMoon
-}
-
-function renderWeatherIcon(conditions: string, className: string, isDaytime: boolean = true) {
-  const IconComponent = getWeatherIcon(conditions, isDaytime)
-  return <IconComponent className={className} />
-}
 
 function getConditionsEmoji(conditions: string): string {
   const lower = conditions.toLowerCase()

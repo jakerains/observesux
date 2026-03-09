@@ -547,11 +547,12 @@ export function InteractiveMap() {
       }
     }
 
+    if (radarSource !== 'rainviewer') return
     fetchRadar()
     // Refresh radar every 5 minutes
     const interval = setInterval(fetchRadar, 5 * 60 * 1000)
     return () => clearInterval(interval)
-  }, [])
+  }, [radarSource])
 
   // Animate radar frames - slower for better visibility
   useEffect(() => {

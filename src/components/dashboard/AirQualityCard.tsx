@@ -3,47 +3,15 @@
 import { DashboardCard } from './DashboardCard'
 import { RefreshAction } from './RefreshAction'
 import { MiniTrendChart, TrendIndicator } from './MiniTrendChart'
-import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useAirQuality } from '@/lib/hooks/useDataFetching'
 import { useAirQualityHistory } from '@/lib/hooks/useHistory'
 import { Wind, AlertTriangle } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { getAQIColor } from '@/types'
+import { getAQIColor, getAQIEmoji, getAQIDescription } from '@/types'
 import type { AQICategory } from '@/types'
 import { getDataFreshness } from '@/lib/utils/dataFreshness'
-
-function getAQIDescription(category: AQICategory): string {
-  switch (category) {
-    case 'Good':
-      return 'Air quality is satisfactory, and air pollution poses little or no risk.'
-    case 'Moderate':
-      return 'Air quality is acceptable. However, there may be a risk for some people.'
-    case 'Unhealthy for Sensitive Groups':
-      return 'Members of sensitive groups may experience health effects.'
-    case 'Unhealthy':
-      return 'Some members of the general public may experience health effects.'
-    case 'Very Unhealthy':
-      return 'Health alert: The risk of health effects is increased for everyone.'
-    case 'Hazardous':
-      return 'Health warning of emergency conditions: everyone is more likely to be affected.'
-    default:
-      return 'Air quality data unavailable.'
-  }
-}
-
-function getAQIEmoji(category: AQICategory): string {
-  switch (category) {
-    case 'Good': return '😊'
-    case 'Moderate': return '🙂'
-    case 'Unhealthy for Sensitive Groups': return '😐'
-    case 'Unhealthy': return '😷'
-    case 'Very Unhealthy': return '🤢'
-    case 'Hazardous': return '☠️'
-    default: return '❓'
-  }
-}
 
 export function AirQualityCard() {
   const refreshInterval = 600000

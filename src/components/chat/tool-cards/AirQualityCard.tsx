@@ -2,41 +2,10 @@ import { Wind, AlertTriangle } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { ToolCardWrapper } from './ToolCardWrapper'
 import type { ToolCardProps } from './types'
-import type { AirQualityReading, AQICategory, ApiResponse } from '@/types'
-import { getAQIColor } from '@/types'
+import type { AirQualityReading, ApiResponse } from '@/types'
+import { getAQIColor, getAQIEmoji, getAQIShortDescription } from '@/types'
 
 type AirQualityToolOutput = ApiResponse<AirQualityReading> | { error: string }
-
-function getAQIEmoji(category: AQICategory): string {
-  switch (category) {
-    case 'Good': return '😊'
-    case 'Moderate': return '🙂'
-    case 'Unhealthy for Sensitive Groups': return '😐'
-    case 'Unhealthy': return '😷'
-    case 'Very Unhealthy': return '🤢'
-    case 'Hazardous': return '☠️'
-    default: return '❓'
-  }
-}
-
-function getAQIShortDescription(category: AQICategory): string {
-  switch (category) {
-    case 'Good':
-      return 'Air quality is satisfactory'
-    case 'Moderate':
-      return 'Acceptable; some risk for sensitive individuals'
-    case 'Unhealthy for Sensitive Groups':
-      return 'Sensitive groups may experience effects'
-    case 'Unhealthy':
-      return 'General public may experience effects'
-    case 'Very Unhealthy':
-      return 'Health alert: increased risk for everyone'
-    case 'Hazardous':
-      return 'Health warning: emergency conditions'
-    default:
-      return 'Air quality data unavailable'
-  }
-}
 
 export function AirQualityCard({ data, error, state }: ToolCardProps<AirQualityToolOutput>) {
   // Handle tool error response

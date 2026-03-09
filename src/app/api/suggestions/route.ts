@@ -4,19 +4,10 @@ import {
   getSuggestions,
   getSuggestionStats,
 } from '@/lib/db/suggestions'
-import { getCurrentUser } from '@/lib/auth/server'
+import { isAdmin } from '@/lib/auth/server'
 import type { SuggestionCategory, SuggestionStatus } from '@/types'
 
 const VALID_CATEGORIES: SuggestionCategory[] = ['feature', 'bug', 'improvement', 'content', 'other']
-
-/**
- * Check if current user is an admin
- */
-async function isAdmin(): Promise<boolean> {
-  const user = await getCurrentUser()
-  if (!user) return false
-  return (user as { role?: string }).role === 'admin'
-}
 
 /**
  * POST /api/suggestions

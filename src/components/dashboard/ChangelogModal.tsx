@@ -16,6 +16,18 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.12.3',
+    date: '2026-03-09',
+    changed: [
+      'Dashboard status checks now load faster and use less bandwidth',
+      'Radar map no longer fetches extra data when using default NWS radar',
+      'Cleaned up unused pieces throughout the app for a slightly smaller download',
+    ],
+    fixed: [
+      'Removed duplicate code across 15+ pages — everything now shares one copy',
+    ],
+  },
+  {
     version: '0.12.2',
     date: '2026-03-08',
     changed: [

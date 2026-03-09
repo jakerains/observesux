@@ -1,15 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCurrentUser } from '@/lib/auth/server'
+import { isAdmin } from '@/lib/auth/server'
 import { updateUserEventStatus, deleteUserEvent, getUserEvent } from '@/lib/db/userEvents'
 import type { EventSubmissionStatus } from '@/types'
 
 export const dynamic = 'force-dynamic'
-
-async function isAdmin(): Promise<boolean> {
-  const user = await getCurrentUser()
-  if (!user) return false
-  return (user as { role?: string }).role === 'admin'
-}
 
 const VALID_STATUSES: EventSubmissionStatus[] = ['pending', 'approved', 'rejected']
 

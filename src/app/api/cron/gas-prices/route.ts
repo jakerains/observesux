@@ -2,30 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { sql, isDatabaseConfigured } from '@/lib/db'
 import { scrapeGasPrices, type ScrapedGasStation } from '@/lib/fetchers/gasbuddy'
 import { logCronRun } from '@/lib/db/historical'
+import { verifyCronRequest } from '@/lib/utils/cron-auth'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300 // Allow up to 5 minutes for scraping (Pro plan)
-
-/**
- * Cron endpoint to scrape gas prices and update database
- * Runs daily at 12:00 UTC (6 AM Central) via Vercel Cron
- *
- * GET /api/cron/gas-prices
- */
-function verifyCronRequest(request: NextRequest): boolean {
-  // Method 1: Vercel cron sends this header automatically
-  const isVercelCron = request.headers.get('x-vercel-cron') === '1'
-
-  // Method 2: Check CRON_SECRET if configured (for manual testing)
-  const authHeader = request.headers.get('authorization')
-  const cronSecret = process.env.CRON_SECRET
-  const hasValidSecret = cronSecret && authHeader === `Bearer ${cronSecret}`
-
-  // Method 3: Allow in development
-  const isDev = process.env.NODE_ENV === 'development'
-
-  return isVercelCron || hasValidSecret || isDev
-}
 
 export async function GET(request: NextRequest) {
   if (!verifyCronRequest(request)) {

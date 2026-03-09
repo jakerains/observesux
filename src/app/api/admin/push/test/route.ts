@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCurrentUser } from '@/lib/auth/server'
+import { isAdminWithUser } from '@/lib/auth/server'
 import { isDatabaseConfigured } from '@/lib/db'
 import { type PushPayload } from '@/lib/push/send'
 import { sendBrowserPushToSubscribers } from '@/lib/push/send-browser'
@@ -9,19 +9,13 @@ import { getAllActiveBrowserSubscriptions } from '@/lib/db/browser-push'
 
 export const dynamic = 'force-dynamic'
 
-async function isAdmin(): Promise<{ isAdmin: boolean; userId?: string }> {
-  const user = await getCurrentUser()
-  if (!user) return { isAdmin: false }
-  return { isAdmin: (user as { role?: string }).role === 'admin', userId: user.id }
-}
-
 /**
  * POST /api/admin/push/test
  * Send a test push notification to the admin's own subscriptions.
  * Body: { channel?: 'web' | 'expo' | 'both' }
  */
 export async function POST(request: NextRequest) {
-  const { isAdmin: isAdminUser, userId } = await isAdmin()
+  const { isAdmin: isAdminUser, userId } = await isAdminWithUser()
   if (!isAdminUser || !userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }

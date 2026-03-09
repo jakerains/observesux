@@ -22,8 +22,8 @@ import type {
   CommunityEventsData,
 } from '@/types'
 
-// Generic fetcher with error handling
-const fetcher = async <T>(url: string): Promise<T> => {
+// Generic fetcher with error handling — exported for reuse in widgets with inline SWR
+export const fetcher = async <T>(url: string): Promise<T> => {
   const res = await fetch(url)
   if (!res.ok) {
     const error = new Error('An error occurred while fetching the data.')
