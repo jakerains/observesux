@@ -16,6 +16,15 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.12.3',
+    date: '2026-03-09',
+    added: [
+      'Sioux City Resources page — comprehensive local directory with 80+ resources across 12 categories',
+      'Search and category filtering on the resources page',
+      'Footer link to resources page from the main dashboard',
+    ],
+  },
+  {
     version: '0.12.2',
     date: '2026-03-08',
     changed: [

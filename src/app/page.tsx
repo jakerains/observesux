@@ -305,6 +305,13 @@ function DashboardContent() {
             >
               View on GitHub
             </a>
+            <span className="mx-1">·</span>
+            <a
+              href="/resources"
+              className="text-primary hover:underline"
+            >
+              Local Resources
+            </a>
           </p>
           <ChangelogModal>
             <button className="text-muted-foreground/50 hover:text-foreground transition-colors cursor-pointer">
