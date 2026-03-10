@@ -799,7 +799,7 @@ export const EVENT_SUBMISSION_STATUSES: { value: EventSubmissionStatus; label: s
 // Suggestions/Feedback
 // ============================================
 
-export type SuggestionCategory = 'feature' | 'bug' | 'improvement' | 'content' | 'other'
+export type SuggestionCategory = 'feature' | 'bug' | 'improvement' | 'content' | 'resource' | 'other'
 export type SuggestionStatus = 'pending' | 'reviewed' | 'planned' | 'implemented' | 'dismissed'
 
 export interface Suggestion {
@@ -822,11 +822,12 @@ export interface SuggestionStats {
   dismissed: number
 }
 
-export const SUGGESTION_CATEGORIES: { value: SuggestionCategory; label: string; icon: string }[] = [
+export const SUGGESTION_CATEGORIES: { value: SuggestionCategory; label: string; icon: string; titlePlaceholder?: string; descriptionPlaceholder?: string }[] = [
   { value: 'feature', label: 'New Feature', icon: '🚀' },
   { value: 'bug', label: 'Bug Report', icon: '🐛' },
   { value: 'improvement', label: 'Improvement', icon: '✨' },
   { value: 'content', label: 'Content Request', icon: '📝' },
+  { value: 'resource', label: 'Suggest Resource', icon: '📍', titlePlaceholder: 'Name of the business, place, or organization...', descriptionPlaceholder: 'Website URL, address, category (e.g. Dining, Parks), and a short description...' },
   { value: 'other', label: 'Other', icon: '💬' },
 ]
 

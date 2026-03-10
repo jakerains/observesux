@@ -5,9 +5,9 @@ import {
   getSuggestionStats,
 } from '@/lib/db/suggestions'
 import { isAdmin } from '@/lib/auth/server'
-import type { SuggestionCategory, SuggestionStatus } from '@/types'
+import { SUGGESTION_CATEGORIES, type SuggestionCategory, type SuggestionStatus } from '@/types'
 
-const VALID_CATEGORIES: SuggestionCategory[] = ['feature', 'bug', 'improvement', 'content', 'other']
+const VALID_CATEGORIES = SUGGESTION_CATEGORIES.map(c => c.value)
 
 /**
  * POST /api/suggestions

@@ -120,7 +120,7 @@ export function SuggestionModal({ trigger }: SuggestionModalProps) {
             Submit a Suggestion
           </DialogTitle>
           <DialogDescription>
-            Have an idea for a new feature, found a bug, or want to request content? Let us know!
+            Have an idea, found a bug, or know a local resource we should add? Let us know!
           </DialogDescription>
         </DialogHeader>
 
@@ -164,7 +164,7 @@ export function SuggestionModal({ trigger }: SuggestionModalProps) {
               </Label>
               <Input
                 id="title"
-                placeholder={`Brief ${categoryInfo?.label.toLowerCase()} title...`}
+                placeholder={categoryInfo?.titlePlaceholder || `Brief ${categoryInfo?.label.toLowerCase()} title...`}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 maxLength={200}
@@ -181,7 +181,7 @@ export function SuggestionModal({ trigger }: SuggestionModalProps) {
               </Label>
               <Textarea
                 id="description"
-                placeholder="Please provide details..."
+                placeholder={categoryInfo?.descriptionPlaceholder || 'Please provide details...'}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={4}

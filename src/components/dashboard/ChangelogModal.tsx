@@ -16,6 +16,13 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.12.7',
+    date: '2026-03-10',
+    added: [
+      '"Suggest Resource" category in the suggestion modal for submitting local businesses and places',
+    ],
+  },
+  {
     version: '0.12.6',
     date: '2026-03-10',
     added: [
