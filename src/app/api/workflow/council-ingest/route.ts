@@ -448,6 +448,11 @@ export async function POST(request: NextRequest) {
           const result = await processVideo(videoId, meeting, controller, encoder, '[Upload]', segments)
 
           if (result === 'completed') {
+            // Send push notifications for manually uploaded meetings
+            sendCouncilMeetingNotification(meeting.id, videoId, uploadData.title!).catch(err =>
+              console.error('[Council Ingest] Failed to send council meeting notification:', err)
+            )
+
             sendEvent(controller, encoder, 'progress', {
               step: 'done',
               message: `Upload complete: ${uploadData.title}`,
@@ -588,6 +593,11 @@ export async function POST(request: NextRequest) {
 
             await storeMeetingResults(meeting.id, recap, meeting.transcriptRaw, meeting.chunkCount)
 
+            // Send push notifications for recap regeneration (dedup prevents duplicates)
+            sendCouncilMeetingNotification(meeting.id, videoId, meeting.title || videoId).catch(err =>
+              console.error('[Council Ingest] Failed to send council meeting notification:', err)
+            )
+
             sendEvent(controller, encoder, 'progress', {
               step: 'done',
               message: `[1/1] Recap regenerated: ${meeting.title}`,
@@ -611,6 +621,11 @@ export async function POST(request: NextRequest) {
           const result = await processVideo(videoId, meeting, controller, encoder, '[1/1]')
 
           if (result === 'completed') {
+            // Send push notifications for single-meeting retries
+            sendCouncilMeetingNotification(meeting.id, videoId, meeting.title || videoId).catch(err =>
+              console.error('[Council Ingest] Failed to send council meeting notification:', err)
+            )
+
             sendEvent(controller, encoder, 'progress', {
               step: 'done',
               message: `[1/1] Completed: ${meeting.title}`,

@@ -16,6 +16,13 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.12.4',
+    date: '2026-03-10',
+    fixed: [
+      'Push notifications for new council meeting recaps now fire from all ingestion paths, not just the automatic cron run',
+    ],
+  },
+  {
     version: '0.12.3',
     date: '2026-03-09',
     changed: [
