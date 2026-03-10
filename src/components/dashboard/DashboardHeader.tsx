@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { RefreshCw, Lightbulb, BookOpen } from "lucide-react"
 import { track } from '@vercel/analytics'
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { SuggestionModal } from './SuggestionModal'
 import { UserMenu } from '@/components/auth/UserMenu'
 
@@ -13,6 +13,7 @@ interface DashboardHeaderProps {
 }
 
 export function DashboardHeader({ onRefresh, isRefreshing }: DashboardHeaderProps) {
+  const router = useRouter()
   return (
     <header className="sticky top-0 z-50 w-full header-glass">
       <div className="w-full max-w-7xl mx-auto flex h-16 items-center justify-between px-4 sm:px-6">
@@ -38,17 +39,18 @@ export function DashboardHeader({ onRefresh, isRefreshing }: DashboardHeaderProp
             <span className="sr-only">Refresh all data</span>
           </Button>
 
-          <Link href="/resources">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 rounded-full hover:bg-accent press-effect"
-              onClick={() => track('resources_clicked')}
-            >
-              <BookOpen className="h-4 w-4" />
-              <span className="sr-only">Resources</span>
-            </Button>
-          </Link>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 rounded-full hover:bg-accent press-effect"
+            onClick={() => {
+              track('resources_clicked')
+              router.push('/resources')
+            }}
+          >
+            <BookOpen className="h-4 w-4" />
+            <span className="sr-only">Resources</span>
+          </Button>
 
           <SuggestionModal
             trigger={
