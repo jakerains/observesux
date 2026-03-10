@@ -16,6 +16,13 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.12.4',
+    date: '2026-03-10',
+    added: [
+      'Resources icon in the dashboard header for quick access to the Sioux City Resources page',
+    ],
+  },
+  {
     version: '0.12.3',
     date: '2026-03-09',
     added: [

@@ -1,8 +1,9 @@
 'use client'
 
 import { Button } from "@/components/ui/button"
-import { RefreshCw, Lightbulb } from "lucide-react"
+import { RefreshCw, Lightbulb, BookOpen } from "lucide-react"
 import { track } from '@vercel/analytics'
+import Link from 'next/link'
 import { SuggestionModal } from './SuggestionModal'
 import { UserMenu } from '@/components/auth/UserMenu'
 
@@ -36,6 +37,18 @@ export function DashboardHeader({ onRefresh, isRefreshing }: DashboardHeaderProp
             <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
             <span className="sr-only">Refresh all data</span>
           </Button>
+
+          <Link href="/resources">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-full hover:bg-accent press-effect"
+              onClick={() => track('resources_clicked')}
+            >
+              <BookOpen className="h-4 w-4" />
+              <span className="sr-only">Resources</span>
+            </Button>
+          </Link>
 
           <SuggestionModal
             trigger={
