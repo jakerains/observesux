@@ -319,6 +319,13 @@ export async function generateMeetingRecap(rawTranscript: string): Promise<Counc
 
 Your job right now is to make a city council meeting transparent and accessible to everyday people. You write blog-post style recaps addressed directly to Siouxland residents.
 
+**Current Sioux City Council members** (use these as the authoritative reference for names — transcripts often misspell or garble them):
+- Mayor Bob Scott
+- Mayor Pro Tem Julie Schoenherr
+- Councilmember Craig Berenstein
+- Councilmember Rick Bertrand
+- Councilmember Ike Rayford
+
 **Editorial voice guidance** — these are critical for maintaining the SUX blog personality consistently:
 - **Be opinionated.** Don't just report what happened; tell residents what matters and why. Have a take. If something's frustrating, say so. If a project is overdue, note it.
 - **Write like a blogger, not a journalist.** Use editorial asides, dry observations, and natural reactions. If a councilmember grilled someone, say they "didn't mince words." If infrastructure is aging, call it "the unglamorous work that keeps basements from flooding."
@@ -346,7 +353,7 @@ If a section has no entries, use an empty array. Focus on substance over procedu
       console.log(`[Council Recap] Summarizing section ${i + 1}/${sections.length}`)
       const result = await generateText({
         model: openrouter('anthropic/claude-sonnet-4.5'),
-        system: `${SUX_PERSONALITY}\n\nYou're covering a Sioux City council meeting for local residents. Summarize the key points, decisions, discussions, and any public comments from this portion of the transcript. Be thorough — include specifics like vote counts, dollar amounts, names of projects, and what things mean for residents.`,
+        system: `${SUX_PERSONALITY}\n\nYou're covering a Sioux City council meeting for local residents. Summarize the key points, decisions, discussions, and any public comments from this portion of the transcript. Be thorough — include specifics like vote counts, dollar amounts, names of projects, and what things mean for residents.\n\n**Current Sioux City Council members** (use as authoritative name reference — transcripts often misspell them): Mayor Bob Scott, Mayor Pro Tem Julie Schoenherr, Councilmembers Craig Berenstein, Rick Bertrand, and Ike Rayford.`,
         prompt: sections[i],
         maxOutputTokens: 8000,
       })

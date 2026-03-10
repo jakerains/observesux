@@ -16,6 +16,13 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.12.5',
+    date: '2026-03-10',
+    changed: [
+      'Council meeting recaps now use council member names as a grounding reference to correct transcript misspellings',
+    ],
+  },
+  {
     version: '0.12.4',
     date: '2026-03-10',
     fixed: [
