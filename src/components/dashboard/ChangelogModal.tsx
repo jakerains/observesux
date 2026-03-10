@@ -16,6 +16,13 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.12.8',
+    date: '2026-03-10',
+    changed: [
+      'Council recaps now show summary first, with Key Decisions, Topics, and Public Comments in collapsible sections',
+    ],
+  },
+  {
     version: '0.12.7',
     date: '2026-03-10',
     added: [

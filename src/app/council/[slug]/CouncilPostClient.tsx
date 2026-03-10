@@ -9,6 +9,9 @@ import {
   Landmark,
   ExternalLink,
   MessageSquare,
+  ChevronRight,
+  Vote,
+  ListChecks,
 } from 'lucide-react'
 import { track } from '@vercel/analytics'
 import { MobileNavigation } from '@/components/dashboard/MobileNavigation'
@@ -89,44 +92,26 @@ export function CouncilPostClient({ meeting }: CouncilPostClientProps) {
           <h1 className="text-2xl sm:text-3xl font-bold mt-2 leading-tight">
             {meeting.title}
           </h1>
-
-          {/* Topic badges */}
-          {recap.topics.length > 0 && (
-            <div className="flex flex-wrap gap-2 mt-4">
-              {recap.topics.map((topic, i) => (
-                <Badge key={i} variant="secondary" className="text-xs">
-                  {topic}
-                </Badge>
-              ))}
-            </div>
-          )}
         </header>
 
-        {/* Article body */}
-        <article className="mb-10">
-          {recap.article ? (
-            <div className="prose prose-neutral dark:prose-invert max-w-none prose-headings:font-semibold prose-p:leading-relaxed prose-li:leading-relaxed">
-              <div dangerouslySetInnerHTML={{ __html: markdownToHtml(recap.article) }} />
-            </div>
-          ) : (
-            <p className="text-base leading-relaxed text-foreground">
-              {recap.summary}
-            </p>
-          )}
-        </article>
+        {/* Summary */}
+        <section className="mb-8">
+          <p className="text-base leading-relaxed text-foreground">
+            {recap.summary}
+          </p>
+        </section>
 
-        {/* At a Glance sidebar */}
-        {(recap.decisions.length > 0 || recap.publicComments.length > 0) && (
-          <section className="mb-10 rounded-xl border bg-card p-5 sm:p-6 space-y-5">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              At a Glance
-            </h2>
-
-            {recap.decisions.length > 0 && (
-              <div>
-                <h3 className="text-sm font-medium text-foreground mb-2">
-                  Key Decisions
-                </h3>
+        {/* Collapsible sections */}
+        <div className="mb-10 space-y-3">
+          {recap.decisions.length > 0 && (
+            <details className="group rounded-xl border bg-card overflow-hidden">
+              <summary className="flex items-center gap-3 p-4 cursor-pointer select-none hover:bg-accent/50 transition-colors list-none [&::-webkit-details-marker]:hidden">
+                <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 transition-transform group-open:rotate-90" />
+                <Vote className="h-4 w-4 text-primary shrink-0" />
+                <span className="text-sm font-medium">Key Decisions</span>
+                <Badge variant="secondary" className="ml-auto text-xs">{recap.decisions.length}</Badge>
+              </summary>
+              <div className="px-4 pb-4 pt-1">
                 <ul className="space-y-2">
                   {recap.decisions.map((decision, i) => (
                     <li key={i} className="flex gap-2 text-sm">
@@ -136,14 +121,38 @@ export function CouncilPostClient({ meeting }: CouncilPostClientProps) {
                   ))}
                 </ul>
               </div>
-            )}
+            </details>
+          )}
 
-            {recap.publicComments.length > 0 && (
-              <div>
-                <h3 className="text-sm font-medium text-foreground mb-2 flex items-center gap-1.5">
-                  <MessageSquare className="h-3.5 w-3.5" />
-                  Public Comments
-                </h3>
+          {recap.topics.length > 0 && (
+            <details className="group rounded-xl border bg-card overflow-hidden">
+              <summary className="flex items-center gap-3 p-4 cursor-pointer select-none hover:bg-accent/50 transition-colors list-none [&::-webkit-details-marker]:hidden">
+                <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 transition-transform group-open:rotate-90" />
+                <ListChecks className="h-4 w-4 text-primary shrink-0" />
+                <span className="text-sm font-medium">Topics Discussed</span>
+                <Badge variant="secondary" className="ml-auto text-xs">{recap.topics.length}</Badge>
+              </summary>
+              <div className="px-4 pb-4 pt-1">
+                <div className="flex flex-wrap gap-2">
+                  {recap.topics.map((topic, i) => (
+                    <Badge key={i} variant="secondary" className="text-xs">
+                      {topic}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </details>
+          )}
+
+          {recap.publicComments.length > 0 && (
+            <details className="group rounded-xl border bg-card overflow-hidden">
+              <summary className="flex items-center gap-3 p-4 cursor-pointer select-none hover:bg-accent/50 transition-colors list-none [&::-webkit-details-marker]:hidden">
+                <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 transition-transform group-open:rotate-90" />
+                <MessageSquare className="h-4 w-4 text-primary shrink-0" />
+                <span className="text-sm font-medium">Public Comments</span>
+                <Badge variant="secondary" className="ml-auto text-xs">{recap.publicComments.length}</Badge>
+              </summary>
+              <div className="px-4 pb-4 pt-1">
                 <ul className="space-y-2">
                   {recap.publicComments.map((comment, i) => (
                     <li key={i} className="flex gap-2 text-sm text-muted-foreground">
@@ -153,8 +162,17 @@ export function CouncilPostClient({ meeting }: CouncilPostClientProps) {
                   ))}
                 </ul>
               </div>
-            )}
-          </section>
+            </details>
+          )}
+        </div>
+
+        {/* Full recap article */}
+        {recap.article && (
+          <article className="mb-10">
+            <div className="prose prose-neutral dark:prose-invert max-w-none prose-headings:font-semibold prose-p:leading-relaxed prose-li:leading-relaxed">
+              <div dangerouslySetInnerHTML={{ __html: markdownToHtml(recap.article) }} />
+            </div>
+          </article>
         )}
 
         {/* Footer: YouTube link + attribution */}

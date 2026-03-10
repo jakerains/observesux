@@ -2,8 +2,8 @@
  * City Council Meeting Recap - Detail Modal
  */
 
-import { useCallback, useMemo, useRef } from 'react';
-import { View, ScrollView, Text, Pressable, Linking } from 'react-native';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { View, ScrollView, Text, Pressable, Linking, LayoutAnimation } from 'react-native';
 import { useLocalSearchParams, Stack, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
@@ -126,20 +126,18 @@ export default function CouncilDetailScreen() {
         )}
 
         {decisions.length > 0 && (
-          <View style={{ marginBottom: 20 }}>
-            <SectionHeader icon="checkmark.circle.fill" title="Key Decisions" />
+          <CollapsibleSection icon="checkmark.circle.fill" title="Key Decisions" count={decisions.length}>
             {decisions.map((d, i) => (
               <View key={i} style={{ flexDirection: 'row', gap: 10, marginBottom: 8 }}>
                 <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: Brand.amber, marginTop: 8 }} />
                 <Text style={{ flex: 1, color: Brand.foreground, lineHeight: 20 }}>{d}</Text>
               </View>
             ))}
-          </View>
+          </CollapsibleSection>
         )}
 
         {topics.length > 0 && (
-          <View style={{ marginBottom: 20 }}>
-            <SectionHeader icon="list.bullet" title="Topics Discussed" />
+          <CollapsibleSection icon="list.bullet" title="Topics Discussed" count={topics.length}>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
               {topics.map((t, i) => (
                 <View key={i} style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, backgroundColor: Brand.card, borderWidth: 0.5, borderColor: 'rgba(230,156,58,0.3)' }}>
@@ -147,19 +145,18 @@ export default function CouncilDetailScreen() {
                 </View>
               ))}
             </View>
-          </View>
+          </CollapsibleSection>
         )}
 
         {publicComments.length > 0 && (
-          <View style={{ marginBottom: 20 }}>
-            <SectionHeader icon="bubble.left.and.bubble.right" title="Public Comments" />
+          <CollapsibleSection icon="bubble.left.and.bubble.right" title="Public Comments" count={publicComments.length}>
             {publicComments.map((c, i) => (
               <View key={i} style={{ flexDirection: 'row', gap: 10, marginBottom: 8 }}>
                 <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: Brand.amber, marginTop: 8 }} />
                 <Text style={{ flex: 1, color: Brand.foreground, lineHeight: 20 }}>{c}</Text>
               </View>
             ))}
-          </View>
+          </CollapsibleSection>
         )}
 
         {!!recap?.article && (
@@ -179,6 +176,31 @@ export default function CouncilDetailScreen() {
           </Pressable>
         )}
       </ScrollView>
+    </View>
+  );
+}
+
+function CollapsibleSection({ icon, title, count, children }: { icon: string; title: string; count: number; children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const toggle = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setOpen((v) => !v);
+  };
+  return (
+    <View style={{ marginBottom: 12, borderRadius: 12, backgroundColor: Brand.card, borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+      <Pressable onPress={toggle} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 14 }}>
+        <Image source={`sf:chevron.right`} alt="" style={{ width: 12, height: 12, transform: [{ rotate: open ? '90deg' : '0deg' }] }} tintColor={Brand.muted} />
+        <Image source={`sf:${icon}`} alt="" style={{ width: 16, height: 16 }} tintColor={Brand.amber} />
+        <Text style={{ fontSize: 14, fontWeight: '600', color: Brand.foreground, flex: 1 }}>{title}</Text>
+        <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.06)' }}>
+          <Text style={{ fontSize: 11, color: Brand.muted, fontWeight: '500' }}>{count}</Text>
+        </View>
+      </Pressable>
+      {open && (
+        <View style={{ paddingHorizontal: 14, paddingBottom: 14 }}>
+          {children}
+        </View>
+      )}
     </View>
   );
 }
