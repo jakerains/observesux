@@ -1,26 +1,77 @@
 'use client'
 
-import { useState, useCallback } from 'react'
-import { ArrowLeft, MessageSquare, PenSquare } from 'lucide-react'
+import { useState, useCallback, useRef } from 'react'
+import { ArrowLeft, MessageSquare, PenSquare, PanelLeft } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
-import { AdminChat } from './AdminChat'
-import { Canvas, type CanvasState } from './Canvas'
+import { ThreadContent, type ThreadContentHandle } from './ThreadContent'
+import { ThreadSidebar } from './ThreadSidebar'
+import { useThreads, type ThreadStateSnapshot } from './useThreads'
 
 export function ContentStudioLayout() {
-  const [canvasState, setCanvasState] = useState<CanvasState>({
-    contentType: 'free-form',
-    title: '',
-    body: '',
-  })
-  const [mobilePanel, setMobilePanel] = useState<'chat' | 'canvas'>('chat')
+  const {
+    threads,
+    activeThread,
+    activeThreadId,
+    createThread,
+    switchThread,
+    deleteThread,
+    renameThread,
+    saveThreadState,
+  } = useThreads()
 
-  const handleWriteToCanvas = useCallback((state: CanvasState) => {
-    setCanvasState(state)
-    // On mobile, switch to canvas view when content is written
-    setMobilePanel('canvas')
-  }, [])
+  const [mobilePanel, setMobilePanel] = useState<'chat' | 'canvas'>('chat')
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const threadContentRef = useRef<ThreadContentHandle>(null)
+
+  // Save current thread state before switching away
+  const saveCurrentThreadState = useCallback(() => {
+    if (threadContentRef.current) {
+      const snapshot = threadContentRef.current.getState()
+      saveThreadState(activeThreadId, snapshot)
+    }
+  }, [activeThreadId, saveThreadState])
+
+  const handleSwitchThread = useCallback((id: string) => {
+    if (id === activeThreadId) return
+    saveCurrentThreadState()
+    switchThread(id)
+    setMobilePanel('chat')
+    setSidebarOpen(false)
+  }, [activeThreadId, saveCurrentThreadState, switchThread])
+
+  const handleNewThread = useCallback(() => {
+    saveCurrentThreadState()
+    createThread()
+    setMobilePanel('chat')
+    setSidebarOpen(false)
+  }, [saveCurrentThreadState, createThread])
+
+  const handleDeleteThread = useCallback((id: string) => {
+    deleteThread(id)
+    setSidebarOpen(false)
+  }, [deleteThread])
+
+  const handleStateChange = useCallback((data: ThreadStateSnapshot) => {
+    saveThreadState(activeThreadId, data)
+  }, [activeThreadId, saveThreadState])
+
+  const handleFirstUserMessage = useCallback((text: string) => {
+    const title = text.length > 50 ? text.slice(0, 50) + '…' : text
+    renameThread(activeThreadId, title)
+  }, [activeThreadId, renameThread])
+
+  const sidebarContent = (
+    <ThreadSidebar
+      threads={threads}
+      activeThreadId={activeThreadId}
+      onSelectThread={handleSwitchThread}
+      onNewThread={handleNewThread}
+      onDeleteThread={handleDeleteThread}
+    />
+  )
 
   return (
     <div className="flex flex-col h-screen bg-background">
@@ -31,11 +82,26 @@ export function ContentStudioLayout() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
         </Link>
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-md bg-primary/10">
+
+        {/* Mobile sidebar toggle */}
+        <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8 md:hidden">
+              <PanelLeft className="h-4 w-4" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-[280px] p-0">
+            {sidebarContent}
+          </SheetContent>
+        </Sheet>
+
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <div className="p-1.5 rounded-md bg-primary/10 shrink-0">
             <PenSquare className="h-4 w-4 text-primary" />
           </div>
-          <h1 className="text-sm font-semibold">Content Studio</h1>
+          <div className="min-w-0">
+            <h1 className="text-sm font-semibold truncate">{activeThread.title}</h1>
+          </div>
         </div>
 
         {/* Mobile panel switcher */}
@@ -57,36 +123,27 @@ export function ContentStudioLayout() {
           >
             <PenSquare className="h-3 w-3" />
             Canvas
-            {canvasState.body.trim() && (
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-            )}
           </Button>
         </div>
       </header>
 
-      {/* Main content - side by side on desktop, tabbed on mobile */}
-      <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-[1fr_1.2fr]">
-        {/* Chat panel */}
-        <div className={cn(
-          'min-h-0 border-r',
-          mobilePanel !== 'chat' && 'hidden md:block'
-        )}>
-          <AdminChat
-            canvasState={canvasState}
-            onWriteToCanvas={handleWriteToCanvas}
-          />
+      {/* Main content */}
+      <div className="flex-1 min-h-0 flex">
+        {/* Desktop sidebar */}
+        <div className="hidden md:block w-60 border-r shrink-0">
+          {sidebarContent}
         </div>
 
-        {/* Canvas panel */}
-        <div className={cn(
-          'min-h-0',
-          mobilePanel !== 'canvas' && 'hidden md:block'
-        )}>
-          <Canvas
-            state={canvasState}
-            onChange={setCanvasState}
-          />
-        </div>
+        {/* Thread content — key forces remount on thread switch */}
+        <ThreadContent
+          key={activeThreadId}
+          ref={threadContentRef}
+          thread={activeThread}
+          mobilePanel={mobilePanel}
+          onMobilePanelChange={setMobilePanel}
+          onStateChange={handleStateChange}
+          onFirstUserMessage={handleFirstUserMessage}
+        />
       </div>
     </div>
   )

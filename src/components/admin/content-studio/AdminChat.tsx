@@ -61,15 +61,40 @@ function formatToolName(toolName: string): string {
 interface AdminChatProps {
   canvasState: CanvasState
   onWriteToCanvas: (state: CanvasState) => void
+  initialMessages?: import('ai').UIMessage[]
+  onMessagesChange?: (messages: import('ai').UIMessage[]) => void
+  onFirstUserMessage?: (text: string) => void
 }
 
-export function AdminChat({ canvasState, onWriteToCanvas }: AdminChatProps) {
+export function AdminChat({ canvasState, onWriteToCanvas, initialMessages, onMessagesChange, onFirstUserMessage }: AdminChatProps) {
   const [input, setInput] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const [suggestedPrompts] = useState(() => getRandomPrompts(4))
   // Track which writeToCanvas tool calls we've already processed
-  const processedToolCallsRef = useRef<Set<string>>(new Set())
+  // Pre-populate from initial messages to prevent re-triggering
+  const [initProcessedIds] = useState(() => {
+    const ids = new Set<string>()
+    if (initialMessages) {
+      for (const msg of initialMessages) {
+        if (msg.role !== 'assistant' || !msg.parts) continue
+        for (const part of msg.parts) {
+          if (!part.type.startsWith('tool-')) continue
+          const toolPart = part as { type: string; toolCallId: string; state: string }
+          const toolName = part.type.slice(5)
+          if (toolName === 'writeToCanvas' && toolPart.state === 'output-available') {
+            ids.add(toolPart.toolCallId)
+          }
+        }
+      }
+    }
+    return ids
+  })
+  const processedToolCallsRef = useRef<Set<string>>(initProcessedIds)
+  // Track whether we've fired the first-user-message callback
+  const hasFiredFirstMessageRef = useRef(
+    !!(initialMessages && initialMessages.some((m) => m.role === 'user'))
+  )
 
   const transport = useMemo(() => new DefaultChatTransport({
     api: '/api/admin/chat',
@@ -85,7 +110,10 @@ export function AdminChat({ canvasState, onWriteToCanvas }: AdminChatProps) {
     error,
     regenerate,
     setMessages,
-  } = useChat({ transport })
+  } = useChat({
+    transport,
+    ...(initialMessages?.length ? { messages: initialMessages } : {}),
+  })
 
   const isLoading = status === 'streaming' || status === 'submitted'
 
@@ -118,6 +146,17 @@ export function AdminChat({ canvasState, onWriteToCanvas }: AdminChatProps) {
       }
     }
   }, [messages, onWriteToCanvas])
+
+  // Notify parent of message changes when streaming finishes
+  const prevStatusRef = useRef(status)
+  useEffect(() => {
+    const wasActive = prevStatusRef.current === 'streaming' || prevStatusRef.current === 'submitted'
+    const isIdle = status === 'ready' || status === 'error'
+    if (wasActive && isIdle && onMessagesChange) {
+      onMessagesChange(messages)
+    }
+    prevStatusRef.current = status
+  }, [status, messages, onMessagesChange])
 
   // Auto-scroll
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -160,11 +199,19 @@ export function AdminChat({ canvasState, onWriteToCanvas }: AdminChatProps) {
     if (!input.trim() || isLoading) return
     const message = input.trim()
     setInput('')
+    if (!hasFiredFirstMessageRef.current) {
+      hasFiredFirstMessageRef.current = true
+      onFirstUserMessage?.(message)
+    }
     await sendMessage({ text: message })
   }
 
   const handleSuggestedPrompt = async (prompt: string) => {
     if (isLoading) return
+    if (!hasFiredFirstMessageRef.current) {
+      hasFiredFirstMessageRef.current = true
+      onFirstUserMessage?.(prompt)
+    }
     await sendMessage({ text: prompt })
   }
 
