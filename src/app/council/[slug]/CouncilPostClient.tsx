@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { track } from '@vercel/analytics'
 import { MobileNavigation } from '@/components/dashboard/MobileNavigation'
+import { ShareButton } from '@/components/ui/share-button'
 import { markdownToHtml } from '@/lib/utils'
 import type { CouncilMeeting } from '@/types/council-meetings'
 
@@ -86,12 +87,22 @@ export function CouncilPostClient({ meeting }: CouncilPostClientProps) {
 
         {/* Hero header */}
         <header className="mb-8">
-          <time className="text-sm font-medium text-primary">
-            {formatMeetingDate(meeting.meetingDate)}
-          </time>
-          <h1 className="text-2xl sm:text-3xl font-bold mt-2 leading-tight">
-            {meeting.title}
-          </h1>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <time className="text-sm font-medium text-primary">
+                {formatMeetingDate(meeting.meetingDate)}
+              </time>
+              <h1 className="text-2xl sm:text-3xl font-bold mt-2 leading-tight">
+                {meeting.title}
+              </h1>
+            </div>
+            <ShareButton
+              url={`https://siouxland.online/council/${meeting.meetingDate}`}
+              title={meeting.title}
+              text={recap.summary}
+              className="shrink-0 mt-1"
+            />
+          </div>
         </header>
 
         {/* Summary */}

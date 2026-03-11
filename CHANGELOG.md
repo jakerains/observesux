@@ -5,6 +5,12 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.3] - 2026-03-11
+
+### Added
+- Share buttons on council meeting recaps and the daily digest page
+- (Admin) Content Studio threads now save to the database — your threads persist across sessions, devices, and browsers
+
 ## [0.13.2] - 2026-03-10
 
 ### Added

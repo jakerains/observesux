@@ -16,6 +16,14 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.13.3',
+    date: '2026-03-11',
+    added: [
+      'Share buttons on council meeting recaps and the daily digest page',
+      '(Admin) Content Studio threads now save to the database — your threads persist across sessions, devices, and browsers',
+    ],
+  },
+  {
     version: '0.13.2',
     date: '2026-03-10',
     added: [

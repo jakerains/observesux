@@ -19,6 +19,7 @@ import {
   Clock
 } from 'lucide-react'
 import { MobileNavigation } from '@/components/dashboard/MobileNavigation'
+import { ShareButton } from '@/components/ui/share-button'
 import { getCurrentEdition, editionLabels, type Digest, type DigestEdition } from '@/lib/digest/types'
 
 // Edition icons map
@@ -81,17 +82,23 @@ export default function DigestPage() {
               <ArrowLeft className="h-5 w-5" />
             </Button>
           </Link>
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className="p-2 rounded-lg bg-primary/10 shrink-0">
               <Newspaper className="h-5 w-5 text-primary" />
             </div>
-            <div>
+            <div className="min-w-0">
               <h1 className="text-xl font-bold">What You Need to Know, Siouxland</h1>
               <p className="text-sm text-muted-foreground">
                 Your daily community newsletter
               </p>
             </div>
           </div>
+          <ShareButton
+            url="https://siouxland.online/digest"
+            title="Siouxland Daily Digest"
+            text="Your daily community newsletter from Siouxland Online"
+            className="shrink-0"
+          />
         </div>
 
         {/* Main content */}

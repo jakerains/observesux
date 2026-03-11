@@ -177,6 +177,26 @@ CREATE INDEX IF NOT EXISTS idx_chat_messages_created ON chat_messages(created_at
 -- =====================================================
 
 -- =====================================================
+-- Content Studio Threads (Admin)
+-- =====================================================
+
+-- Persists Content Studio chat threads per admin user
+CREATE TABLE IF NOT EXISTS content_studio_threads (
+  id TEXT PRIMARY KEY,                -- Client-generated thread ID
+  user_id TEXT NOT NULL,              -- References neon_auth.user.id
+  title TEXT NOT NULL DEFAULT 'New Thread',
+  messages JSONB NOT NULL DEFAULT '[]'::jsonb,
+  canvas_state JSONB NOT NULL DEFAULT '{}'::jsonb,
+  canvas_history JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_cst_user_updated ON content_studio_threads(user_id, updated_at DESC);
+
+-- =====================================================
+
+-- =====================================================
 -- User Suggestions/Feedback
 -- =====================================================
 
