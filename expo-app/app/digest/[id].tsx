@@ -4,7 +4,7 @@
  */
 
 import { useCallback, useMemo, useRef } from 'react';
-import { View, ScrollView, Text, Pressable } from 'react-native';
+import { View, ScrollView, Text, Pressable, Share } from 'react-native';
 import { useLocalSearchParams, Stack, useFocusEffect } from 'expo-router';
 import { MarkdownText } from '@/components/MarkdownText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -209,9 +209,23 @@ export default function DigestDetailScreen() {
     );
   }
 
+  const handleShare = () => {
+    Share.share({
+      url: 'https://siouxland.online/digest',
+      message: `${editionLabel} — Siouxland Daily Digest`,
+    });
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: Brand.background }}>
-      <Stack.Screen options={{ title: editionLabel }} />
+      <Stack.Screen options={{
+        title: editionLabel,
+        headerRight: () => (
+          <Pressable onPress={handleShare} hitSlop={8}>
+            <Image source="sf:square.and.arrow.up" alt="" style={{ width: 20, height: 20 }} tintColor={Brand.amber} />
+          </Pressable>
+        ),
+      }} />
       <ScrollView
         ref={scrollRef}
         style={{ flex: 1 }}

@@ -3,7 +3,7 @@
  */
 
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { View, ScrollView, Text, Pressable, Linking, LayoutAnimation } from 'react-native';
+import { View, ScrollView, Text, Pressable, Linking, LayoutAnimation, Share } from 'react-native';
 import { useLocalSearchParams, Stack, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
@@ -94,9 +94,24 @@ export default function CouncilDetailScreen() {
     dateLabel = '';
   }
 
+  const shareUrl = `https://siouxland.online/council/${meeting.meetingDate || meeting.id}`;
+  const handleShare = () => {
+    Share.share({
+      url: shareUrl,
+      message: `${meeting.title} — Sioux City Council Recap`,
+    });
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: Brand.background }}>
-      <Stack.Screen options={{ title: 'Council Recap' }} />
+      <Stack.Screen options={{
+        title: 'Council Recap',
+        headerRight: () => (
+          <Pressable onPress={handleShare} hitSlop={8}>
+            <Image source="sf:square.and.arrow.up" alt="" style={{ width: 20, height: 20 }} tintColor={Brand.amber} />
+          </Pressable>
+        ),
+      }} />
       <ScrollView
         ref={scrollRef}
         style={{ flex: 1 }}
