@@ -83,7 +83,9 @@ Use semantic versioning:
 
 #### b) `CHANGELOG.md` - Add new version section at the top
 
-Follow the [Keep a Changelog](https://keepachangelog.com) format:
+Follow the [Keep a Changelog](https://keepachangelog.com) format.
+
+**Important: The changelog is user-facing.** Write entries in plain language that non-developers can understand. Avoid technical jargon (no "memoized", "debounced", "refs", "callback recreation", etc.). Focus on what changed for the user. Admin-only changes should be prefixed with "(Admin)". Don't include internal refactors or code cleanup unless they visibly affect the user experience.
 
 ```markdown
 ## [X.Y.Z] - YYYY-MM-DD

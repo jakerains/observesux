@@ -14,12 +14,14 @@ import { getToolCardComponent } from '@/components/chat/tool-cards'
 import type { CanvasState } from './Canvas'
 
 const SUGGESTED_PROMPTS = [
-  'Write a social post about tonight\'s council meeting',
-  'Draft a press release about the new water main project',
+  'Write a social post about the latest council meeting',
+  'Draft a press release about today\'s top story',
   'Summarize recent news for the newsletter',
   'Create an event announcement',
   'What topics are trending in local news?',
   'Summarize the latest council meeting',
+  'Write a weather update post for today',
+  'Draft a community spotlight feature',
 ]
 
 function getRandomPrompts(count: number): string[] {
@@ -73,7 +75,8 @@ export function AdminChat({ canvasState, onWriteToCanvas, initialMessages, onMes
   const [suggestedPrompts] = useState(() => getRandomPrompts(4))
   // Track which writeToCanvas tool calls we've already processed
   // Pre-populate from initial messages to prevent re-triggering
-  const [initProcessedIds] = useState(() => {
+  const processedToolCallsRef = useRef<Set<string>>(null as unknown as Set<string>)
+  if (processedToolCallsRef.current === null) {
     const ids = new Set<string>()
     if (initialMessages) {
       for (const msg of initialMessages) {
@@ -81,27 +84,35 @@ export function AdminChat({ canvasState, onWriteToCanvas, initialMessages, onMes
         for (const part of msg.parts) {
           if (!part.type.startsWith('tool-')) continue
           const toolPart = part as { type: string; toolCallId: string; state: string }
-          const toolName = part.type.slice(5)
-          if (toolName === 'writeToCanvas' && toolPart.state === 'output-available') {
+          if (part.type === 'tool-writeToCanvas' && toolPart.state === 'output-available') {
             ids.add(toolPart.toolCallId)
           }
         }
       }
     }
-    return ids
-  })
-  const processedToolCallsRef = useRef<Set<string>>(initProcessedIds)
+    processedToolCallsRef.current = ids
+  }
   // Track whether we've fired the first-user-message callback
   const hasFiredFirstMessageRef = useRef(
     !!(initialMessages && initialMessages.some((m) => m.role === 'user'))
   )
+  const maybeFireFirstMessage = useCallback((text: string) => {
+    if (!hasFiredFirstMessageRef.current) {
+      hasFiredFirstMessageRef.current = true
+      onFirstUserMessage?.(text)
+    }
+  }, [onFirstUserMessage])
+
+  // Use ref for canvasState so transport is created once
+  const canvasStateRef = useRef(canvasState)
+  canvasStateRef.current = canvasState
 
   const transport = useMemo(() => new DefaultChatTransport({
     api: '/api/admin/chat',
     body: () => ({
-      canvasContent: canvasState.body.trim() ? canvasState : undefined,
+      canvasContent: canvasStateRef.current.body.trim() ? canvasStateRef.current : undefined,
     }),
-  }), [canvasState])
+  }), [])
 
   const {
     messages,
@@ -199,19 +210,13 @@ export function AdminChat({ canvasState, onWriteToCanvas, initialMessages, onMes
     if (!input.trim() || isLoading) return
     const message = input.trim()
     setInput('')
-    if (!hasFiredFirstMessageRef.current) {
-      hasFiredFirstMessageRef.current = true
-      onFirstUserMessage?.(message)
-    }
+    maybeFireFirstMessage(message)
     await sendMessage({ text: message })
   }
 
   const handleSuggestedPrompt = async (prompt: string) => {
     if (isLoading) return
-    if (!hasFiredFirstMessageRef.current) {
-      hasFiredFirstMessageRef.current = true
-      onFirstUserMessage?.(prompt)
-    }
+    maybeFireFirstMessage(prompt)
     await sendMessage({ text: prompt })
   }
 

@@ -85,12 +85,17 @@ function persistThreads(threads: Thread[], activeId: string) {
 
 export function useThreads() {
   const [state, setState] = useState(() => loadThreads())
-  const stateRef = useRef(state)
-  stateRef.current = state
+  const persistTimerRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Persist on every state change
+  // Debounced persist — avoids serializing on every keystroke
   useEffect(() => {
-    persistThreads(state.threads, state.activeId)
+    if (persistTimerRef.current) clearTimeout(persistTimerRef.current)
+    persistTimerRef.current = setTimeout(() => {
+      persistThreads(state.threads, state.activeId)
+    }, 500)
+    return () => {
+      if (persistTimerRef.current) clearTimeout(persistTimerRef.current)
+    }
   }, [state])
 
   const activeThread = state.threads.find((t) => t.id === state.activeId) ?? state.threads[0]

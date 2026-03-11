@@ -1,6 +1,6 @@
 'use client'
 
-import { forwardRef, useImperativeHandle, useCallback, useRef, useEffect, useState } from 'react'
+import { forwardRef, useImperativeHandle, useCallback, useRef, useEffect } from 'react'
 import type { UIMessage } from 'ai'
 import { cn } from '@/lib/utils'
 import { AdminChat } from './AdminChat'
@@ -40,31 +40,35 @@ export const ThreadContent = forwardRef<ThreadContentHandle, ThreadContentProps>
       initialIndex: thread.canvasHistory.currentIndex,
     })
 
-    const [latestMessages, setLatestMessages] = useState<UIMessage[]>(thread.messages)
-    const latestMessagesRef = useRef(latestMessages)
-    latestMessagesRef.current = latestMessages
+    const latestMessagesRef = useRef<UIMessage[]>(thread.messages)
+
+    // Stable refs for values needed in auto-save (avoids callback recreation)
+    const canvasStateRef = useRef(canvasState)
+    canvasStateRef.current = canvasState
+    const onStateChangeRef = useRef(onStateChange)
+    onStateChangeRef.current = onStateChange
 
     // Expose getState for parent to snapshot before thread switch
     useImperativeHandle(ref, () => ({
       getState: () => ({
         messages: latestMessagesRef.current,
-        canvasState,
+        canvasState: canvasStateRef.current,
         canvasHistory: getSnapshot(),
       }),
-    }), [canvasState, getSnapshot])
+    }), [getSnapshot])
 
-    // Debounced auto-save
+    // Debounced auto-save — stable callback, reads current values from refs
     const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null)
     const scheduleAutoSave = useCallback(() => {
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
       autoSaveTimerRef.current = setTimeout(() => {
-        onStateChange({
+        onStateChangeRef.current({
           messages: latestMessagesRef.current,
-          canvasState,
+          canvasState: canvasStateRef.current,
           canvasHistory: getSnapshot(),
         })
       }, 3000)
-    }, [canvasState, getSnapshot, onStateChange])
+    }, [getSnapshot])
 
     // Auto-save when canvas state changes
     useEffect(() => {
@@ -84,7 +88,7 @@ export const ThreadContent = forwardRef<ThreadContentHandle, ThreadContentProps>
     }, [handleAIWrite, onMobilePanelChange])
 
     const handleMessagesChange = useCallback((messages: UIMessage[]) => {
-      setLatestMessages(messages)
+      latestMessagesRef.current = messages
       scheduleAutoSave()
     }, [scheduleAutoSave])
 

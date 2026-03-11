@@ -34,7 +34,11 @@ export function useCanvasHistory(initialState: CanvasState, options?: CanvasHist
   const [, bump] = useState(0)
 
   const debounceRef = useRef<NodeJS.Timeout | null>(null)
-  const lastCommittedRef = useRef(JSON.stringify(initialState))
+  const lastCommittedRef = useRef(JSON.stringify(
+    options?.initialEntries?.length && options.initialIndex !== undefined
+      ? options.initialEntries[options.initialIndex]?.state ?? initialState
+      : initialState
+  ))
 
   const commitToHistory = useCallback((state: CanvasState, label: string) => {
     const serialized = JSON.stringify(state)

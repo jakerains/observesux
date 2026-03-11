@@ -1,21 +1,11 @@
 'use client'
 
+import { useMemo } from 'react'
+import { formatDistanceToNow } from 'date-fns'
 import { Plus, Trash2, MessageSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import type { Thread } from './useThreads'
-
-function formatRelativeTime(timestamp: number): string {
-  const seconds = Math.floor((Date.now() - timestamp) / 1000)
-  if (seconds < 60) return 'just now'
-  const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes}m ago`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  if (days < 7) return `${days}d ago`
-  return new Date(timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-}
 
 interface ThreadSidebarProps {
   threads: Thread[]
@@ -32,7 +22,7 @@ export function ThreadSidebar({
   onNewThread,
   onDeleteThread,
 }: ThreadSidebarProps) {
-  const sorted = [...threads].sort((a, b) => b.updatedAt - a.updatedAt)
+  const sorted = useMemo(() => [...threads].sort((a, b) => b.updatedAt - a.updatedAt), [threads])
 
   return (
     <div className="flex flex-col h-full bg-muted/30">
@@ -82,7 +72,7 @@ export function ThreadSidebar({
                       </div>
                       <div className="flex items-center gap-1.5 mt-0.5">
                         <span className="text-[10px] text-muted-foreground">
-                          {formatRelativeTime(thread.updatedAt)}
+                          {formatDistanceToNow(thread.updatedAt, { addSuffix: true })}
                         </span>
                         {messageCount > 0 && (
                           <span className="text-[10px] text-muted-foreground">
