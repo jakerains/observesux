@@ -41,6 +41,7 @@ import {
   Landmark,
   Bell,
   Timer,
+  PenSquare,
 } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
@@ -2180,6 +2181,12 @@ function AdminPageContent() {
               <p className="text-sm text-muted-foreground">Manage chat logs and knowledge base</p>
             </div>
           </div>
+          <Link href="/admin/content-studio" className="ml-auto">
+            <Button variant="outline" size="sm" className="gap-2">
+              <PenSquare className="h-4 w-4" />
+              Content Studio
+            </Button>
+          </Link>
         </div>
 
         {/* Tabs */}
