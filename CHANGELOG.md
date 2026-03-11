@@ -5,6 +5,19 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.0] - 2026-03-10
+
+### Added
+- Content Studio thread/conversation system — multiple threads with independent chat history, canvas state, and undo/redo history persisted to localStorage
+- Thread sidebar (permanent on desktop, slide-out sheet on mobile) with new thread, switch, and delete
+- Auto-titling threads from the first user message
+- Branded OpenGraph social cards for digest and events pages
+- Refreshed council meeting OpenGraph cards with new section-card component
+
+### Changed
+- Content Studio layout now includes thread sidebar (desktop: 240px permanent, mobile: sheet overlay)
+- Canvas history supports restoring from saved thread snapshots
+
 ## [0.12.8] - 2026-03-10
 
 ### Changed

@@ -16,6 +16,20 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.13.0',
+    date: '2026-03-10',
+    added: [
+      'Content Studio thread system — multiple conversations with independent chat, canvas, and undo/redo history',
+      'Thread sidebar with create, switch, and delete (permanent on desktop, sheet on mobile)',
+      'Auto-titling threads from your first message',
+      'Branded OpenGraph social cards for digest and events pages',
+      'Refreshed council meeting OpenGraph cards',
+    ],
+    changed: [
+      'Content Studio layout updated with thread sidebar and canvas history restore',
+    ],
+  },
+  {
     version: '0.12.8',
     date: '2026-03-10',
     changed: [
