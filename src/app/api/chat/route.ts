@@ -181,6 +181,22 @@ export async function POST(req: Request) {
 
     const messages = validation.data;
 
+    // Enforce per-session turn limit (5 user messages max per session)
+    const MAX_USER_TURNS = 5;
+    const userMessageCount = messages.filter((m: { role: string }) => m.role === 'user').length;
+    if (userMessageCount > MAX_USER_TURNS) {
+      return new Response(JSON.stringify({
+        error: `You've reached the ${MAX_USER_TURNS}-message limit for this conversation. Please start a new chat to continue.`,
+        code: 'TURN_LIMIT_REACHED',
+      }), {
+        status: 429,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+        },
+      });
+    }
+
     // Get current user if logged in (for chat logging and personalization)
     // Non-fatal: chat works without personalization
     let userId: string | undefined;

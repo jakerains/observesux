@@ -5,6 +5,17 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.2] - 2026-03-10
+
+### Added
+- Chat now has a 5-message limit per conversation to prevent abuse (start a new chat to continue)
+- Share link widgets in chat — when SUX gives you a link to share, you get Copy Link, Share, and Open buttons
+- SUX can now show the latest council meeting recap with shareable links directly in chat
+- New "council recaps" tool so SUX knows the latest meeting date when you ask about sharing
+
+### Fixed
+- Fixed incorrect site URLs in chat and digest (now correctly points to siouxland.online)
+
 ## [0.13.1] - 2026-03-10
 
 ### Fixed

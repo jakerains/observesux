@@ -3,7 +3,7 @@
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
 import { useRef, useEffect, useMemo, FormEvent, useState, useCallback } from 'react'
-import { Send, Loader2, RotateCcw, Maximize2, Minimize2 } from 'lucide-react'
+import { Send, Loader2, RotateCcw, Maximize2, Minimize2, MessageCircleWarning } from 'lucide-react'
 import { track } from '@vercel/analytics'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
@@ -24,6 +24,9 @@ import { useChatSheet } from '@/lib/contexts/ChatContext'
 // Session storage key for chat session ID
 const SESSION_STORAGE_KEY = 'sux-chat-session-id'
 const MESSAGE_INDEX_KEY = 'sux-chat-message-index'
+
+// Max user messages per session (must match server-side MAX_USER_TURNS)
+const MAX_TURNS = 5
 
 // Capture device info for analytics
 function getDeviceInfo() {
@@ -209,6 +212,8 @@ function ChatWidgetInner() {
   })
 
   const isLoading = status === 'streaming' || status === 'submitted'
+  const userTurnCount = messages.filter((m) => m.role === 'user').length
+  const isLimitReached = userTurnCount >= MAX_TURNS
 
   // Update the last logged message index when messages change (for deduplication)
   useEffect(() => {
@@ -263,7 +268,7 @@ function ChatWidgetInner() {
   // Handle form submission
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    if (!input.trim() || isLoading) return
+    if (!input.trim() || isLoading || isLimitReached) return
 
     const message = input.trim()
     setInput('')
@@ -276,7 +281,7 @@ function ChatWidgetInner() {
 
   // Handle suggested question click
   const handleSuggestedQuestion = async (question: string) => {
-    if (isLoading) return
+    if (isLoading || isLimitReached) return
     track('chat_suggested_question', { question })
     await sendMessage({ text: question })
     if (shouldSendDeviceInfo) {
@@ -583,35 +588,56 @@ function ChatWidgetInner() {
             "border-t p-4 shrink-0 bg-background",
             isFullscreen && !isMobile && "px-6"
           )}>
-            <form
-              onSubmit={handleSubmit}
-              className={cn(
-                "flex items-center gap-2",
+            {isLimitReached ? (
+              <div className={cn(
+                "flex flex-col items-center gap-2 text-center",
                 isFullscreen && !isMobile && "max-w-3xl mx-auto"
-              )}
-            >
-              <input
-                ref={inputRef}
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask about Sioux City..."
-                className="flex-1 bg-muted rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/50"
-                disabled={isLoading}
-              />
-              <Button
-                type="submit"
-                size="icon"
-                disabled={isLoading || !input.trim()}
-                className="rounded-full h-10 w-10 shrink-0"
-              >
-                {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Send className="h-4 w-4" />
+              )}>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <MessageCircleWarning className="h-4 w-4 shrink-0" />
+                  <span>You&apos;ve reached the {MAX_TURNS}-message limit for this chat.</span>
+                </div>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleClearChat}
+                  className="rounded-full"
+                >
+                  <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+                  Start new conversation
+                </Button>
+              </div>
+            ) : (
+              <form
+                onSubmit={handleSubmit}
+                className={cn(
+                  "flex items-center gap-2",
+                  isFullscreen && !isMobile && "max-w-3xl mx-auto"
                 )}
-              </Button>
-            </form>
+              >
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder={`Ask about Sioux City... (${MAX_TURNS - userTurnCount} left)`}
+                  className="flex-1 bg-muted rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/50"
+                  disabled={isLoading}
+                />
+                <Button
+                  type="submit"
+                  size="icon"
+                  disabled={isLoading || !input.trim()}
+                  className="rounded-full h-10 w-10 shrink-0"
+                >
+                  {isLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                </Button>
+              </form>
+            )}
           </div>
         </SheetContent>
       </Sheet>
@@ -638,6 +664,7 @@ function formatToolName(toolName: string): string {
     getEarthquakes: 'earthquakes',
     getSystemStatus: 'system status',
     searchKnowledgeBase: 'local info',
+    getCouncilRecaps: 'council recaps',
     getEvents: 'events',
     webSearch: 'realtime info',
   }

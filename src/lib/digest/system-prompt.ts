@@ -273,7 +273,7 @@ export function buildDigestPrompt(
       }
     }
     prompt += `Watch full meeting: https://www.youtube.com/watch?v=${recap.videoId}\n`
-    prompt += `Full recap: https://siouxlandonline.com/council/${recap.videoId}\n`
+    prompt += `Full recap: https://siouxland.online/council/${recap.videoId}\n`
   }
 
   // News

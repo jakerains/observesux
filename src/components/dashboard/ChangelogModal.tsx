@@ -16,6 +16,18 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.13.2',
+    date: '2026-03-10',
+    added: [
+      'Chat now has a 5-message limit per conversation to curb abuse — start a new chat to keep going',
+      'Share link widgets in chat with Copy Link, Share, and Open buttons',
+      'SUX can show the latest council meeting recap with shareable links',
+    ],
+    fixed: [
+      'Fixed incorrect site URLs in chat links',
+    ],
+  },
+  {
     version: '0.13.0',
     date: '2026-03-10',
     added: [

@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { Phone, MapPin, Clock, Mail, Globe, ExternalLink, FileText, Menu, ChevronDown, UtensilsCrossed } from 'lucide-react'
+import { useState, useCallback } from 'react'
+import { Phone, MapPin, Clock, Mail, Globe, ExternalLink, FileText, Menu, ChevronDown, UtensilsCrossed, Link2, Check, Share2 } from 'lucide-react'
 import { track } from '@vercel/analytics'
 import { cn } from '@/lib/utils'
 
@@ -251,6 +251,8 @@ export function parseStructuredBlock(
         return <RestaurantBlock data={data} />
       case 'restaurants':
         return <RestaurantListBlock data={data} />
+      case 'sharelink':
+        return <ShareLinkBlock data={data} />
       default:
         return null
     }
@@ -464,10 +466,150 @@ export function RestaurantListBlock({ data }: { data: RestaurantListData }) {
 }
 
 // =============================================================================
+// SHARE LINK BLOCK
+// =============================================================================
+
+interface ShareLinkItem {
+  url: string
+  title: string
+  description?: string
+  label?: string
+}
+
+interface ShareLinkData {
+  // Single link (backwards-compatible)
+  url?: string
+  title?: string
+  description?: string
+  // Multi-link variant
+  heading?: string
+  links?: ShareLinkItem[]
+}
+
+/**
+ * Individual share link row with copy/share/open buttons
+ */
+function ShareLinkRow({ item }: { item: ShareLinkItem }) {
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(item.url)
+      setCopied(true)
+      track('sharelink_copied', { url: item.url })
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      window.prompt('Copy this link:', item.url)
+    }
+  }, [item.url])
+
+  const handleShare = useCallback(async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({ url: item.url, title: item.title, text: item.description })
+        track('sharelink_shared', { url: item.url })
+        return
+      } catch {
+        // User cancelled — fall through to copy
+      }
+    }
+    handleCopy()
+  }, [item.url, item.title, item.description, handleCopy])
+
+  // Show a shortened display URL
+  let displayUrl = item.url
+  try {
+    const parsed = new URL(item.url)
+    displayUrl = parsed.hostname.replace(/^www\./, '') + parsed.pathname
+  } catch {
+    // Use raw URL if parsing fails
+  }
+
+  return (
+    <div>
+      <div className="flex items-start gap-2 mb-1.5">
+        <Link2 className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+        <div className="min-w-0 flex-1">
+          {item.label && (
+            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{item.label}</span>
+          )}
+          <div className="font-semibold text-sm">{item.title}</div>
+          {item.description && (
+            <p className="text-xs text-muted-foreground mt-0.5">{item.description}</p>
+          )}
+          <p className="text-xs text-muted-foreground/70 mt-0.5 truncate">{displayUrl}</p>
+        </div>
+      </div>
+      <div className="flex gap-2 ml-6">
+        <button
+          onClick={handleCopy}
+          className={cn(
+            'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors',
+            copied
+              ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+              : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+          )}
+        >
+          {copied ? (
+            <><Check className="h-3.5 w-3.5" /> Copied!</>
+          ) : (
+            <><Link2 className="h-3.5 w-3.5" /> Copy Link</>
+          )}
+        </button>
+        <button
+          onClick={handleShare}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors bg-secondary text-secondary-foreground hover:bg-secondary/80"
+        >
+          <Share2 className="h-3.5 w-3.5" /> Share
+        </button>
+        <a
+          href={item.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors bg-primary text-primary-foreground hover:bg-primary/90"
+          onClick={() => track('sharelink_opened', { url: item.url })}
+        >
+          <ExternalLink className="h-3.5 w-3.5" /> Open
+        </a>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Share link card - renders one or more URLs with copy/share/open buttons
+ * Supports single link: {url, title, description}
+ * Supports multi-link:  {heading, links: [{url, title, description, label}]}
+ */
+export function ShareLinkBlock({ data }: { data: ShareLinkData }) {
+  // Normalize: single link → array of 1, multi-link → array
+  const items: ShareLinkItem[] = data.links && data.links.length > 0
+    ? data.links
+    : data.url && data.title
+      ? [{ url: data.url, title: data.title, description: data.description }]
+      : []
+
+  if (items.length === 0) return null
+
+  return (
+    <div className="my-3 p-3 rounded-lg bg-muted/50 border border-border/50 not-prose overflow-hidden">
+      {data.heading && (
+        <div className="font-semibold text-sm mb-3">{data.heading}</div>
+      )}
+      <div className="space-y-4">
+        {items.map((item, i) => (
+          <ShareLinkRow key={i} item={item} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// =============================================================================
 // BLOCK TYPE REGISTRY
 // =============================================================================
 
 /**
  * Structured block types the AI can use
  */
-export const STRUCTURED_BLOCK_TYPES = ['contact', 'hours', 'links', 'restaurant', 'restaurants'] as const
+export const STRUCTURED_BLOCK_TYPES = ['contact', 'hours', 'links', 'restaurant', 'restaurants', 'sharelink'] as const

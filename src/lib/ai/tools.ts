@@ -416,6 +416,38 @@ export const chatTools = {
     },
   }),
 
+  getCouncilRecaps: tool({
+    description: 'Get the most recent Sioux City Council meeting recaps. Use this when users ask about sharing, finding, or linking to council recaps — it returns the latest meeting(s) with their shareable URLs. Also useful to check what recent meetings are available.',
+    inputSchema: z.object({
+      count: z.number().optional().describe('How many recent meetings to return (default 1, max 5)'),
+    }),
+    execute: async ({ count }) => {
+      const limit = Math.min(Math.max(count ?? 1, 1), 5);
+      type RecapMeeting = {
+        title: string;
+        meetingDate: string | null;
+        videoUrl: string | null;
+        recap: { summary: string; topics: string[]; decisions: string[] } | null;
+      };
+      const data = await fetchApi<{ meetings: RecapMeeting[] }>(`/api/council-meetings/recaps?all=${limit > 1}`);
+      const meetings = (data?.meetings ?? []).slice(0, limit);
+      if (meetings.length === 0) {
+        return { message: 'No council meeting recaps available yet.' };
+      }
+      return {
+        meetings: meetings.map((m) => ({
+          title: m.title,
+          meetingDate: m.meetingDate,
+          recapUrl: m.meetingDate ? `https://siouxland.online/council/${m.meetingDate}` : null,
+          videoUrl: m.videoUrl,
+          summary: m.recap?.summary?.slice(0, 200) ?? null,
+          topics: m.recap?.topics ?? [],
+        })),
+        allMeetingsUrl: 'https://siouxland.online/council',
+      };
+    },
+  }),
+
   searchCouncilMeetings: tool({
     description: 'Search Sioux City Council meeting transcripts for discussions, decisions, votes, ordinances, public hearings, budget items, and project debates. Returns relevant excerpts with YouTube timestamp links to the exact moment in the meeting video. For topic questions, pass a descriptive query like "library budget cuts city council" instead of a single noun.',
     inputSchema: z.object({
@@ -454,6 +486,7 @@ export const chatTools = {
           meetingDate: r.meetingDate,
           excerpt: r.content,
           youtubeLink: r.youtubeLink,
+          recapUrl: r.meetingDate ? `https://siouxland.online/council/${r.meetingDate}` : null,
           relevance: `${Math.round(r.similarity * 100)}%`,
         })),
       };
