@@ -16,6 +16,16 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.13.4',
+    date: '2026-03-11',
+    changed: [
+      '(Admin) Removed Users tab from admin panel to clean up space',
+    ],
+    fixed: [
+      'Logging in from the admin page now returns you to admin instead of the home page',
+    ],
+  },
+  {
     version: '0.13.3',
     date: '2026-03-11',
     added: [

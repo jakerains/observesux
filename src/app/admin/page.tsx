@@ -31,7 +31,6 @@ import {
   ChevronDown,
   ChevronUp,
   ShieldX,
-  Users,
   Newspaper,
   Sun,
   Sunset,
@@ -70,7 +69,6 @@ import {
 } from '@/components/ui/dialog'
 import { ChatMarkdown } from '@/components/dashboard/ChatMarkdown'
 import { RagAdmin } from '@/components/rag/RagAdmin'
-import { UsersPanel } from '@/components/admin/UsersPanel'
 import { CouncilIngestPanel } from '@/components/admin/CouncilIngestPanel'
 import { CronLogsPanel } from '@/components/admin/CronLogsPanel'
 import { PushNotificationsPanel } from '@/components/admin/PushNotificationsPanel'
@@ -144,7 +142,7 @@ function AccessDenied({ reason }: { reason: 'not-logged-in' | 'not-admin' }) {
         <CardContent className="space-y-3">
           {reason === 'not-logged-in' ? (
             <Button asChild className="w-full">
-              <Link href="/auth/sign-in">Sign In</Link>
+              <Link href="/auth/sign-in?callbackURL=/admin">Sign In</Link>
             </Button>
           ) : (
             <p className="text-xs text-center text-muted-foreground">
@@ -2196,10 +2194,6 @@ function AdminPageContent() {
               <MessageSquare className="h-4 w-4" />
               Chat Logs
             </TabsTrigger>
-            <TabsTrigger value="users" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Users
-            </TabsTrigger>
             <TabsTrigger value="knowledge-base" className="flex items-center gap-2">
               <Database className="h-4 w-4" />
               Knowledge Base
@@ -2238,9 +2232,6 @@ function AdminPageContent() {
             <ChatLogsPanel />
           </TabsContent>
 
-          <TabsContent value="users">
-            <UsersPanel />
-          </TabsContent>
 
           <TabsContent value="knowledge-base">
             <RagAdmin hideHeader />
