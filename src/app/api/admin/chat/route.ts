@@ -135,7 +135,7 @@ export async function POST(req: Request) {
       }
     }
 
-    const MODEL_ID = 'anthropic/claude-sonnet-4.5'
+    const MODEL_ID = 'anthropic/claude-sonnet-4.6'
     const openrouter = createOpenRouter({
       apiKey: process.env.OPENROUTER_API_KEY,
     })

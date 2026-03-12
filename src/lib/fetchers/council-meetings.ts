@@ -352,7 +352,7 @@ If a section has no entries, use an empty array. Focus on substance over procedu
     for (let i = 0; i < sections.length; i++) {
       console.log(`[Council Recap] Summarizing section ${i + 1}/${sections.length}`)
       const result = await generateText({
-        model: openrouter('anthropic/claude-sonnet-4.5'),
+        model: openrouter('anthropic/claude-sonnet-4.6'),
         system: `${SUX_PERSONALITY}\n\nYou're covering a Sioux City council meeting for local residents. Summarize the key points, decisions, discussions, and any public comments from this portion of the transcript. Be thorough — include specifics like vote counts, dollar amounts, names of projects, and what things mean for residents.\n\n**Current Sioux City Council members** (use as authoritative name reference — transcripts often misspell them): Mayor Bob Scott, Mayor Pro Tem Julie Schoenherr, Councilmembers Craig Berenstein, Rick Bertrand, and Ike Rayford.`,
         prompt: sections[i],
         maxOutputTokens: 8000,
@@ -363,7 +363,7 @@ If a section has no entries, use an empty array. Focus on substance over procedu
     // Combine and generate final structured recap
     const combinedSummary = sectionSummaries.join('\n\n---\n\n')
     const result = await generateObject({
-      model: openrouter('anthropic/claude-sonnet-4.5'),
+      model: openrouter('anthropic/claude-sonnet-4.6'),
       schema: RecapSchema,
       system: RECAP_SYSTEM_PROMPT,
       prompt: `Here are detailed summaries of different sections of a city council meeting:\n\n${combinedSummary}`,
@@ -375,7 +375,7 @@ If a section has no entries, use an empty array. Focus on substance over procedu
 
   // Direct generation — send full transcript in one call
   const result = await generateObject({
-    model: openrouter('anthropic/claude-sonnet-4.5'),
+    model: openrouter('anthropic/claude-sonnet-4.6'),
     schema: RecapSchema,
     system: RECAP_SYSTEM_PROMPT,
     prompt: rawTranscript,

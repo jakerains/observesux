@@ -16,6 +16,13 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.13.5',
+    date: '2026-03-11',
+    changed: [
+      'Upgraded to Claude Sonnet 4.6 because WE SUPPORT FREEDOM... but also for improved quality across chat, digest, and council recaps',
+    ],
+  },
+  {
     version: '0.13.4',
     date: '2026-03-11',
     changed: [

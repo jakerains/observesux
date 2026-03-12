@@ -59,7 +59,7 @@ async function generateDigestContent(
   })
 
   const result = await generateText({
-    model: openrouter('anthropic/claude-opus-4.5'),
+    model: openrouter('anthropic/claude-sonnet-4.6'),
     system: systemPrompt,
     prompt: userPrompt,
     maxOutputTokens: 4000,
