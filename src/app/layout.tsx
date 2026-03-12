@@ -173,6 +173,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark" style={{ colorScheme: 'dark' }}>
       <head>
+        <link rel="preload" href="/suxicon-splash.webp" as="image" type="image/webp" />
         <JsonLdSchema />
       </head>
       <body

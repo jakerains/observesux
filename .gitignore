@@ -52,3 +52,6 @@ public/swe-worker-*.js.map
 .firecrawl/
 .claude/
 dogfood-output/
+
+# Icon backups
+backups/

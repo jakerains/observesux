@@ -13,13 +13,14 @@
       "backgroundColor": "#000000"
     },
     "ios": {
-      "icon": "./assets/siouxlandonline.icon",
+      "icon": "./assets/icon.png",
       "supportsTablet": true,
       "bundleIdentifier": "com.siouxland.online",
       "config": {
         "usesNonExemptEncryption": false
       },
       "infoPlist": {
+        "CFBundleDisplayName": "SUX Online",
         "NSLocationWhenInUseUsageDescription": "Siouxland Online uses your location to show nearby traffic cameras, transit stops, and weather conditions.",
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true

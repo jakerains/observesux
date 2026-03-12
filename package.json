@@ -1,6 +1,6 @@
 {
   "name": "siouxland-online",
-  "version": "0.13.5",
+  "version": "0.13.6",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -82,6 +82,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.2",
     "playwright-core": "^1.58.0",
+    "png-to-ico": "^3.0.1",
     "remotion": "^4.0.410",
     "serwist": "^9.5.0",
     "sharp": "^0.34.5",

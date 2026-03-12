@@ -16,6 +16,15 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.13.6',
+    date: '2026-03-11',
+    changed: [
+      'New SUX mascot icon across the entire app — favicon, PWA icons, app icon, and splash screen',
+      'Loading screen now shows the colorful SUX mascot instead of the old black & white logo',
+      'Loading screen image loads much faster thanks to optimized sizing',
+    ],
+  },
+  {
     version: '0.13.5',
     date: '2026-03-11',
     changed: [

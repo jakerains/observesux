@@ -60,9 +60,12 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
       {/* Logo */}
       <div className="mb-12 animate-in fade-in zoom-in duration-500">
         <img
-          src="/siouxlandonlinelogo_black.png"
+          src="/suxicon-splash.webp"
           alt="Siouxland Online"
-          className="h-32 sm:h-40 md:h-48 w-auto dark:invert"
+          width={192}
+          height={192}
+          fetchPriority="high"
+          className="h-32 sm:h-40 md:h-48 w-auto rounded-2xl"
         />
       </div>
 

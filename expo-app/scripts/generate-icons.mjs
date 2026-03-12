@@ -8,7 +8,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const SOURCE_ICON = path.join(__dirname, '../../public/siouxlandonlineicon_black.png');
+const SOURCE_ICON = path.join(__dirname, '../../public/suxicon.png');
 const ASSETS_DIR = path.join(__dirname, '../assets');
 
 const ICON_SIZES = [

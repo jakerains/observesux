@@ -5,13 +5,14 @@
  */
 
 import sharp from 'sharp'
-import { mkdir } from 'fs/promises'
+import pngToIco from 'png-to-ico'
+import { mkdir, writeFile } from 'fs/promises'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
-const SOURCE = join(ROOT, 'public', 'siouxlandonlineicon_black.png')
+const SOURCE = join(ROOT, 'public', 'suxicon.png')
 const OUTPUT_DIR = join(ROOT, 'public', 'icons')
 
 // Icon sizes for PWA
@@ -103,6 +104,24 @@ async function generateIcons() {
       .toFile(shortcutPath)
     console.log(`Generated: ${name}`)
   }
+
+  // Generate favicon.ico (multi-resolution: 16, 32, 48)
+  const icoSizes = [16, 32, 48]
+  const icoPngs = await Promise.all(
+    icoSizes.map(size =>
+      sharp(SOURCE)
+        .resize(size, size, {
+          fit: 'contain',
+          background: { r: 15, g: 23, b: 42, alpha: 1 }
+        })
+        .png()
+        .toBuffer()
+    )
+  )
+  const icoBuffer = await pngToIco(icoPngs)
+  const icoPath = join(ROOT, 'public', 'favicon.ico')
+  await writeFile(icoPath, icoBuffer)
+  console.log('Generated: favicon.ico (16, 32, 48)')
 
   console.log('\nPWA icons generated successfully!')
 }
