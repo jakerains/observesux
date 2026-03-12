@@ -14,7 +14,7 @@
     },
     "ios": {
       "icon": "./assets/icon.png",
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.siouxland.online",
       "config": {
         "usesNonExemptEncryption": false
