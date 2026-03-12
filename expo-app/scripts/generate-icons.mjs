@@ -27,27 +27,14 @@ async function generateIcons() {
   for (const { name, size } of ICON_SIZES) {
     console.log(`Generating ${name} (${size}x${size})...`);
 
-    // Clone the source image
+    // Clone and resize to fill the entire canvas — no padding, no transparency
+    // iOS applies its own rounded-rect mask; Android adaptive-icon handles its own safe zone
     const resized = sourceImage.clone();
-
-    // Create a square canvas with padding for the icon
-    const canvas = new Jimp(size, size, 0x00000000); // Transparent background
-
-    // Calculate the size to fit the icon with some padding (90% of canvas)
-    const iconSize = Math.floor(size * 0.85);
-
-    // Resize the icon maintaining aspect ratio
-    resized.contain(iconSize, iconSize);
-
-    // Center the icon on the canvas
-    const x = Math.floor((size - resized.getWidth()) / 2);
-    const y = Math.floor((size - resized.getHeight()) / 2);
-
-    canvas.composite(resized, x, y);
+    resized.cover(size, size);
 
     // Save the icon
     const outputPath = path.join(ASSETS_DIR, name);
-    await canvas.writeAsync(outputPath);
+    await resized.writeAsync(outputPath);
     console.log(`  Saved: ${outputPath}`);
   }
 
