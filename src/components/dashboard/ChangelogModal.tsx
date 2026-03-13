@@ -16,6 +16,20 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.13.7',
+    date: '2026-03-13',
+    added: [
+      'Custom 404 page with helpful navigation links',
+      'Friendly error page for unexpected crashes',
+      'Search engine structured data on Events and Digest pages',
+      'Breadcrumb data for better Google search results',
+    ],
+    fixed: [
+      'Resources page was missing title and description for search engines',
+      'Resources and Privacy pages were missing from the sitemap',
+    ],
+  },
+  {
     version: '0.13.6',
     date: '2026-03-11',
     changed: [

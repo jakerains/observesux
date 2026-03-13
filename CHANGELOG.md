@@ -5,6 +5,18 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.7] - 2026-03-13
+
+### Added
+- Custom 404 page with helpful navigation links instead of the default blank error
+- Error page so unexpected crashes show a friendly message with a retry button
+- Search engine structured data (JSON-LD) on the Events and Daily Digest pages
+- Breadcrumb data for Events and Digest so Google can show navigation trails in search results
+
+### Fixed
+- Resources page was missing a title and description for search engines
+- Resources and Privacy pages were missing from the sitemap
+
 ## [0.13.6] - 2026-03-11
 
 ### Changed
