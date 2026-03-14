@@ -29,6 +29,9 @@ import type {
   WatchlistResponse,
   WatchlistItemType,
   AirQualityHistoryResponse,
+  PollenData,
+  AuroraData,
+  SunData,
 } from '../types';
 
 /**
@@ -242,6 +245,45 @@ export function useCouncilMeetings() {
   return useQuery({
     queryKey: ['council'],
     queryFn: () => fetcher<CouncilResponse>(endpoints.council),
+    refetchInterval: interval,
+    staleTime: interval / 2,
+  });
+}
+
+/**
+ * Pollen data hook
+ */
+export function usePollen() {
+  const interval = useRefreshInterval(refreshIntervals.pollen);
+  return useQuery({
+    queryKey: ['pollen'],
+    queryFn: () => fetcher<ApiResponse<PollenData>>(endpoints.pollen),
+    refetchInterval: interval,
+    staleTime: interval / 2,
+  });
+}
+
+/**
+ * Aurora / geomagnetic activity hook
+ */
+export function useAurora() {
+  const interval = useRefreshInterval(refreshIntervals.aurora);
+  return useQuery({
+    queryKey: ['aurora'],
+    queryFn: () => fetcher<ApiResponse<AuroraData>>(endpoints.aurora),
+    refetchInterval: interval,
+    staleTime: interval / 2,
+  });
+}
+
+/**
+ * Sun times hook
+ */
+export function useSunTimes() {
+  const interval = useRefreshInterval(refreshIntervals.sun);
+  return useQuery({
+    queryKey: ['sun'],
+    queryFn: () => fetcher<ApiResponse<SunData>>(endpoints.sun),
     refetchInterval: interval,
     staleTime: interval / 2,
   });

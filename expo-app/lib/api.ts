@@ -110,6 +110,9 @@ export const endpoints = {
   status: '/api/status',
   digest: '/api/user/digest',
   council: '/api/council-meetings/recaps?all=true',
+  pollen: '/api/pollen',
+  aurora: '/api/aurora',
+  sun: '/api/sun',
 } as const;
 
 /**
@@ -128,6 +131,9 @@ export const refreshIntervals = {
   outages: 5 * 60 * 1000, // 5 minutes
   digest: 60 * 1000, // 1 minute
   council: 30 * 60 * 1000, // 30 minutes — meetings happen every 2 weeks
+  pollen: 5 * 60 * 1000, // 5 minutes
+  aurora: 5 * 60 * 1000, // 5 minutes
+  sun: 60 * 60 * 1000, // 1 hour — changes slowly
 } as const;
 
 /**

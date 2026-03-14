@@ -16,6 +16,14 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.13.11',
+    date: '2026-03-14',
+    added: [
+      'Pollen, Aurora, and Sun widgets now available in the iOS app',
+      'Aurora Watch on the web features an animated aurora sky with twinkling stars',
+    ],
+  },
+  {
     version: '0.13.10',
     date: '2026-03-14',
     changed: [

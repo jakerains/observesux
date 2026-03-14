@@ -5,6 +5,14 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.11] - 2026-03-14
+
+### Added
+- Pollen & Allergy widget in the iOS app — pollen bars, level banner, UV index
+- Aurora Watch widget in the iOS app — Kp gauge, visibility status, "Look North" tip
+- Sun & Daylight widget in the iOS app — live countdown, phase badge, sunrise/sunset times
+- Aurora Watch widget on the web now features an animated aurora sky with twinkling stars and treeline silhouette
+
 ## [0.13.10] - 2026-03-14
 
 ### Changed

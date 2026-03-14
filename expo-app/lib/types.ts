@@ -253,6 +253,45 @@ export interface DigestResponse {
   available: boolean;
 }
 
+// Pollen types
+export interface PollenReading {
+  grass: number | null;
+  ragweed: number | null;
+  birch: number | null;
+  alder: number | null;
+}
+
+export interface PollenData {
+  current: PollenReading;
+  uvIndex: number | null;
+  peakToday: PollenReading;
+  dominantType: string | null;
+  overallLevel: 'none' | 'low' | 'moderate' | 'high' | 'very_high';
+}
+
+// Aurora types
+export interface AuroraData {
+  kpIndex: number;
+  estimatedKp: number;
+  timestamp: string;
+  visibility: 'none' | 'unlikely' | 'possible' | 'likely' | 'strong';
+  visibilityLabel: string;
+  lookNorth: boolean;
+}
+
+// Sun types
+export interface SunData {
+  sunrise: string;
+  sunset: string;
+  dawn: string;
+  dusk: string;
+  goldenHour: string;
+  dayLength: string;
+  solarNoon: string;
+  firstLight: string;
+  lastLight: string;
+}
+
 // Data freshness status
 export type DataStatus = 'live' | 'stale' | 'error' | 'loading';
 
