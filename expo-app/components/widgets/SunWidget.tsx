@@ -66,17 +66,14 @@ function shortTime(timeStr: string): string {
 function SunArc({ progress, isDaytime, sunrise, sunset }: {
   progress: number; isDaytime: boolean; sunrise: string; sunset: string;
 }) {
-  // Padding so glow/labels aren't clipped at edges
-  const pad = 20;
-  const innerWidth = 280;
-  const width = innerWidth + pad * 2;
-  const startX = 32 + pad;
-  const endX = innerWidth - 32 + pad;
+  const width = 300;
+  const startX = 50;
+  const endX = width - 50;
   const centerX = width / 2;
   const rx = (endX - startX) / 2;
-  const ry = 68;
-  const baseline = ry + pad + 24;
-  const svgHeight = baseline + 20;
+  const ry = 55;
+  const baseline = ry + 38;   // room above for glow + NOW label
+  const svgHeight = baseline + 22;
 
   // Sun position on elliptical arc
   const angle = Math.PI * (1 - progress);
