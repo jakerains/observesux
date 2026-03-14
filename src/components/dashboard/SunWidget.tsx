@@ -100,14 +100,16 @@ function useSunPosition(sunrise: string, sunset: string): SunTimeState {
 function SunArc({ progress, isDaytime, sunrise, sunset }: {
   progress: number; isDaytime: boolean; sunrise: string; sunset: string
 }) {
-  const width = 300
-  const startX = 50
-  const endX = width - 50
+  // Layout: generous margins so the arc + glow + labels never clip.
+  const width = 280
+  const startX = 40
+  const endX = width - 40
   const centerX = width / 2
-  const rx = (endX - startX) / 2
-  const ry = 55
-  const baseline = ry + 38   // room above for glow + NOW label
-  const svgHeight = baseline + 22
+  const rx = (endX - startX) / 2  // 100
+  const ry = 65
+  const topPad = 34              // room for NOW label + glow above apex
+  const baseline = ry + topPad
+  const svgHeight = baseline + 18 // room for time labels below horizon
 
   // Sun position on elliptical arc
   const angle = Math.PI * (1 - progress)
@@ -117,14 +119,14 @@ function SunArc({ progress, isDaytime, sunrise, sunset }: {
   const noonY = baseline - ry
   const largeArc = progress > 0.5 ? 1 : 0
 
-  // "Now" label offset — keep it above and slightly right to avoid arc overlap
+  // "Now" label offset — keep it above the sun dot
   const labelX = sunX + (progress > 0.85 ? -16 : progress < 0.15 ? 16 : 0)
   const labelY = sunY - 22
   const labelAnchor = progress > 0.85 ? 'end' : progress < 0.15 ? 'start' : 'middle'
 
   return (
-    <div className="my-1 flex justify-center">
-      <svg viewBox={`0 0 ${width} ${svgHeight}`} className="w-full max-w-[300px]" aria-hidden="true">
+    <div className="my-1 mx-auto w-full max-w-[320px]">
+      <svg viewBox={`0 0 ${width} ${svgHeight}`} className="w-full" aria-hidden="true">
         <defs>
           <radialGradient id="sun-glow-grad">
             <stop offset="0%" stopColor="#fbbf24" stopOpacity="0.5" />
