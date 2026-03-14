@@ -3,7 +3,7 @@
  * Shows daylight remaining countdown, sunrise/sunset times, day length, and current phase.
  */
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Text, PlatformColor } from 'react-native';
 import Svg, {
   Path, Line, Circle, Text as SvgText,
@@ -82,7 +82,6 @@ function SunArc({ progress, isDaytime, sunrise, sunset }: {
   const sunY = baseline - ry * Math.sin(angle);
 
   const noonY = baseline - ry;
-  const largeArc = progress > 0.5 ? 1 : 0;
 
   // "NOW" label positioning
   const labelX = sunX + (progress > 0.85 ? -16 : progress < 0.15 ? 16 : 0);
@@ -118,7 +117,7 @@ function SunArc({ progress, isDaytime, sunrise, sunset }: {
         {/* Filled area under traveled arc */}
         {isDaytime && progress > 0.01 && (
           <Path
-            d={`M ${startX} ${baseline} A ${rx} ${ry} 0 ${largeArc} 1 ${sunX} ${sunY} L ${sunX} ${baseline} Z`}
+            d={`M ${startX} ${baseline} A ${rx} ${ry} 0 0 1 ${sunX} ${sunY} L ${sunX} ${baseline} Z`}
             fill="url(#fillGrad)"
           />
         )}
@@ -126,7 +125,7 @@ function SunArc({ progress, isDaytime, sunrise, sunset }: {
         {/* Traveled arc (gradient) */}
         {isDaytime && progress > 0.01 && (
           <Path
-            d={`M ${startX} ${baseline} A ${rx} ${ry} 0 ${largeArc} 1 ${sunX} ${sunY}`}
+            d={`M ${startX} ${baseline} A ${rx} ${ry} 0 0 1 ${sunX} ${sunY}`}
             fill="none" stroke="url(#arcGrad)" strokeWidth={2.5}
             strokeLinecap="round"
           />
@@ -220,31 +219,12 @@ export function SunWidget() {
   const fetchedAt = dataUpdatedAt ? new Date(dataUpdatedAt).toISOString() : undefined;
   const status = getDataStatus(fetchedAt, refreshIntervals.sun, isLoading, isError);
 
-  // Live countdown + progress
-  const compute = useCallback(() => {
-    if (!sun) return { remaining: 0, isDaytime: false, untilSunrise: 0, progress: 0 };
-    const sunriseMin = parseTimeToMinutes(sun.sunrise);
-    const sunsetMin = parseTimeToMinutes(sun.sunset);
-    const now = new Date();
-    const nowMin = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
-    const nowSec = (now.getHours() * 60 + now.getMinutes()) * 60 + now.getSeconds();
-    const daytime = nowMin >= sunriseMin && nowMin <= sunsetMin;
-    const p = (nowMin - sunriseMin) / (sunsetMin - sunriseMin);
-    return {
-      remaining: daytime ? Math.max(0, sunsetMin * 60 - nowSec) : 0,
-      isDaytime: daytime,
-      untilSunrise: nowMin < sunriseMin ? Math.max(0, sunriseMin * 60 - nowSec) : 0,
-      progress: Math.max(0, Math.min(1, p)),
-    };
-  }, [sun]);
-
-  const [countdown, setCountdown] = useState(compute);
+  const [nowTs, setNowTs] = useState(() => Date.now());
 
   useEffect(() => {
-    setCountdown(compute());
-    const id = setInterval(() => setCountdown(compute()), 1000);
+    const id = setInterval(() => setNowTs(Date.now()), 1000);
     return () => clearInterval(id);
-  }, [compute]);
+  }, []);
 
   if (isLoading) {
     return (
@@ -271,6 +251,19 @@ export function SunWidget() {
 
   const dayParts = parseDayLength(sun.dayLength);
   const phase = getCurrentPhase(sun);
+  const sunriseMin = parseTimeToMinutes(sun.sunrise);
+  const sunsetMin = parseTimeToMinutes(sun.sunset);
+  const now = new Date(nowTs);
+  const nowMin = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
+  const nowSec = (now.getHours() * 60 + now.getMinutes()) * 60 + now.getSeconds();
+  const isDaytime = nowMin >= sunriseMin && nowMin <= sunsetMin;
+  const progress = Math.max(0, Math.min(1, (nowMin - sunriseMin) / (sunsetMin - sunriseMin)));
+  const countdown = {
+    remaining: isDaytime ? Math.max(0, sunsetMin * 60 - nowSec) : 0,
+    isDaytime,
+    untilSunrise: nowMin < sunriseMin ? Math.max(0, sunriseMin * 60 - nowSec) : 0,
+    progress,
+  };
 
   // Countdown parts
   const cH = Math.floor(countdown.remaining / 3600);
