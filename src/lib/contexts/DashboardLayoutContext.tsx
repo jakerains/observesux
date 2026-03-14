@@ -32,7 +32,10 @@ export const DEFAULT_WIDGETS: WidgetConfig[] = [
   { id: 'flights', name: 'Airport Flights', description: 'SUX arrivals and departures', enabled: true, size: 'small' },
   { id: 'community-events', name: 'Community Events', description: 'Upcoming local events from multiple sources', enabled: true, size: 'small' },
   { id: 'news', name: 'Local News', description: 'KTIV, Siouxland Proud, SC Journal', enabled: true, size: 'large' },
+  { id: 'pollen', name: 'Pollen & Allergy', description: 'Pollen levels and UV index', enabled: true, size: 'small' },
+  { id: 'sun', name: 'Sun & Daylight', description: 'Sunrise, sunset, and day length', enabled: true, size: 'small' },
   { id: 'earthquakes', name: 'Seismic Activity', description: 'Recent earthquakes within 500km', enabled: true, size: 'small' },
+  { id: 'aurora', name: 'Aurora Watch', description: 'Northern lights visibility forecast', enabled: true, size: 'small' },
 ]
 
 const STORAGE_KEY = 'sioux-city-dashboard-layout'

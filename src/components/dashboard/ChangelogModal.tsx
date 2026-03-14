@@ -16,6 +16,16 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.13.8',
+    date: '2026-03-13',
+    added: [
+      'Pollen & Allergy Forecast — ragweed, grass, birch, and alder pollen levels with UV index',
+      'Aurora Watch — see when the Northern Lights might be visible from Sioux City',
+      'Sun & Daylight — sunrise, sunset, golden hour, and day length',
+      'Sunrise and sunset times now show in the main weather section',
+    ],
+  },
+  {
     version: '0.13.7',
     date: '2026-03-13',
     added: [

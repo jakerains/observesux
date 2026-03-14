@@ -5,6 +5,14 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.8] - 2026-03-13
+
+### Added
+- Pollen & Allergy Forecast widget — ragweed, grass, birch, and alder pollen levels with UV index
+- Aurora Watch widget — see when the Northern Lights might be visible from Sioux City
+- Sun & Daylight widget — sunrise, sunset, golden hour, and day length
+- Sunrise and sunset times now show in the main weather hero section
+
 ## [0.13.7] - 2026-03-13
 
 ### Added

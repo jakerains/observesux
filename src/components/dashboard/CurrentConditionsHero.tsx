@@ -1,8 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { useWeather, useAirQuality, useRivers, useWeatherForecast } from '@/lib/hooks/useDataFetching'
-import { Cloud, Droplets, Wind, Eye, Waves, ChevronDown, ChevronUp, Sun, Moon, CloudRain, Snowflake } from 'lucide-react'
+import { useWeather, useAirQuality, useRivers, useWeatherForecast, useSunTimes } from '@/lib/hooks/useDataFetching'
+import { Cloud, Droplets, Wind, Eye, Waves, ChevronDown, ChevronUp, Sun, Moon, CloudRain, Snowflake, Sunrise, Sunset } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
 import Image from 'next/image'
@@ -73,8 +73,10 @@ export function CurrentConditionsHero() {
   const { data: airQualityData } = useAirQuality()
   const { data: riversData } = useRivers()
   const { data: forecastData } = useWeatherForecast()
+  const { data: sunData } = useSunTimes()
 
   const weather = weatherData?.data
+  const sunTimes = sunData?.data
   const airQuality = airQualityData?.data
   const primaryRiver = riversData?.data?.[0] // Missouri River at Sioux City
   const forecast = forecastData?.data?.forecast?.periods || []
@@ -200,6 +202,22 @@ export function CurrentConditionsHero() {
               <Waves className="h-4 w-4" />
               <span className="font-medium">{primaryRiver.gaugeHeight?.toFixed(1) || '--'} ft</span>
               <span className="text-sm opacity-80 capitalize">{primaryRiver.floodStage}</span>
+            </div>
+          )}
+
+          {/* Sunrise */}
+          {sunTimes?.sunrise && (
+            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/15 backdrop-blur-sm">
+              <Sunrise className="h-4 w-4" />
+              <span className="font-medium">{sunTimes.sunrise.replace(/:\d{2}\s/, ' ')}</span>
+            </div>
+          )}
+
+          {/* Sunset */}
+          {sunTimes?.sunset && (
+            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/15 backdrop-blur-sm">
+              <Sunset className="h-4 w-4" />
+              <span className="font-medium">{sunTimes.sunset.replace(/:\d{2}\s/, ' ')}</span>
             </div>
           )}
         </div>

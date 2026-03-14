@@ -365,6 +365,51 @@ export function useEvents(refreshInterval = 1800000) {
 }
 
 // ============================================
+// Pollen & Allergy
+// ============================================
+export function usePollen(refreshInterval = 300000) {
+  return useSWR<ApiResponse<import('@/lib/fetchers/pollen').PollenData>>(
+    '/api/pollen',
+    fetcher,
+    {
+      refreshInterval,
+      dedupingInterval: 120000,
+      revalidateOnFocus: false,
+    }
+  )
+}
+
+// ============================================
+// Aurora / Northern Lights
+// ============================================
+export function useAurora(refreshInterval = 300000) {
+  return useSWR<ApiResponse<import('@/lib/fetchers/aurora').AuroraData>>(
+    '/api/aurora',
+    fetcher,
+    {
+      refreshInterval,
+      dedupingInterval: 120000,
+      revalidateOnFocus: false,
+    }
+  )
+}
+
+// ============================================
+// Sunrise / Sunset
+// ============================================
+export function useSunTimes(refreshInterval = 3600000) {
+  return useSWR<ApiResponse<import('@/lib/fetchers/sun').SunData>>(
+    '/api/sun',
+    fetcher,
+    {
+      refreshInterval,
+      dedupingInterval: 600000,
+      revalidateOnFocus: false,
+    }
+  )
+}
+
+// ============================================
 // Dashboard Status
 // ============================================
 export function useDashboardStatus() {

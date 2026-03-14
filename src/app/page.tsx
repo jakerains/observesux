@@ -20,6 +20,9 @@ import { GasPricesWidget } from '@/components/dashboard/GasPricesWidget'
 import { EventsWidget } from '@/components/dashboard/EventsWidget'
 import { CouncilWidget } from '@/components/dashboard/CouncilWidget'
 import { DigestWidget } from '@/components/dashboard/DigestWidget'
+import { PollenWidget } from '@/components/dashboard/PollenWidget'
+import { AuroraWidget } from '@/components/dashboard/AuroraWidget'
+import { SunWidget } from '@/components/dashboard/SunWidget'
 import { StatusBar } from '@/components/dashboard/StatusBar'
 import { MobileNavigation } from '@/components/dashboard/MobileNavigation'
 import { DashboardLayoutProvider } from '@/lib/contexts/DashboardLayoutContext'
@@ -256,6 +259,16 @@ function DashboardContent() {
             <Suspense fallback={<WidgetSkeleton />}>
               <EventsWidget />
             </Suspense>
+
+            {/* Pollen & Allergy */}
+            <Suspense fallback={<WidgetSkeleton />}>
+              <PollenWidget />
+            </Suspense>
+
+            {/* Sun & Daylight */}
+            <Suspense fallback={<WidgetSkeleton />}>
+              <SunWidget />
+            </Suspense>
           </div>
         </section>
 
@@ -285,6 +298,11 @@ function DashboardContent() {
             <Suspense fallback={<WidgetSkeleton />}>
               <EarthquakeWidget />
             </Suspense>
+
+            {/* Aurora Watch */}
+            <Suspense fallback={<WidgetSkeleton />}>
+              <AuroraWidget />
+            </Suspense>
           </div>
         </section>
 
@@ -293,7 +311,7 @@ function DashboardContent() {
            ============================================ */}
         <footer className="pt-8 border-t border-border/50 text-center text-xs text-muted-foreground/70">
           <p className="mb-2 leading-relaxed">
-            Data: Iowa DOT, National Weather Service, AviationWeather.gov, USGS, AirNow, Broadcastify, Iowa 511, RainViewer, Passio GO, KTIV, Siouxland Proud
+            Data: Iowa DOT, National Weather Service, AviationWeather.gov, USGS, AirNow, NOAA SWPC, Open-Meteo, Broadcastify, Iowa 511, RainViewer, Passio GO, KTIV, Siouxland Proud
           </p>
           <p className="mb-3">
             Built with Next.js, shadcn/ui, and public APIs.

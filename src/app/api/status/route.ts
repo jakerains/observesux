@@ -37,6 +37,19 @@ const UPSTREAM_CHECKS: Record<string, { url: string; method?: string; headers?: 
   snowplows: {
     url: 'https://services.arcgis.com/8lRhdTsQyJpO52F1/arcgis/rest/services/AVL_Trucks_Iowa_DOT/FeatureServer/0/query?f=json&where=1%3D1&resultRecordCount=1&returnGeometry=false',
   },
+  pollen: {
+    url: 'https://air-quality-api.open-meteo.com/v1/air-quality?latitude=42.5&longitude=-96.4&current=us_aqi&forecast_days=1',
+  },
+  aurora: {
+    url: 'https://services.swpc.noaa.gov/json/planetary_k_index_1m.json',
+    method: 'HEAD',
+    headers: {
+      'User-Agent': 'SiouxlandOnline/1.0 (https://siouxland.online)',
+    },
+  },
+  sun: {
+    url: 'https://api.sunrisesunset.io/json?lat=42.5&lng=-96.4',
+  },
   news: {
     url: 'https://news.google.com/rss/search?q=Sioux+City+Iowa&hl=en-US&gl=US&ceid=US:en',
     method: 'HEAD',
