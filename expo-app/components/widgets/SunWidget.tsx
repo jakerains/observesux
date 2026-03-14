@@ -5,6 +5,10 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { View, Text, PlatformColor } from 'react-native';
+import Svg, {
+  Path, Line, Circle, Text as SvgText,
+  Defs, RadialGradient, LinearGradient as SvgLinearGradient, Stop,
+} from 'react-native-svg';
 import { useSunTimes, getDataStatus } from '@/lib/hooks/useDataFetching';
 import { refreshIntervals } from '@/lib/api';
 import { DashboardCard } from '../DashboardCard';
@@ -53,6 +57,148 @@ function getCurrentPhase(sun: {
   return { label: 'Night', color: '#818cf8' };
 }
 
+// Strip seconds from time for compact labels
+function shortTime(timeStr: string): string {
+  return timeStr.replace(/:\d+\s/, ' ');
+}
+
+// SVG sun arc showing current sun position
+function SunArc({ progress, isDaytime, sunrise, sunset }: {
+  progress: number; isDaytime: boolean; sunrise: string; sunset: string;
+}) {
+  const width = 280;
+  const startX = 32;
+  const endX = width - 32;
+  const centerX = width / 2;
+  const rx = (endX - startX) / 2;
+  const ry = 68;
+  const baseline = ry + 24;
+  const svgHeight = baseline + 20;
+
+  // Sun position on elliptical arc
+  const angle = Math.PI * (1 - progress);
+  const sunX = centerX + rx * Math.cos(angle);
+  const sunY = baseline - ry * Math.sin(angle);
+
+  const noonY = baseline - ry;
+  const largeArc = progress > 0.5 ? 1 : 0;
+
+  // "NOW" label positioning
+  const labelX = sunX + (progress > 0.85 ? -16 : progress < 0.15 ? 16 : 0);
+  const labelY = sunY - 22;
+  const labelAnchor = progress > 0.85 ? 'end' : progress < 0.15 ? 'start' : 'middle';
+
+  return (
+    <View style={{ alignItems: 'center', marginVertical: 4 }}>
+      <Svg width="100%" height={svgHeight} viewBox={`0 0 ${width} ${svgHeight}`}>
+        <Defs>
+          <RadialGradient id="sunGlow" cx="50%" cy="50%" r="50%">
+            <Stop offset="0%" stopColor="#fbbf24" stopOpacity={0.5} />
+            <Stop offset="50%" stopColor="#fbbf24" stopOpacity={0.12} />
+            <Stop offset="100%" stopColor="#fbbf24" stopOpacity={0} />
+          </RadialGradient>
+          <SvgLinearGradient id="arcGrad" x1="0" y1="0" x2="1" y2="0">
+            <Stop offset="0%" stopColor="#f97316" />
+            <Stop offset="100%" stopColor="#fbbf24" />
+          </SvgLinearGradient>
+          <SvgLinearGradient id="fillGrad" x1="0" y1="1" x2="0" y2="0">
+            <Stop offset="0%" stopColor="#fbbf24" stopOpacity={0.07} />
+            <Stop offset="100%" stopColor="#fbbf24" stopOpacity={0.01} />
+          </SvgLinearGradient>
+        </Defs>
+
+        {/* Full arc background (dashed) */}
+        <Path
+          d={`M ${startX} ${baseline} A ${rx} ${ry} 0 0 1 ${endX} ${baseline}`}
+          fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={1.5}
+          strokeDasharray="4 4"
+        />
+
+        {/* Filled area under traveled arc */}
+        {isDaytime && progress > 0.01 && (
+          <Path
+            d={`M ${startX} ${baseline} A ${rx} ${ry} 0 ${largeArc} 1 ${sunX} ${sunY} L ${sunX} ${baseline} Z`}
+            fill="url(#fillGrad)"
+          />
+        )}
+
+        {/* Traveled arc (gradient) */}
+        {isDaytime && progress > 0.01 && (
+          <Path
+            d={`M ${startX} ${baseline} A ${rx} ${ry} 0 ${largeArc} 1 ${sunX} ${sunY}`}
+            fill="none" stroke="url(#arcGrad)" strokeWidth={2.5}
+            strokeLinecap="round"
+          />
+        )}
+
+        {/* Horizon line */}
+        <Line
+          x1={startX - 12} y1={baseline} x2={endX + 12} y2={baseline}
+          stroke="rgba(255,255,255,0.06)" strokeWidth={1}
+        />
+
+        {/* Noon tick */}
+        <Line
+          x1={centerX} y1={noonY - 4} x2={centerX} y2={noonY + 4}
+          stroke="rgba(255,255,255,0.12)" strokeWidth={1}
+        />
+
+        {/* Horizon endpoint markers */}
+        <Circle cx={startX} cy={baseline} r={2.5} fill="rgba(251,146,60,0.4)" />
+        <Circle cx={endX} cy={baseline} r={2.5} fill="rgba(251,113,133,0.4)" />
+
+        {/* Sun glow + dot + NOW label */}
+        {isDaytime && (
+          <>
+            <Line
+              x1={sunX} y1={sunY + 8} x2={sunX} y2={baseline}
+              stroke="rgba(251,191,36,0.2)" strokeWidth={0.75}
+              strokeDasharray="2 2"
+            />
+            <Circle cx={sunX} cy={sunY} r={18} fill="url(#sunGlow)" />
+            <Circle cx={sunX} cy={sunY} r={6} fill="#fbbf24" />
+            <Circle cx={sunX} cy={sunY} r={2.5} fill="#fde68a" />
+            <SvgText
+              x={labelX} y={labelY}
+              fontSize={9} fill="#fbbf24" fontWeight="600"
+              textAnchor={labelAnchor as 'start' | 'middle' | 'end'}
+              letterSpacing={0.5}
+            >
+              NOW
+            </SvgText>
+          </>
+        )}
+
+        {/* Night indicator */}
+        {!isDaytime && (
+          <Circle
+            cx={progress <= 0 ? startX : endX} cy={baseline}
+            r={4} fill="rgba(129,140,248,0.4)"
+          />
+        )}
+
+        {/* Sunrise label */}
+        <SvgText
+          x={startX} y={baseline + 14}
+          fontSize={9.5} fill={Brand.muted} opacity={0.6}
+          textAnchor="start"
+        >
+          {shortTime(sunrise)}
+        </SvgText>
+
+        {/* Sunset label */}
+        <SvgText
+          x={endX} y={baseline + 14}
+          fontSize={9.5} fill={Brand.muted} opacity={0.6}
+          textAnchor="end"
+        >
+          {shortTime(sunset)}
+        </SvgText>
+      </Svg>
+    </View>
+  );
+}
+
 function TimeRow({ label, value, color }: { label: string; value: string; color: string }) {
   return (
     <View style={{
@@ -73,18 +219,21 @@ export function SunWidget() {
   const fetchedAt = dataUpdatedAt ? new Date(dataUpdatedAt).toISOString() : undefined;
   const status = getDataStatus(fetchedAt, refreshIntervals.sun, isLoading, isError);
 
-  // Live countdown
+  // Live countdown + progress
   const compute = useCallback(() => {
-    if (!sun) return { remaining: 0, isDaytime: false, untilSunrise: 0 };
+    if (!sun) return { remaining: 0, isDaytime: false, untilSunrise: 0, progress: 0 };
     const sunriseMin = parseTimeToMinutes(sun.sunrise);
     const sunsetMin = parseTimeToMinutes(sun.sunset);
     const now = new Date();
+    const nowMin = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
     const nowSec = (now.getHours() * 60 + now.getMinutes()) * 60 + now.getSeconds();
-    const daytime = nowSec / 60 >= sunriseMin && nowSec / 60 <= sunsetMin;
+    const daytime = nowMin >= sunriseMin && nowMin <= sunsetMin;
+    const p = (nowMin - sunriseMin) / (sunsetMin - sunriseMin);
     return {
       remaining: daytime ? Math.max(0, sunsetMin * 60 - nowSec) : 0,
       isDaytime: daytime,
-      untilSunrise: nowSec / 60 < sunriseMin ? Math.max(0, sunriseMin * 60 - nowSec) : 0,
+      untilSunrise: nowMin < sunriseMin ? Math.max(0, sunriseMin * 60 - nowSec) : 0,
+      progress: Math.max(0, Math.min(1, p)),
     };
   }, [sun]);
 
@@ -181,6 +330,14 @@ export function SunWidget() {
           {countdown.isDaytime ? 'of daylight remaining' : countdown.untilSunrise > 0 ? 'until sunrise' : ''}
         </Text>
       </View>
+
+      {/* Sun Arc */}
+      <SunArc
+        progress={countdown.progress}
+        isDaytime={countdown.isDaytime}
+        sunrise={sun.sunrise}
+        sunset={sun.sunset}
+      />
 
       {/* Phase badge */}
       <View style={{ alignItems: 'center', marginBottom: 12 }}>
