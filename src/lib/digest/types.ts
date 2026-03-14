@@ -7,6 +7,8 @@ import type {
   NewsItem,
   CommunityEvent,
 } from '@/types'
+import type { PollenData } from '@/lib/fetchers/pollen'
+import type { AuroraData } from '@/lib/fetchers/aurora'
 
 // Re-export with digest-friendly names
 export type NewsArticle = NewsItem
@@ -81,6 +83,8 @@ export interface DigestData {
   flights: FlightDelaySummary | null
   schools: SchoolUpdate[] // School closings, delays, and announcements from Firecrawl
   councilRecap: CouncilRecapDigest | null // Monday night council meeting recap (Tuesday morning only)
+  pollen: PollenData | null // Pollen & UV data from Open-Meteo
+  aurora: AuroraData | null // Geomagnetic activity / aurora visibility from NOAA SWPC
   timestamp: string
 }
 

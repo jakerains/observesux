@@ -20,6 +20,9 @@ import {
   Navigation,
   Fuel,
   CalendarDays,
+  Flower2,
+  Sparkles,
+  Sun,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ChangelogModal } from './ChangelogModal'
@@ -41,6 +44,9 @@ const STATUS_ITEMS = [
   { key: 'aircraft', icon: PlaneTakeoff, label: 'Aircraft' },
   { key: 'gasPrices', icon: Fuel, label: 'Gas' },
   { key: 'events', icon: CalendarDays, label: 'Events' },
+  { key: 'pollen', icon: Flower2, label: 'Pollen' },
+  { key: 'aurora', icon: Sparkles, label: 'Aurora' },
+  { key: 'sun', icon: Sun, label: 'Sun' },
 ] as const
 
 export function StatusBar() {

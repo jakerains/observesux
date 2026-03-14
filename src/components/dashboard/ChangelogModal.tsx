@@ -16,6 +16,20 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.13.9',
+    date: '2026-03-14',
+    added: [
+      'Daily briefing now includes pollen alerts when allergy levels are elevated',
+      'Daily briefing now includes aurora/Northern Lights alerts when visibility is possible',
+      'Pollen, Aurora, and Sun services now tracked in the status bar',
+    ],
+    fixed: [
+      'Status bar showed "18/15" instead of "18/18" — three services were missing',
+      'Pollen widget showed "Low Pollen" while all readings showed dashes',
+      'Dashboard no longer flashes before the loading screen on first visit',
+    ],
+  },
+  {
     version: '0.13.8',
     date: '2026-03-13',
     added: [

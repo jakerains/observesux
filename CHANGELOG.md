@@ -5,6 +5,18 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.9] - 2026-03-14
+
+### Added
+- Daily briefing now includes pollen alerts when allergy levels are elevated
+- Daily briefing now includes aurora/Northern Lights alerts when visibility is possible
+- Pollen, Aurora, and Sun services now tracked in the status bar
+
+### Fixed
+- Status bar showed "18/15 online" instead of "18/18" — three services were missing from the display
+- Pollen widget showed "Low Pollen" banner while all individual readings showed dashes
+- Dashboard no longer flashes content before the loading screen on first visit
+
 ## [0.13.8] - 2026-03-13
 
 ### Added

@@ -38,6 +38,8 @@ import { fetchAirQuality } from '@/lib/fetchers/airnow'
 import { fetch511Events } from '@/lib/fetchers/iowa-dot'
 import { fetchCommunityEvents } from '@/lib/fetchers/events'
 import { fetchLocalNews, type NewsItem } from '@/lib/fetchers/news'
+import { fetchPollenData, type PollenData } from '@/lib/fetchers/pollen'
+import { fetchAuroraData, type AuroraData } from '@/lib/fetchers/aurora'
 import { sql, isDatabaseConfigured } from '@/lib/db'
 
 /**
@@ -645,6 +647,70 @@ async function fetchCouncilRecapStep(): Promise<CouncilRecapDigest | null> {
 }
 
 /**
+ * Fetch pollen & UV data from Open-Meteo
+ */
+export async function fetchPollenStep(): Promise<PollenData | null> {
+  "use step"
+
+  console.log('[fetchPollenStep] Starting Open-Meteo pollen fetch...')
+  const startTime = Date.now()
+
+  try {
+    const data = await fetchPollenData()
+    const duration = Date.now() - startTime
+
+    console.log(`[fetchPollenStep] Completed in ${duration}ms`)
+    console.log(`[fetchPollenStep] Overall: ${data.overallLevel}, dominant: ${data.dominantType}, UV: ${data.uvIndex}`)
+
+    return data
+  } catch (error) {
+    const duration = Date.now() - startTime
+    console.error(`[fetchPollenStep] Failed after ${duration}ms:`, error)
+
+    if (error instanceof Error && (
+      error.message.includes('fetch') ||
+      error.message.includes('timeout')
+    )) {
+      throw new RetryableError(`Pollen fetch failed: ${error.message}`, { retryAfter: 15_000 })
+    }
+
+    return null
+  }
+}
+
+/**
+ * Fetch aurora / geomagnetic activity from NOAA SWPC
+ */
+export async function fetchAuroraStep(): Promise<AuroraData | null> {
+  "use step"
+
+  console.log('[fetchAuroraStep] Starting NOAA SWPC Kp index fetch...')
+  const startTime = Date.now()
+
+  try {
+    const data = await fetchAuroraData()
+    const duration = Date.now() - startTime
+
+    console.log(`[fetchAuroraStep] Completed in ${duration}ms`)
+    console.log(`[fetchAuroraStep] Kp: ${data.kpIndex}, visibility: ${data.visibility} — ${data.visibilityLabel}`)
+
+    return data
+  } catch (error) {
+    const duration = Date.now() - startTime
+    console.error(`[fetchAuroraStep] Failed after ${duration}ms:`, error)
+
+    if (error instanceof Error && (
+      error.message.includes('fetch') ||
+      error.message.includes('timeout')
+    )) {
+      throw new RetryableError(`Aurora fetch failed: ${error.message}`, { retryAfter: 15_000 })
+    }
+
+    return null
+  }
+}
+
+/**
  * Aggregates all data from direct fetcher calls
  * This is the main entry point for workflow data collection
  * @param edition - The digest edition (morning, midday, evening). School updates only fetched for morning. Council recap only on Tuesday morning.
@@ -680,7 +746,9 @@ export async function aggregateAllData(edition?: DigestEdition): Promise<DigestD
     gasPrices,
     flights,
     schools,
-    councilRecap
+    councilRecap,
+    pollen,
+    aurora
   ] = await Promise.all([
     fetchWeatherStep(),
     fetchForecastStep(),
@@ -693,7 +761,9 @@ export async function aggregateAllData(edition?: DigestEdition): Promise<DigestD
     fetchGasPricesStep(),
     fetchFlightsStep(),
     shouldFetchSchools ? fetchSchoolUpdatesStep() : Promise.resolve([]),
-    shouldFetchCouncilRecap ? fetchCouncilRecapStep() : Promise.resolve(null)
+    shouldFetchCouncilRecap ? fetchCouncilRecapStep() : Promise.resolve(null),
+    fetchPollenStep(),
+    fetchAuroraStep()
   ])
 
   const duration = Date.now() - startTime
@@ -714,6 +784,8 @@ export async function aggregateAllData(edition?: DigestEdition): Promise<DigestD
   console.log(`║ Flights:     ${flights ? `✓ ${flights.totalDelays} delays` : '✗ NULL'}`)
   console.log(`║ Schools:     ${schools.length > 0 ? `✓ ${schools.length} updates` : '○ 0 updates'}`)
   console.log(`║ Council:     ${councilRecap ? `✓ "${councilRecap.title}"` : shouldFetchCouncilRecap ? '✗ No recap found' : '○ Not Tuesday morning'}`)
+  console.log(`║ Pollen:      ${pollen ? `✓ ${pollen.overallLevel}${pollen.dominantType ? ` (${pollen.dominantType})` : ''}` : '✗ NULL'}`)
+  console.log(`║ Aurora:      ${aurora ? `✓ Kp ${aurora.kpIndex} (${aurora.visibility})` : '✗ NULL'}`)
   console.log('╠════════════════════════════════════════════════════════════╣')
   console.log(`║ Total time: ${duration}ms                                  `)
   console.log('╚════════════════════════════════════════════════════════════╝')
@@ -733,6 +805,8 @@ export async function aggregateAllData(edition?: DigestEdition): Promise<DigestD
     flights,
     schools,
     councilRecap,
+    pollen,
+    aurora,
     timestamp: new Date().toISOString()
   }
 }

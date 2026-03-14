@@ -81,11 +81,16 @@ export async function fetchPollenData(): Promise<PollenData> {
     alder: data.hourly?.alder_pollen ? Math.max(...data.hourly.alder_pollen.filter((v: number | null) => v !== null)) : null,
   }
 
+  // Use current values for overall level so it stays consistent with the bars.
+  // Only fall back to peakToday when all current values are null (API has no hourly data at all).
+  const hasAnyCurrent = [current.grass, current.ragweed, current.birch, current.alder].some(v => v !== null)
+  const levelSource = hasAnyCurrent ? current : peakToday
+
   return {
     current,
     uvIndex: data.current?.uv_index ?? null,
     peakToday,
-    dominantType: getDominantType(current.grass || current.ragweed || current.birch || current.alder ? current : peakToday),
-    overallLevel: getOverallLevel(current.grass || current.ragweed || current.birch || current.alder ? current : peakToday),
+    dominantType: getDominantType(levelSource),
+    overallLevel: getOverallLevel(levelSource),
   }
 }

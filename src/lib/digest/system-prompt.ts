@@ -85,7 +85,7 @@ If there are no school announcements, OMIT THIS SECTION ENTIRELY - do not mentio
 CRITICAL: School data includes timestamps showing how old each post/article is. Any school post or article older than 24 hours is STALE and must be completely ignored — do not reference it, summarize it, or mention that the school website has posted anything. Treat stale entries as if they do not exist.
 
 ` : ''}### Right Now
-Current weather conditions and what it feels like outside. Include AQI only if Moderate or worse. Include river levels only if above normal.
+Current weather conditions and what it feels like outside. Include AQI only if Moderate or worse. Include river levels only if above normal. If pollen data is provided, mention it naturally (it's only included when elevated). If aurora/northern lights data is provided, mention it — this is exciting for readers and only included when there's a real chance of visibility.
 
 ### Looking Ahead
 ${edition === 'evening' ? "Tomorrow's forecast and what to prepare for. Include any overnight conditions to watch." : '24-48 hour forecast highlights. Mention any significant changes coming.'}
@@ -201,6 +201,37 @@ export function buildDigestPrompt(
     }
   } else {
     prompt += `Data unavailable\n`
+  }
+
+  // Pollen — only include when elevated (moderate or higher)
+  if (data.pollen && ['moderate', 'high', 'very_high'].includes(data.pollen.overallLevel)) {
+    prompt += `\n### Pollen Alert\n`
+    prompt += `Overall pollen level: ${data.pollen.overallLevel.replace('_', ' ').toUpperCase()}\n`
+    if (data.pollen.dominantType) {
+      prompt += `Dominant allergen: ${data.pollen.dominantType}\n`
+    }
+    const { current } = data.pollen
+    const types = [
+      { name: 'Ragweed', val: current.ragweed },
+      { name: 'Grass', val: current.grass },
+      { name: 'Birch', val: current.birch },
+      { name: 'Alder', val: current.alder },
+    ].filter(t => t.val !== null && t.val > 0)
+    if (types.length > 0) {
+      prompt += `Readings: ${types.map(t => `${t.name} ${Math.round(t.val!)} grains/m³`).join(', ')}\n`
+    }
+    if (data.pollen.uvIndex !== null && data.pollen.uvIndex >= 6) {
+      prompt += `UV Index: ${Math.round(data.pollen.uvIndex)} (high)\n`
+    }
+  }
+
+  // Aurora — only include when there's a real chance of visibility (Kp 5+)
+  if (data.aurora && ['possible', 'likely', 'strong'].includes(data.aurora.visibility)) {
+    prompt += `\n### 🌌 Aurora Watch\n`
+    prompt += `Kp Index: ${data.aurora.kpIndex} — ${data.aurora.visibilityLabel}\n`
+    if (data.aurora.lookNorth) {
+      prompt += `Tip: Look toward the northern horizon after dark, away from city lights\n`
+    }
   }
 
   // Traffic

@@ -143,10 +143,11 @@ function DashboardContent() {
   }, [])
 
   return (
-    <div className="min-h-screen pb-24 md:pb-16">
-      {/* Splash Screen */}
+    <>
+      {/* Splash Screen — rendered outside content wrapper so it's independent */}
       {hydrated && showSplash && <SplashScreen onComplete={handleSplashComplete} />}
 
+    <div className={`min-h-screen pb-24 md:pb-16${hydrated ? '' : ' opacity-0'}`}>
       {/* Alert Banner - Top priority, always visible */}
       <AlertBanner />
 
@@ -351,6 +352,7 @@ function DashboardContent() {
       {/* Voice Agent */}
       <VoiceAgentWidget />
     </div>
+    </>
   )
 }
 

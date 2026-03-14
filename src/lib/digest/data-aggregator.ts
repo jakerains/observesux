@@ -293,6 +293,8 @@ export async function aggregateDigestData(): Promise<DigestData> {
     flights,
     schools: [], // School updates are fetched via Firecrawl in the workflow, not this legacy HTTP aggregator
     councilRecap: null, // Council recap is fetched in the workflow step, not this legacy HTTP aggregator
+    pollen: null, // Pollen data is fetched in the workflow step, not this legacy HTTP aggregator
+    aurora: null, // Aurora data is fetched in the workflow step, not this legacy HTTP aggregator
     timestamp: new Date().toISOString()
   }
 }
