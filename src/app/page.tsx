@@ -23,6 +23,7 @@ import { DigestWidget } from '@/components/dashboard/DigestWidget'
 import { PollenWidget } from '@/components/dashboard/PollenWidget'
 import { AuroraWidget } from '@/components/dashboard/AuroraWidget'
 import { SunWidget } from '@/components/dashboard/SunWidget'
+import { LocalEatsWidget } from '@/components/dashboard/LocalEatsWidget'
 import { StatusBar } from '@/components/dashboard/StatusBar'
 import { MobileNavigation } from '@/components/dashboard/MobileNavigation'
 import { DashboardLayoutProvider } from '@/lib/contexts/DashboardLayoutContext'
@@ -256,6 +257,11 @@ function DashboardContent() {
               <GasPricesWidget />
             </Suspense>
 
+            {/* Local Eats */}
+            <Suspense fallback={<WidgetSkeleton />}>
+              <LocalEatsWidget />
+            </Suspense>
+
             {/* Community Events */}
             <Suspense fallback={<WidgetSkeleton />}>
               <EventsWidget />
@@ -312,7 +318,7 @@ function DashboardContent() {
            ============================================ */}
         <footer className="pt-8 border-t border-border/50 text-center text-xs text-muted-foreground/70">
           <p className="mb-2 leading-relaxed">
-            Data: Iowa DOT, National Weather Service, AviationWeather.gov, USGS, AirNow, NOAA SWPC, Open-Meteo, Broadcastify, Iowa 511, RainViewer, Passio GO, KTIV, Siouxland Proud
+            Data: Iowa DOT, National Weather Service, AviationWeather.gov, USGS, AirNow, NOAA SWPC, Open-Meteo, Broadcastify, Iowa 511, RainViewer, Passio GO, KTIV, Siouxland Proud, Yelp
           </p>
           <p className="mb-3">
             Built with Next.js, shadcn/ui, and public APIs.

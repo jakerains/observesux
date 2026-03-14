@@ -873,6 +873,44 @@ export interface NewsItem {
 }
 
 // ============================================
+// Local Eats (Yelp Fusion)
+// ============================================
+
+export interface LocalEatsCategory {
+  alias: string
+  title: string
+}
+
+export interface LocalEatsRestaurant {
+  id: string
+  name: string
+  imageUrl: string
+  yelpUrl: string
+  rating: number
+  reviewCount: number
+  categories: LocalEatsCategory[]
+  price?: string
+  displayPhone: string
+  location: {
+    address1: string
+    city: string
+    state: string
+    zipCode: string
+    displayAddress: string[]
+  }
+  coordinates: {
+    latitude: number
+    longitude: number
+  }
+  isClosed: boolean
+}
+
+export interface LocalEatsData {
+  restaurants: LocalEatsRestaurant[]
+  total: number
+}
+
+// ============================================
 // Dashboard State
 // ============================================
 

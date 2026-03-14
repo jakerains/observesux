@@ -63,7 +63,7 @@ const UPSTREAM_CHECKS: Record<string, { url: string; method?: string; headers?: 
 }
 
 // Routes that are purely database-backed or return static/demo data — always healthy
-const DB_ONLY_ROUTES = ['gasPrices', 'events', 'outages', 'flights'] as const
+const DB_ONLY_ROUTES = ['gasPrices', 'events', 'outages', 'flights', 'localEats'] as const
 
 async function checkUpstream(name: string, config: { url: string; method?: string; headers?: Record<string, string> }): Promise<boolean> {
   try {

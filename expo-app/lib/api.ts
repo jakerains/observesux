@@ -113,6 +113,7 @@ export const endpoints = {
   pollen: '/api/pollen',
   aurora: '/api/aurora',
   sun: '/api/sun',
+  localEats: '/api/local-eats',
 } as const;
 
 /**
@@ -134,6 +135,7 @@ export const refreshIntervals = {
   pollen: 5 * 60 * 1000, // 5 minutes
   aurora: 5 * 60 * 1000, // 5 minutes
   sun: 60 * 60 * 1000, // 1 hour — changes slowly
+  localEats: 30 * 60 * 1000, // 30 minutes — CDN caches for 1 hour
 } as const;
 
 /**

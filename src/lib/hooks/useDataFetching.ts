@@ -20,6 +20,7 @@ import type {
   ApiResponse,
   GasPriceData,
   CommunityEventsData,
+  LocalEatsData,
 } from '@/types'
 
 // Generic fetcher with error handling — exported for reuse in widgets with inline SWR
@@ -404,6 +405,22 @@ export function useSunTimes(refreshInterval = 3600000) {
     {
       refreshInterval,
       dedupingInterval: 600000,
+      revalidateOnFocus: false,
+    }
+  )
+}
+
+// ============================================
+// Local Eats (Yelp)
+// ============================================
+export function useLocalEats(refreshInterval = 1800000) {
+  // Default: refresh every 30 min (CDN caches for 1 hour)
+  return useSWR<ApiResponse<LocalEatsData>>(
+    '/api/local-eats',
+    fetcher,
+    {
+      refreshInterval,
+      dedupingInterval: 300000, // 5 minutes
       revalidateOnFocus: false,
     }
   )

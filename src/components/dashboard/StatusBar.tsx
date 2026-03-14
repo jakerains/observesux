@@ -23,6 +23,7 @@ import {
   Flower2,
   Sparkles,
   Sun,
+  UtensilsCrossed,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ChangelogModal } from './ChangelogModal'
@@ -47,6 +48,7 @@ const STATUS_ITEMS = [
   { key: 'pollen', icon: Flower2, label: 'Pollen' },
   { key: 'aurora', icon: Sparkles, label: 'Aurora' },
   { key: 'sun', icon: Sun, label: 'Sun' },
+  { key: 'localEats', icon: UtensilsCrossed, label: 'Local Eats' },
 ] as const
 
 export function StatusBar() {

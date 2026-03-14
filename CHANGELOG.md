@@ -5,6 +5,15 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.12] - 2026-03-14
+
+### Added
+- Local Eats widget showing top-rated Sioux City restaurants from Yelp
+- Filter restaurants by cuisine type (Mexican, American, Chinese, etc.)
+- Star ratings, price levels, and direct links to Yelp pages
+- Local Eats widget also available in the iOS app
+- Local Eats service added to the status bar
+
 ## [0.13.11] - 2026-03-14
 
 ### Added

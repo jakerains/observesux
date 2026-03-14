@@ -32,6 +32,7 @@ import type {
   PollenData,
   AuroraData,
   SunData,
+  LocalEatsData,
 } from '../types';
 
 /**
@@ -284,6 +285,19 @@ export function useSunTimes() {
   return useQuery({
     queryKey: ['sun'],
     queryFn: () => fetcher<ApiResponse<SunData>>(endpoints.sun),
+    refetchInterval: interval,
+    staleTime: interval / 2,
+  });
+}
+
+/**
+ * Local Eats (Yelp) hook
+ */
+export function useLocalEats() {
+  const interval = useRefreshInterval(refreshIntervals.localEats);
+  return useQuery({
+    queryKey: ['local-eats'],
+    queryFn: () => fetcher<ApiResponse<LocalEatsData>>(endpoints.localEats),
     refetchInterval: interval,
     staleTime: interval / 2,
   });

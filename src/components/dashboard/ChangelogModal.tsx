@@ -16,6 +16,15 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.13.12',
+    date: '2026-03-14',
+    added: [
+      'Local Eats widget — browse top-rated Sioux City restaurants from Yelp',
+      'Filter by cuisine type, see star ratings, prices, and tap through to Yelp',
+      'Local Eats also available in the iOS app',
+    ],
+  },
+  {
     version: '0.13.11',
     date: '2026-03-14',
     added: [

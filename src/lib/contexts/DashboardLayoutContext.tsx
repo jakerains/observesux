@@ -36,6 +36,7 @@ export const DEFAULT_WIDGETS: WidgetConfig[] = [
   { id: 'sun', name: 'Sun & Daylight', description: 'Sunrise, sunset, and day length', enabled: true, size: 'small' },
   { id: 'earthquakes', name: 'Seismic Activity', description: 'Recent earthquakes within 500km', enabled: true, size: 'small' },
   { id: 'aurora', name: 'Aurora Watch', description: 'Northern lights visibility forecast', enabled: true, size: 'small' },
+  { id: 'local-eats', name: 'Local Eats', description: 'Top-rated Sioux City restaurants via Yelp', enabled: true, size: 'small' },
 ]
 
 const STORAGE_KEY = 'sioux-city-dashboard-layout'

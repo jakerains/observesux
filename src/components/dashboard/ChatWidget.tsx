@@ -666,6 +666,9 @@ function formatToolName(toolName: string): string {
     searchKnowledgeBase: 'local info',
     getCouncilRecaps: 'council recaps',
     getEvents: 'events',
+    searchLocalEats: 'restaurants',
+    getRestaurantDetails: 'restaurant details',
+    findDelivery: 'delivery options',
     webSearch: 'realtime info',
   }
   return names[toolName] || toolName

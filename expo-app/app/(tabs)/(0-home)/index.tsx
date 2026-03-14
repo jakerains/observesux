@@ -15,6 +15,7 @@ import { DigestWidget } from '@/components/widgets/DigestWidget';
 import { TransitWidget } from '@/components/widgets/TransitWidget';
 import { AirQualityWidget } from '@/components/widgets/AirQualityWidget';
 import { GasPricesWidget } from '@/components/widgets/GasPricesWidget';
+import { LocalEatsWidget } from '@/components/widgets/LocalEatsWidget';
 import { NewsWidget } from '@/components/widgets/NewsWidget';
 import { CouncilWidget } from '@/components/widgets/CouncilWidget';
 import { PollenWidget } from '@/components/widgets/PollenWidget';
@@ -60,6 +61,7 @@ export default function HomeScreen() {
           <DigestWidget />
           <AirQualityWidget />
           <GasPricesWidget />
+          <LocalEatsWidget />
           <TransitWidget />
           <PollenWidget />
           <SunWidget />

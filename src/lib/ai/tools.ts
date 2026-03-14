@@ -493,6 +493,127 @@ export const chatTools = {
     },
   }),
 
+  // ──────────────────────────────────────────────
+  // Local Eats (Yelp)
+  // ──────────────────────────────────────────────
+
+  searchLocalEats: tool({
+    description: 'Search Sioux City restaurants on Yelp by cuisine, name, price, or vibe. Use for "where should I eat", "best Mexican food", "cheap lunch spots", "nice date night restaurant", or any food/dining question. Returns ratings, prices, addresses, and phone numbers. Prefer this over the knowledge base for restaurant questions — it has live Yelp data.',
+    inputSchema: z.object({
+      query: z.string().optional().describe('Search term like "pizza", "sushi", "brunch", or a restaurant name'),
+      category: z.string().optional().describe('Yelp category alias like "mexican", "pizza", "chinese", "bbq", "burgers", "seafood", "italian", "thai", "vietnamese", "indian", "breakfast_brunch", "coffee"'),
+      price: z.string().optional().describe('Price filter: "1" ($), "2" ($$), "3" ($$$), "4" ($$$$). Comma-separated for multiple: "1,2"'),
+      sortBy: z.enum(['best_match', 'rating', 'review_count', 'distance']).optional().describe('Sort order (default: best_match)'),
+    }),
+    execute: async ({ query, category, price, sortBy }) => {
+      try {
+        const { fetchLocalEats } = await import('@/lib/fetchers/yelp');
+        const data = await fetchLocalEats({
+          term: query,
+          category,
+          price,
+          sortBy,
+          limit: 10,
+        });
+
+        if (data.restaurants.length === 0) {
+          return { message: 'No restaurants found matching that criteria in the Sioux City area.' };
+        }
+
+        return {
+          restaurants: data.restaurants.map(r => ({
+            name: r.name,
+            rating: r.rating,
+            reviewCount: r.reviewCount,
+            price: r.price || 'N/A',
+            categories: r.categories.map(c => c.title).join(', '),
+            phone: r.displayPhone,
+            address: r.location.displayAddress.join(', '),
+            yelpUrl: r.yelpUrl,
+            id: r.id,
+          })),
+          total: data.total,
+          source: 'yelp',
+        };
+      } catch (error) {
+        return { error: 'Unable to search restaurants at this time' };
+      }
+    },
+  }),
+
+  getRestaurantDetails: tool({
+    description: 'Get detailed info about a specific Sioux City restaurant including hours of operation, whether it\'s open right now, photos, and top reviews. Use after searchLocalEats when a user wants more info about a specific place, or when they ask "is X open", "what are the hours", or "what do people say about X".',
+    inputSchema: z.object({
+      businessId: z.string().describe('Yelp business ID from searchLocalEats results'),
+      includeReviews: z.boolean().optional().describe('Also fetch top 3 review excerpts (default: true)'),
+    }),
+    execute: async ({ businessId, includeReviews = true }) => {
+      try {
+        const { fetchRestaurantDetails, fetchRestaurantReviews } = await import('@/lib/fetchers/yelp');
+
+        const [details, reviews] = await Promise.all([
+          fetchRestaurantDetails(businessId),
+          includeReviews
+            ? fetchRestaurantReviews(businessId).catch(() => [])
+            : Promise.resolve([]),
+        ]);
+
+        return {
+          name: details.name,
+          rating: details.rating,
+          reviewCount: details.reviewCount,
+          price: details.price || 'N/A',
+          categories: details.categories.map(c => c.title).join(', '),
+          phone: details.displayPhone,
+          address: details.location.displayAddress.join(', '),
+          yelpUrl: details.yelpUrl,
+          isOpenNow: details.isOpenNow,
+          hours: details.hours,
+          photos: details.photos.slice(0, 3),
+          reviews: reviews.map(r => ({
+            text: r.text,
+            rating: r.rating,
+            user: r.userName,
+          })),
+          source: 'yelp',
+        };
+      } catch (error) {
+        return { error: 'Unable to fetch restaurant details at this time' };
+      }
+    },
+  }),
+
+  findDelivery: tool({
+    description: 'Find restaurants that offer food delivery in the Sioux City area. Use when someone asks "what delivers", "food delivery near me", or "order food".',
+    inputSchema: z.object({}),
+    execute: async () => {
+      try {
+        const { fetchDeliveryRestaurants } = await import('@/lib/fetchers/yelp');
+        const data = await fetchDeliveryRestaurants();
+
+        if (data.restaurants.length === 0) {
+          return { message: 'No delivery restaurants found in the area.' };
+        }
+
+        return {
+          restaurants: data.restaurants.slice(0, 10).map(r => ({
+            name: r.name,
+            rating: r.rating,
+            categories: r.categories.map(c => c.title).join(', '),
+            phone: r.displayPhone,
+            address: r.location.displayAddress.join(', '),
+            yelpUrl: r.yelpUrl,
+          })),
+          total: data.total,
+          source: 'yelp',
+          note: 'Delivery availability from Yelp — check restaurant directly to confirm.',
+        };
+      } catch (error) {
+        return { error: 'Unable to search delivery restaurants at this time' };
+      }
+    },
+  }),
+
   // Web search via Firecrawl
   webSearch: tool({
     description: 'Search the web for realtime Siouxland information. USE IMMEDIATELY (no clarifying questions) for: Sioux City Musketeers schedules/scores, Sioux City Explorers, local sports, specific event dates, business info. "Sioux City hockey" means Musketeers - just search, don\'t ask. When searching for schedules or upcoming events, include the current year/season context.',

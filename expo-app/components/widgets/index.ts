@@ -9,3 +9,4 @@ export { AirQualityWidget } from './AirQualityWidget';
 export { GasPricesWidget } from './GasPricesWidget';
 export { NewsWidget } from './NewsWidget';
 export { CouncilWidget } from './CouncilWidget';
+export { LocalEatsWidget } from './LocalEatsWidget';
