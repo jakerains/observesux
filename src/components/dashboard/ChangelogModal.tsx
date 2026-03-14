@@ -16,6 +16,14 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.13.10',
+    date: '2026-03-14',
+    changed: [
+      'Sun & Daylight widget redesigned with a live sun arc, daylight countdown, and current phase badge',
+      'Daylight remaining now counts down in real time with hours, minutes, and seconds',
+    ],
+  },
+  {
     version: '0.13.9',
     date: '2026-03-14',
     added: [

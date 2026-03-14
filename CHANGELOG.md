@@ -5,6 +5,12 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.10] - 2026-03-14
+
+### Changed
+- Sun & Daylight widget redesigned with a live sun arc, daylight countdown with seconds, and current phase badge
+- Daylight remaining is now the hero display, counting down in real time
+
 ## [0.13.9] - 2026-03-14
 
 ### Added
