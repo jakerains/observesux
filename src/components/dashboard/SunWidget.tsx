@@ -8,7 +8,7 @@ import { useSunTimes } from '@/lib/hooks/useDataFetching'
 import { Sunrise, Sunset, Clock, Sun, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getDataFreshness } from '@/lib/utils/dataFreshness'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -68,31 +68,27 @@ interface SunTimeState {
 }
 
 function useSunPosition(sunrise: string, sunset: string): SunTimeState {
-  const compute = useCallback((): SunTimeState => {
-    const sunriseMin = parseTimeToMinutes(sunrise)
-    const sunsetMin = parseTimeToMinutes(sunset)
-    const now = new Date()
-    const nowMin = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60
-    const nowSec = nowMin * 60
-    const p = (nowMin - sunriseMin) / (sunsetMin - sunriseMin)
-    const daytime = nowMin >= sunriseMin && nowMin <= sunsetMin
-    return {
-      progress: Math.max(0, Math.min(1, p)),
-      isDaytime: daytime,
-      remainingSec: daytime ? Math.max(0, sunsetMin * 60 - nowSec) : 0,
-      untilSunriseSec: nowMin < sunriseMin ? Math.max(0, sunriseMin * 60 - nowSec) : 0,
-    }
-  }, [sunrise, sunset])
-
-  const [state, setState] = useState(compute)
+  const [nowTs, setNowTs] = useState(() => Date.now())
 
   useEffect(() => {
-    setState(compute())
-    const id = setInterval(() => setState(compute()), 1_000) // tick every second
+    const id = setInterval(() => setNowTs(Date.now()), 1_000) // tick every second
     return () => clearInterval(id)
-  }, [compute])
+  }, [])
 
-  return state
+  const sunriseMin = parseTimeToMinutes(sunrise)
+  const sunsetMin = parseTimeToMinutes(sunset)
+  const now = new Date(nowTs)
+  const nowMin = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60
+  const nowSec = nowMin * 60
+  const p = (nowMin - sunriseMin) / (sunsetMin - sunriseMin)
+  const daytime = nowMin >= sunriseMin && nowMin <= sunsetMin
+
+  return {
+    progress: Math.max(0, Math.min(1, p)),
+    isDaytime: daytime,
+    remainingSec: daytime ? Math.max(0, sunsetMin * 60 - nowSec) : 0,
+    untilSunriseSec: nowMin < sunriseMin ? Math.max(0, sunriseMin * 60 - nowSec) : 0,
+  }
 }
 
 // ── Sun Arc SVG ──────────────────────────────────────────────────────
@@ -117,7 +113,6 @@ function SunArc({ progress, isDaytime, sunrise, sunset }: {
   const sunY = baseline - ry * Math.sin(angle)
 
   const noonY = baseline - ry
-  const largeArc = progress > 0.5 ? 1 : 0
 
   // "Now" label offset — keep it above the sun dot
   const labelX = sunX + (progress > 0.85 ? -16 : progress < 0.15 ? 16 : 0)
@@ -153,7 +148,7 @@ function SunArc({ progress, isDaytime, sunrise, sunset }: {
         {/* Filled area under traveled arc */}
         {isDaytime && progress > 0.01 && (
           <path
-            d={`M ${startX} ${baseline} A ${rx} ${ry} 0 ${largeArc} 1 ${sunX} ${sunY} L ${sunX} ${baseline} Z`}
+            d={`M ${startX} ${baseline} A ${rx} ${ry} 0 0 1 ${sunX} ${sunY} L ${sunX} ${baseline} Z`}
             fill="url(#fill-grad)"
           />
         )}
@@ -161,7 +156,7 @@ function SunArc({ progress, isDaytime, sunrise, sunset }: {
         {/* Traveled arc (gradient) */}
         {isDaytime && progress > 0.01 && (
           <path
-            d={`M ${startX} ${baseline} A ${rx} ${ry} 0 ${largeArc} 1 ${sunX} ${sunY}`}
+            d={`M ${startX} ${baseline} A ${rx} ${ry} 0 0 1 ${sunX} ${sunY}`}
             fill="none" stroke="url(#arc-grad)" strokeWidth="2.5" strokeLinecap="round"
           />
         )}
