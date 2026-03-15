@@ -23,7 +23,7 @@
       "autoIncrement": true,
       "channel": "production",
       "ios": {
-        "image": "macos-sonoma-14.5-xcode-15.4"
+        "image": "macos-sequoia-15.6-xcode-26.0"
       },
       "env": {
         "EAS_BUILD_NO_EXPO_GO_WARNING": "true"
