@@ -14,9 +14,6 @@ web-build/
 *.mobileprovision
 *.orig.*
 
-# iOS
-ios/
-
 # Android
 android/
 
