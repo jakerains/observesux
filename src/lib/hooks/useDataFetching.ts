@@ -429,15 +429,19 @@ export function useSunTimes(refreshInterval = 3600000) {
 // ============================================
 // Local Eats (Yelp)
 // ============================================
-export function useLocalEats(refreshInterval = 1800000) {
+export function useLocalEats(refreshInterval = 1800000, term?: string) {
   // Default: refresh every 30 min (CDN caches for 1 hour)
+  const url = term
+    ? `/api/local-eats?term=${encodeURIComponent(term)}`
+    : '/api/local-eats'
   return useSWR<ApiResponse<LocalEatsData>>(
-    '/api/local-eats',
+    url,
     fetcher,
     {
       refreshInterval,
       dedupingInterval: 300000, // 5 minutes
       revalidateOnFocus: false,
+      keepPreviousData: true,
     }
   )
 }

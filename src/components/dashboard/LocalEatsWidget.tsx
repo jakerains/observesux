@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { DashboardCard } from './DashboardCard'
 import { RefreshAction } from './RefreshAction'
 import { Skeleton } from "@/components/ui/skeleton"
 import { useLocalEats } from '@/lib/hooks/useDataFetching'
-import { UtensilsCrossed, Star, ExternalLink } from 'lucide-react'
+import { UtensilsCrossed, Star, ExternalLink, Search, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getDataFreshness } from '@/lib/utils/dataFreshness'
 import type { LocalEatsRestaurant } from '@/types'
@@ -78,10 +78,30 @@ function RestaurantRow({ restaurant }: { restaurant: LocalEatsRestaurant }) {
   )
 }
 
+function useDebounce(value: string, delay: number) {
+  const [debounced, setDebounced] = useState(value)
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(value), delay)
+    return () => clearTimeout(id)
+  }, [value, delay])
+  return debounced
+}
+
 export function LocalEatsWidget() {
   const refreshInterval = 1800000 // 30 min
-  const { data: eatsData, error, isLoading, isValidating, mutate: refreshEats } = useLocalEats(refreshInterval)
+  const [searchInput, setSearchInput] = useState('')
+  const debouncedSearch = useDebounce(searchInput, 500)
+  const searchTerm = debouncedSearch.trim() || undefined
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const { data: eatsData, error, isLoading, isValidating, mutate: refreshEats } = useLocalEats(refreshInterval, searchTerm)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+
+  const clearSearch = useCallback(() => {
+    setSearchInput('')
+    setSelectedCategory(null)
+    inputRef.current?.focus()
+  }, [])
 
   const data = eatsData?.data
   const lastUpdated = eatsData?.timestamp ? new Date(eatsData.timestamp) : undefined
@@ -159,6 +179,30 @@ export function LocalEatsWidget() {
       status={status}
       action={refreshAction}
     >
+      {/* Search Input */}
+      <div className="relative mb-3">
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+        <input
+          ref={inputRef}
+          type="text"
+          value={searchInput}
+          onChange={(e) => {
+            setSearchInput(e.target.value)
+            setSelectedCategory(null)
+          }}
+          placeholder="Search pizza, tacos, burgers..."
+          className="w-full pl-8 pr-8 py-1.5 rounded-lg bg-muted/50 border border-transparent focus:border-orange-500/50 focus:bg-background text-sm placeholder:text-muted-foreground/60 outline-none transition-all"
+        />
+        {searchInput && (
+          <button
+            onClick={clearSearch}
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-muted-foreground/20 transition-colors"
+          >
+            <X className="h-3.5 w-3.5 text-muted-foreground" />
+          </button>
+        )}
+      </div>
+
       {/* Category Filter Chips */}
       {topCategories.length > 0 && (
         <div className="flex gap-1 mb-3 overflow-x-auto pb-1">
@@ -205,7 +249,12 @@ export function LocalEatsWidget() {
 
       {/* Yelp Attribution (required by TOS) */}
       <div className="mt-4 pt-3 border-t flex items-center justify-between text-xs text-muted-foreground">
-        <span>{data.restaurants.length} restaurants</span>
+        <span>
+          {searchTerm
+            ? `${filteredRestaurants.length} result${filteredRestaurants.length !== 1 ? 's' : ''} for "${searchTerm}"`
+            : `${data.restaurants.length} restaurants`
+          }
+        </span>
         <a
           href="https://www.yelp.com/search?find_desc=restaurants&find_loc=Sioux+City%2C+IA"
           target="_blank"
