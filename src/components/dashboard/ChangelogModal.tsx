@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -15,6 +15,15 @@ import { cn } from '@/lib/utils'
 
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
+  {
+    version: '0.13.15',
+    date: '2026-03-15',
+    added: [
+      'Command palette — press ⌘K (or Ctrl+K) to quickly search for any widget, page, or action',
+      'Jump to any of the 22 dashboard widgets by name or keyword',
+      'Navigate to pages, refresh data, open SUX chat, and more from one searchable menu',
+    ],
+  },
   {
     version: '0.13.14',
     date: '2026-03-15',
@@ -1268,6 +1277,13 @@ interface ChangelogModalProps {
 
 export function ChangelogModal({ children }: ChangelogModalProps) {
   const [open, setOpen] = useState(false)
+
+  // Allow programmatic opening via custom event (e.g., from command palette)
+  React.useEffect(() => {
+    const handler = () => setOpen(true)
+    document.addEventListener('open-changelog', handler)
+    return () => document.removeEventListener('open-changelog', handler)
+  }, [])
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

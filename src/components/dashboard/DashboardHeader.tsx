@@ -1,7 +1,7 @@
 'use client'
 
 import { Button } from "@/components/ui/button"
-import { RefreshCw, Lightbulb, BookOpen } from "lucide-react"
+import { RefreshCw, Lightbulb, BookOpen, Search } from "lucide-react"
 import { track } from '@vercel/analytics'
 import { useRouter } from 'next/navigation'
 import { SuggestionModal } from './SuggestionModal'
@@ -25,6 +25,19 @@ export function DashboardHeader({ onRefresh, isRefreshing }: DashboardHeaderProp
         </div>
 
         <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              track('command_palette_opened', { source: 'header' })
+              document.dispatchEvent(new CustomEvent('open-command-palette'))
+            }}
+            className="h-9 w-9 rounded-full hover:bg-accent press-effect"
+          >
+            <Search className="h-4 w-4" />
+            <span className="sr-only">Search (⌘K)</span>
+          </Button>
+
           <Button
             variant="ghost"
             size="icon"

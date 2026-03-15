@@ -10,6 +10,7 @@ import {
 import Image from 'next/image'
 import { useRouter, usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { scrollToWidget } from '@/lib/utils/scrollToWidget'
 import { useChatSheet } from '@/lib/contexts/ChatContext'
 import { track } from '@vercel/analytics'
 
@@ -95,13 +96,7 @@ export function MobileNavigation() {
         return
       }
       // On home page, scroll to the widget
-      const element = document.querySelector(`[data-widget-id="${item.widgetId}"]`)
-      if (element) {
-        const headerOffset = 70
-        const elementPosition = element.getBoundingClientRect().top
-        const offsetPosition = elementPosition + window.pageYOffset - headerOffset
-        window.scrollTo({ top: offsetPosition, behavior: 'smooth' })
-      }
+      scrollToWidget(item.widgetId)
     }
   }
 

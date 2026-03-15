@@ -30,6 +30,7 @@ import { DashboardLayoutProvider } from '@/lib/contexts/DashboardLayoutContext'
 import { TransitProvider } from '@/lib/contexts/TransitContext'
 import { MapFocusProvider } from '@/lib/contexts/MapFocusContext'
 import { Skeleton } from '@/components/ui/skeleton'
+import { scrollToWidget } from '@/lib/utils/scrollToWidget'
 import { SplashScreen } from '@/components/splash/SplashScreen'
 import packageJson from '../../package.json'
 
@@ -82,6 +83,11 @@ const VoiceAgentWidget = dynamic(
   { ssr: false, loading: () => null }
 )
 
+const CommandMenu = dynamic(
+  () => import('@/components/dashboard/CommandMenu').then(mod => ({ default: mod.CommandMenu })),
+  { ssr: false, loading: () => null }
+)
+
 const ScannerPlayer = dynamic(
   () => import('@/components/dashboard/ScannerPlayer').then(mod => ({ default: mod.ScannerPlayer })),
   { ssr: false, loading: () => <WidgetSkeleton /> }
@@ -108,19 +114,12 @@ function DashboardContent() {
     return !sessionStorage.getItem('splash-shown')
   })
 
-  // Handle hash navigation (e.g., from /digest clicking on Map)
+  // Handle hash navigation (e.g., from /digest clicking on Map, or command palette)
   useEffect(() => {
-    const hash = window.location.hash.slice(1) // Remove the #
+    const hash = window.location.hash.slice(1)
     if (hash) {
-      // Small delay to ensure elements are rendered
       setTimeout(() => {
-        const element = document.querySelector(`[data-widget-id="${hash}"]`)
-        if (element) {
-          const headerOffset = 70
-          const elementPosition = element.getBoundingClientRect().top
-          const offsetPosition = elementPosition + window.pageYOffset - headerOffset
-          window.scrollTo({ top: offsetPosition, behavior: 'smooth' })
-          // Clear the hash after scrolling
+        if (scrollToWidget(hash)) {
           window.history.replaceState(null, '', window.location.pathname)
         }
       }, 100)
@@ -169,7 +168,7 @@ function DashboardContent() {
         {/* ============================================
             DIGEST - Daily summary right after hero
            ============================================ */}
-        <section>
+        <section data-widget-id="digest">
           <Suspense fallback={null}>
             <DigestWidget />
           </Suspense>
@@ -202,9 +201,11 @@ function DashboardContent() {
             </div>
 
             {/* Weather Forecast */}
-            <Suspense fallback={<WidgetSkeleton />}>
-              <WeatherWidget />
-            </Suspense>
+            <div data-widget-id="forecast">
+              <Suspense fallback={<WidgetSkeleton />}>
+                <WeatherWidget />
+              </Suspense>
+            </div>
 
             {/* News */}
             <div data-widget-id="news">
@@ -214,9 +215,11 @@ function DashboardContent() {
             </div>
 
             {/* City Council */}
-            <Suspense fallback={<WidgetSkeleton />}>
-              <CouncilWidget />
-            </Suspense>
+            <div data-widget-id="council">
+              <Suspense fallback={<WidgetSkeleton />}>
+                <CouncilWidget />
+              </Suspense>
+            </div>
           </div>
         </section>
 
@@ -228,54 +231,74 @@ function DashboardContent() {
           <SectionHeader title="Conditions & Services" />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
             {/* Traffic Events */}
-            <Suspense fallback={<WidgetSkeleton />}>
-              <TrafficEventsWidget />
-            </Suspense>
+            <div data-widget-id="traffic">
+              <Suspense fallback={<WidgetSkeleton />}>
+                <TrafficEventsWidget />
+              </Suspense>
+            </div>
 
             {/* River Gauge */}
-            <Suspense fallback={<WidgetSkeleton />}>
-              <RiverGauge />
-            </Suspense>
+            <div data-widget-id="river">
+              <Suspense fallback={<WidgetSkeleton />}>
+                <RiverGauge />
+              </Suspense>
+            </div>
 
             {/* Air Quality */}
-            <Suspense fallback={<WidgetSkeleton />}>
-              <AirQualityCard />
-            </Suspense>
+            <div data-widget-id="air-quality">
+              <Suspense fallback={<WidgetSkeleton />}>
+                <AirQualityCard />
+              </Suspense>
+            </div>
 
             {/* Transit */}
-            <Suspense fallback={<WidgetSkeleton />}>
-              <TransitWidget />
-            </Suspense>
+            <div data-widget-id="transit">
+              <Suspense fallback={<WidgetSkeleton />}>
+                <TransitWidget />
+              </Suspense>
+            </div>
 
             {/* Outages */}
-            <Suspense fallback={<WidgetSkeleton />}>
-              <OutageMap />
-            </Suspense>
+            <div data-widget-id="outages">
+              <Suspense fallback={<WidgetSkeleton />}>
+                <OutageMap />
+              </Suspense>
+            </div>
 
             {/* Gas Prices */}
-            <Suspense fallback={<WidgetSkeleton />}>
-              <GasPricesWidget />
-            </Suspense>
+            <div data-widget-id="gas-prices">
+              <Suspense fallback={<WidgetSkeleton />}>
+                <GasPricesWidget />
+              </Suspense>
+            </div>
 
             {/* Local Eats */}
-            <Suspense fallback={<WidgetSkeleton />}>
-              <LocalEatsWidget />
-            </Suspense>
+            <div data-widget-id="local-eats">
+              <Suspense fallback={<WidgetSkeleton />}>
+                <LocalEatsWidget />
+              </Suspense>
+            </div>
 
             {/* Community Events */}
-            <Suspense fallback={<WidgetSkeleton />}>
-              <EventsWidget />
-            </Suspense>
+            <div data-widget-id="events">
+              <Suspense fallback={<WidgetSkeleton />}>
+                <EventsWidget />
+              </Suspense>
+            </div>
 
             {/* Pollen & Allergy */}
-            <Suspense fallback={<WidgetSkeleton />}>
-              <PollenWidget />
-            </Suspense>
+            <div data-widget-id="pollen">
+              <Suspense fallback={<WidgetSkeleton />}>
+                <PollenWidget />
+              </Suspense>
+            </div>
 
             {/* Sun & Daylight */}
-            <Suspense fallback={<WidgetSkeleton />}>
-              <SunWidget />
-            </Suspense>
+            <div data-widget-id="sun">
+              <Suspense fallback={<WidgetSkeleton />}>
+                <SunWidget />
+              </Suspense>
+            </div>
           </div>
         </section>
 
@@ -287,29 +310,39 @@ function DashboardContent() {
           <SectionHeader title="More Info" />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Flights */}
-            <Suspense fallback={<WidgetSkeleton />}>
-              <FlightBoard />
-            </Suspense>
+            <div data-widget-id="flights">
+              <Suspense fallback={<WidgetSkeleton />}>
+                <FlightBoard />
+              </Suspense>
+            </div>
 
             {/* Aviation Weather */}
-            <Suspense fallback={<WidgetSkeleton />}>
-              <AviationWeatherWidget />
-            </Suspense>
+            <div data-widget-id="aviation-weather">
+              <Suspense fallback={<WidgetSkeleton />}>
+                <AviationWeatherWidget />
+              </Suspense>
+            </div>
 
             {/* Scanner */}
-            <Suspense fallback={<WidgetSkeleton />}>
-              <ScannerPlayer />
-            </Suspense>
+            <div data-widget-id="scanner">
+              <Suspense fallback={<WidgetSkeleton />}>
+                <ScannerPlayer />
+              </Suspense>
+            </div>
 
             {/* Earthquakes */}
-            <Suspense fallback={<WidgetSkeleton />}>
-              <EarthquakeWidget />
-            </Suspense>
+            <div data-widget-id="earthquakes">
+              <Suspense fallback={<WidgetSkeleton />}>
+                <EarthquakeWidget />
+              </Suspense>
+            </div>
 
             {/* Aurora Watch */}
-            <Suspense fallback={<WidgetSkeleton />}>
-              <AuroraWidget />
-            </Suspense>
+            <div data-widget-id="aurora">
+              <Suspense fallback={<WidgetSkeleton />}>
+                <AuroraWidget />
+              </Suspense>
+            </div>
           </div>
         </section>
 
@@ -351,6 +384,9 @@ function DashboardContent() {
 
       {/* Mobile Navigation */}
       <MobileNavigation />
+
+      {/* Command Palette (Cmd+K) */}
+      <CommandMenu onRefresh={handleRefresh} />
 
       {/* Chat Widget */}
       <ChatWidget />

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -24,6 +24,13 @@ interface SuggestionModalProps {
 
 export function SuggestionModal({ trigger }: SuggestionModalProps) {
   const [open, setOpen] = useState(false)
+
+  // Allow programmatic opening via custom event (e.g., from command palette)
+  useEffect(() => {
+    const handler = () => setOpen(true)
+    document.addEventListener('open-suggestion-modal', handler)
+    return () => document.removeEventListener('open-suggestion-modal', handler)
+  }, [])
   const [category, setCategory] = useState<SuggestionCategory>('feature')
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')

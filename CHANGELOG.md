@@ -5,6 +5,17 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.15] - 2026-03-15
+
+### Added
+- Command palette — press ⌘K (or Ctrl+K) to quickly search for any widget, page, or action
+- Jump to any of the 22 dashboard widgets by name or keyword (e.g., type "pizza" to find Local Eats)
+- Navigate to pages like Daily Digest, Council, Resources, or Account Settings
+- Quick actions: refresh all data, open SUX chat, view changelog, submit feedback, and more
+- Search button added to the header for easy access on desktop and mobile
+
+---
+
 ## [0.13.14] - 2026-03-15
 
 ### Added
