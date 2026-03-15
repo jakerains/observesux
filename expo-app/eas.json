@@ -22,9 +22,6 @@
     "production": {
       "autoIncrement": true,
       "channel": "production",
-      "ios": {
-        "image": "macos-sequoia-15.6-xcode-26.0"
-      },
       "env": {
         "EAS_BUILD_NO_EXPO_GO_WARNING": "true"
       }

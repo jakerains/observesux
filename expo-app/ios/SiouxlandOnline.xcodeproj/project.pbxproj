@@ -469,6 +469,9 @@
 				);
 				MARKETING_VERSION = 1.0.0;
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				DEVELOPMENT_TEAM = 47347VQHQV;
 				PRODUCT_BUNDLE_IDENTIFIER = com.siouxland.online.widgets;
 				PRODUCT_NAME = SiouxlandWidgetsExtension;
 				SKIP_INSTALL = YES;
@@ -558,6 +561,9 @@
 				);
 				MARKETING_VERSION = 1.0;
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
+				CODE_SIGN_IDENTITY = "iPhone Distribution";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				DEVELOPMENT_TEAM = 47347VQHQV;
 				PRODUCT_BUNDLE_IDENTIFIER = com.siouxland.online.widgets;
 				PRODUCT_NAME = SiouxlandWidgetsExtension;
 				SKIP_INSTALL = YES;
