@@ -14,6 +14,7 @@
     },
     "ios": {
       "icon": "./assets/icon.png",
+      "deploymentTarget": "16.1",
       "supportsTablet": false,
       "bundleIdentifier": "com.siouxland.online",
       "config": {
@@ -21,6 +22,7 @@
       },
       "infoPlist": {
         "CFBundleDisplayName": "SUX Online",
+        "NSSupportsLiveActivities": true,
         "NSLocationWhenInUseUsageDescription": "Siouxland Online uses your location to show nearby traffic cameras, transit stops, and weather conditions.",
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true
@@ -79,7 +81,19 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "7177e8d6-7bd1-4995-80e8-5286ee3b0720"
+        "projectId": "7177e8d6-7bd1-4995-80e8-5286ee3b0720",
+        "build": {
+          "experimental": {
+            "ios": {
+              "appExtensions": [
+                {
+                  "targetName": "SiouxlandWidgetsExtension",
+                  "bundleIdentifier": "com.siouxland.online.widgets"
+                }
+              ]
+            }
+          }
+        }
       }
     },
     "owner": "siouxlandonline"

@@ -82,7 +82,7 @@ function AuroraSky({ kp, label }: { kp: number; label: string }) {
         <div
           className="absolute inset-0"
           style={{
-            background: `linear-gradient(90deg,
+            backgroundImage: `linear-gradient(90deg,
               transparent 0%,
               rgba(34,197,94,${0.04 + intensity * 0.35}) 20%,
               rgba(16,185,129,${0.02 + intensity * 0.2}) 40%,
@@ -102,7 +102,7 @@ function AuroraSky({ kp, label }: { kp: number; label: string }) {
         <div
           className="absolute inset-0"
           style={{
-            background: `linear-gradient(90deg,
+            backgroundImage: `linear-gradient(90deg,
               transparent 0%,
               rgba(139,92,246,${intensity * 0.3}) 25%,
               rgba(99,102,241,${intensity * 0.15}) 50%,
@@ -120,7 +120,7 @@ function AuroraSky({ kp, label }: { kp: number; label: string }) {
           <div
             className="absolute inset-0"
             style={{
-              background: `linear-gradient(90deg,
+              backgroundImage: `linear-gradient(90deg,
                 transparent 10%,
                 rgba(45,212,191,${intensity * 0.2}) 35%,
                 rgba(20,184,166,${intensity * 0.15}) 65%,

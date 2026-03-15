@@ -9,8 +9,11 @@ export async function GET(request: NextRequest) {
     const { searchParams } = request.nextUrl
     const sortBy = searchParams.get('sort_by') || undefined
     const category = searchParams.get('category') || undefined
+    const term = searchParams.get('term') || undefined
+    const price = searchParams.get('price') || undefined
+    const limit = searchParams.get('limit') ? Number(searchParams.get('limit')) : undefined
 
-    const eats = await fetchLocalEats({ sortBy, category })
+    const eats = await fetchLocalEats({ sortBy, category, term, price, limit })
 
     const response: ApiResponse<LocalEatsData> = {
       data: eats,

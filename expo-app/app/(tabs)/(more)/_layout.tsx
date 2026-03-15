@@ -54,6 +54,12 @@ export default function MoreLayout() {
           title: 'Notifications',
         }}
       />
+      <Stack.Screen
+        name="sun"
+        options={{
+          title: 'Widgets & Live Activity',
+        }}
+      />
     </Stack>
   );
 }

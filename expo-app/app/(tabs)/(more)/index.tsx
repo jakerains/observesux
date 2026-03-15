@@ -218,6 +218,15 @@ export default function MoreScreen() {
         />
       </MenuSection>
 
+      <MenuSection title="WIDGETS">
+        <MenuItem
+          sfSymbol="apps.iphone"
+          label="Widgets & Live Activity"
+          subtitle="Set up Sun & Daylight on Home Screen, Lock Screen, and Dynamic Island"
+          onPress={() => router.push('/(tabs)/(more)/sun')}
+        />
+      </MenuSection>
+
       {/* About Section */}
       <MenuSection title="ABOUT">
         <MenuItem

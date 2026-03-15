@@ -73,7 +73,7 @@ export default function WeatherScreen() {
             Active Alerts
           </Text>
           {alerts.map((alert) => (
-            <Link key={alert.id} href={`/alert/${alert.id}`} asChild>
+            <Link key={alert.id} href={{ pathname: '/alert/[id]', params: { id: alert.id } }} asChild>
               <Pressable
                 style={{
                   padding: 16,

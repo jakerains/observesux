@@ -173,6 +173,12 @@ function AppShell() {
             ...detailModalOptions,
           }}
         />
+        <Stack.Screen
+          name="sun"
+          options={{
+            headerShown: false,
+          }}
+        />
       </Stack>
       <NotificationPromptModal
         onDismiss={(enabled) => {

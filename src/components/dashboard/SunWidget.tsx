@@ -19,7 +19,7 @@ function parseDayLength(dl: string): { hours: number; minutes: number; seconds: 
 }
 
 function parseTimeToMinutes(timeStr: string): number {
-  const match = timeStr.match(/(\d+):(\d+):(\d+)\s*(AM|PM)/i)
+  const match = timeStr.match(/(\d+):(\d+)(?::(\d+))?\s*(AM|PM)/i)
   if (!match) return 0
   let hours = parseInt(match[1])
   const minutes = parseInt(match[2])

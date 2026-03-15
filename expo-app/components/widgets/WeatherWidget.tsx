@@ -23,17 +23,30 @@ import morningBridge from '@/assets/siouxlandbridge-morning.jpeg';
 import noonBridge from '@/assets/siouxlandbridge-noon.jpeg';
 import eveningBridge from '@/assets/siouxlandbridge-evening.jpeg';
 import nightBridge from '@/assets/siouxlandbridge-night.jpeg';
+import snowBridge from '@/assets/siouxlandbridge-snow.jpeg';
 
 const BRIDGE_IMAGES = {
   morning: morningBridge,
   noon: noonBridge,
   evening: eveningBridge,
   night: nightBridge,
+  snow: snowBridge,
 } as const;
 
 type TimeOfDay = keyof typeof BRIDGE_IMAGES;
 
-function getTimeOfDay(hour: number): TimeOfDay {
+// Winter-related keywords for conditions and alert events
+const WINTER_KEYWORDS = ['snow', 'blizzard', 'flurr', 'sleet', 'ice storm', 'winter storm', 'winter weather', 'freezing rain'];
+
+function getTimeOfDay(hour: number, conditions?: string, alertEvents?: string[]): TimeOfDay {
+  const lowerConditions = (conditions || '').toLowerCase();
+  const lowerAlerts = (alertEvents || []).map(e => e.toLowerCase());
+
+  // Winter conditions or alerts override time-of-day
+  const isWintry = WINTER_KEYWORDS.some(kw => lowerConditions.includes(kw))
+    || WINTER_KEYWORDS.some(kw => lowerAlerts.some(alert => alert.includes(kw)));
+  if (isWintry) return 'snow';
+
   if (hour >= 5  && hour < 11) return 'morning';
   if (hour >= 11 && hour < 17) return 'noon';
   if (hour >= 17 && hour < 21) return 'evening';
@@ -144,7 +157,8 @@ export function WeatherWidget() {
   const fetchedAt = dataUpdatedAt ? new Date(dataUpdatedAt).toISOString() : undefined;
   const status = getDataStatus(fetchedAt, refreshIntervals.weather, isLoading, isError);
 
-  const bridgeImage = BRIDGE_IMAGES[getTimeOfDay(new Date().getHours())];
+  const alertEvents = alerts.map((a: { event?: string }) => a.event || '');
+  const bridgeImage = BRIDGE_IMAGES[getTimeOfDay(new Date().getHours(), weather?.conditions, alertEvents)];
 
   // Full-bleed loading placeholder
   if (isLoading || isError || !weather) {
@@ -230,7 +244,7 @@ export function WeatherWidget() {
                 if (process.env.EXPO_OS === 'ios') {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 }
-                router.push(`/alert/${alerts[0].id}`);
+                router.push({ pathname: '/alert/[id]', params: { id: alerts[0].id } });
               }}
               style={{
                 flexDirection: 'row',

@@ -25,6 +25,7 @@ import {
   Trophy,
 } from 'lucide-react'
 import { MobileNavigation } from '@/components/dashboard/MobileNavigation'
+import { DiningExplorer } from '@/components/resources/DiningExplorer'
 
 // ============================================
 // Resource Data
@@ -82,11 +83,11 @@ const CATEGORIES: ResourceCategory[] = [
     resources: [
       { name: 'Sioux City Parks & Recreation', description: '59 parks, 33 miles of trails, 3 pools, 7 splash pads', url: 'https://www.sioux-city.org/government/departments-g-p/parks-recreation-department' },
       { name: 'Cone Park', description: 'Year-round — tubing hill, ice skating, mountain bike trails, summer activities', url: 'https://www.sioux-city.org/government/departments-g-p/parks-recreation-department/cone-park' },
-      { name: 'Bacon Creek Park', description: 'Playgrounds, dog park, fishing, kayaking, and multi-use trails' },
-      { name: 'Riverside Park', description: '100-acre park with Sioux City\'s best public pool and playgrounds' },
+      { name: 'Bacon Creek Park', description: 'Playgrounds, dog park, fishing, kayaking, and multi-use trails', url: 'https://www.sioux-city.org/Home/Components/FacilityDirectory/FacilityDirectory/2/164' },
+      { name: 'Riverside Park', description: '100-acre park with Sioux City\'s best public pool and playgrounds', url: 'https://www.sioux-city.org/Home/Components/FacilityDirectory/FacilityDirectory/79/164' },
       { name: 'Stone State Park', description: '1,000+ acres of trails, camping, and Loess Hills views', url: 'https://www.iowadnr.gov/Places-to-Go/State-Parks/Iowa-State-Parks/Stone-State-Park' },
-      { name: 'Dorothy Pecaut Nature Center', description: 'Loess Hills exhibits, hiking trails, and raptor house' },
-      { name: 'ibp Ice Center', description: 'Indoor ice skating and hockey facility', address: '3808 Stadium Drive' },
+      { name: 'Dorothy Pecaut Nature Center', description: 'Loess Hills exhibits, hiking trails, and raptor house', url: 'https://woodburyparks.org/dorothy-pecaut-nature-center/' },
+      { name: 'ibp Ice Center', description: 'Indoor ice skating and hockey facility', url: 'https://www.sioux-city.org/government/departments-g-p/parks-recreation-department/ibp-ice-center', address: '3808 Stadium Drive' },
     ],
   },
   {
@@ -103,34 +104,19 @@ const CATEGORIES: ResourceCategory[] = [
     ],
   },
   {
-    id: 'dining',
-    title: 'Dining & Nightlife',
-    icon: <UtensilsCrossed className="h-4 w-4" />,
-    color: 'bg-orange-500/10 text-orange-500 border-orange-500/30',
-    resources: [
-      { name: 'Marto Brewing Co.', description: 'Craft brewery with wood-fired Neapolitan pizza', url: 'https://martobrewing.com/', address: '930 4th Street' },
-      { name: 'Jackson Street Brewing', description: 'Local craft brewery with 609 event space', url: 'https://jacksonstreetbrewing.com/' },
-      { name: 'The Diving Elk', description: 'Craft beverages, comfort food, and a seasonal menu' },
-      { name: 'Woodbury\'s at The Warrior', description: 'Upscale rustic American cuisine in the historic Warrior Hotel' },
-      { name: 'Miles Inn', description: 'Legendary neighborhood bar — home of the Charlie Boy loose-meat sandwich' },
-      { name: 'Buffalo Alice', description: 'Pizza, beer, vintage vibes, and a great back patio', address: '1022 4th Street' },
-      { name: 'Trattoria Fresco', description: 'Italian-inspired dining on Historic 4th Street' },
-    ],
-  },
-  {
     id: 'things-to-do',
     title: 'Things to Do',
     icon: <MapPin className="h-4 w-4" />,
     color: 'bg-rose-500/10 text-rose-500 border-rose-500/30',
     resources: [
       { name: 'Hard Rock Hotel & Casino', description: 'Gaming, live entertainment, and dining', url: 'https://www.hardrockcasinosiouxcity.com/' },
-      { name: 'Palmer\'s Olde Tyme Candy Shoppe', description: 'Candy museum and old-fashioned candy shop' },
-      { name: 'Lewis & Clark Interpretive Center', description: 'Interactive exhibits about the Corps of Discovery expedition' },
-      { name: 'Mid America Museum of Aviation & Transportation', description: 'Full-size aircraft, vintage vehicles, and a Boeing 727' },
-      { name: 'Historic Fourth Street District', description: 'Shops, pubs, and restaurants in restored 19th-century buildings' },
-      { name: 'Saturday in the Park', description: 'Free annual music festival at Grandview Park (July)' },
-      { name: 'Flight 232 Memorial', description: 'Riverfront memorial honoring the 1989 crash survivors and responders' },
-      { name: 'War Eagle Monument', description: 'Bluff-top monument with panoramic tri-state views' },
+      { name: 'Palmer\'s Olde Tyme Candy Shoppe', description: 'Candy museum and old-fashioned candy shop', url: 'https://palmercandy.com/pages/candy-shoppe' },
+      { name: 'Lewis & Clark Interpretive Center', description: 'Interactive exhibits about the Corps of Discovery expedition', url: 'https://siouxcitylcic.com/' },
+      { name: 'Mid America Museum of Aviation & Transportation', description: 'Full-size aircraft, vintage vehicles, and a Boeing 727', url: 'https://www.midamericaairmuseum.org/' },
+      { name: 'Historic Fourth Street District', description: 'Shops, pubs, and restaurants in restored 19th-century buildings', url: 'https://exploresiouxland.com/listing/fourth-street-historic-district/' },
+      { name: 'Saturday in the Park', description: 'Free annual music festival at Grandview Park (July)', url: 'https://saturdayinthepark.com/' },
+      { name: 'Flight 232 Memorial', description: 'Riverfront memorial honoring the 1989 crash survivors and responders', url: 'https://www.tripadvisor.com/Attraction_Review-g38400-d17664233-Reviews-Flight_232_Memorial-Sioux_City_Iowa.html' },
+      { name: 'War Eagle Monument', description: 'Bluff-top monument with panoramic tri-state views', url: 'https://www.siouxcitymuseum.org/history-website/war-eagle-monument' },
     ],
   },
   {
@@ -142,10 +128,10 @@ const CATEGORIES: ResourceCategory[] = [
       { name: 'Tyson Events Center', description: '10,000-seat arena for concerts, sports, and events', url: 'https://www.tysoncenter.com/' },
       { name: 'Sioux City Musketeers', description: 'USHL hockey — developing future NHL talent', url: 'https://musketeershockey.com/' },
       { name: 'Sioux City Explorers', description: 'American Association independent baseball', url: 'https://aabaseball.com/team/sioux-city-explorers/' },
-      { name: 'Sioux City Bandits', description: 'National Arena League indoor football' },
-      { name: 'Cone Park Mountain Bike Trails', description: '10.5 miles of trails from beginner to advanced' },
-      { name: 'Disc Golf', description: '3 free public courses — Grandview, Leif Erikson, and Sertoma parks' },
-      { name: 'Missouri & Big Sioux Rivers', description: 'Fishing, kayaking, and canoeing access points' },
+      { name: 'Sioux City Bandits', description: 'National Arena League indoor football', url: 'https://www.gobandits.fun/' },
+      { name: 'Cone Park Mountain Bike Trails', description: '10.5 miles of trails from beginner to advanced', url: 'https://www.coneparksiouxcity.com/mtn-biking/' },
+      { name: 'Disc Golf', description: '3 free public courses — Grandview, Leif Erikson, and Sertoma parks', url: 'https://www.sioux-city.org/government/departments-g-p/parks-recreation/parks/disc-golf-courses' },
+      { name: 'Missouri & Big Sioux Rivers', description: 'Fishing, kayaking, and canoeing access points', url: 'https://exploresiouxland.com/' },
     ],
   },
   {
@@ -155,10 +141,10 @@ const CATEGORIES: ResourceCategory[] = [
     color: 'bg-pink-500/10 text-pink-500 border-pink-500/30',
     resources: [
       { name: 'Southern Hills Mall', description: '~100 retailers anchored by Scheels and JCPenney', url: 'https://www.southernhillsmall.com/', address: '4400 Sergeant Road' },
-      { name: 'Lakeport Commons', description: '500,000+ sq ft outdoor lifestyle center (Kohl\'s, Best Buy, Old Navy)' },
-      { name: 'Historic Fourth Street', description: 'Boutiques, antique shops, and specialty stores downtown' },
-      { name: 'Historic Pearl District', description: 'Westside downtown shops, pubs, and services' },
-      { name: 'Thinker Toys', description: 'Castle-shaped toy store with games and puzzles' },
+      { name: 'Lakeport Commons', description: '500,000+ sq ft outdoor lifestyle center (Kohl\'s, Best Buy, Old Navy)', url: 'https://exploresiouxland.com/listing/lakeport-commons/' },
+      { name: 'Historic Fourth Street', description: 'Boutiques, antique shops, and specialty stores downtown', url: 'https://downtownsiouxcity.com/' },
+      { name: 'Historic Pearl District', description: 'Westside downtown shops, pubs, and services', url: 'https://www.sioux-city.org/government/departments-a-f/community-development/planning-and-zoning/other-planning-projects/historic-pearl-district-536' },
+      { name: 'Thinker Toys', description: 'Castle-shaped toy store with games and puzzles', url: 'https://www.thinkertoysiowa.com/' },
     ],
   },
   {
@@ -170,7 +156,7 @@ const CATEGORIES: ResourceCategory[] = [
       { name: 'MercyOne Siouxland Medical Center', description: 'Only Level II Trauma Center in western Iowa', url: 'https://www.mercyone.org/location/mercyone-siouxland-medical-center' },
       { name: 'UnityPoint Health - St. Luke\'s', description: '464-bed hospital and regional health system', url: 'https://www.unitypoint.org/locations/unitypoint-health---st-lukes', address: '801 5th Street' },
       { name: 'Siouxland Community Health Center', description: 'Federally qualified health center with 3 locations — sliding fee scale', url: 'https://www.slandchc.com/' },
-      { name: 'Siouxland District Health Department', description: 'Public health agency for Woodbury County', address: '1014 Nebraska Street' },
+      { name: 'Siouxland District Health Department', description: 'Public health agency for Woodbury County', url: 'https://www.siouxlanddistricthealth.org/', address: '1014 Nebraska Street' },
       { name: 'Emergency Services', description: 'Call 911 for police, fire, and ambulance' },
     ],
   },
@@ -182,7 +168,7 @@ const CATEGORIES: ResourceCategory[] = [
     resources: [
       { name: 'Sioux Gateway Airport (SUX)', description: 'American Airlines to Chicago O\'Hare and Denver', url: 'https://flysux.com/' },
       { name: 'Sioux City Transit', description: '10 bus routes, Monday–Saturday 7am–7pm', url: 'https://www.sioux-city.org/government/departments-q-to-z/transit' },
-      { name: 'MLK Jr. Transportation Center', description: 'Downtown bus transfer hub', address: '505 Nebraska Street' },
+      { name: 'MLK Jr. Transportation Center', description: 'Downtown bus transfer hub', url: 'https://www.sioux-city.org/government/departments-q-to-z/transit', address: '505 Nebraska Street' },
       { name: 'Interstate 29', description: 'North-south corridor connecting Kansas City to the Canadian border' },
       { name: 'US Highway 20', description: 'East-west corridor across northern Iowa' },
     ],
@@ -198,7 +184,7 @@ const CATEGORIES: ResourceCategory[] = [
       { name: 'Food Bank of Siouxland', description: 'Fighting hunger across the tri-state region', url: 'https://www.siouxlandfoodbank.org/', address: '1313 11th Street' },
       { name: 'Siouxland Habitat for Humanity', description: 'Affordable housing and community building', url: 'https://www.siouxlandhabitat.org/' },
       { name: 'Downtown Partners', description: 'Downtown Sioux City development and events', url: 'https://downtownsiouxcity.com/' },
-      { name: 'Siouxland Center for Active Generations', description: 'Programs and services for older adults' },
+      { name: 'Siouxland Center for Active Generations', description: 'Programs and services for older adults', url: 'https://siouxlandcenterforactivegenerations.com/home' },
     ],
   },
   {
@@ -357,10 +343,37 @@ export default function ResourcesPage() {
               {cat.title}
             </Badge>
           ))}
+          <Badge
+            variant={activeCategory === 'dining' ? 'default' : 'outline'}
+            className="cursor-pointer text-xs"
+            onClick={() =>
+              setActiveCategory(activeCategory === 'dining' ? null : 'dining')
+            }
+          >
+            Dining & Nightlife
+          </Badge>
         </div>
 
         {/* Resource sections */}
-        {filtered.length === 0 ? (
+        {activeCategory === 'dining' ? (
+          /* Dining-only view */
+          <div className="space-y-4">
+            <Card className="overflow-hidden">
+              <CardContent className="pt-5 pb-4">
+                <div className="flex items-center gap-2.5 mb-4">
+                  <Badge variant="outline" className="bg-orange-500/10 text-orange-500 border-orange-500/30">
+                    <UtensilsCrossed className="h-4 w-4" />
+                  </Badge>
+                  <h2 className="font-semibold text-sm">Dining & Nightlife</h2>
+                  <span className="text-xs text-muted-foreground ml-auto">
+                    Live from Yelp
+                  </span>
+                </div>
+                <DiningExplorer />
+              </CardContent>
+            </Card>
+          </div>
+        ) : filtered.length === 0 && activeCategory !== null ? (
           <Card className="border-dashed">
             <CardContent className="py-12">
               <div className="flex flex-col items-center gap-3 text-center">
@@ -378,9 +391,50 @@ export default function ResourcesPage() {
           </Card>
         ) : (
           <div className="space-y-4">
-            {filtered.map((category) => (
-              <CategorySection key={category.id} category={category} />
-            ))}
+            {filtered.map((category) => {
+              // Insert Dining Explorer after Education (where it originally lived in the list)
+              const showDiningAfter = category.id === 'education' && activeCategory === null
+
+              return (
+                <div key={category.id} className="space-y-4">
+                  <CategorySection category={category} />
+                  {showDiningAfter && (
+                    <Card className="overflow-hidden">
+                      <CardContent className="pt-5 pb-4">
+                        <div className="flex items-center gap-2.5 mb-4">
+                          <Badge variant="outline" className="bg-orange-500/10 text-orange-500 border-orange-500/30">
+                            <UtensilsCrossed className="h-4 w-4" />
+                          </Badge>
+                          <h2 className="font-semibold text-sm">Dining & Nightlife</h2>
+                          <span className="text-xs text-muted-foreground ml-auto">
+                            Live from Yelp
+                          </span>
+                        </div>
+                        <DiningExplorer />
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              )
+            })}
+
+            {/* If education was filtered out by search but no specific category is selected, show dining at end */}
+            {activeCategory === null && !filtered.some(c => c.id === 'education') && (
+              <Card className="overflow-hidden">
+                <CardContent className="pt-5 pb-4">
+                  <div className="flex items-center gap-2.5 mb-4">
+                    <Badge variant="outline" className="bg-orange-500/10 text-orange-500 border-orange-500/30">
+                      <UtensilsCrossed className="h-4 w-4" />
+                    </Badge>
+                    <h2 className="font-semibold text-sm">Dining & Nightlife</h2>
+                    <span className="text-xs text-muted-foreground ml-auto">
+                      Live from Yelp
+                    </span>
+                  </div>
+                  <DiningExplorer />
+                </CardContent>
+              </Card>
+            )}
           </div>
         )}
       </div>

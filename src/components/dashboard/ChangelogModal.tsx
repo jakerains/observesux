@@ -16,6 +16,17 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.13.13',
+    date: '2026-03-15',
+    added: [
+      'Dining & Nightlife on the Resources page — live Yelp-powered restaurant search with cuisine, price, and sort filters',
+      'Links added to 24+ resources that were previously missing them',
+    ],
+    changed: [
+      '(Mobile) Weather widget shows a snowy bridge image during winter conditions',
+    ],
+  },
+  {
     version: '0.13.12',
     date: '2026-03-14',
     added: [

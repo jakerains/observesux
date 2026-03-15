@@ -17,7 +17,7 @@ import { Brand } from '@/constants/BrandColors';
 
 // Parse "H:MM:SS AM/PM" to minutes since midnight
 function parseTimeToMinutes(timeStr: string): number {
-  const match = timeStr.match(/(\d+):(\d+):(\d+)\s*(AM|PM)/i);
+  const match = timeStr.match(/(\d+):(\d+)(?::(\d+))?\s*(AM|PM)/i);
   if (!match) return 0;
   let hours = parseInt(match[1]);
   const minutes = parseInt(match[2]);
