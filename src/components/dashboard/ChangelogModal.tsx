@@ -16,6 +16,13 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.13.14',
+    date: '2026-03-15',
+    added: [
+      'Road conditions layer on the interactive map — color-coded highway segments showing snow coverage, ice, and travel advisories from Iowa DOT',
+    ],
+  },
+  {
     version: '0.13.13',
     date: '2026-03-15',
     added: [

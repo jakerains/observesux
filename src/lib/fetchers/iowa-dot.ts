@@ -1,4 +1,4 @@
-import type { TrafficCamera, TrafficEvent } from '@/types'
+import type { TrafficCamera, TrafficEvent, RoadCondition, RoadConditionSeverity } from '@/types'
 
 // Iowa DOT ArcGIS API for traffic cameras
 const CAMERAS_API = 'https://services.arcgis.com/8lRhdTsQyJpO52F1/arcgis/rest/services/Traffic_Cameras_View/FeatureServer/0/query'
@@ -6,6 +6,9 @@ const CAMERAS_API = 'https://services.arcgis.com/8lRhdTsQyJpO52F1/arcgis/rest/se
 // CARS511 ArcGIS APIs for traffic events (multi-state)
 const IOWA_511_API = 'https://data.iowa.gov/api/views/yata-4k7n/rows.json?accessType=DOWNLOAD'
 const NEBRASKA_511_API = 'https://services.arcgis.com/8lRhdTsQyJpO52F1/arcgis/rest/services/CARS511_NE_Events_View/FeatureServer/0/query'
+
+// Iowa DOT Road Conditions (polyline segments from 511 system)
+const ROAD_CONDITIONS_API = 'https://services.arcgis.com/8lRhdTsQyJpO52F1/arcgis/rest/services/511_IA_Road_Conditions_View/FeatureServer/0/query'
 
 // Sioux City / Siouxland bounding box (expanded for interstates)
 // Covers I-29, I-129, and surrounding communities in IA, NE, SD
@@ -365,4 +368,106 @@ function mapSeverity(severity: string): TrafficEvent['severity'] {
   if (normalized.includes('moderate') || normalized.includes('significant')) return 'moderate'
   if (normalized.includes('minor') || normalized.includes('low')) return 'minor'
   return 'moderate'
+}
+
+// Map Iowa DOT condition to severity using the human-readable string (most reliable)
+// Falls back to numeric code ranges if string doesn't match
+function mapConditionCodeToSeverity(code: number, condition: string): RoadConditionSeverity {
+  const normalized = (condition || '').toLowerCase()
+
+  // Check condition string first — more reliable than codes
+  if (normalized.includes('impassable')) return 'impassable'
+  if (normalized.includes('travel not advised')) return 'travel_not_advised'
+  if (normalized.includes('completely covered')) return 'completely_covered'
+  if (normalized.includes('mostly covered')) return 'mostly_covered'
+  if (normalized.includes('partially covered')) return 'partially_covered'
+  if (normalized.includes('wet')) return 'wet'
+  if (normalized.includes('seasonal') || normalized.includes('normal')) return 'normal'
+
+  // Fallback to numeric code ranges
+  // Known codes: 10=Seasonal, 21=Wet, 22-23=Partial, 31-32=Mostly, 33-34=Completely, 40=TNA, 51+=Impassable
+  if (code >= 51) return 'impassable'
+  if (code >= 40) return 'travel_not_advised'
+  if (code >= 33) return 'completely_covered'
+  if (code >= 31) return 'mostly_covered'
+  if (code >= 22) return 'partially_covered'
+  if (code >= 21) return 'wet'
+
+  return 'normal'
+}
+
+// Fetch road conditions for the Siouxland area
+export async function fetchRoadConditions(): Promise<RoadCondition[]> {
+  try {
+    const params = new URLSearchParams({
+      where: '1=1',
+      outFields: 'OBJECTID,ROUTE_NAME,ROAD_CONDITION,HL_PAVEMENT_CONDITION,ROAD_CONDITION_CODE,CONDITION_CHANGE,REST_UPDATED',
+      f: 'json',
+      returnGeometry: 'true',
+      outSR: '4326', // Get lat/lng directly
+      geometry: `${SIOUX_CITY_BOUNDS.minLon},${SIOUX_CITY_BOUNDS.minLat},${SIOUX_CITY_BOUNDS.maxLon},${SIOUX_CITY_BOUNDS.maxLat}`,
+      geometryType: 'esriGeometryEnvelope',
+      inSR: '4326',
+      spatialRel: 'esriSpatialRelIntersects',
+    })
+
+    const response = await fetch(`${ROAD_CONDITIONS_API}?${params}`, {
+      next: { revalidate: 300 } // Cache for 5 minutes
+    })
+
+    if (!response.ok) {
+      throw new Error(`Road Conditions API error: ${response.status}`)
+    }
+
+    const data = await response.json()
+    const conditions: RoadCondition[] = []
+
+    if (data.features && Array.isArray(data.features)) {
+      for (const feature of data.features) {
+        try {
+          const attrs = feature.attributes
+          const geom = feature.geometry
+
+          if (!geom?.paths?.length) continue
+
+          const conditionCode = attrs.ROAD_CONDITION_CODE ?? 10
+          const condition = attrs.HL_PAVEMENT_CONDITION || attrs.ROAD_CONDITION || 'Normal'
+          const severity = mapConditionCodeToSeverity(conditionCode, condition)
+
+          // Skip normal/seasonal conditions - only show noteworthy road conditions
+          if (severity === 'normal') continue
+
+          // Convert ArcGIS paths to [lat, lng] tuples
+          // ArcGIS polyline paths are arrays of [lng, lat] arrays
+          const path: [number, number][] = []
+          for (const ring of geom.paths) {
+            for (const point of ring) {
+              path.push([point[1], point[0]]) // [lat, lng]
+            }
+          }
+
+          if (path.length < 2) continue
+
+          conditions.push({
+            id: `rc-${attrs.OBJECTID}`,
+            routeName: attrs.ROUTE_NAME || 'Unknown',
+            condition,
+            conditionCode,
+            severity,
+            conditionChange: attrs.CONDITION_CHANGE || null,
+            path,
+            lastUpdated: attrs.REST_UPDATED ? new Date(attrs.REST_UPDATED) : new Date(),
+          })
+        } catch {
+          continue
+        }
+      }
+    }
+
+    console.log(`[Road Conditions] Found ${conditions.length} non-normal segments in Siouxland area`)
+    return conditions
+  } catch (error) {
+    console.error('Failed to fetch road conditions:', error)
+    return []
+  }
 }

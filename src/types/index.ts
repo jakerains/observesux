@@ -150,6 +150,46 @@ export interface WinterRoadCondition {
   lastUpdated: Date
 }
 
+// Road condition severity levels (Iowa DOT codes mapped to categories)
+export type RoadConditionSeverity = 'normal' | 'wet' | 'partially_covered' | 'mostly_covered' | 'completely_covered' | 'travel_not_advised' | 'impassable'
+
+export interface RoadCondition {
+  id: string
+  routeName: string
+  condition: string // Human-readable, e.g. "Partially Covered with Snow"
+  conditionCode: number
+  severity: RoadConditionSeverity
+  conditionChange?: 'BETTER' | 'WORSE' | 'SAME' | null
+  path: [number, number][] // [lat, lng] polyline coordinates
+  lastUpdated: Date
+}
+
+export function getRoadConditionColor(severity: RoadConditionSeverity): string {
+  const colors: Record<RoadConditionSeverity, string> = {
+    normal: '#22c55e',           // green
+    wet: '#3b82f6',              // blue
+    partially_covered: '#eab308', // yellow
+    mostly_covered: '#f97316',    // orange
+    completely_covered: '#ef4444', // red
+    travel_not_advised: '#dc2626', // dark red
+    impassable: '#7f1d1d',        // very dark red
+  }
+  return colors[severity]
+}
+
+export function getRoadConditionLabel(severity: RoadConditionSeverity): string {
+  const labels: Record<RoadConditionSeverity, string> = {
+    normal: 'Normal',
+    wet: 'Wet',
+    partially_covered: 'Partially Covered',
+    mostly_covered: 'Mostly Covered',
+    completely_covered: 'Completely Covered',
+    travel_not_advised: 'Travel Not Advised',
+    impassable: 'Impassable',
+  }
+  return labels[severity]
+}
+
 // ============================================
 // River/Flood Monitoring
 // ============================================

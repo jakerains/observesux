@@ -4,6 +4,7 @@ import useSWR from 'swr'
 import type {
   TrafficCamera,
   TrafficEvent,
+  RoadCondition,
   WeatherObservation,
   WeatherAlert,
   WeatherForecast,
@@ -54,6 +55,21 @@ export function useCameras(refreshInterval = 120000) {
 export function useTrafficEvents(refreshInterval = 300000) {
   return useSWR<ApiResponse<TrafficEvent[]>>(
     '/api/traffic-events',
+    fetcher,
+    {
+      refreshInterval,
+      dedupingInterval: 60000,
+      revalidateOnFocus: false,
+    }
+  )
+}
+
+// ============================================
+// Road Conditions (Iowa DOT)
+// ============================================
+export function useRoadConditions(refreshInterval = 300000) {
+  return useSWR<ApiResponse<RoadCondition[]>>(
+    '/api/road-conditions',
     fetcher,
     {
       refreshInterval,

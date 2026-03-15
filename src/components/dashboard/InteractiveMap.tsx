@@ -4,14 +4,16 @@ import React, { useEffect, useState, useRef, useMemo } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline, CircleMarker } from 'react-leaflet'
 import { DashboardCard } from './DashboardCard'
 import { Badge } from "@/components/ui/badge"
-import { useCameras, useRivers, useTrafficEvents, useSnowplows, useTransit, useAircraft, useGasPrices } from '@/lib/hooks/useDataFetching'
+import { useCameras, useRivers, useTrafficEvents, useRoadConditions, useSnowplows, useTransit, useAircraft, useGasPrices } from '@/lib/hooks/useDataFetching'
 import { track } from '@vercel/analytics'
 import { useBusInterpolation } from '@/lib/hooks/useBusInterpolation'
 import { useAircraftInterpolation } from '@/lib/hooks/useAircraftInterpolation'
 import { useTransitSelection } from '@/lib/contexts/TransitContext'
 import { useMapFocus } from '@/lib/contexts/MapFocusContext'
-import { Map, Layers, Camera, Waves, AlertTriangle, CloudRain, Snowflake, Bus, Plane, Fuel, ChevronDown } from 'lucide-react'
+import { Map, Layers, Camera, Waves, AlertTriangle, CloudRain, Snowflake, Bus, Plane, Fuel, ChevronDown, Route } from 'lucide-react'
 import type { SuxAssociation, OccupancyStatus, ScheduleAdherence, TransitStop } from '@/types'
+import { getRoadConditionColor, getRoadConditionLabel } from '@/types'
+import type { RoadConditionSeverity } from '@/types'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -184,6 +186,7 @@ interface LayerToggleProps {
     transit: boolean
     aircraft: boolean
     gasStations: boolean
+    roadConditions: boolean
   }
   onToggle: (layer: keyof LayerToggleProps['layers']) => void
   radarSource: RadarSource
@@ -196,9 +199,10 @@ interface LayerToggleProps {
   activeBuses?: number
   activeAircraft?: number
   gasStationCount?: number
+  roadConditionCount?: number
 }
 
-function LayerToggle({ layers, onToggle, radarSource, onRadarSourceChange, radarTime, radarFrame = 0, totalFrames = 1, radarLoading, radarError, activeBuses = 0, activeAircraft = 0, gasStationCount = 0 }: LayerToggleProps) {
+function LayerToggle({ layers, onToggle, radarSource, onRadarSourceChange, radarTime, radarFrame = 0, totalFrames = 1, radarLoading, radarError, activeBuses = 0, activeAircraft = 0, gasStationCount = 0, roadConditionCount = 0 }: LayerToggleProps) {
   const [isExpanded, setIsExpanded] = useState(false)
 
   // Count active layers for the badge
@@ -300,6 +304,18 @@ function LayerToggle({ layers, onToggle, radarSource, onRadarSourceChange, radar
             Gas Stations
             {layers.gasStations && gasStationCount > 0 && (
               <span className="text-[10px] opacity-70 ml-auto">{gasStationCount}</span>
+            )}
+          </button>
+          <button
+            onClick={() => onToggle('roadConditions')}
+            className={`flex items-center gap-2 w-full px-2 py-1 rounded text-xs transition-colors ${
+              layers.roadConditions ? 'bg-yellow-500/20 text-yellow-500' : 'hover:bg-muted'
+            }`}
+          >
+            <Route className="h-3 w-3" />
+            Road Conditions
+            {layers.roadConditions && roadConditionCount > 0 && (
+              <span className="text-[10px] opacity-70 ml-auto">{roadConditionCount}</span>
             )}
           </button>
         </div>
@@ -440,6 +456,7 @@ export function InteractiveMap() {
     transit: true,
     aircraft: true,
     gasStations: true,
+    roadConditions: true,
   })
 
   // Solo mode: when set, only show this layer
@@ -459,6 +476,7 @@ export function InteractiveMap() {
         transit: true,
         aircraft: true,
         gasStations: true,
+        roadConditions: true,
       })
     } else {
       // Solo this layer - hide all others
@@ -472,6 +490,7 @@ export function InteractiveMap() {
         transit: layer === 'transit',
         aircraft: layer === 'aircraft',
         gasStations: layer === 'gasStations',
+        roadConditions: layer === 'roadConditions',
       })
     }
   }
@@ -485,6 +504,7 @@ export function InteractiveMap() {
   const { data: camerasData } = useCameras()
   const { data: riversData } = useRivers()
   const { data: eventsData } = useTrafficEvents()
+  const { data: roadConditionsData } = useRoadConditions()
   const { data: snowplowsData } = useSnowplows()
   const { data: transitData } = useTransit()
   const { data: aircraftData } = useAircraft()
@@ -493,6 +513,7 @@ export function InteractiveMap() {
   const cameras = camerasData?.data || []
   const rivers = riversData?.data || []
   const events = eventsData?.data || []
+  const roadConditions = roadConditionsData?.data || []
   const snowplows = snowplowsData?.data || []
   const rawBuses = transitData?.buses || []
   const rawAircraft = aircraftData?.data || []
@@ -660,6 +681,44 @@ export function InteractiveMap() {
                 </div>
               </Popup>
             </Marker>
+          ))}
+
+          {/* Road Condition Polylines */}
+          {layers.roadConditions && roadConditions.map((rc) => (
+            <Polyline
+              key={rc.id}
+              positions={rc.path}
+              pathOptions={{
+                color: getRoadConditionColor(rc.severity),
+                weight: 5,
+                opacity: 0.8,
+                lineCap: 'round',
+                lineJoin: 'round',
+              }}
+              eventHandlers={{
+                click: (e) => {
+                  e.target.openPopup()
+                }
+              }}
+            >
+              <Popup>
+                <div className="min-w-[180px]">
+                  <h4 className="font-medium text-sm mb-1">{rc.routeName}</h4>
+                  <Badge
+                    variant="outline"
+                    className="text-xs mb-1"
+                    style={{ borderColor: getRoadConditionColor(rc.severity), color: getRoadConditionColor(rc.severity) }}
+                  >
+                    {rc.condition}
+                  </Badge>
+                  {rc.conditionChange && rc.conditionChange !== 'SAME' && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Trend: {rc.conditionChange === 'WORSE' ? 'Getting worse' : 'Improving'}
+                    </p>
+                  )}
+                </div>
+              </Popup>
+            </Polyline>
           ))}
 
           {/* Traffic Event Markers */}
@@ -980,6 +1039,7 @@ export function InteractiveMap() {
           activeBuses={buses.length}
           activeAircraft={aircraft.length}
           gasStationCount={gasStations.length}
+          roadConditionCount={roadConditions.length}
         />
       </div>
 
@@ -1076,6 +1136,17 @@ export function InteractiveMap() {
           <div className="w-3 h-3 rounded-full bg-green-500" />
           <span>Gas ({gasStations.length})</span>
         </button>
+        <button
+          onClick={() => handleLegendClick('roadConditions')}
+          className={`flex items-center gap-2 px-2 py-1 rounded-full transition-all cursor-pointer ${
+            soloLayer === 'roadConditions'
+              ? 'bg-yellow-500/20 text-yellow-500 ring-1 ring-yellow-500'
+              : soloLayer ? 'opacity-40 text-muted-foreground hover:opacity-70' : 'text-muted-foreground hover:bg-muted'
+          }`}
+        >
+          <div className="w-3 h-3 rounded-full bg-yellow-500" />
+          <span>Roads ({roadConditions.length})</span>
+        </button>
         {soloLayer && (
           <button
             onClick={() => {
@@ -1089,6 +1160,7 @@ export function InteractiveMap() {
                 transit: true,
                 aircraft: true,
                 gasStations: true,
+                roadConditions: true,
               })
             }}
             className="ml-2 px-2 py-1 text-xs bg-muted hover:bg-muted/80 rounded-full"
@@ -1097,6 +1169,21 @@ export function InteractiveMap() {
           </button>
         )}
       </div>
+      {/* Road Conditions Severity Legend */}
+      {layers.roadConditions && roadConditions.length > 0 && (
+        <div className="mt-2 pt-2 border-t flex flex-wrap gap-3 text-xs text-muted-foreground">
+          <span className="font-medium">Road Conditions:</span>
+          {(['wet', 'partially_covered', 'mostly_covered', 'completely_covered', 'travel_not_advised', 'impassable'] as RoadConditionSeverity[])
+            .filter(sev => roadConditions.some(rc => rc.severity === sev))
+            .map(sev => (
+              <div key={sev} className="flex items-center gap-1">
+                <div className="w-4 h-1 rounded" style={{ backgroundColor: getRoadConditionColor(sev) }} />
+                <span>{getRoadConditionLabel(sev)}</span>
+              </div>
+            ))
+          }
+        </div>
+      )}
       {/* Aircraft SUX Legend */}
       {layers.aircraft && aircraft.length > 0 && (
         <div className="mt-2 pt-2 border-t flex flex-wrap gap-3 text-xs text-muted-foreground">

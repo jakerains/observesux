@@ -5,6 +5,13 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.14] - 2026-03-15
+
+### Added
+- Road conditions layer on the interactive map — see color-coded highway segments showing snow coverage, ice, and travel advisories from Iowa DOT in real time
+
+---
+
 ## [0.13.13] - 2026-03-15
 
 ### Added
