@@ -62,8 +62,26 @@ target 'SiouxlandOnline' do
       :ccache_enabled => ccache_enabled?(podfile_properties),
     )
 
+    hermes_header_paths = [
+      '"${PODS_ROOT}/Headers/Public/hermes-engine"',
+      '"${PODS_ROOT}/hermes-engine/destroot/include"',
+    ]
+
     # Disable resource bundle signing (required for Xcode 14+)
     installer.pods_project.targets.each do |target|
+      if target.name == 'ExpoModulesJSI'
+        target.build_configurations.each do |build_config|
+          header_search_paths = build_config.build_settings['HEADER_SEARCH_PATHS'] || '$(inherited)'
+          header_search_paths = [header_search_paths] unless header_search_paths.is_a?(Array)
+
+          hermes_header_paths.each do |path|
+            header_search_paths << path unless header_search_paths.include?(path)
+          end
+
+          build_config.build_settings['HEADER_SEARCH_PATHS'] = header_search_paths
+        end
+      end
+
       if target.respond_to?(:product_type) && target.product_type == "com.apple.product-type.bundle"
         target.build_configurations.each do |build_config|
           build_config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
