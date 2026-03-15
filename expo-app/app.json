@@ -14,7 +14,6 @@
     },
     "ios": {
       "icon": "./assets/icon.png",
-      "deploymentTarget": "16.1",
       "supportsTablet": false,
       "bundleIdentifier": "com.siouxland.online",
       "config": {
