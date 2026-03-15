@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useWeather, useAirQuality, useRivers, useWeatherForecast, useSunTimes } from '@/lib/hooks/useDataFetching'
+import { useWeather, useAirQuality, useRivers, useWeatherForecast, useSunTimes, useWeatherAlerts } from '@/lib/hooks/useDataFetching'
 import { Cloud, Droplets, Wind, Eye, Waves, ChevronDown, ChevronUp, Sun, Moon, CloudRain, Snowflake, Sunrise, Sunset } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -29,8 +29,23 @@ function getWeatherGradient(conditions: string, isDaytime: boolean): string {
   return 'gradient-clear-day'
 }
 
-// Get time-of-day background image
-function getTimeOfDayImage(hour: number): string {
+// Winter-related keywords for conditions and alert events
+const WINTER_KEYWORDS = ['snow', 'blizzard', 'flurr', 'sleet', 'ice storm', 'winter storm', 'winter weather', 'freezing rain']
+
+// Get background image based on weather conditions, alerts, and time of day
+function getBackgroundImage(hour: number, conditions: string, alertEvents: string[] = []): string {
+  const lowerConditions = conditions.toLowerCase()
+  const lowerAlerts = alertEvents.map(e => e.toLowerCase())
+
+  // Weather-specific images take priority — check both conditions and active alerts
+  const isWintry = WINTER_KEYWORDS.some(kw => lowerConditions.includes(kw))
+    || WINTER_KEYWORDS.some(kw => lowerAlerts.some(alert => alert.includes(kw)))
+
+  if (isWintry) {
+    return '/siouxlandbridge-snow.jpeg'
+  }
+
+  // Fall back to time-of-day images
   if (hour >= 5 && hour < 11) {
     return '/siouxlandbridge-morning.jpeg'
   }
@@ -74,6 +89,7 @@ export function CurrentConditionsHero() {
   const { data: riversData } = useRivers()
   const { data: forecastData } = useWeatherForecast()
   const { data: sunData } = useSunTimes()
+  const { data: alertsData } = useWeatherAlerts()
 
   const weather = weatherData?.data
   const sunTimes = sunData?.data
@@ -84,7 +100,8 @@ export function CurrentConditionsHero() {
   // Determine if it's daytime (rough estimate)
   const hour = new Date().getHours()
   const isDaytime = hour >= 6 && hour < 20
-  const backgroundImage = getTimeOfDayImage(hour)
+  const alertEvents = (alertsData?.data || []).map(a => a.event)
+  const backgroundImage = getBackgroundImage(hour, weather?.conditions || '', alertEvents)
 
   if (weatherLoading) {
     return (
