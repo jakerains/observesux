@@ -41,6 +41,7 @@ import {
   Bell,
   Timer,
   PenSquare,
+  LogOut,
 } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
@@ -79,7 +80,7 @@ import {
   type SuggestionStats,
   type SuggestionStatus,
 } from '@/types'
-import { useSession } from '@/lib/auth/client'
+import { useSession, signOut } from '@/lib/auth/client'
 import {
   getCurrentEdition,
   editionLabels,
@@ -142,7 +143,7 @@ function AccessDenied({ reason }: { reason: 'not-logged-in' | 'not-admin' }) {
         <CardContent className="space-y-3">
           {reason === 'not-logged-in' ? (
             <Button asChild className="w-full">
-              <Link href="/auth/sign-in?callbackURL=/admin">Sign In</Link>
+              <Link href="/auth/sign-in?redirectTo=/admin">Sign In</Link>
             </Button>
           ) : (
             <p className="text-xs text-center text-muted-foreground">
@@ -2179,12 +2180,26 @@ function AdminPageContent() {
               <p className="text-sm text-muted-foreground">Manage chat logs and knowledge base</p>
             </div>
           </div>
-          <Link href="/admin/content-studio" className="ml-auto">
-            <Button variant="outline" size="sm" className="gap-2">
-              <PenSquare className="h-4 w-4" />
-              Content Studio
+          <div className="ml-auto flex items-center gap-2">
+            <Link href="/admin/content-studio">
+              <Button variant="outline" size="sm" className="gap-2">
+                <PenSquare className="h-4 w-4" />
+                Content Studio
+              </Button>
+            </Link>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-2 text-muted-foreground hover:text-destructive"
+              onClick={async () => {
+                await signOut()
+                window.location.href = '/'
+              }}
+            >
+              <LogOut className="h-4 w-4" />
+              Sign Out
             </Button>
-          </Link>
+          </div>
         </div>
 
         {/* Tabs */}

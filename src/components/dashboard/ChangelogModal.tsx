@@ -16,6 +16,19 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.13.16',
+    date: '2026-03-17',
+    added: [
+      'Sign Out button in the admin panel',
+      'SUX Content Studio skill files available on GitHub for other AI agents',
+    ],
+    fixed: [
+      'Login error on localhost ("invalid origin") now resolved',
+      'Admin login redirect — signing in from /admin now returns you to /admin',
+      'iOS app splash screen background updated to brand brown',
+    ],
+  },
+  {
     version: '0.13.15',
     date: '2026-03-15',
     added: [

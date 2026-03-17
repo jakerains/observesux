@@ -5,6 +5,19 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.16] - 2026-03-17
+
+### Added
+- Sign Out button in the admin panel header
+- SUX Content Studio skill files in /skills for sharing with other AI agents
+
+### Fixed
+- "Invalid origin" error when signing in on localhost — added trusted origins to auth handler
+- Admin login now redirects back to /admin instead of the dashboard
+- iOS app splash screen background changed from black to brand brown (#120905)
+
+---
+
 ## [0.13.15] - 2026-03-15
 
 ### Added
