@@ -9,11 +9,4 @@ import { authApiHandler } from '@neondatabase/auth/next/server'
  * - /api/auth/callback
  * - /api/auth/session
  */
-export const { GET, POST, PUT, DELETE, PATCH } = authApiHandler({
-  trustedOrigins: [
-    'http://localhost:3000',
-    'https://siouxland.online',
-    'https://www.siouxland.online',
-    'https://*.vercel.app',
-  ],
-})
+export const { GET, POST, PUT, DELETE, PATCH } = authApiHandler()
