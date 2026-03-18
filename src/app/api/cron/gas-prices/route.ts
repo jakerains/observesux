@@ -7,6 +7,23 @@ import { verifyCronRequest } from '@/lib/utils/cron-auth'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300 // Allow up to 5 minutes for scraping (Pro plan)
 
+/**
+ * Blocklist of stations that no longer exist (demolished, permanently closed, etc.).
+ * Matched case-insensitively against scraped brand_name and street_address.
+ * When a station is added here, the cron job will also delete it from the DB on next run.
+ */
+const STATION_BLOCKLIST = [
+  { brandName: 'Phillips 66', addressContains: 'Gordon' },
+]
+
+function isBlocklisted(station: ScrapedGasStation): boolean {
+  return STATION_BLOCKLIST.some(blocked => {
+    const nameMatch = station.brandName.toLowerCase().includes(blocked.brandName.toLowerCase())
+    const addressMatch = station.streetAddress.toLowerCase().includes(blocked.addressContains.toLowerCase())
+    return nameMatch && addressMatch
+  })
+}
+
 export async function GET(request: NextRequest) {
   if (!verifyCronRequest(request)) {
     console.warn('[Gas Prices Cron] Unauthorized request rejected')
@@ -42,12 +59,36 @@ export async function GET(request: NextRequest) {
 
     console.log(`[Gas Prices Cron] Scraped ${stations.length} stations`)
 
+    // Step 1b: Filter out blocklisted stations (demolished, permanently closed)
+    const activeStations = stations.filter(station => {
+      if (isBlocklisted(station)) {
+        console.log(`[Gas Prices Cron] Skipping blocklisted station: ${station.brandName} at ${station.streetAddress}`)
+        return false
+      }
+      return true
+    })
+
+    // Step 1c: Remove blocklisted stations from DB (if they still exist)
+    for (const blocked of STATION_BLOCKLIST) {
+      const deleted = await sql`
+        DELETE FROM gas_stations
+        WHERE LOWER(brand_name) LIKE ${`%${blocked.brandName.toLowerCase()}%`}
+        AND LOWER(street_address) LIKE ${`%${blocked.addressContains.toLowerCase()}%`}
+        RETURNING id, brand_name, street_address
+      `
+      if (deleted.length > 0) {
+        console.log(`[Gas Prices Cron] Removed blocklisted station from DB: ${deleted.map(d => `${d.brand_name} at ${d.street_address}`).join(', ')}`)
+      }
+    }
+
+    console.log(`[Gas Prices Cron] Processing ${activeStations.length} stations (${stations.length - activeStations.length} blocklisted)`)
+
     // Step 2: Process and save each station
     let totalPricesInserted = 0
     let newStations = 0
     let geocodedCount = 0
 
-    for (const station of stations) {
+    for (const station of activeStations) {
       const result = await processStation(station)
       totalPricesInserted += result.pricesInserted
       if (result.isNew) newStations++
@@ -60,10 +101,12 @@ export async function GET(request: NextRequest) {
       WHERE scraped_at < NOW() - INTERVAL '7 days'
     `
 
-    console.log(`[Gas Prices Cron] Complete: ${stations.length} stations, ${totalPricesInserted} prices`)
+    const blockedCount = stations.length - activeStations.length
+    console.log(`[Gas Prices Cron] Complete: ${activeStations.length} stations, ${totalPricesInserted} prices (${blockedCount} blocklisted)`)
 
     await logCronRun('gas-prices', 'success', startedAt, {
-      stationsScraped: stations.length,
+      stationsScraped: activeStations.length,
+      blocklisted: blockedCount,
       newStations,
       pricesInserted: totalPricesInserted,
       geocoded: geocodedCount,
@@ -71,7 +114,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      stationsScraped: stations.length,
+      stationsScraped: activeStations.length,
+      blocklisted: blockedCount,
       newStations,
       pricesInserted: totalPricesInserted,
       geocoded: geocodedCount,
