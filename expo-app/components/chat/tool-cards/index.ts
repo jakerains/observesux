@@ -2,6 +2,7 @@ import type { ComponentType } from 'react'
 import { AirQualityCard } from './AirQualityCard'
 import { CitySummaryCard } from './CitySummaryCard'
 import { GasPricesCard } from './GasPricesCard'
+import { LocalEatsCard } from './LocalEatsCard'
 import { NewsCard } from './NewsCard'
 import { RiverLevelsCard } from './RiverLevelsCard'
 import { TrafficEventsCard } from './TrafficEventsCard'
@@ -21,6 +22,7 @@ const toolCardMap: Record<string, ToolCardComponent> = {
   getTrafficEvents: TrafficEventsCard,
   getNews: NewsCard,
   getGasPrices: GasPricesCard,
+  searchLocalEats: LocalEatsCard,
 }
 
 export function getToolCardComponent(toolName: string): ToolCardComponent | null {
