@@ -24,6 +24,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
+import { ModelCombobox } from '@/components/admin/ModelCombobox'
 import {
   AVAILABLE_MODELS,
   MODEL_CONTEXTS,
@@ -307,8 +308,6 @@ const PlaygroundPanel = forwardRef<PlaygroundPanelHandle, {
   model: string
   onModelChange: (model: string) => void
 }>(function PlaygroundPanel({ panelId, model, onModelChange }, ref) {
-  const [customMode, setCustomMode] = useState(false)
-  const [customInput, setCustomInput] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const modelRef = useRef(model)
@@ -341,77 +340,19 @@ const PlaygroundPanel = forwardRef<PlaygroundPanelHandle, {
     messagesEndRef.current?.scrollIntoView({ behavior: status === 'streaming' ? 'auto' : 'smooth' })
   }, [messages, status])
 
-  const knownModelIds: string[] = AVAILABLE_MODELS.map((m) => m.id)
-  const isKnown = knownModelIds.includes(model)
-
-  function handleCustomConfirm() {
-    const val = customInput.trim()
-    if (!val) return
-    onModelChange(val)
-    setCustomMode(false)
-    setCustomInput('')
-  }
-
   return (
     <div data-panel-id={panelId} className="flex flex-col h-full border rounded-lg overflow-hidden bg-card">
       {/* Header */}
       <div className="flex items-center gap-2 px-3 py-2 border-b">
         <div className={`w-3 h-3 rounded-full ${PANEL_COLORS[panelId]}`} />
         <span className="text-sm font-semibold">Panel {panelId}</span>
-        <div className="ml-auto flex-1 max-w-[200px]">
-          {customMode ? (
-            <div className="flex gap-1">
-              <Input
-                placeholder="model id..."
-                value={customInput}
-                onChange={(e) => setCustomInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleCustomConfirm()
-                  if (e.key === 'Escape') setCustomMode(false)
-                }}
-                className="h-7 text-xs"
-                autoFocus
-              />
-              <Button size="sm" className="h-7 px-2" onClick={handleCustomConfirm}>
-                <Check className="h-3 w-3" />
-              </Button>
-            </div>
-          ) : (
-            <Select
-              value={isKnown ? model : '__custom_current__'}
-              onValueChange={(val) => {
-                if (val === '__custom_current__') return
-                if (val === '__custom__') {
-                  setCustomMode(true)
-                  return
-                }
-                onModelChange(val)
-              }}
-            >
-              <SelectTrigger size="sm" className="h-7 text-xs w-full">
-                <SelectValue>
-                  {isKnown
-                    ? AVAILABLE_MODELS.find((m) => m.id === model)?.label
-                    : model}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {AVAILABLE_MODELS.map((m) => (
-                  <SelectItem key={m.id} value={m.id}>
-                    {m.label}
-                  </SelectItem>
-                ))}
-                {!isKnown && (
-                  <SelectItem value="__custom_current__">
-                    <span className="text-muted-foreground text-xs">{model}</span>
-                  </SelectItem>
-                )}
-                <SelectItem value="__custom__">
-                  <span className="italic text-muted-foreground">Custom...</span>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          )}
+        <div className="ml-auto flex-1 max-w-[220px]">
+          <ModelCombobox
+            value={model}
+            onChange={onModelChange}
+            size="sm"
+            className="w-full"
+          />
         </div>
       </div>
 
@@ -509,6 +450,7 @@ const PlaygroundPanel = forwardRef<PlaygroundPanelHandle, {
 
 // ---------------------------------------------------------------------------
 // Shared: Model Selector for streaming panels (Digest / Council)
+// Uses ModelCombobox with full OpenRouter catalog
 // ---------------------------------------------------------------------------
 
 function StreamingPanelModelSelector({
@@ -518,75 +460,13 @@ function StreamingPanelModelSelector({
   model: string
   onModelChange: (model: string) => void
 }) {
-  const [customMode, setCustomMode] = useState(false)
-  const [customInput, setCustomInput] = useState('')
-  const knownModelIds: string[] = AVAILABLE_MODELS.map((m) => m.id)
-  const isKnown = knownModelIds.includes(model)
-
-  function handleCustomConfirm() {
-    const val = customInput.trim()
-    if (!val) return
-    onModelChange(val)
-    setCustomMode(false)
-    setCustomInput('')
-  }
-
-  if (customMode) {
-    return (
-      <div className="flex gap-1">
-        <Input
-          placeholder="model id..."
-          value={customInput}
-          onChange={(e) => setCustomInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') handleCustomConfirm()
-            if (e.key === 'Escape') setCustomMode(false)
-          }}
-          className="h-7 text-xs"
-          autoFocus
-        />
-        <Button size="sm" className="h-7 px-2" onClick={handleCustomConfirm}>
-          <Check className="h-3 w-3" />
-        </Button>
-      </div>
-    )
-  }
-
   return (
-    <Select
-      value={isKnown ? model : '__custom_current__'}
-      onValueChange={(val) => {
-        if (val === '__custom_current__') return
-        if (val === '__custom__') {
-          setCustomMode(true)
-          return
-        }
-        onModelChange(val)
-      }}
-    >
-      <SelectTrigger size="sm" className="h-7 text-xs w-full">
-        <SelectValue>
-          {isKnown
-            ? AVAILABLE_MODELS.find((m) => m.id === model)?.label
-            : model}
-        </SelectValue>
-      </SelectTrigger>
-      <SelectContent>
-        {AVAILABLE_MODELS.map((m) => (
-          <SelectItem key={m.id} value={m.id}>
-            {m.label}
-          </SelectItem>
-        ))}
-        {!isKnown && (
-          <SelectItem value="__custom_current__">
-            <span className="text-muted-foreground text-xs">{model}</span>
-          </SelectItem>
-        )}
-        <SelectItem value="__custom__">
-          <span className="italic text-muted-foreground">Custom...</span>
-        </SelectItem>
-      </SelectContent>
-    </Select>
+    <ModelCombobox
+      value={model}
+      onChange={onModelChange}
+      size="sm"
+      className="w-full"
+    />
   )
 }
 
