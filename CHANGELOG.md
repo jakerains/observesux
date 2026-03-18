@@ -5,6 +5,20 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.15.0] - 2026-03-18
+
+### Added
+- (Admin) Client-orchestrated meeting pipeline — long meetings no longer time out during processing. Each step (transcript, chunking, embedding, recap) runs as a separate short API call orchestrated by the browser
+- (Admin) Batch embedding progress — embedding step runs in batches of 10 with a live progress bar, so even 100+ chunk meetings complete reliably
+- AI recap now skips unnecessary transcript splitting for large-context models (e.g., Claude Opus at 1M tokens sends the full transcript in one call for better results)
+
+### Fixed
+- Fixed incorrect council member names in AI recap prompts — corrected roles and names to match actual city council membership
+- Budget sessions, planning/zoning, and special sessions now receive the council member name reference (previously only regular council meetings had it)
+
+### Changed
+- Meeting recap generation gets the full 300-second budget to itself instead of sharing time with transcript fetching and embedding
+
 ## [0.14.0] - 2026-03-18
 
 ### Added

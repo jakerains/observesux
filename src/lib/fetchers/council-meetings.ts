@@ -14,6 +14,18 @@ const RSS_URL = `https://www.youtube.com/feeds/videos.xml?channel_id=${COUNCIL_C
 const CHUNK_WINDOW_MS = 300000
 
 /**
+ * Authoritative council member names and roles.
+ * Transcripts frequently misspell or garble names — the AI should use these as the reference.
+ * UPDATE THIS when council membership changes (elections, resignations, etc.).
+ */
+const COUNCIL_MEMBERS_REFERENCE = `**Current Sioux City Council members** (use these as the authoritative reference for names — transcripts often misspell or garble them):
+- Mayor Bob Scott
+- Mayor Pro Tem Julie Schoenherr
+- Councilmember Craig Berenstein
+- Councilmember Rick Bertrand
+- Councilmember Ike Rayford`
+
+/**
  * Parse meeting date from video title.
  * Handles formats like:
  *   - "City of Sioux City Council Meeting - February 2 2026"
@@ -404,7 +416,9 @@ function getRecapContextForType(meetingType?: MeetingType): string {
     case 'budget_session':
       return `Your job right now is to make a city budget session transparent and accessible to everyday people. You write blog-post style recaps addressed directly to Siouxland residents.
 
-Focus on the fiscal impact: what's being proposed, what it costs, who pays for it, and what services or projects the money funds. Explain budget jargon in plain English — "mill levy" means property tax rate, "general fund" means the city's main checking account, etc.`
+Focus on the fiscal impact: what's being proposed, what it costs, who pays for it, and what services or projects the money funds. Explain budget jargon in plain English — "mill levy" means property tax rate, "general fund" means the city's main checking account, etc.
+
+${COUNCIL_MEMBERS_REFERENCE}`
 
     case 'school_board':
       return `Your job right now is to make a school board meeting transparent and accessible to Siouxland families. You write blog-post style recaps addressed directly to parents, students, and educators.
@@ -414,26 +428,41 @@ Focus on what matters to families: school policies, budget decisions that affect
     case 'planning_zoning':
       return `Your job right now is to make a planning & zoning meeting transparent and accessible to everyday people. You write blog-post style recaps addressed directly to Siouxland residents.
 
-Focus on what's being built, rezoned, or proposed — and what it means for the neighborhood. Will there be more traffic? New businesses? Changes to property use? Explain zoning jargon in plain terms.`
+Focus on what's being built, rezoned, or proposed — and what it means for the neighborhood. Will there be more traffic? New businesses? Changes to property use? Explain zoning jargon in plain terms.
+
+${COUNCIL_MEMBERS_REFERENCE}`
 
     case 'special_session':
     case 'other':
       return `Your job right now is to make this public meeting transparent and accessible to everyday people. You write blog-post style recaps addressed directly to Siouxland residents.
 
-Focus on the key decisions, discussions, and what they mean for real people in the community.`
+Focus on the key decisions, discussions, and what they mean for real people in the community.
+
+${COUNCIL_MEMBERS_REFERENCE}`
 
     case 'city_council':
     default:
       return `Your job right now is to make a city council meeting transparent and accessible to everyday people. You write blog-post style recaps addressed directly to Siouxland residents.
 
-**Current Sioux City Council members** (use these as the authoritative reference for names — transcripts often misspell or garble them):
-- Mayor Bob Scott
-- Mayor Pro Tem Julie Schoenherr
-- Councilmember Craig Berenstein
-- Councilmember Rick Bertrand
-- Councilmember Ike Rayford`
+${COUNCIL_MEMBERS_REFERENCE}`
   }
 }
+
+/**
+ * Approximate max input chars by model ID. Models with large context windows
+ * don't need staged summarization — sending the full transcript in one call
+ * produces better recaps and avoids information loss from intermediate summaries.
+ *
+ * Values are ~70% of each model's token context (in chars) to leave room for
+ * system prompt + structured output tokens.
+ */
+const MODEL_CHAR_LIMITS: Record<string, number> = {
+  'anthropic/claude-sonnet-4.6': 500000,   // ~200K token context
+  'anthropic/claude-opus-4.6': 2500000,    // ~1M token context
+  'openai/gpt-5.4': 350000,               // ~128K token context
+  'openai/gpt-5.4-mini': 350000,          // ~128K token context
+}
+const DEFAULT_CHAR_LIMIT = 200000 // Conservative fallback for unknown models
 
 export async function generateMeetingRecap(rawTranscript: string, meetingType?: MeetingType): Promise<CouncilMeetingRecap> {
   const openrouter = createOpenRouter({
@@ -457,9 +486,13 @@ For the article field: structure it with clear sections using markdown headings 
 
 If a section has no entries, use an empty array. Focus on substance over procedure.`
 
-  // Staged summarization for long transcripts (>200K chars / ~50K tokens).
-  // Splitting into sections ensures each AI call completes within Vercel's timeout.
-  if (rawTranscript.length > 200000) {
+  // Determine the char limit for the active model. Models with large context
+  // windows (e.g. Opus 4.6 at 1M tokens) can handle transcripts in one call,
+  // producing better recaps without information loss from staged summaries.
+  const charLimit = MODEL_CHAR_LIMITS[modelId] ?? DEFAULT_CHAR_LIMIT
+
+  // Staged summarization only for transcripts that exceed the model's capacity.
+  if (rawTranscript.length > charLimit) {
     console.log(`[Council Recap] Transcript is ${(rawTranscript.length / 1000).toFixed(0)}K chars, using staged summarization`)
     const sectionSize = 150000
     const sections: string[] = []
@@ -474,7 +507,7 @@ If a section has no entries, use an empty array. Focus on substance over procedu
       console.log(`[Council Recap] Summarizing section ${i + 1}/${sections.length}`)
       const result = await generateText({
         model: openrouter(modelId),
-        system: `${SUX_PERSONALITY}\n\nYou're covering a Sioux City council meeting for local residents. Summarize the key points, decisions, discussions, and any public comments from this portion of the transcript. Be thorough — include specifics like vote counts, dollar amounts, names of projects, and what things mean for residents.\n\n**Current Sioux City Council members** (use as authoritative name reference — transcripts often misspell them): Mayor Bob Scott, Mayor Pro Tem Julie Schoenherr, Councilmembers Craig Berenstein, Rick Bertrand, and Ike Rayford.`,
+        system: `${SUX_PERSONALITY}\n\nYou're covering a Sioux City council meeting for local residents. Summarize the key points, decisions, discussions, and any public comments from this portion of the transcript. Be thorough — include specifics like vote counts, dollar amounts, names of projects, and what things mean for residents.\n\n${COUNCIL_MEMBERS_REFERENCE}`,
         prompt: sections[i],
         maxOutputTokens: 8000,
       })

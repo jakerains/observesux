@@ -388,6 +388,124 @@ export async function insertMeetingChunks(chunks: Array<{
 }
 
 /**
+ * Get just the transcript text for a meeting (lightweight — avoids loading the full meeting object).
+ */
+export async function getTranscriptRaw(meetingId: string): Promise<string | null> {
+  if (!isDatabaseConfigured()) return null
+
+  try {
+    const result = await sql`
+      SELECT transcript_raw FROM council_meetings WHERE id = ${meetingId}
+    `
+    if (result.length === 0) return null
+    return result[0].transcript_raw as string | null
+  } catch (error) {
+    console.error('Error getting transcript raw:', error)
+    return null
+  }
+}
+
+/**
+ * Insert meeting chunks WITHOUT embeddings (used by the split pipeline).
+ * Deletes existing chunks for idempotent re-processing.
+ */
+export async function insertChunksWithoutEmbeddings(chunks: Array<{
+  meetingId: string
+  videoId: string
+  chunkIndex: number
+  content: string
+  startSeconds: number
+  endSeconds: number
+  meetingDate: string | null
+}>): Promise<boolean> {
+  if (!isDatabaseConfigured()) return false
+
+  try {
+    if (chunks.length > 0) {
+      await sql`
+        DELETE FROM council_meeting_chunks WHERE meeting_id = ${chunks[0].meetingId}
+      `
+    }
+
+    for (const chunk of chunks) {
+      await sql`
+        INSERT INTO council_meeting_chunks (
+          meeting_id, video_id, chunk_index, content,
+          start_seconds, end_seconds, meeting_date
+        )
+        VALUES (
+          ${chunk.meetingId},
+          ${chunk.videoId},
+          ${chunk.chunkIndex},
+          ${chunk.content},
+          ${chunk.startSeconds},
+          ${chunk.endSeconds},
+          ${chunk.meetingDate || null}
+        )
+      `
+    }
+
+    return true
+  } catch (error) {
+    console.error('Error inserting chunks without embeddings:', error)
+    return false
+  }
+}
+
+/**
+ * Update embeddings on existing chunk rows (used by the split pipeline's batch embedding step).
+ */
+export async function updateChunkEmbeddings(
+  meetingId: string,
+  updates: Array<{ chunkIndex: number; embedding: number[] }>
+): Promise<boolean> {
+  if (!isDatabaseConfigured()) return false
+
+  try {
+    for (const { chunkIndex, embedding } of updates) {
+      const embeddingStr = `[${embedding.join(',')}]`
+      await sql`
+        UPDATE council_meeting_chunks
+        SET embedding = ${embeddingStr}::vector
+        WHERE meeting_id = ${meetingId} AND chunk_index = ${chunkIndex}
+      `
+    }
+    return true
+  } catch (error) {
+    console.error('Error updating chunk embeddings:', error)
+    return false
+  }
+}
+
+/**
+ * Get chunk contents for a range of chunk indices (used by split pipeline embedding step).
+ */
+export async function getChunkContents(
+  meetingId: string,
+  startIndex: number,
+  count: number
+): Promise<Array<{ chunkIndex: number; content: string }>> {
+  if (!isDatabaseConfigured()) return []
+
+  try {
+    const result = await sql`
+      SELECT chunk_index, content FROM council_meeting_chunks
+      WHERE meeting_id = ${meetingId}
+        AND chunk_index >= ${startIndex}
+        AND chunk_index < ${startIndex + count}
+      ORDER BY chunk_index ASC
+    `
+    return result.map(row => ({
+      chunkIndex: row.chunk_index as number,
+      content: row.content as string,
+    }))
+  } catch (error) {
+    console.error('Error getting chunk contents:', error)
+    return []
+  }
+}
+
+/**
  * Search council meeting chunks by semantic similarity
  */
 export async function searchCouncilMeetingChunks(

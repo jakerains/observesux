@@ -46,6 +46,7 @@ import { format, parseISO } from 'date-fns'
 import type { CouncilMeeting, CouncilIngestStats, MeetingVersion, MeetingType } from '@/types/council-meetings'
 import { MEETING_TYPE_LABELS, MEETING_TYPES } from '@/types/council-meetings'
 import { TranscriptUploadModal, type TranscriptUploadData, type TranscriptPrefillData } from './TranscriptUploadModal'
+import { useManualPipeline } from '@/lib/hooks/useManualPipeline'
 
 interface WorkflowOutput {
   success: boolean
@@ -117,7 +118,7 @@ export function CouncilIngestPanel() {
   const [progressLog, setProgressLog] = useState<ProgressEvent[]>([])
   const [expandedMeeting, setExpandedMeeting] = useState<string | null>(null)
   const [sortAsc, setSortAsc] = useState(false)
-  const [retryingVideoId, setRetryingVideoId] = useState<string | null>(null)
+  const pipeline = useManualPipeline()
   const [versionHistory, setVersionHistory] = useState<Record<string, MeetingVersion[]>>({})
   const [loadingVersions, setLoadingVersions] = useState<string | null>(null)
   const [showVersions, setShowVersions] = useState<string | null>(null)
@@ -131,7 +132,6 @@ export function CouncilIngestPanel() {
   }> | null>(null)
   const [loadingFeed, setLoadingFeed] = useState(false)
   const [uploadModalOpen, setUploadModalOpen] = useState(false)
-  const [isUploading, setIsUploading] = useState(false)
   const [uploadPrefill, setUploadPrefill] = useState<TranscriptPrefillData | null>(null)
   const [addingVideoId, setAddingVideoId] = useState<string | null>(null)
   const [addMeetingUrl, setAddMeetingUrl] = useState('')
@@ -171,18 +171,30 @@ export function CouncilIngestPanel() {
     fetchData()
   }, [fetchData])
 
+  // Derived: any operation in progress (bulk SSE or manual pipeline)
+  const isBusy = ingesting || pipeline.state.active
+
   // Poll when any meeting has 'processing' status (e.g. after page refresh mid-ingestion)
   const hasProcessing = meetings.some(m => m.status === 'processing')
   useEffect(() => {
-    if (!hasProcessing || ingesting || retryingVideoId) return
+    if (!hasProcessing || isBusy) return
     const interval = setInterval(fetchData, 5000)
     return () => clearInterval(interval)
-  }, [hasProcessing, ingesting, retryingVideoId, fetchData])
+  }, [hasProcessing, isBusy, fetchData])
 
-  // Auto-scroll progress log
+  // Auto-scroll progress log (for both SSE and pipeline logs)
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [progressLog])
+  }, [progressLog, pipeline.state.log])
+
+  // Refresh data when pipeline completes
+  useEffect(() => {
+    if (pipeline.state.currentStep === 'done' || pipeline.state.currentStep === 'error') {
+      fetchData()
+      if (feedVideos) fetchFeed()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pipeline.state.currentStep])
 
   const startIngestion = async () => {
     setIngesting(true)
@@ -305,99 +317,22 @@ export function CouncilIngestPanel() {
     }
   }
 
+  /**
+   * Retry a meeting using the client-orchestrated pipeline.
+   * For 'full' mode: runs the entire pipeline (transcript → chunk → embed → recap).
+   * For 'recap_only': regenerates recap from existing transcript.
+   */
   const retryMeeting = async (
-    videoId: string,
+    meetingId: string,
     mode: 'full' | 'recap_only' = 'full',
-    meta?: { title?: string; publishedAt?: string }
   ) => {
-    setRetryingVideoId(videoId)
     setResult(null)
     setProgressLog([])
 
-    try {
-      const res = await fetch('/api/workflow/council-ingest', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ videoId, mode, ...meta }),
-      })
-
-      if (!res.ok) {
-        const data = await res.json()
-        setRetryingVideoId(null)
-        setResult({
-          success: false,
-          processed: 0,
-          skipped: 0,
-          failed: 1,
-          noCaptions: 0,
-          error: data.error || `HTTP ${res.status}`,
-        })
-        return
-      }
-
-      const reader = res.body?.getReader()
-      if (!reader) {
-        setRetryingVideoId(null)
-        return
-      }
-
-      const decoder = new TextDecoder()
-      let buffer = ''
-
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-
-        buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split('\n')
-        buffer = lines.pop() || ''
-
-        let currentEvent = ''
-        let currentData = ''
-
-        for (const line of lines) {
-          if (line.startsWith('event: ')) {
-            currentEvent = line.slice(7)
-          } else if (line.startsWith('data: ')) {
-            currentData = line.slice(6)
-          } else if (line === '' && currentEvent && currentData) {
-            try {
-              const data = JSON.parse(currentData)
-              if (currentEvent === 'progress') {
-                setProgressLog(prev => [...prev, data as ProgressEvent])
-              } else if (currentEvent === 'error') {
-                setProgressLog(prev => [
-                  ...prev,
-                  { step: 'error', message: `Error: ${data.message}`, videoId: data.videoId },
-                ])
-              } else if (currentEvent === 'complete') {
-                setResult(data as WorkflowOutput)
-                setRetryingVideoId(null)
-                fetchData()
-                if (feedVideos) fetchFeed() // Refresh feed statuses
-              }
-            } catch {
-              // Skip malformed JSON
-            }
-            currentEvent = ''
-            currentData = ''
-          }
-        }
-      }
-
-      if (retryingVideoId) {
-        setRetryingVideoId(null)
-      }
-    } catch (error) {
-      setRetryingVideoId(null)
-      setResult({
-        success: false,
-        processed: 0,
-        skipped: 0,
-        failed: 1,
-        noCaptions: 0,
-        error: error instanceof Error ? error.message : 'Request failed',
-      })
+    if (mode === 'recap_only') {
+      await pipeline.runRecapOnly(meetingId)
+    } else {
+      await pipeline.run(meetingId)
     }
   }
 
@@ -445,105 +380,60 @@ export function CouncilIngestPanel() {
     }
   }
 
+  /**
+   * Upload a transcript via the client-orchestrated pipeline.
+   * Creates the meeting record first (via add_only), then runs the full pipeline.
+   */
   const uploadTranscript = async (data: TranscriptUploadData) => {
-    setIsUploading(true)
     setResult(null)
     setProgressLog([])
+    setUploadModalOpen(false)
+
+    // Generate videoId if not provided (manual uploads without YouTube)
+    const videoId = data.videoId || `manual-${data.meetingDate}-${Date.now().toString(36)}`
 
     try {
+      // Create/upsert the meeting record first
       const res = await fetch('/api/workflow/council-ingest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          mode: 'upload',
-          transcript: data.transcript,
+          mode: 'add_only',
+          videoId,
           title: data.title,
-          meetingDate: data.meetingDate,
-          videoId: data.videoId,
           meetingType: data.meetingType,
         }),
       })
 
       if (!res.ok) {
         const errorData = await res.json()
-        setIsUploading(false)
         setResult({
           success: false,
           processed: 0,
           skipped: 0,
           failed: 1,
           noCaptions: 0,
-          error: errorData.error || `HTTP ${res.status}`,
+          error: errorData.error || `Failed to create meeting record (${res.status})`,
         })
         return
       }
 
-      const reader = res.body?.getReader()
-      if (!reader) {
-        setIsUploading(false)
+      const { meeting } = await res.json()
+      if (!meeting?.id) {
         setResult({
           success: false,
           processed: 0,
           skipped: 0,
           failed: 1,
           noCaptions: 0,
-          error: 'No response stream',
+          error: 'Failed to create meeting record',
         })
         return
       }
 
-      // Close the modal once we start receiving the stream
-      setUploadModalOpen(false)
-
-      const decoder = new TextDecoder()
-      let buffer = ''
-
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-
-        buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split('\n')
-        buffer = lines.pop() || ''
-
-        let currentEvent = ''
-        let currentData = ''
-
-        for (const line of lines) {
-          if (line.startsWith('event: ')) {
-            currentEvent = line.slice(7)
-          } else if (line.startsWith('data: ')) {
-            currentData = line.slice(6)
-          } else if (line === '' && currentEvent && currentData) {
-            try {
-              const eventData = JSON.parse(currentData)
-              if (currentEvent === 'progress') {
-                setProgressLog(prev => [...prev, eventData as ProgressEvent])
-              } else if (currentEvent === 'error') {
-                setProgressLog(prev => [
-                  ...prev,
-                  { step: 'error', message: `Error: ${eventData.message}`, videoId: eventData.videoId },
-                ])
-              } else if (currentEvent === 'complete') {
-                setResult(eventData as WorkflowOutput)
-                setIsUploading(false)
-                fetchData()
-                if (feedVideos) fetchFeed()
-              }
-            } catch {
-              // Skip malformed JSON
-            }
-            currentEvent = ''
-            currentData = ''
-          }
-        }
-      }
-
-      if (isUploading) {
-        setIsUploading(false)
-      }
+      // Run the full pipeline with the uploaded transcript
+      await pipeline.run(meeting.id, { transcript: data.transcript })
     } catch (error) {
-      setIsUploading(false)
       setResult({
         success: false,
         processed: 0,
@@ -643,7 +533,11 @@ export function CouncilIngestPanel() {
     }
   }
 
-  const latestProgress = progressLog[progressLog.length - 1]
+  // For progress UI: use pipeline log when pipeline is active, SSE log for bulk ingestion
+  const activeLog = pipeline.state.active || pipeline.state.currentStep === 'done' || pipeline.state.currentStep === 'error'
+    ? pipeline.state.log.map(e => ({ ...e } as ProgressEvent))
+    : progressLog
+  const latestProgress = activeLog[activeLog.length - 1]
 
   const formatDate = (dateStr: string | null | undefined): string => {
     if (!dateStr) return '—'
@@ -744,7 +638,7 @@ export function CouncilIngestPanel() {
           <div className="flex gap-2">
             <Button
               onClick={startIngestion}
-              disabled={ingesting || retryingVideoId !== null || isUploading}
+              disabled={isBusy}
               className="gap-2"
             >
               {ingesting ? (
@@ -766,10 +660,10 @@ export function CouncilIngestPanel() {
                 setUploadPrefill(null)
                 setUploadModalOpen(true)
               }}
-              disabled={ingesting || retryingVideoId !== null || isUploading}
+              disabled={isBusy}
               className="gap-2"
             >
-              {isUploading ? (
+              {pipeline.state.active ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Uploading...
@@ -821,13 +715,23 @@ export function CouncilIngestPanel() {
           </div>
 
           {/* Live progress log */}
-          {(ingesting || retryingVideoId || isUploading) && progressLog.length > 0 && (() => {
-            // Extract the latest embedding progress for the progress bar
-            const latestEmbedding = [...progressLog].reverse().find(
-              e => e.step === 'embeddings' && e.embeddingsDone !== undefined
-            )
-            const embeddingsDone = (latestEmbedding?.embeddingsDone as number) || 0
-            const embeddingsTotal = (latestEmbedding?.embeddingsTotal as number) || 0
+          {isBusy && activeLog.length > 0 && (() => {
+            // For pipeline: use pipeline.state.progress for embedding counts
+            // For SSE bulk: extract from log events as before
+            let embeddingsDone = 0
+            let embeddingsTotal = 0
+
+            if (pipeline.state.active) {
+              embeddingsDone = pipeline.state.progress.embeddedSoFar
+              embeddingsTotal = pipeline.state.progress.totalChunks
+            } else {
+              const latestEmbedding = [...activeLog].reverse().find(
+                e => e.step === 'embeddings' && (e as ProgressEvent).embeddingsDone !== undefined
+              )
+              embeddingsDone = ((latestEmbedding as ProgressEvent)?.embeddingsDone as number) || 0
+              embeddingsTotal = ((latestEmbedding as ProgressEvent)?.embeddingsTotal as number) || 0
+            }
+
             const embeddingPct = embeddingsTotal > 0 ? Math.round((embeddingsDone / embeddingsTotal) * 100) : 0
             const isEmbedding = latestProgress?.step === 'embeddings'
 
@@ -890,11 +794,11 @@ export function CouncilIngestPanel() {
                 {/* Detailed log (collapsed by default) */}
                 <details className="text-xs">
                   <summary className="cursor-pointer text-muted-foreground hover:text-foreground transition-colors">
-                    Show detailed log ({progressLog.length} events)
+                    Show detailed log ({activeLog.length} events)
                   </summary>
                   <div className="max-h-[150px] overflow-y-auto mt-2">
                     <div className="text-muted-foreground space-y-1 font-mono">
-                      {progressLog.map((event, i) => {
+                      {activeLog.map((event, i) => {
                         const Icon = stepIcons[event.step] || FileText
                         return (
                           <p key={i} className={cn(
@@ -915,8 +819,30 @@ export function CouncilIngestPanel() {
             )
           })()}
 
-          {/* Result */}
-          {result && !ingesting && !isUploading && (
+          {/* Pipeline result (done/error) */}
+          {!isBusy && (pipeline.state.currentStep === 'done' || pipeline.state.currentStep === 'error') && (
+            <div className={cn(
+              'p-4 rounded-lg text-sm',
+              pipeline.state.currentStep === 'done' ? 'bg-green-500/10 border border-green-500/20' : 'bg-red-500/10 border border-red-500/20'
+            )}>
+              <div className="flex items-center gap-2">
+                {pipeline.state.currentStep === 'done' ? (
+                  <CheckCircle2 className="h-5 w-5 text-green-500" />
+                ) : (
+                  <XCircle className="h-5 w-5 text-red-500" />
+                )}
+                <span className="font-medium">
+                  {pipeline.state.currentStep === 'done' ? 'Pipeline Complete — Draft Ready' : 'Pipeline Failed'}
+                </span>
+              </div>
+              {pipeline.state.error && (
+                <p className="text-red-600 ml-7 mt-1">{pipeline.state.error}</p>
+              )}
+            </div>
+          )}
+
+          {/* SSE Result (bulk ingestion) */}
+          {result && !ingesting && !pipeline.state.active && (
             <div className={cn(
               'p-4 rounded-lg text-sm',
               result.success ? 'bg-green-500/10 border border-green-500/20' : 'bg-red-500/10 border border-red-500/20'
@@ -996,7 +922,7 @@ export function CouncilIngestPanel() {
               {feedVideos.filter(v => v.dbStatus !== 'dismissed').map((video) => {
                 const isNew = video.dbStatus === null
                 const isProcessable = isNew || video.dbStatus === 'failed' || video.dbStatus === 'no_captions'
-                const isProcessing = video.dbStatus === 'processing' || retryingVideoId === video.videoId
+                const isProcessing = video.dbStatus === 'processing' || (pipeline.state.active && meetings.find(m => m.videoId === video.videoId)?.id === pipeline.state.meetingId)
 
                 return (
                   <div
@@ -1041,7 +967,7 @@ export function CouncilIngestPanel() {
                           variant="secondary"
                           size="sm"
                           className="h-7 gap-1.5 text-xs"
-                          disabled={ingesting || retryingVideoId !== null || addingVideoId !== null}
+                          disabled={isBusy || addingVideoId !== null}
                           onClick={() => addToSystem(video)}
                         >
                           {addingVideoId === video.videoId ? (
@@ -1057,7 +983,7 @@ export function CouncilIngestPanel() {
                           variant="ghost"
                           size="sm"
                           className="h-7 gap-1.5 text-xs"
-                          disabled={ingesting || retryingVideoId !== null || isUploading}
+                          disabled={isBusy}
                           onClick={() => {
                             const meetingDate = parseMeetingDateFromTitle(video.title)
                               || (video.publishedAt ? video.publishedAt.split('T')[0] : '')
@@ -1078,11 +1004,26 @@ export function CouncilIngestPanel() {
                           variant="outline"
                           size="sm"
                           className="h-7 gap-1.5 text-xs"
-                          disabled={ingesting || retryingVideoId !== null}
-                          onClick={() => retryMeeting(video.videoId, 'full', {
-                            title: video.title,
-                            publishedAt: video.publishedAt,
-                          })}
+                          disabled={isBusy}
+                          onClick={async () => {
+                            // Create/upsert the meeting record, then run pipeline
+                            const res = await fetch('/api/workflow/council-ingest', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                mode: 'add_only',
+                                videoId: video.videoId,
+                                title: video.title,
+                                publishedAt: video.publishedAt,
+                              }),
+                            })
+                            if (res.ok) {
+                              const data = await res.json()
+                              if (data.meeting?.id) {
+                                retryMeeting(data.meeting.id, 'full')
+                              }
+                            }
+                          }}
                         >
                           <Play className="h-3 w-3" />
                           Process
@@ -1104,7 +1045,7 @@ export function CouncilIngestPanel() {
                           variant="ghost"
                           size="sm"
                           className="h-7 gap-1.5 text-xs text-muted-foreground"
-                          disabled={ingesting || retryingVideoId !== null}
+                          disabled={isBusy}
                           onClick={() => dismissVideo(video.videoId)}
                           title="Mark as livestream (not a VOD) — removes from list"
                         >
@@ -1143,7 +1084,7 @@ export function CouncilIngestPanel() {
           </div>
         </CardHeader>
         <CardContent>
-          {hasProcessing && !ingesting && !retryingVideoId && (
+          {hasProcessing && !isBusy && (
             <div className="mb-3 flex items-center gap-2 p-2 rounded-lg bg-primary/5 border border-primary/20 text-xs text-muted-foreground">
               <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0 text-primary" />
               <span>A meeting is being processed in the background. Auto-refreshing every 5s...</span>
@@ -1361,7 +1302,7 @@ export function CouncilIngestPanel() {
                               Watch on YouTube
                             </a>
                           )}
-                          {retryingVideoId === meeting.videoId || meeting.status === 'processing' ? (
+                          {(pipeline.state.active && pipeline.state.meetingId === meeting.id) || meeting.status === 'processing' ? (
                             <Button
                               variant="outline"
                               size="sm"
@@ -1378,10 +1319,10 @@ export function CouncilIngestPanel() {
                                   variant={meeting.recap ? 'outline' : 'default'}
                                   size="sm"
                                   className="h-7 gap-1.5 text-xs"
-                                  disabled={ingesting || retryingVideoId !== null}
+                                  disabled={isBusy}
                                   onClick={(e) => {
                                     e.stopPropagation()
-                                    retryMeeting(meeting.videoId, 'recap_only')
+                                    retryMeeting(meeting.id, 'recap_only')
                                   }}
                                 >
                                   <Sparkles className="h-3 w-3" />
@@ -1392,10 +1333,10 @@ export function CouncilIngestPanel() {
                                 variant="ghost"
                                 size="sm"
                                 className="h-7 gap-1.5 text-xs"
-                                disabled={ingesting || retryingVideoId !== null}
+                                disabled={isBusy}
                                 onClick={(e) => {
                                   e.stopPropagation()
-                                  retryMeeting(meeting.videoId, 'full')
+                                  retryMeeting(meeting.id, 'full')
                                 }}
                               >
                                 <RotateCcw className="h-3 w-3" />
@@ -1405,7 +1346,7 @@ export function CouncilIngestPanel() {
                                 variant="ghost"
                                 size="sm"
                                 className="h-7 gap-1.5 text-xs"
-                                disabled={ingesting || retryingVideoId !== null || isUploading}
+                                disabled={isBusy}
                                 onClick={(e) => {
                                   e.stopPropagation()
                                   setUploadPrefill({
@@ -1453,7 +1394,7 @@ export function CouncilIngestPanel() {
                                   variant="ghost"
                                   size="sm"
                                   className="h-7 gap-1.5 text-xs text-muted-foreground"
-                                  disabled={ingesting || retryingVideoId !== null}
+                                  disabled={isBusy}
                                   onClick={(e) => {
                                     e.stopPropagation()
                                     dismissVideo(meeting.videoId)
@@ -1485,7 +1426,7 @@ export function CouncilIngestPanel() {
           if (!open) setUploadPrefill(null)
         }}
         onSubmit={uploadTranscript}
-        isSubmitting={isUploading}
+        isSubmitting={pipeline.state.active}
         meetings={meetings}
         prefillData={uploadPrefill}
       />

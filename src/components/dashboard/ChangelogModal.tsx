@@ -16,6 +16,20 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.15.0',
+    date: '2026-03-18',
+    added: [
+      '(Admin) Reliable meeting processing — long meetings no longer time out. Each pipeline step runs separately with live progress',
+      'Smarter AI recaps — large-context models process the full transcript in one call for richer results',
+    ],
+    fixed: [
+      'Fixed incorrect council member names in AI-generated recaps',
+    ],
+    changed: [
+      'Recap generation gets dedicated processing time instead of sharing with other steps',
+    ],
+  },
+  {
     version: '0.14.0',
     date: '2026-03-18',
     added: [
