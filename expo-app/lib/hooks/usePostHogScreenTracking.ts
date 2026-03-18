@@ -1,22 +1,37 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import { AppState, Platform } from 'react-native';
 import { usePathname, useSegments } from 'expo-router';
 import { usePostHog } from 'posthog-react-native';
 
 /**
- * Automatically captures a PostHog screen event on every navigation change.
+ * Automatically captures a PostHog screen event on every navigation change
+ * and an app_opened event on first mount.
  * Call once in a component that is always mounted (e.g. AppShell).
  */
 export function usePostHogScreenTracking() {
   const posthog = usePostHog();
   const pathname = usePathname();
   const segments = useSegments();
+  const identifiedRef = useRef(false);
 
+  // Capture an app_opened event once the SDK is ready
+  useEffect(() => {
+    if (!posthog || identifiedRef.current) return;
+    identifiedRef.current = true;
+
+    posthog.capture('app_opened', {
+      platform: Platform.OS,
+      app_version: require('../../app.json').expo.version,
+    });
+  }, [posthog]);
+
+  // Track screen views on navigation
   useEffect(() => {
     if (!posthog || !pathname) return;
 
-    // Build a readable screen name from segments, stripping group prefixes
+    // Strip Expo Router group segments like (tabs), (0-home), etc.
     const screenName = segments
-      .filter((s) => !s.startsWith('(') || !s.endsWith(')'))
+      .filter((s) => !(s.startsWith('(') && s.endsWith(')')))
       .join('/') || 'Home';
 
     posthog.screen(screenName, { path: pathname });
