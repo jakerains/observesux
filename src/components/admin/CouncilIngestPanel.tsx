@@ -837,11 +837,11 @@ export function CouncilIngestPanel() {
             const currentStepIdx = stepOrder.indexOf(currentStepName)
 
             return (
-              <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20 overflow-hidden space-y-3">
+              <div className="p-4 rounded-lg bg-primary/5 border border-primary/20 overflow-hidden space-y-3">
                 {/* Current step headline */}
                 <div className="flex items-center gap-3">
-                  <Loader2 className="h-5 w-5 animate-spin text-blue-500 shrink-0" />
-                  <span className="font-medium text-blue-700 dark:text-blue-400 truncate">
+                  <Loader2 className="h-5 w-5 animate-spin text-primary shrink-0" />
+                  <span className="font-medium text-foreground truncate">
                     {latestProgress?.message || 'Processing...'}
                   </span>
                 </div>
@@ -855,15 +855,15 @@ export function CouncilIngestPanel() {
                       <div key={step} className="flex items-center gap-1 flex-1">
                         <div className={cn(
                           'h-1.5 rounded-full flex-1 transition-all',
-                          isDone ? 'bg-blue-500' :
-                          isCurrent ? 'bg-blue-500/50 animate-pulse' :
-                          'bg-blue-500/15'
+                          isDone ? 'bg-primary' :
+                          isCurrent ? 'bg-primary/50 animate-pulse' :
+                          'bg-muted-foreground/15'
                         )} />
                       </div>
                     )
                   })}
                 </div>
-                <div className="flex justify-between text-[10px] text-blue-600/60 dark:text-blue-400/60">
+                <div className="flex justify-between text-[10px] text-muted-foreground">
                   <span>Transcript</span>
                   <span>Chunk</span>
                   <span>Embed</span>
@@ -874,13 +874,13 @@ export function CouncilIngestPanel() {
                 {/* Embedding progress bar */}
                 {isEmbedding && embeddingsTotal > 0 && (
                   <div className="space-y-1">
-                    <div className="flex justify-between text-xs text-blue-600 dark:text-blue-400">
+                    <div className="flex justify-between text-xs text-muted-foreground">
                       <span>Embedding chunks</span>
                       <span>{embeddingsDone}/{embeddingsTotal} ({embeddingPct}%)</span>
                     </div>
-                    <div className="h-2 bg-blue-500/15 rounded-full overflow-hidden">
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-blue-500 rounded-full transition-all duration-300"
+                        className="h-full bg-primary rounded-full transition-all duration-300"
                         style={{ width: `${embeddingPct}%` }}
                       />
                     </div>
@@ -889,17 +889,17 @@ export function CouncilIngestPanel() {
 
                 {/* Detailed log (collapsed by default) */}
                 <details className="text-xs">
-                  <summary className="cursor-pointer text-blue-600/60 dark:text-blue-400/60 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                  <summary className="cursor-pointer text-muted-foreground hover:text-foreground transition-colors">
                     Show detailed log ({progressLog.length} events)
                   </summary>
                   <div className="max-h-[150px] overflow-y-auto mt-2">
-                    <div className="text-blue-600 dark:text-blue-400 space-y-1 font-mono">
+                    <div className="text-muted-foreground space-y-1 font-mono">
                       {progressLog.map((event, i) => {
                         const Icon = stepIcons[event.step] || FileText
                         return (
                           <p key={i} className={cn(
                             'flex items-center gap-2',
-                            event.step === 'error' && 'text-red-500',
+                            event.step === 'error' && 'text-destructive',
                             event.step === 'done' && 'text-green-500',
                           )}>
                             <Icon className="h-3 w-3 shrink-0" />
