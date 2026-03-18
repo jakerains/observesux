@@ -579,7 +579,7 @@ export function TranscriptUploadModal({
                   transcript: validateField('transcript', e.target.value),
                 }))
               }
-              className="min-h-[200px] font-mono text-xs"
+              className="min-h-[120px] max-h-[200px] font-mono text-xs resize-none"
               aria-invalid={!!errors.transcript}
             />
             <div className="flex items-center justify-between text-xs text-muted-foreground">
