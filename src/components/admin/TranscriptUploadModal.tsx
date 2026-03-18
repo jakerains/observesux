@@ -26,7 +26,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Upload, FileText, X, Loader2, AlertCircle, ListVideo } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { CouncilMeeting } from '@/types/council-meetings'
+import type { CouncilMeeting, MeetingType } from '@/types/council-meetings'
+import { MEETING_TYPE_LABELS, MEETING_TYPES } from '@/types/council-meetings'
 import { format } from 'date-fns'
 
 export interface TranscriptUploadData {
@@ -34,6 +35,7 @@ export interface TranscriptUploadData {
   meetingDate: string
   videoId?: string
   transcript: string
+  meetingType: MeetingType
 }
 
 export interface TranscriptPrefillData {
@@ -73,6 +75,7 @@ export function TranscriptUploadModal({
   const [meetingDate, setMeetingDate] = useState(() => prefillData?.meetingDate ?? '')
   const [videoId, setVideoId] = useState(() => prefillData?.videoId ?? '')
   const [transcript, setTranscript] = useState('')
+  const [meetingTypeValue, setMeetingTypeValue] = useState<MeetingType>('city_council')
   const [fileName, setFileName] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [errors, setErrors] = useState<ValidationErrors>({})
@@ -125,6 +128,7 @@ export function TranscriptUploadModal({
     setMeetingDate('')
     setVideoId('')
     setTranscript('')
+    setMeetingTypeValue('city_council')
     setFileName(null)
     setErrors({})
   }, [])
@@ -189,6 +193,7 @@ export function TranscriptUploadModal({
         meetingDate,
         videoId: videoId.trim() || undefined,
         transcript: transcript.trim(),
+        meetingType: meetingTypeValue,
       })
     },
     [title, meetingDate, videoId, transcript, validate, onSubmit]
@@ -377,6 +382,23 @@ export function TranscriptUploadModal({
               </p>
             </div>
           )}
+
+          {/* Meeting Type */}
+          <div className="space-y-2">
+            <Label htmlFor="meeting-type">Meeting Type</Label>
+            <Select value={meetingTypeValue} onValueChange={(v) => setMeetingTypeValue(v as MeetingType)}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {MEETING_TYPES.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {MEETING_TYPE_LABELS[type]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
           {/* Title */}
           <div className="space-y-2">

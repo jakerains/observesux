@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { getMeetingBySlug } from '@/lib/db/council-meetings'
+import { MEETING_TYPE_LABELS } from '@/types/council-meetings'
 import { CouncilPostClient } from './CouncilPostClient'
 
 interface PageProps {
@@ -42,7 +43,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     other: {
       'article:published_time': meeting.createdAt,
       'article:modified_time': meeting.updatedAt,
-      'article:section': 'City Council',
+      'article:section': meeting.meetingType ? MEETING_TYPE_LABELS[meeting.meetingType] : 'City Council',
       'og:locale': 'en_US',
     },
   }

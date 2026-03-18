@@ -25,7 +25,8 @@ import { isDatabaseConfigured } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth/server'
 import { getDeviceTokensForType, hasDeviceAlertBeenTriggered, recordDeviceTriggeredAlert } from '@/lib/db/device-push'
 import { sendExpoPushToTokens, type ExpoPushPayload } from '@/lib/push/send-expo'
-import type { TranscriptSegment } from '@/types/council-meetings'
+import type { TranscriptSegment, MeetingType } from '@/types/council-meetings'
+import { MEETING_TYPE_LABELS } from '@/types/council-meetings'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
@@ -67,7 +68,7 @@ function sendEvent(
  */
 async function processVideo(
   videoId: string,
-  meeting: { id: string; meetingDate: string | null },
+  meeting: { id: string; meetingDate: string | null; meetingType?: MeetingType },
   controller: ReadableStreamDefaultController,
   encoder: TextEncoder,
   label: string,
@@ -143,7 +144,7 @@ async function processVideo(
   })
 
   const rawTranscript = segments.map(s => s.text).join(' ')
-  const recap = await generateMeetingRecap(rawTranscript)
+  const recap = await generateMeetingRecap(rawTranscript, meeting.meetingType)
   sendEvent(controller, encoder, 'progress', {
     step: 'recap',
     message: `${label} Recap: ${recap.topics.length} topics, ${recap.decisions.length} decisions`,
@@ -211,13 +212,15 @@ async function processVideo(
 async function sendCouncilMeetingNotification(
   meetingId: string,
   videoId: string,
-  title: string
+  title: string,
+  meetingType?: MeetingType
 ): Promise<void> {
   const deviceSubs = await getDeviceTokensForType('council_meeting')
   if (deviceSubs.length === 0) return
 
+  const typeLabel = meetingType ? MEETING_TYPE_LABELS[meetingType] : 'Council Meeting'
   const payload: ExpoPushPayload = {
-    title: 'New Council Meeting Available',
+    title: `New ${typeLabel} Available`,
     body: title,
     data: {
       type: 'council_meeting',
@@ -267,6 +270,7 @@ export async function POST(request: NextRequest) {
   let mode: 'full' | 'recap_only' | 'upload' | 'add_only' | 'dismiss' | 'undismiss' = 'full'
   const videoMeta: { title?: string; publishedAt?: string } = {}
   let uploadData: { transcript?: string; title?: string; meetingDate?: string; videoId?: string } = {}
+  let meetingType: MeetingType = 'city_council'
   try {
     const body = await request.json()
     if (body.force) force = true
@@ -278,6 +282,7 @@ export async function POST(request: NextRequest) {
     if (body.mode === 'undismiss') mode = 'undismiss'
     if (body.title) videoMeta.title = body.title
     if (body.publishedAt) videoMeta.publishedAt = body.publishedAt
+    if (body.meetingType) meetingType = body.meetingType as MeetingType
     // Upload-specific fields
     if (mode === 'upload') {
       uploadData = {
@@ -325,6 +330,7 @@ export async function POST(request: NextRequest) {
         publishedAt: videoMeta.publishedAt || null,
         meetingDate,
         videoUrl: `https://www.youtube.com/watch?v=${singleVideoId}`,
+        meetingType,
       })
 
       if (!meeting) {
@@ -407,6 +413,7 @@ export async function POST(request: NextRequest) {
               ? `https://www.youtube.com/watch?v=${uploadData.videoId}`
               : null, // No video URL for purely manual uploads
             channelId: null, // Manual uploads don't have a channel
+            meetingType,
           })
 
           if (!meeting) {
@@ -463,11 +470,11 @@ export async function POST(request: NextRequest) {
           })
 
           // Process using the standard pipeline with preloaded segments
-          const result = await processVideo(videoId, meeting, controller, encoder, '[Upload]', segments)
+          const result = await processVideo(videoId, { ...meeting, meetingType }, controller, encoder, '[Upload]', segments)
 
           if (result === 'completed') {
             // Send push notifications for manually uploaded meetings
-            sendCouncilMeetingNotification(meeting.id, videoId, uploadData.title!).catch(err =>
+            sendCouncilMeetingNotification(meeting.id, videoId, uploadData.title!, meetingType).catch(err =>
               console.error('[Council Ingest] Failed to send council meeting notification:', err)
             )
 
@@ -554,6 +561,7 @@ export async function POST(request: NextRequest) {
               publishedAt,
               meetingDate,
               videoUrl: `https://www.youtube.com/watch?v=${videoId}`,
+              meetingType,
             })
           }
 
@@ -593,7 +601,7 @@ export async function POST(request: NextRequest) {
               videoId,
             })
 
-            const recap = await generateMeetingRecap(meeting.transcriptRaw)
+            const recap = await generateMeetingRecap(meeting.transcriptRaw, meeting.meetingType)
 
             sendEvent(controller, encoder, 'progress', {
               step: 'recap',
@@ -612,7 +620,7 @@ export async function POST(request: NextRequest) {
             await storeMeetingResults(meeting.id, recap, meeting.transcriptRaw, meeting.chunkCount)
 
             // Send push notifications for recap regeneration (dedup prevents duplicates)
-            sendCouncilMeetingNotification(meeting.id, videoId, meeting.title || videoId).catch(err =>
+            sendCouncilMeetingNotification(meeting.id, videoId, meeting.title || videoId, meeting.meetingType).catch(err =>
               console.error('[Council Ingest] Failed to send council meeting notification:', err)
             )
 
@@ -636,11 +644,11 @@ export async function POST(request: NextRequest) {
           // Full reprocess mode
           await updateMeetingStatus(meeting.id, 'processing')
 
-          const result = await processVideo(videoId, meeting, controller, encoder, '[1/1]')
+          const result = await processVideo(videoId, { ...meeting, meetingType: meeting.meetingType || meetingType }, controller, encoder, '[1/1]')
 
           if (result === 'completed') {
             // Send push notifications for single-meeting retries
-            sendCouncilMeetingNotification(meeting.id, videoId, meeting.title || videoId).catch(err =>
+            sendCouncilMeetingNotification(meeting.id, videoId, meeting.title || videoId, meeting.meetingType).catch(err =>
               console.error('[Council Ingest] Failed to send council meeting notification:', err)
             )
 
@@ -850,7 +858,7 @@ export async function POST(request: NextRequest) {
               })
 
               // Send push notifications to devices subscribed to council meeting alerts
-              sendCouncilMeetingNotification(meeting.id, video.videoId, video.title).catch(err =>
+              sendCouncilMeetingNotification(meeting.id, video.videoId, video.title, 'city_council').catch(err =>
                 console.error('[Council Ingest] Failed to send council meeting notification:', err)
               )
             } else {

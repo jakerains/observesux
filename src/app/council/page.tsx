@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -13,7 +14,8 @@ import {
 import { track } from '@vercel/analytics'
 import { MobileNavigation } from '@/components/dashboard/MobileNavigation'
 import useSWR from 'swr'
-import type { CouncilMeeting } from '@/types/council-meetings'
+import type { CouncilMeeting, MeetingType } from '@/types/council-meetings'
+import { MEETING_TYPE_LABELS } from '@/types/council-meetings'
 
 interface RecapsResponse {
   meetings: CouncilMeeting[]
@@ -33,11 +35,18 @@ function formatMeetingDate(dateStr: string | null): string {
   })
 }
 
+function getMeetingSlug(meeting: CouncilMeeting): string {
+  const base = meeting.meetingDate || meeting.id
+  if (!meeting.meetingType || meeting.meetingType === 'city_council') return base
+  return `${base}-${meeting.meetingType}`
+}
+
 function MeetingListItem({ meeting }: { meeting: CouncilMeeting }) {
   const recap = meeting.recap
   if (!recap) return null
 
-  const slug = meeting.meetingDate || meeting.id
+  const slug = getMeetingSlug(meeting)
+  const showTypeBadge = meeting.meetingType && meeting.meetingType !== 'city_council'
 
   return (
     <Link
@@ -46,16 +55,24 @@ function MeetingListItem({ meeting }: { meeting: CouncilMeeting }) {
       onClick={() => track('council_recap_clicked', {
         source: 'list',
         meetingDate: meeting.meetingDate,
-        videoId: meeting.videoId
+        videoId: meeting.videoId,
+        meetingType: meeting.meetingType,
       })}
     >
       <Card className="overflow-hidden transition-colors group-hover:border-primary/30">
         <CardContent className="pt-6">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
-              <time className="text-xs font-medium text-primary">
-                {formatMeetingDate(meeting.meetingDate)}
-              </time>
+              <div className="flex items-center gap-2">
+                <time className="text-xs font-medium text-primary">
+                  {formatMeetingDate(meeting.meetingDate)}
+                </time>
+                {showTypeBadge && (
+                  <Badge variant="secondary" className="text-[10px]">
+                    {MEETING_TYPE_LABELS[meeting.meetingType]}
+                  </Badge>
+                )}
+              </div>
               <h3 className="font-medium text-sm leading-snug mt-1 line-clamp-2">
                 {meeting.title}
               </h3>
@@ -94,6 +111,20 @@ export default function CouncilPage() {
   )
 
   const meetings = data?.meetings ?? []
+  const [activeFilter, setActiveFilter] = useState<MeetingType | 'all'>('all')
+
+  // Compute which types have meetings — only show filter when multiple types exist
+  const availableTypes = useMemo(() => {
+    const types = new Set(meetings.map(m => m.meetingType || 'city_council'))
+    return Array.from(types) as MeetingType[]
+  }, [meetings])
+
+  const showFilters = availableTypes.length > 1
+
+  const filteredMeetings = useMemo(() => {
+    if (activeFilter === 'all') return meetings
+    return meetings.filter(m => (m.meetingType || 'city_council') === activeFilter)
+  }, [meetings, activeFilter])
 
   if (isLoading) {
     return (
@@ -118,13 +149,42 @@ export default function CouncilPage() {
               <Landmark className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h1 className="text-xl font-bold">City Council Recaps</h1>
+              <h1 className="text-xl font-bold">Meeting Recaps</h1>
               <p className="text-sm text-muted-foreground">
-                What your city council decided — and what it means for you
+                Council meetings, budget sessions, and more — recapped by SUX
               </p>
             </div>
           </div>
         </div>
+
+        {/* Type filter tabs — only shown when multiple types exist */}
+        {showFilters && (
+          <div className="flex flex-wrap gap-2 mb-4">
+            <button
+              onClick={() => setActiveFilter('all')}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                activeFilter === 'all'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+              }`}
+            >
+              All
+            </button>
+            {availableTypes.map(type => (
+              <button
+                key={type}
+                onClick={() => setActiveFilter(type)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                  activeFilter === type
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                }`}
+              >
+                {MEETING_TYPE_LABELS[type]}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Meeting list */}
         {error ? (
@@ -133,22 +193,22 @@ export default function CouncilPage() {
               <div className="flex flex-col items-center gap-3 text-center">
                 <Landmark className="h-12 w-12 text-muted-foreground/30" />
                 <p className="text-sm text-muted-foreground">
-                  Unable to load council meeting recaps
+                  Unable to load meeting recaps
                 </p>
               </div>
             </CardContent>
           </Card>
-        ) : meetings.length === 0 ? (
+        ) : filteredMeetings.length === 0 ? (
           <Card className="border-dashed">
             <CardContent className="py-12">
               <div className="flex flex-col items-center gap-3 text-center">
                 <Landmark className="h-12 w-12 text-muted-foreground/30" />
                 <div>
                   <h3 className="font-medium text-muted-foreground">
-                    No council meetings yet
+                    {activeFilter !== 'all' ? `No ${MEETING_TYPE_LABELS[activeFilter]} meetings yet` : 'No meetings yet'}
                   </h3>
                   <p className="text-sm text-muted-foreground/70 mt-1">
-                    Meeting recaps will appear here once council videos are processed
+                    Meeting recaps will appear here once videos are processed
                   </p>
                 </div>
               </div>
@@ -156,7 +216,7 @@ export default function CouncilPage() {
           </Card>
         ) : (
           <div className="space-y-3">
-            {meetings.map((meeting) => (
+            {filteredMeetings.map((meeting) => (
               <MeetingListItem key={meeting.id} meeting={meeting} />
             ))}
           </div>

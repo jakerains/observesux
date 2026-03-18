@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { query, dateFrom, dateTo, limit = 5 } = body
+    const { query, dateFrom, dateTo, limit = 5, meetingType } = body
 
     if (!query) {
       return NextResponse.json(
@@ -38,6 +38,7 @@ export async function POST(request: NextRequest) {
       minSimilarity: 0.3,
       dateFrom,
       dateTo,
+      meetingType: meetingType || null,
     })
 
     return NextResponse.json({

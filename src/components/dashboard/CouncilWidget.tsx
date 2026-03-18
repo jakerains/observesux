@@ -29,7 +29,7 @@ function formatMeetingDate(dateStr: string | null): string {
 
 export function CouncilWidget() {
   const { data, error, isLoading } = useSWR<RecapsResponse>(
-    '/api/council-meetings/recaps',
+    '/api/council-meetings/recaps?type=city_council',
     fetcher,
     { refreshInterval: 1800000 } // 30 minutes
   )

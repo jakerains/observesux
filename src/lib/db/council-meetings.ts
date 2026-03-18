@@ -6,6 +6,7 @@ import type {
   CouncilMeetingChunkWithSimilarity,
   CouncilIngestStats,
   MeetingVersion,
+  MeetingType,
 } from '@/types/council-meetings'
 
 /**
@@ -22,6 +23,7 @@ function mapRowToMeeting(row: Record<string, unknown>): CouncilMeeting {
           ? row.meeting_date.toISOString().split('T')[0]
           : String(row.meeting_date))
       : null,
+    meetingType: (row.meeting_type as MeetingType) || 'city_council',
     videoUrl: row.video_url as string | null,
     channelId: row.channel_id as string | null,
     transcriptRaw: row.transcript_raw as string | null,
@@ -35,6 +37,34 @@ function mapRowToMeeting(row: Record<string, unknown>): CouncilMeeting {
     createdAt: (row.created_at as Date).toISOString(),
     updatedAt: (row.updated_at as Date).toISOString(),
   }
+}
+
+/**
+ * Generate a URL slug for a meeting.
+ * City council meetings use bare date (backward compatible): "2026-01-26"
+ * Other types use composite: "2026-01-26-budget_session"
+ */
+export function getMeetingSlug(meeting: CouncilMeeting): string {
+  const base = meeting.meetingDate || meeting.id
+  if (!meeting.meetingType || meeting.meetingType === 'city_council') return base
+  return `${base}-${meeting.meetingType}`
+}
+
+/**
+ * Parse a composite slug into date and meeting type.
+ * "2026-01-26" → { date: "2026-01-26", meetingType: "city_council" }
+ * "2026-01-26-budget_session" → { date: "2026-01-26", meetingType: "budget_session" }
+ */
+function parseSlug(slug: string): { date: string; meetingType: MeetingType } {
+  // Match YYYY-MM-DD followed by optional -type suffix
+  const match = slug.match(/^(\d{4}-\d{2}-\d{2})(?:-(.+))?$/)
+  if (match) {
+    const date = match[1]
+    const type = match[2] as MeetingType | undefined
+    return { date, meetingType: type || 'city_council' }
+  }
+  // Fallback: treat entire slug as a non-date identifier (UUID, etc.)
+  return { date: slug, meetingType: 'city_council' }
 }
 
 /**
@@ -65,12 +95,15 @@ export async function upsertMeeting(input: {
   meetingDate?: string | null
   videoUrl?: string | null
   channelId?: string | null
+  meetingType?: MeetingType
 }): Promise<CouncilMeeting | null> {
   if (!isDatabaseConfigured()) return null
 
+  const meetingType = input.meetingType || 'city_council'
+
   try {
     const result = await sql`
-      INSERT INTO council_meetings (video_id, title, published_at, meeting_date, video_url, channel_id, status)
+      INSERT INTO council_meetings (video_id, title, published_at, meeting_date, video_url, channel_id, meeting_type, status)
       VALUES (
         ${input.videoId},
         ${input.title},
@@ -78,6 +111,7 @@ export async function upsertMeeting(input: {
         ${input.meetingDate || null},
         ${input.videoUrl || null},
         ${input.channelId || null},
+        ${meetingType},
         'processing'
       )
       ON CONFLICT (video_id) DO UPDATE SET
@@ -86,6 +120,7 @@ export async function upsertMeeting(input: {
         meeting_date = COALESCE(EXCLUDED.meeting_date, council_meetings.meeting_date),
         video_url = COALESCE(EXCLUDED.video_url, council_meetings.video_url),
         channel_id = COALESCE(EXCLUDED.channel_id, council_meetings.channel_id),
+        meeting_type = EXCLUDED.meeting_type,
         status = 'processing',
         error_message = NULL,
         updated_at = NOW()
@@ -319,12 +354,15 @@ export async function searchCouncilMeetingChunks(
     minSimilarity?: number
     dateFrom?: string
     dateTo?: string
+    meetingType?: MeetingType | null
   } = {}
 ): Promise<CouncilMeetingChunkWithSimilarity[]> {
   if (!isDatabaseConfigured()) return []
 
-  const { limit = 5, minSimilarity = 0.3, dateFrom, dateTo } = options
+  const { limit = 5, minSimilarity = 0.3, dateFrom, dateTo, meetingType } = options
   const embeddingStr = `[${queryEmbedding.join(',')}]`
+  // Use null coalescing for the type filter — NULL means "all types"
+  const typeFilter = meetingType || null
 
   try {
     let result
@@ -343,6 +381,7 @@ export async function searchCouncilMeetingChunks(
           AND 1 - (c.embedding <=> ${embeddingStr}::vector) >= ${minSimilarity}
           AND c.meeting_date >= ${dateFrom}::date
           AND c.meeting_date <= ${dateTo}::date
+          AND (${typeFilter}::text IS NULL OR m.meeting_type = ${typeFilter})
         ORDER BY c.embedding <=> ${embeddingStr}::vector ASC
         LIMIT ${limit}
       `
@@ -359,6 +398,7 @@ export async function searchCouncilMeetingChunks(
         WHERE c.embedding IS NOT NULL
           AND 1 - (c.embedding <=> ${embeddingStr}::vector) >= ${minSimilarity}
           AND c.meeting_date >= ${dateFrom}::date
+          AND (${typeFilter}::text IS NULL OR m.meeting_type = ${typeFilter})
         ORDER BY c.embedding <=> ${embeddingStr}::vector ASC
         LIMIT ${limit}
       `
@@ -375,6 +415,7 @@ export async function searchCouncilMeetingChunks(
         WHERE c.embedding IS NOT NULL
           AND 1 - (c.embedding <=> ${embeddingStr}::vector) >= ${minSimilarity}
           AND c.meeting_date <= ${dateTo}::date
+          AND (${typeFilter}::text IS NULL OR m.meeting_type = ${typeFilter})
         ORDER BY c.embedding <=> ${embeddingStr}::vector ASC
         LIMIT ${limit}
       `
@@ -390,6 +431,7 @@ export async function searchCouncilMeetingChunks(
         JOIN council_meetings m ON m.id = c.meeting_id
         WHERE c.embedding IS NOT NULL
           AND 1 - (c.embedding <=> ${embeddingStr}::vector) >= ${minSimilarity}
+          AND (${typeFilter}::text IS NULL OR m.meeting_type = ${typeFilter})
         ORDER BY c.embedding <=> ${embeddingStr}::vector ASC
         LIMIT ${limit}
       `
@@ -421,15 +463,20 @@ export async function searchCouncilMeetingChunks(
 }
 
 /**
- * Fetch a single completed meeting by its date slug (e.g. "2026-01-26")
+ * Fetch a single completed meeting by its slug.
+ * Supports bare date slugs ("2026-01-26" → city_council) and
+ * composite slugs ("2026-01-26-budget_session" → budget_session).
  */
 export async function getMeetingBySlug(dateSlug: string): Promise<CouncilMeeting | null> {
   if (!isDatabaseConfigured()) return null
 
   try {
+    const { date, meetingType } = parseSlug(dateSlug)
+
     const result = await sql`
       SELECT * FROM council_meetings
-      WHERE meeting_date = ${dateSlug}::date
+      WHERE meeting_date = ${date}::date
+        AND meeting_type = ${meetingType}
         AND status = 'completed'
         AND recap IS NOT NULL
       LIMIT 1
@@ -461,18 +508,30 @@ export async function getMeetingById(id: string): Promise<CouncilMeeting | null>
 }
 
 /**
- * Get recent meeting recaps
+ * Get recent meeting recaps, optionally filtered by meeting type.
+ * Pass meetingType to filter (e.g. 'city_council' for widget), or omit for all types.
  */
-export async function getRecentMeetingRecaps(limit: number = 5): Promise<CouncilMeeting[]> {
+export async function getRecentMeetingRecaps(
+  limit: number = 5,
+  meetingType?: MeetingType | null
+): Promise<CouncilMeeting[]> {
   if (!isDatabaseConfigured()) return []
 
   try {
-    const result = await sql`
-      SELECT * FROM council_meetings
-      WHERE status = 'completed' AND recap IS NOT NULL
-      ORDER BY meeting_date DESC NULLS LAST
-      LIMIT ${limit}
-    `
+    const result = meetingType
+      ? await sql`
+          SELECT * FROM council_meetings
+          WHERE status = 'completed' AND recap IS NOT NULL
+            AND meeting_type = ${meetingType}
+          ORDER BY meeting_date DESC NULLS LAST
+          LIMIT ${limit}
+        `
+      : await sql`
+          SELECT * FROM council_meetings
+          WHERE status = 'completed' AND recap IS NOT NULL
+          ORDER BY meeting_date DESC NULLS LAST
+          LIMIT ${limit}
+        `
     return result.map(mapRowToMeeting)
   } catch (error) {
     console.error('Error getting recent meeting recaps:', error)

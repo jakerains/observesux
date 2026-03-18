@@ -1,4 +1,23 @@
-// City Council Meeting Types
+// City Council & Community Meeting Types
+
+export type MeetingType =
+  | 'city_council'
+  | 'budget_session'
+  | 'school_board'
+  | 'planning_zoning'
+  | 'special_session'
+  | 'other'
+
+export const MEETING_TYPE_LABELS: Record<MeetingType, string> = {
+  city_council: 'City Council',
+  budget_session: 'Budget Session',
+  school_board: 'School Board',
+  planning_zoning: 'Planning & Zoning',
+  special_session: 'Special Session',
+  other: 'Community Meeting',
+}
+
+export const MEETING_TYPES = Object.keys(MEETING_TYPE_LABELS) as MeetingType[]
 
 export interface CouncilMeeting {
   id: string
@@ -6,6 +25,7 @@ export interface CouncilMeeting {
   title: string
   publishedAt: string | null
   meetingDate: string | null
+  meetingType: MeetingType
   videoUrl: string | null
   channelId: string | null
   transcriptRaw: string | null

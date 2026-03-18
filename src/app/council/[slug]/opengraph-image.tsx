@@ -1,5 +1,6 @@
 import { getMeetingBySlug } from '@/lib/db/council-meetings'
 import { createSectionOgImage, ogImageContentType, ogImageSize } from '@/lib/og/section-card'
+import { MEETING_TYPE_LABELS } from '@/types/council-meetings'
 
 export const runtime = 'edge'
 export const size = ogImageSize
@@ -52,9 +53,12 @@ export default async function Image({ params }: { params: Promise<{ slug: string
   const metrics = metricCounts.filter(metric => metric.count > 0).map(metric => metric.label)
   const fallbackMetric = !metrics.length ? 'AI summary ready' : null
 
+  const typeLabel = meeting?.meetingType ? MEETING_TYPE_LABELS[meeting.meetingType] : 'City Council'
+  const eyebrow = `${typeLabel} Recap`
+
   return createSectionOgImage(
     {
-      eyebrow: 'City Council Recap',
+      eyebrow,
       title: displayTitle,
       date: fullDate,
       metrics,
@@ -62,7 +66,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
       footerPath: 'siouxland.online/council',
       footerNote: 'Decisions, debate, and what changed',
       imageTopBadge: 'Sioux City, Iowa',
-      imagePanelEyebrow: 'Council coverage',
+      imagePanelEyebrow: `${typeLabel} coverage`,
       imagePanelTitle: 'What changed at City Hall',
       imagePanelBody: 'Faster context from the official meeting transcript.',
     }

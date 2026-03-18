@@ -5,6 +5,23 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.0] - 2026-03-18
+
+### Added
+- Community meeting support — budget sessions, school board, planning & zoning, special sessions, and other meetings now get the same AI recaps, search, and sharing as city council meetings
+- Add Meeting from YouTube URL in admin panel — paste a link, pick a meeting type, and the title/date are pulled automatically
+- Meeting type selector in the transcript upload modal
+- Filter tabs on the council page — filter by meeting type (only appears when multiple types exist)
+- Meeting type badges on recap cards and detail pages for non-council meetings
+- Type-aware AI recap prompts — each meeting type gets context-specific guidance (budget terms, school board context, etc.)
+- Dynamic OG images — share cards now show "Budget Session Recap", "School Board Recap", etc. instead of just "City Council Recap"
+
+### Changed
+- Council page title updated to "Meeting Recaps" with broader subtitle
+- Dashboard widget now explicitly filters to city council meetings only
+
+---
+
 ## [0.13.16] - 2026-03-17
 
 ### Added

@@ -16,6 +16,20 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.14.0',
+    date: '2026-03-18',
+    added: [
+      'Community meeting support — budget sessions, school board, planning & zoning, and special sessions now get the same AI recaps and search as council meetings',
+      'Add Meeting from YouTube URL in admin panel — paste a link, pick a type, title and date are pulled automatically',
+      'Meeting type filter tabs on the council page',
+      'Type-aware AI recaps with context-specific prompts for each meeting type',
+      'Dynamic OG share cards show the meeting type (e.g., "Budget Session Recap")',
+    ],
+    changed: [
+      'Council page renamed to "Meeting Recaps" to reflect broader coverage',
+    ],
+  },
+  {
     version: '0.13.16',
     date: '2026-03-17',
     added: [

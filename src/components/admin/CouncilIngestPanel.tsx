@@ -31,9 +31,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
 import { cn, markdownToHtml } from '@/lib/utils'
 import { format, parseISO } from 'date-fns'
-import type { CouncilMeeting, CouncilIngestStats, MeetingVersion } from '@/types/council-meetings'
+import type { CouncilMeeting, CouncilIngestStats, MeetingVersion, MeetingType } from '@/types/council-meetings'
+import { MEETING_TYPE_LABELS, MEETING_TYPES } from '@/types/council-meetings'
 import { TranscriptUploadModal, type TranscriptUploadData, type TranscriptPrefillData } from './TranscriptUploadModal'
 
 interface WorkflowOutput {
@@ -122,6 +131,9 @@ export function CouncilIngestPanel() {
   const [isUploading, setIsUploading] = useState(false)
   const [uploadPrefill, setUploadPrefill] = useState<TranscriptPrefillData | null>(null)
   const [addingVideoId, setAddingVideoId] = useState<string | null>(null)
+  const [addMeetingUrl, setAddMeetingUrl] = useState('')
+  const [addMeetingType, setAddMeetingType] = useState<MeetingType>('city_council')
+  const [addingMeeting, setAddingMeeting] = useState(false)
   const logEndRef = useRef<HTMLDivElement>(null)
 
   const fetchData = useCallback(async () => {
@@ -445,6 +457,7 @@ export function CouncilIngestPanel() {
           title: data.title,
           meetingDate: data.meetingDate,
           videoId: data.videoId,
+          meetingType: data.meetingType,
         }),
       })
 
@@ -562,6 +575,54 @@ export function CouncilIngestPanel() {
       console.error('Failed to add meeting:', error)
     } finally {
       setAddingVideoId(null)
+    }
+  }
+
+  const addMeetingFromUrl = async () => {
+    const url = addMeetingUrl.trim()
+    let videoId: string | null = null
+    try {
+      const parsed = new URL(url)
+      videoId = parsed.searchParams.get('v') || parsed.pathname.split('/').pop() || null
+    } catch {
+      if (/^[a-zA-Z0-9_-]{11}$/.test(url)) videoId = url
+    }
+    if (!videoId) return
+
+    setAddingMeeting(true)
+
+    try {
+      // Fetch title from YouTube oEmbed
+      let title = `Meeting — ${videoId}`
+      try {
+        const oembedRes = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`)
+        if (oembedRes.ok) {
+          const oembed = await oembedRes.json()
+          if (oembed.title) title = oembed.title
+        }
+      } catch { /* use fallback title */ }
+
+      // Create the meeting record via add_only mode (no transcript processing)
+      const res = await fetch('/api/workflow/council-ingest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'add_only',
+          videoId,
+          title,
+          meetingType: addMeetingType,
+        }),
+      })
+
+      if (res.ok) {
+        setAddMeetingUrl('')
+        await fetchData()
+        if (feedVideos) await fetchFeed()
+      }
+    } catch (error) {
+      console.error('Failed to add meeting:', error)
+    } finally {
+      setAddingMeeting(false)
     }
   }
 
@@ -703,6 +764,43 @@ export function CouncilIngestPanel() {
                 </>
               )}
             </Button>
+          </div>
+
+          {/* Add Meeting from YouTube URL */}
+          <div className="p-3 rounded-lg bg-muted/50 space-y-2">
+            <p className="text-sm font-medium">Add Meeting from YouTube URL</p>
+            <div className="flex gap-2">
+              <Input
+                placeholder="YouTube URL or Video ID..."
+                value={addMeetingUrl}
+                onChange={(e) => setAddMeetingUrl(e.target.value)}
+                className="flex-1"
+              />
+              <Select value={addMeetingType} onValueChange={(v) => setAddMeetingType(v as MeetingType)}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {MEETING_TYPES.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {MEETING_TYPE_LABELS[type]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                onClick={addMeetingFromUrl}
+                disabled={!addMeetingUrl.trim() || addingMeeting || ingesting}
+                size="sm"
+                className="gap-1"
+              >
+                {addingMeeting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                Add
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Adds the meeting with title &amp; date from YouTube. Use Retry or Upload Transcript on the meeting to process it.
+            </p>
           </div>
 
           {/* Live progress log */}
@@ -1005,6 +1103,11 @@ export function CouncilIngestPanel() {
                             )}
                             {meeting.status}
                           </Badge>
+                          {meeting.meetingType && meeting.meetingType !== 'city_council' && (
+                            <Badge variant="secondary" className="text-xs">
+                              {MEETING_TYPE_LABELS[meeting.meetingType] || meeting.meetingType}
+                            </Badge>
+                          )}
                           {meeting.version > 1 && (
                             <Badge variant="outline" className="text-xs font-mono">
                               v{meeting.version}

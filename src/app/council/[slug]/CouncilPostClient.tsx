@@ -18,6 +18,7 @@ import { MobileNavigation } from '@/components/dashboard/MobileNavigation'
 import { ShareButton } from '@/components/ui/share-button'
 import { markdownToHtml } from '@/lib/utils'
 import type { CouncilMeeting } from '@/types/council-meetings'
+import { MEETING_TYPE_LABELS } from '@/types/council-meetings'
 
 function formatMeetingDate(dateStr: string | null): string {
   if (!dateStr) return 'Date unknown'
@@ -81,7 +82,7 @@ export function CouncilPostClient({ meeting }: CouncilPostClientProps) {
             className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
-            All Council Meetings
+            All Meetings
           </Link>
         </div>
 
@@ -89,15 +90,22 @@ export function CouncilPostClient({ meeting }: CouncilPostClientProps) {
         <header className="mb-8">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <time className="text-sm font-medium text-primary">
-                {formatMeetingDate(meeting.meetingDate)}
-              </time>
+              <div className="flex items-center gap-2">
+                <time className="text-sm font-medium text-primary">
+                  {formatMeetingDate(meeting.meetingDate)}
+                </time>
+                {meeting.meetingType && meeting.meetingType !== 'city_council' && (
+                  <Badge variant="secondary" className="text-xs">
+                    {MEETING_TYPE_LABELS[meeting.meetingType]}
+                  </Badge>
+                )}
+              </div>
               <h1 className="text-2xl sm:text-3xl font-bold mt-2 leading-tight">
                 {meeting.title}
               </h1>
             </div>
             <ShareButton
-              url={`https://siouxland.online/council/${meeting.meetingDate}`}
+              url={`https://siouxland.online/council/${meeting.meetingType && meeting.meetingType !== 'city_council' ? `${meeting.meetingDate}-${meeting.meetingType}` : meeting.meetingDate}`}
               title={meeting.title}
               text={recap.summary}
               className="shrink-0 mt-1"

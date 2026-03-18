@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { fetchTranscript as ytFetchTranscript } from 'youtube-transcript'
 import { SUX_PERSONALITY } from '@/lib/ai/sux-personality'
 import { getActiveModel } from '@/lib/ai/model-config'
-import type { TranscriptSegment, CouncilMeetingRecap } from '@/types/council-meetings'
+import type { TranscriptSegment, CouncilMeetingRecap, MeetingType } from '@/types/council-meetings'
 
 // Sioux City Council YouTube channel
 const COUNCIL_CHANNEL_ID = 'UCrekGAbOEqDvdzn9w8FAcoQ'
@@ -396,7 +396,46 @@ const RecapSchema = z.object({
  * Sonnet 4.5 supports ~200K tokens (~600K chars), so most transcripts fit in a single call.
  * Only falls back to staged summarization for exceptionally long transcripts.
  */
-export async function generateMeetingRecap(rawTranscript: string): Promise<CouncilMeetingRecap> {
+/**
+ * Get meeting-type-specific context for the recap system prompt.
+ */
+function getRecapContextForType(meetingType?: MeetingType): string {
+  switch (meetingType) {
+    case 'budget_session':
+      return `Your job right now is to make a city budget session transparent and accessible to everyday people. You write blog-post style recaps addressed directly to Siouxland residents.
+
+Focus on the fiscal impact: what's being proposed, what it costs, who pays for it, and what services or projects the money funds. Explain budget jargon in plain English — "mill levy" means property tax rate, "general fund" means the city's main checking account, etc.`
+
+    case 'school_board':
+      return `Your job right now is to make a school board meeting transparent and accessible to Siouxland families. You write blog-post style recaps addressed directly to parents, students, and educators.
+
+Focus on what matters to families: school policies, budget decisions that affect classrooms, staffing changes, facility plans, and anything that impacts kids directly. Translate edu-speak into plain English.`
+
+    case 'planning_zoning':
+      return `Your job right now is to make a planning & zoning meeting transparent and accessible to everyday people. You write blog-post style recaps addressed directly to Siouxland residents.
+
+Focus on what's being built, rezoned, or proposed — and what it means for the neighborhood. Will there be more traffic? New businesses? Changes to property use? Explain zoning jargon in plain terms.`
+
+    case 'special_session':
+    case 'other':
+      return `Your job right now is to make this public meeting transparent and accessible to everyday people. You write blog-post style recaps addressed directly to Siouxland residents.
+
+Focus on the key decisions, discussions, and what they mean for real people in the community.`
+
+    case 'city_council':
+    default:
+      return `Your job right now is to make a city council meeting transparent and accessible to everyday people. You write blog-post style recaps addressed directly to Siouxland residents.
+
+**Current Sioux City Council members** (use these as the authoritative reference for names — transcripts often misspell or garble them):
+- Mayor Bob Scott
+- Mayor Pro Tem Julie Schoenherr
+- Councilmember Craig Berenstein
+- Councilmember Rick Bertrand
+- Councilmember Ike Rayford`
+  }
+}
+
+export async function generateMeetingRecap(rawTranscript: string, meetingType?: MeetingType): Promise<CouncilMeetingRecap> {
   const openrouter = createOpenRouter({
     apiKey: process.env.OPENROUTER_API_KEY,
   })
@@ -405,14 +444,7 @@ export async function generateMeetingRecap(rawTranscript: string): Promise<Counc
 
   const RECAP_SYSTEM_PROMPT = `${SUX_PERSONALITY}
 
-Your job right now is to make a city council meeting transparent and accessible to everyday people. You write blog-post style recaps addressed directly to Siouxland residents.
-
-**Current Sioux City Council members** (use these as the authoritative reference for names — transcripts often misspell or garble them):
-- Mayor Bob Scott
-- Mayor Pro Tem Julie Schoenherr
-- Councilmember Craig Berenstein
-- Councilmember Rick Bertrand
-- Councilmember Ike Rayford
+${getRecapContextForType(meetingType)}
 
 **Editorial voice guidance** — these are critical for maintaining the SUX blog personality consistently:
 - **Be opinionated.** Don't just report what happened; tell residents what matters and why. Have a take. If something's frustrating, say so. If a project is overdue, note it.
