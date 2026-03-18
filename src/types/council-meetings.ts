@@ -48,7 +48,7 @@ export interface MeetingVersion {
   createdAt: string
 }
 
-export type CouncilMeetingStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'no_captions' | 'dismissed'
+export type CouncilMeetingStatus = 'pending' | 'processing' | 'completed' | 'draft' | 'failed' | 'no_captions' | 'dismissed'
 
 export interface CouncilMeetingRecap {
   summary: string

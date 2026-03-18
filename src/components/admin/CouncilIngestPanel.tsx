@@ -24,6 +24,8 @@ import {
   Upload,
   Plus,
   EyeOff,
+  Send,
+  EyeIcon,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -85,6 +87,7 @@ function parseMeetingDateFromTitle(title: string): string | null {
 
 const statusBadgeVariant: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   completed: 'default',
+  draft: 'secondary',
   failed: 'destructive',
   no_captions: 'outline',
   processing: 'secondary',
@@ -623,6 +626,20 @@ export function CouncilIngestPanel() {
       console.error('Failed to add meeting:', error)
     } finally {
       setAddingMeeting(false)
+    }
+  }
+
+  const publishOrUnpublish = async (videoId: string, action: 'publish' | 'unpublish') => {
+    try {
+      const res = await fetch('/api/workflow/council-ingest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoId, mode: action }),
+      })
+      const data = await res.json()
+      if (data.success) await fetchData()
+    } catch (error) {
+      console.error(`Failed to ${action} meeting:`, error)
     }
   }
 
@@ -1196,7 +1213,7 @@ export function CouncilIngestPanel() {
                         )}
 
                         {/* Version History */}
-                        {meeting.status === 'completed' && (
+                        {(meeting.status === 'completed' || meeting.status === 'draft') && (
                           <div className="mt-3">
                             <button
                               onClick={(e) => {
@@ -1341,7 +1358,35 @@ export function CouncilIngestPanel() {
                                 <Upload className="h-3 w-3" />
                                 Upload Transcript
                               </Button>
-                              {meeting.status !== 'completed' && (
+                              {meeting.status === 'draft' && (
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  className="h-7 gap-1.5 text-xs"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    publishOrUnpublish(meeting.videoId, 'publish')
+                                  }}
+                                >
+                                  <Send className="h-3 w-3" />
+                                  Publish
+                                </Button>
+                              )}
+                              {meeting.status === 'completed' && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 gap-1.5 text-xs text-muted-foreground"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    publishOrUnpublish(meeting.videoId, 'unpublish')
+                                  }}
+                                >
+                                  <EyeIcon className="h-3 w-3" />
+                                  Unpublish
+                                </Button>
+                              )}
+                              {meeting.status !== 'completed' && meeting.status !== 'draft' && (
                                 <Button
                                   variant="ghost"
                                   size="sm"

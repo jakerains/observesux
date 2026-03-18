@@ -217,6 +217,48 @@ export async function dismissMeeting(
 }
 
 /**
+ * Publish a draft meeting — changes status from 'draft' to 'completed'.
+ */
+export async function publishMeeting(id: string): Promise<boolean> {
+  if (!isDatabaseConfigured()) return false
+
+  try {
+    const result = await sql`
+      UPDATE council_meetings
+      SET status = 'completed',
+          updated_at = NOW()
+      WHERE id = ${id} AND status = 'draft'
+      RETURNING id
+    `
+    return result.length > 0
+  } catch (error) {
+    console.error('Error publishing meeting:', error)
+    return false
+  }
+}
+
+/**
+ * Unpublish a completed meeting — changes status back to 'draft'.
+ */
+export async function unpublishMeeting(id: string): Promise<boolean> {
+  if (!isDatabaseConfigured()) return false
+
+  try {
+    const result = await sql`
+      UPDATE council_meetings
+      SET status = 'draft',
+          updated_at = NOW()
+      WHERE id = ${id} AND status = 'completed'
+      RETURNING id
+    `
+    return result.length > 0
+  } catch (error) {
+    console.error('Error unpublishing meeting:', error)
+    return false
+  }
+}
+
+/**
  * Restore a dismissed meeting back to pending so it can be reprocessed.
  */
 export async function undismissMeeting(videoId: string): Promise<boolean> {
@@ -246,7 +288,8 @@ export async function storeMeetingResults(
   id: string,
   recap: CouncilMeetingRecap,
   rawTranscript: string,
-  chunkCount: number
+  chunkCount: number,
+  targetStatus: 'completed' | 'draft' = 'completed'
 ): Promise<boolean> {
   if (!isDatabaseConfigured()) return false
 
@@ -280,7 +323,7 @@ export async function storeMeetingResults(
           transcript_raw = ${rawTranscript},
           chunk_count = ${chunkCount},
           version = ${nextVersion},
-          status = 'completed',
+          status = ${targetStatus},
           error_message = NULL,
           updated_at = NOW()
       WHERE id = ${id}
@@ -378,6 +421,7 @@ export async function searchCouncilMeetingChunks(
         FROM council_meeting_chunks c
         JOIN council_meetings m ON m.id = c.meeting_id
         WHERE c.embedding IS NOT NULL
+          AND m.status = 'completed'
           AND 1 - (c.embedding <=> ${embeddingStr}::vector) >= ${minSimilarity}
           AND c.meeting_date >= ${dateFrom}::date
           AND c.meeting_date <= ${dateTo}::date
@@ -396,6 +440,7 @@ export async function searchCouncilMeetingChunks(
         FROM council_meeting_chunks c
         JOIN council_meetings m ON m.id = c.meeting_id
         WHERE c.embedding IS NOT NULL
+          AND m.status = 'completed'
           AND 1 - (c.embedding <=> ${embeddingStr}::vector) >= ${minSimilarity}
           AND c.meeting_date >= ${dateFrom}::date
           AND (${typeFilter}::text IS NULL OR m.meeting_type = ${typeFilter})
@@ -413,6 +458,7 @@ export async function searchCouncilMeetingChunks(
         FROM council_meeting_chunks c
         JOIN council_meetings m ON m.id = c.meeting_id
         WHERE c.embedding IS NOT NULL
+          AND m.status = 'completed'
           AND 1 - (c.embedding <=> ${embeddingStr}::vector) >= ${minSimilarity}
           AND c.meeting_date <= ${dateTo}::date
           AND (${typeFilter}::text IS NULL OR m.meeting_type = ${typeFilter})
@@ -430,6 +476,7 @@ export async function searchCouncilMeetingChunks(
         FROM council_meeting_chunks c
         JOIN council_meetings m ON m.id = c.meeting_id
         WHERE c.embedding IS NOT NULL
+          AND m.status = 'completed'
           AND 1 - (c.embedding <=> ${embeddingStr}::vector) >= ${minSimilarity}
           AND (${typeFilter}::text IS NULL OR m.meeting_type = ${typeFilter})
         ORDER BY c.embedding <=> ${embeddingStr}::vector ASC

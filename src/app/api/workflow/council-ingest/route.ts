@@ -19,6 +19,8 @@ import {
   syncMeetingMetadata,
   dismissMeeting,
   undismissMeeting,
+  publishMeeting,
+  unpublishMeeting,
 } from '@/lib/db/council-meetings'
 import { generateEmbedding } from '@/lib/ai/embeddings'
 import { isDatabaseConfigured } from '@/lib/db'
@@ -72,8 +74,9 @@ async function processVideo(
   controller: ReadableStreamDefaultController,
   encoder: TextEncoder,
   label: string,
-  preloadedSegments?: TranscriptSegment[]
-): Promise<'completed' | 'no_captions'> {
+  preloadedSegments?: TranscriptSegment[],
+  targetStatus: 'completed' | 'draft' = 'completed'
+): Promise<'completed' | 'draft' | 'no_captions'> {
   let segments: TranscriptSegment[] | null = preloadedSegments || null
 
   // Fetch transcript only if not preloaded (manual upload provides preloaded segments)
@@ -200,9 +203,9 @@ async function processVideo(
   }))
 
   await insertMeetingChunks(chunkData)
-  await storeMeetingResults(meeting.id, recap, rawTranscript, chunks.length)
+  await storeMeetingResults(meeting.id, recap, rawTranscript, chunks.length, targetStatus)
 
-  return 'completed'
+  return targetStatus
 }
 
 /**
@@ -267,7 +270,7 @@ export async function POST(request: NextRequest) {
 
   let force = false
   let singleVideoId: string | null = null
-  let mode: 'full' | 'recap_only' | 'upload' | 'add_only' | 'dismiss' | 'undismiss' = 'full'
+  let mode: 'full' | 'recap_only' | 'upload' | 'add_only' | 'dismiss' | 'undismiss' | 'publish' | 'unpublish' = 'full'
   const videoMeta: { title?: string; publishedAt?: string } = {}
   let uploadData: { transcript?: string; title?: string; meetingDate?: string; videoId?: string } = {}
   let meetingType: MeetingType = 'city_council'
@@ -280,6 +283,8 @@ export async function POST(request: NextRequest) {
     if (body.mode === 'add_only') mode = 'add_only'
     if (body.mode === 'dismiss') mode = 'dismiss'
     if (body.mode === 'undismiss') mode = 'undismiss'
+    if (body.mode === 'publish') mode = 'publish'
+    if (body.mode === 'unpublish') mode = 'unpublish'
     if (body.title) videoMeta.title = body.title
     if (body.publishedAt) videoMeta.publishedAt = body.publishedAt
     if (body.meetingType) meetingType = body.meetingType as MeetingType
@@ -309,6 +314,28 @@ export async function POST(request: NextRequest) {
   // Undismiss mode: restore a dismissed meeting back to pending
   if (mode === 'undismiss' && singleVideoId) {
     const success = await undismissMeeting(singleVideoId)
+    return NextResponse.json({ success })
+  }
+
+  // Publish mode: promote a draft meeting to completed (public)
+  if (mode === 'publish' && singleVideoId) {
+    const meeting = await getMeetingByVideoId(singleVideoId)
+    if (!meeting) return NextResponse.json({ error: 'Meeting not found' }, { status: 404 })
+    const success = await publishMeeting(meeting.id)
+    if (success) {
+      // Send notifications now that it's published
+      sendCouncilMeetingNotification(meeting.id, singleVideoId, meeting.title, meeting.meetingType).catch(err =>
+        console.error('[Council Ingest] Failed to send notification:', err)
+      )
+    }
+    return NextResponse.json({ success })
+  }
+
+  // Unpublish mode: revert a completed meeting back to draft
+  if (mode === 'unpublish' && singleVideoId) {
+    const meeting = await getMeetingByVideoId(singleVideoId)
+    if (!meeting) return NextResponse.json({ error: 'Meeting not found' }, { status: 404 })
+    const success = await unpublishMeeting(meeting.id)
     return NextResponse.json({ success })
   }
 
@@ -469,20 +496,15 @@ export async function POST(request: NextRequest) {
             segmentCount: segments.length,
           })
 
-          // Process using the standard pipeline with preloaded segments
-          const result = await processVideo(videoId, { ...meeting, meetingType }, controller, encoder, '[Upload]', segments)
+          // Process using the standard pipeline with preloaded segments — saves as draft for review
+          const result = await processVideo(videoId, { ...meeting, meetingType }, controller, encoder, '[Upload]', segments, 'draft')
 
-          if (result === 'completed') {
-            // Send push notifications for manually uploaded meetings
-            sendCouncilMeetingNotification(meeting.id, videoId, uploadData.title!, meetingType).catch(err =>
-              console.error('[Council Ingest] Failed to send council meeting notification:', err)
-            )
-
+          if (result === 'draft') {
             sendEvent(controller, encoder, 'progress', {
               step: 'done',
-              message: `Upload complete: ${uploadData.title}`,
+              message: `Draft ready for review: ${uploadData.title}`,
               videoId,
-              status: 'completed',
+              status: 'draft',
             })
             sendEvent(controller, encoder, 'complete', {
               success: true,
@@ -617,18 +639,13 @@ export async function POST(request: NextRequest) {
               videoId,
             })
 
-            await storeMeetingResults(meeting.id, recap, meeting.transcriptRaw, meeting.chunkCount)
-
-            // Send push notifications for recap regeneration (dedup prevents duplicates)
-            sendCouncilMeetingNotification(meeting.id, videoId, meeting.title || videoId, meeting.meetingType).catch(err =>
-              console.error('[Council Ingest] Failed to send council meeting notification:', err)
-            )
+            await storeMeetingResults(meeting.id, recap, meeting.transcriptRaw, meeting.chunkCount, 'draft')
 
             sendEvent(controller, encoder, 'progress', {
               step: 'done',
-              message: `[1/1] Recap regenerated: ${meeting.title}`,
+              message: `[1/1] Draft ready for review: ${meeting.title}`,
               videoId,
-              status: 'completed',
+              status: 'draft',
             })
             sendEvent(controller, encoder, 'complete', {
               success: true,
@@ -641,22 +658,17 @@ export async function POST(request: NextRequest) {
             return
           }
 
-          // Full reprocess mode
+          // Full reprocess mode — saves as draft for admin review
           await updateMeetingStatus(meeting.id, 'processing')
 
-          const result = await processVideo(videoId, { ...meeting, meetingType: meeting.meetingType || meetingType }, controller, encoder, '[1/1]')
+          const result = await processVideo(videoId, { ...meeting, meetingType: meeting.meetingType || meetingType }, controller, encoder, '[1/1]', undefined, 'draft')
 
-          if (result === 'completed') {
-            // Send push notifications for single-meeting retries
-            sendCouncilMeetingNotification(meeting.id, videoId, meeting.title || videoId, meeting.meetingType).catch(err =>
-              console.error('[Council Ingest] Failed to send council meeting notification:', err)
-            )
-
+          if (result === 'draft') {
             sendEvent(controller, encoder, 'progress', {
               step: 'done',
-              message: `[1/1] Completed: ${meeting.title}`,
+              message: `[1/1] Draft ready for review: ${meeting.title}`,
               videoId,
-              status: 'completed',
+              status: 'draft',
             })
             sendEvent(controller, encoder, 'complete', {
               success: true,
