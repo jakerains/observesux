@@ -1322,6 +1322,25 @@ export function CouncilIngestPanel() {
                                 <RotateCcw className="h-3 w-3" />
                                 Full Reprocess
                               </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 gap-1.5 text-xs"
+                                disabled={ingesting || retryingVideoId !== null || isUploading}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setUploadPrefill({
+                                    title: meeting.title,
+                                    videoId: meeting.videoId,
+                                    meetingDate: meeting.meetingDate || undefined,
+                                    meetingType: meeting.meetingType,
+                                  })
+                                  setUploadModalOpen(true)
+                                }}
+                              >
+                                <Upload className="h-3 w-3" />
+                                Upload Transcript
+                              </Button>
                               {meeting.status !== 'completed' && (
                                 <Button
                                   variant="ghost"

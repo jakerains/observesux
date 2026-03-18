@@ -42,6 +42,7 @@ export interface TranscriptPrefillData {
   title: string
   videoId: string
   meetingDate?: string
+  meetingType?: MeetingType
 }
 
 interface TranscriptUploadModalProps {
@@ -75,7 +76,7 @@ export function TranscriptUploadModal({
   const [meetingDate, setMeetingDate] = useState(() => prefillData?.meetingDate ?? '')
   const [videoId, setVideoId] = useState(() => prefillData?.videoId ?? '')
   const [transcript, setTranscript] = useState('')
-  const [meetingTypeValue, setMeetingTypeValue] = useState<MeetingType>('city_council')
+  const [meetingTypeValue, setMeetingTypeValue] = useState<MeetingType>(() => prefillData?.meetingType ?? 'city_council')
   const [fileName, setFileName] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [errors, setErrors] = useState<ValidationErrors>({})
