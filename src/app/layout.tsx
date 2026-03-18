@@ -88,6 +88,7 @@ export const metadata: Metadata = {
   other: {
     "theme-color": "#0f172a",
     "mobile-web-app-capable": "yes",
+    "apple-itunes-app": "app-id=6759835169",
   },
 }
 
