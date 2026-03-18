@@ -189,12 +189,15 @@ async function processVideo(
   }))
 
   await insertMeetingChunks(chunkData)
-  // Save transcript + chunk count now, even without a recap yet.
-  // This ensures we don't lose work if recap generation times out.
+  // Checkpoint: save transcript + chunk count and set status to 'draft'.
+  // If recap generation times out, the meeting is in a usable state —
+  // the admin can see it, review the transcript, and hit "Generate Recap".
   await sql`
     UPDATE council_meetings
     SET transcript_raw = ${rawTranscript},
         chunk_count = ${chunks.length},
+        status = 'draft',
+        error_message = NULL,
         updated_at = NOW()
     WHERE id = ${meeting.id}
   `

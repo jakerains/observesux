@@ -1144,8 +1144,8 @@ export function CouncilIngestPanel() {
         </CardHeader>
         <CardContent>
           {hasProcessing && !ingesting && !retryingVideoId && (
-            <div className="mb-3 flex items-center gap-2 p-2 rounded-lg bg-blue-500/10 border border-blue-500/20 text-xs text-blue-600">
-              <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
+            <div className="mb-3 flex items-center gap-2 p-2 rounded-lg bg-primary/5 border border-primary/20 text-xs text-muted-foreground">
+              <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0 text-primary" />
               <span>A meeting is being processed in the background. Auto-refreshing every 5s...</span>
             </div>
           )}
@@ -1373,7 +1373,7 @@ export function CouncilIngestPanel() {
                             </Button>
                           ) : (
                             <>
-                              {meeting.transcriptRaw && (
+                              {(meeting.transcriptRaw || meeting.chunkCount > 0) && (
                                 <Button
                                   variant={meeting.recap ? 'outline' : 'default'}
                                   size="sm"
