@@ -3,6 +3,7 @@
  * Handles: paragraphs, bullet lists, numbered lists, headers, **bold**, [text](url)
  */
 
+import { useMemo } from 'react';
 import { Text, View, Linking } from 'react-native';
 import type { TextStyle, StyleProp } from 'react-native';
 
@@ -179,7 +180,7 @@ export function MarkdownText({ children, style, numberOfLines }: Props) {
     );
   }
 
-  const blocks = parseBlocks(children);
+  const blocks = useMemo(() => parseBlocks(children), [children]);
 
   return (
     <View>

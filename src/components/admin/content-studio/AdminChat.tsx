@@ -12,6 +12,7 @@ import { TextShimmer } from '@/components/ui/text-shimmer'
 import { ChatMarkdown } from '@/components/dashboard/ChatMarkdown'
 import { getToolCardComponent } from '@/components/chat/tool-cards'
 import { ModelCombobox } from '@/components/admin/ModelCombobox'
+import { formatToolName } from '@/lib/ai/tool-display-names'
 import type { CanvasState } from './Canvas'
 
 const SUGGESTED_PROMPTS = [
@@ -32,33 +33,6 @@ function getRandomPrompts(count: number): string[] {
     ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
   }
   return shuffled.slice(0, count)
-}
-
-function formatToolName(toolName: string): string {
-  const names: Record<string, string> = {
-    getCitySummary: 'city conditions',
-    getCurrentWeather: 'weather',
-    getWeatherAlerts: 'weather alerts',
-    getWeatherForecast: 'forecast',
-    getRiverLevels: 'river levels',
-    getAirQuality: 'air quality',
-    getTrafficEvents: 'traffic',
-    getNews: 'news',
-    getGasPrices: 'gas prices',
-    getFlights: 'flights',
-    getAviationWeather: 'aviation weather',
-    getTransit: 'transit',
-    getOutages: 'power outages',
-    getEarthquakes: 'earthquakes',
-    getSystemStatus: 'system status',
-    searchKnowledgeBase: 'local info',
-    searchCouncilMeetings: 'council meetings',
-    searchLocalNews: 'local news',
-    getEvents: 'events',
-    webSearch: 'realtime info',
-    writeToCanvas: 'canvas',
-  }
-  return names[toolName] || toolName
 }
 
 interface AdminChatProps {

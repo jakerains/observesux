@@ -20,6 +20,7 @@ import { TextShimmer } from '@/components/ui/text-shimmer'
 import { ChatMarkdown } from '@/components/dashboard/ChatMarkdown'
 import { getToolCardComponent } from '@/components/chat/tool-cards'
 import { useChatSheet } from '@/lib/contexts/ChatContext'
+import { formatToolName } from '@/lib/ai/tool-display-names'
 
 // Session storage key for chat session ID
 const SESSION_STORAGE_KEY = 'sux-chat-session-id'
@@ -645,31 +646,4 @@ function ChatWidgetInner() {
   )
 }
 
-// Helper to format tool names for display
-function formatToolName(toolName: string): string {
-  const names: Record<string, string> = {
-    getCitySummary: 'city conditions',
-    getCurrentWeather: 'weather',
-    getWeatherAlerts: 'weather alerts',
-    getWeatherForecast: 'forecast',
-    getRiverLevels: 'river levels',
-    getAirQuality: 'air quality',
-    getTrafficEvents: 'traffic',
-    getNews: 'news',
-    getGasPrices: 'gas prices',
-    getFlights: 'flights',
-    getAviationWeather: 'aviation weather',
-    getTransit: 'transit',
-    getOutages: 'power outages',
-    getEarthquakes: 'earthquakes',
-    getSystemStatus: 'system status',
-    searchKnowledgeBase: 'local info',
-    getCouncilRecaps: 'council recaps',
-    getEvents: 'events',
-    searchLocalEats: 'restaurants',
-    getRestaurantDetails: 'restaurant details',
-    findDelivery: 'delivery options',
-    webSearch: 'realtime info',
-  }
-  return names[toolName] || toolName
-}
+// formatToolName imported from @/lib/ai/tool-display-names

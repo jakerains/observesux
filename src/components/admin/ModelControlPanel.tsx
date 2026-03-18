@@ -9,6 +9,9 @@ import {
   Loader2,
   Check,
   RotateCcw,
+  MessageCircle,
+  Newspaper,
+  Landmark,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ChatMarkdown } from '@/components/dashboard/ChatMarkdown'
@@ -31,33 +34,7 @@ import {
   DEFAULT_MODEL,
   type ModelContext,
 } from '@/lib/ai/model-config'
-
-// Tool name display mapping (matches ChatWidget)
-function formatToolName(toolName: string): string {
-  const names: Record<string, string> = {
-    getCitySummary: 'city conditions',
-    getCurrentWeather: 'weather',
-    getWeatherAlerts: 'weather alerts',
-    getWeatherForecast: 'forecast',
-    getRiverLevels: 'river levels',
-    getAirQuality: 'air quality',
-    getTrafficEvents: 'traffic',
-    getNews: 'news',
-    getGasPrices: 'gas prices',
-    getFlights: 'flights',
-    getAviationWeather: 'aviation weather',
-    getTransit: 'transit',
-    getOutages: 'power outages',
-    getEarthquakes: 'earthquakes',
-    getSystemStatus: 'system status',
-    searchKnowledgeBase: 'local info',
-    getCouncilRecaps: 'council recaps',
-    getEvents: 'events',
-    searchLocalEats: 'restaurants',
-    webSearch: 'realtime info',
-  }
-  return names[toolName] || toolName.replace(/^get/, '').replace(/([A-Z])/g, ' $1').trim().toLowerCase()
-}
+import { formatToolName } from '@/lib/ai/tool-display-names'
 
 // ---------------------------------------------------------------------------
 // Section A: Model Configuration
@@ -67,8 +44,6 @@ type ModelSettings = Record<string, string>
 
 function ModelConfigSection() {
   const [settings, setSettings] = useState<ModelSettings>({})
-  const [customInputs, setCustomInputs] = useState<Record<string, string>>({})
-  const [showCustom, setShowCustom] = useState<Record<string, boolean>>({})
   const [saving, setSaving] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [loading, setLoading] = useState(true)
@@ -102,8 +77,6 @@ function ModelConfigSection() {
     fetchSettings()
   }, [])
 
-  const knownModelIds: string[] = AVAILABLE_MODELS.map((m) => m.id)
-
   function getModelForContext(ctx: ModelContext): string {
     const key = `model:${ctx}`
     return settings[key] ?? DEFAULT_MODEL
@@ -111,22 +84,7 @@ function ModelConfigSection() {
 
   function handleModelChange(ctx: ModelContext, value: string) {
     const key = `model:${ctx}`
-    if (value === '__custom__') {
-      setShowCustom((prev) => ({ ...prev, [ctx]: true }))
-      return
-    }
-    setShowCustom((prev) => ({ ...prev, [ctx]: false }))
     setSettings((prev) => ({ ...prev, [key]: value }))
-    setSaveStatus('idle')
-  }
-
-  function handleCustomConfirm(ctx: ModelContext) {
-    const key = `model:${ctx}`
-    const val = customInputs[ctx]?.trim()
-    if (!val) return
-    setSettings((prev) => ({ ...prev, [key]: val }))
-    setShowCustom((prev) => ({ ...prev, [ctx]: false }))
-    setCustomInputs((prev) => ({ ...prev, [ctx]: '' }))
     setSaveStatus('idle')
   }
 
@@ -173,114 +131,63 @@ function ModelConfigSection() {
     )
   }
 
+  const contextIcons: Record<string, React.ReactNode> = {
+    chat: <MessageCircle className="h-4 w-4" />,
+    digest: <Newspaper className="h-4 w-4" />,
+    council: <Landmark className="h-4 w-4" />,
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold">Model Configuration</h3>
           <p className="text-sm text-muted-foreground">
-            Assign AI models to each context. Changes take effect on next request.
+            Assign AI models to each feature. Changes take effect on next request.
           </p>
         </div>
-        <Button
-          onClick={handleSave}
-          disabled={saving || !isDirty}
-          size="sm"
-          className="gap-2"
-        >
-          {saving ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : saveStatus === 'success' ? (
-            <Check className="h-4 w-4" />
-          ) : (
-            <Cpu className="h-4 w-4" />
+        <div className="flex items-center gap-2">
+          {saveStatus === 'error' && (
+            <span className="text-xs text-destructive">Save failed</span>
           )}
-          {saving ? 'Saving...' : saveStatus === 'success' ? 'Saved' : 'Save Changes'}
-        </Button>
+          <Button
+            onClick={handleSave}
+            disabled={saving || !isDirty}
+            size="sm"
+            className="gap-2"
+          >
+            {saving ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : saveStatus === 'success' ? (
+              <Check className="h-4 w-4" />
+            ) : null}
+            {saving ? 'Saving...' : saveStatus === 'success' ? 'Saved' : 'Save Changes'}
+          </Button>
+        </div>
       </div>
 
-      {saveStatus === 'error' && (
-        <p className="text-sm text-destructive">Failed to save one or more settings. Please try again.</p>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {MODEL_CONTEXTS.map((ctx) => {
-          const currentModel = getModelForContext(ctx.id)
-          const isKnown = knownModelIds.includes(currentModel)
-          const isCustomMode = showCustom[ctx.id]
-
-          return (
-            <Card key={ctx.id}>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium flex items-center justify-between">
-                  {ctx.label}
-                  {!isKnown && !isCustomMode && (
-                    <Badge variant="outline" className="text-xs font-normal">
-                      Custom
-                    </Badge>
-                  )}
-                </CardTitle>
-                <p className="text-xs text-muted-foreground">{ctx.description}</p>
-              </CardHeader>
-              <CardContent>
-                {isCustomMode ? (
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="e.g. anthropic/claude-opus-4"
-                      value={customInputs[ctx.id] ?? ''}
-                      onChange={(e) =>
-                        setCustomInputs((prev) => ({ ...prev, [ctx.id]: e.target.value }))
-                      }
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') handleCustomConfirm(ctx.id)
-                        if (e.key === 'Escape') setShowCustom((prev) => ({ ...prev, [ctx.id]: false }))
-                      }}
-                      className="text-sm"
-                      autoFocus
-                    />
-                    <Button size="sm" onClick={() => handleCustomConfirm(ctx.id)}>
-                      <Check className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ) : (
-                  <Select
-                    value={isKnown ? currentModel : '__custom_current__'}
-                    onValueChange={(val) => {
-                      if (val === '__custom_current__') return
-                      handleModelChange(ctx.id, val)
-                    }}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue>
-                        {isKnown
-                          ? AVAILABLE_MODELS.find((m) => m.id === currentModel)?.label
-                          : currentModel}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {AVAILABLE_MODELS.map((model) => (
-                        <SelectItem key={model.id} value={model.id}>
-                          <span className="flex items-center gap-2">
-                            {model.label}
-                            <span className="text-xs text-muted-foreground">{model.provider}</span>
-                          </span>
-                        </SelectItem>
-                      ))}
-                      {!isKnown && (
-                        <SelectItem value="__custom_current__">
-                          <span className="text-muted-foreground">{currentModel}</span>
-                        </SelectItem>
-                      )}
-                      <SelectItem value="__custom__">
-                        <span className="italic text-muted-foreground">Custom...</span>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
-              </CardContent>
-            </Card>
-          )
-        })}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {MODEL_CONTEXTS.map((ctx) => (
+          <div
+            key={ctx.id}
+            className="rounded-lg border bg-card p-4 space-y-3"
+          >
+            <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center w-7 h-7 rounded-md bg-primary/10 text-primary">
+                {contextIcons[ctx.id] ?? <Cpu className="h-4 w-4" />}
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium leading-none">{ctx.label}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">{ctx.description}</p>
+              </div>
+            </div>
+            <ModelCombobox
+              value={getModelForContext(ctx.id)}
+              onChange={(model) => handleModelChange(ctx.id, model)}
+              className="w-full"
+            />
+          </div>
+        ))}
       </div>
     </div>
   )
@@ -452,23 +359,6 @@ const PlaygroundPanel = forwardRef<PlaygroundPanelHandle, {
 // Shared: Model Selector for streaming panels (Digest / Council)
 // Uses ModelCombobox with full OpenRouter catalog
 // ---------------------------------------------------------------------------
-
-function StreamingPanelModelSelector({
-  model,
-  onModelChange,
-}: {
-  model: string
-  onModelChange: (model: string) => void
-}) {
-  return (
-    <ModelCombobox
-      value={model}
-      onChange={onModelChange}
-      size="sm"
-      className="w-full"
-    />
-  )
-}
 
 // ---------------------------------------------------------------------------
 // Shared: Panel Count Toggle
@@ -792,9 +682,11 @@ function DigestPlayground() {
               <div className={`w-3 h-3 rounded-full ${PANEL_COLORS[id]}`} />
               <span className="text-sm font-semibold">Panel {id}</span>
               <div className="ml-auto flex-1 max-w-[200px]">
-                <StreamingPanelModelSelector
-                  model={models[id]}
-                  onModelChange={(model) => setModels((prev) => ({ ...prev, [id]: model }))}
+                <ModelCombobox
+                  value={models[id]}
+                  onChange={(model) => setModels((prev) => ({ ...prev, [id]: model }))}
+                  size="sm"
+                  className="w-full"
                 />
               </div>
             </div>
@@ -1017,9 +909,11 @@ function CouncilPlayground() {
               <div className={`w-3 h-3 rounded-full ${PANEL_COLORS[id]}`} />
               <span className="text-sm font-semibold">Panel {id}</span>
               <div className="ml-auto flex-1 max-w-[200px]">
-                <StreamingPanelModelSelector
-                  model={models[id]}
-                  onModelChange={(model) => setModels((prev) => ({ ...prev, [id]: model }))}
+                <ModelCombobox
+                  value={models[id]}
+                  onChange={(model) => setModels((prev) => ({ ...prev, [id]: model }))}
+                  size="sm"
+                  className="w-full"
                 />
               </div>
             </div>
