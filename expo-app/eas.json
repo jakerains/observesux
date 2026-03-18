@@ -10,6 +10,9 @@
       "channel": "development",
       "ios": {
         "simulator": true
+      },
+      "android": {
+        "buildType": "apk"
       }
     },
     "preview": {
@@ -17,6 +20,9 @@
       "channel": "preview",
       "ios": {
         "simulator": false
+      },
+      "android": {
+        "buildType": "apk"
       }
     },
     "production": {
@@ -32,6 +38,10 @@
       "ios": {
         "appleId": "jakerains@me.com",
         "ascAppId": "6759835169"
+      },
+      "android": {
+        "serviceAccountKeyPath": "./google-services.json",
+        "track": "internal"
       }
     }
   }

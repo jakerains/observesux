@@ -1,4 +1,5 @@
-import { Text, PlatformColor } from 'react-native'
+import { Text } from 'react-native'
+import { platformColor } from '@/lib/platformColors'
 import { ToolCardBase } from './ToolCardBase'
 import { unwrapData, type ToolStatus } from './utils'
 
@@ -34,11 +35,11 @@ export function AirQualityCard({ output }: { output: unknown }) {
 
   return (
     <ToolCardBase title="Air Quality" icon="leaf.fill" status={categoryStatus(reading.category)}>
-      <Text selectable style={{ fontSize: 16, fontWeight: '600', color: PlatformColor('label') }}>
+      <Text selectable style={{ fontSize: 16, fontWeight: '600', color: platformColor('label') }}>
         AQI {reading.aqi} · {reading.category}
       </Text>
       {reading.primaryPollutant ? (
-        <Text selectable style={{ fontSize: 12, color: PlatformColor('secondaryLabel') }}>
+        <Text selectable style={{ fontSize: 12, color: platformColor('secondaryLabel') }}>
           Primary pollutant: {reading.primaryPollutant}
         </Text>
       ) : null}

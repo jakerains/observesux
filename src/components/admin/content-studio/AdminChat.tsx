@@ -11,6 +11,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { TextShimmer } from '@/components/ui/text-shimmer'
 import { ChatMarkdown } from '@/components/dashboard/ChatMarkdown'
 import { getToolCardComponent } from '@/components/chat/tool-cards'
+import { ModelCombobox } from '@/components/admin/ModelCombobox'
 import type { CanvasState } from './Canvas'
 
 const SUGGESTED_PROMPTS = [
@@ -107,10 +108,16 @@ export function AdminChat({ canvasState, onWriteToCanvas, initialMessages, onMes
   const canvasStateRef = useRef(canvasState)
   canvasStateRef.current = canvasState
 
+  // Model override — empty string means use server default
+  const [selectedModel, setSelectedModel] = useState('')
+  const selectedModelRef = useRef(selectedModel)
+  selectedModelRef.current = selectedModel
+
   const transport = useMemo(() => new DefaultChatTransport({
     api: '/api/admin/chat',
     body: () => ({
       canvasContent: canvasStateRef.current.body.trim() ? canvasStateRef.current : undefined,
+      modelOverride: selectedModelRef.current || undefined,
     }),
   }), [])
 
@@ -256,10 +263,16 @@ export function AdminChat({ canvasState, onWriteToCanvas, initialMessages, onMes
           className="shrink-0"
           style={{ width: 'auto', height: 'auto' }}
         />
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <h2 className="text-sm font-semibold">SUX Content Studio</h2>
           <p className="text-xs text-muted-foreground">Draft content with real Siouxland data</p>
         </div>
+        <ModelCombobox
+          value={selectedModel}
+          onChange={setSelectedModel}
+          size="sm"
+          className="w-[250px]"
+        />
         {messages.length > 0 && (
           <Button
             variant="ghost"

@@ -1,4 +1,5 @@
-import { View, Text, PlatformColor } from 'react-native'
+import { View, Text } from 'react-native'
+import { platformColor } from '@/lib/platformColors'
 import { ToolCardBase } from './ToolCardBase'
 import { unwrapData, formatCount } from './utils'
 
@@ -25,7 +26,7 @@ export function WeatherAlertsCard({ output }: { output: unknown }) {
   if (!alerts || alerts.length === 0) {
     return (
       <ToolCardBase title="Weather Alerts" icon="exclamationmark.triangle.fill" status="normal">
-        <Text selectable style={{ fontSize: 12, color: PlatformColor('secondaryLabel') }}>
+        <Text selectable style={{ fontSize: 12, color: platformColor('secondaryLabel') }}>
           No active alerts right now.
         </Text>
       </ToolCardBase>
@@ -34,16 +35,16 @@ export function WeatherAlertsCard({ output }: { output: unknown }) {
 
   return (
     <ToolCardBase title="Weather Alerts" icon="exclamationmark.triangle.fill" status="alert">
-      <Text selectable style={{ fontSize: 12, fontWeight: '600', color: PlatformColor('label') }}>
+      <Text selectable style={{ fontSize: 12, fontWeight: '600', color: platformColor('label') }}>
         {formatCount(alerts.length, 'alert')} active
       </Text>
       <View style={{ gap: 6 }}>
         {alerts.slice(0, 2).map((alert) => (
           <View key={alert.id} style={{ gap: 2 }}>
-            <Text selectable style={{ fontSize: 12, fontWeight: '600', color: PlatformColor('label') }}>
+            <Text selectable style={{ fontSize: 12, fontWeight: '600', color: platformColor('label') }}>
               {alert.event}
             </Text>
-            <Text selectable style={{ fontSize: 11, color: PlatformColor('secondaryLabel') }}>
+            <Text selectable style={{ fontSize: 11, color: platformColor('secondaryLabel') }}>
               {alert.headline}
             </Text>
           </View>

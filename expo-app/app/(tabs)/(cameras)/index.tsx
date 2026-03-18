@@ -10,13 +10,14 @@ import {
   Pressable,
   RefreshControl,
   Text,
-  PlatformColor,
   useWindowDimensions,
 } from 'react-native';
 import { Link, useFocusEffect } from 'expo-router';
 import { Image } from 'expo-image';
 import { useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
+import { AppIcon } from '@/components/AppIcon';
+import { platformColor } from '@/lib/platformColors';
 import { useCameras } from '@/lib/hooks/useDataFetching';
 import { Skeleton } from '@/components/LoadingState';
 import { appendCacheBuster } from '@/lib/api';
@@ -56,9 +57,7 @@ const CameraCard = memo(function CameraCard({ camera, cacheKey }: { camera: Traf
           overflow: 'hidden',
         }}
         onPressIn={() => {
-          if (process.env.EXPO_OS === 'ios') {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          }
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }}
       >
         <View style={{ width: '100%', height: cardHeight, position: 'relative' }}>
@@ -69,10 +68,10 @@ const CameraCard = memo(function CameraCard({ camera, cacheKey }: { camera: Traf
                 height: '100%',
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundColor: PlatformColor('tertiarySystemBackground'),
+                backgroundColor: platformColor('tertiarySystemBackground'),
               }}
             >
-              <Image source="sf:video.slash" style={{ width: 32, height: 32 }} tintColor={PlatformColor('tertiaryLabel') as unknown as string} />
+              <AppIcon name="video.slash" size={32} color={platformColor('tertiaryLabel')} />
             </View>
           ) : (
             <Image
@@ -119,7 +118,7 @@ const CameraCard = memo(function CameraCard({ camera, cacheKey }: { camera: Traf
                 gap: 4,
               }}
             >
-              <Image source="sf:video.fill" style={{ width: 10, height: 10 }} tintColor="#ffffff" />
+              <AppIcon name="video.fill" size={10} color="#ffffff" />
               <Text style={{ color: '#ffffff', fontSize: 9, fontWeight: '600' }}>VIDEO</Text>
             </View>
           )}
@@ -145,12 +144,12 @@ const CameraCard = memo(function CameraCard({ camera, cacheKey }: { camera: Traf
         <View style={{ padding: 10 }}>
           <Text
             numberOfLines={1}
-            style={{ fontSize: 13, fontWeight: '500', color: PlatformColor('label') }}
+            style={{ fontSize: 13, fontWeight: '500', color: platformColor('label') }}
           >
             {camera.name}
           </Text>
           {camera.roadway && (
-            <Text numberOfLines={1} style={{ fontSize: 11, color: PlatformColor('secondaryLabel') }}>
+            <Text numberOfLines={1} style={{ fontSize: 11, color: platformColor('secondaryLabel') }}>
               {camera.roadway} {camera.direction && `• ${camera.direction}`}
             </Text>
           )}
@@ -206,9 +205,7 @@ export default function CamerasScreen() {
   const filteredCameras = showLiveOnly ? liveCameras : cameras;
 
   const onRefresh = useCallback(async () => {
-    if (process.env.EXPO_OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setRefreshing(true);
     setCacheKey(Date.now());
     await refetch();
@@ -238,8 +235,8 @@ export default function CamerasScreen() {
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={{ flexGrow: 1, alignItems: 'center', justifyContent: 'center', padding: 24 }}
       >
-        <Image source="sf:video.slash" style={{ width: 48, height: 48 }} tintColor={PlatformColor('tertiaryLabel') as unknown as string} />
-        <Text style={{ marginTop: 12, color: PlatformColor('secondaryLabel') }}>
+        <AppIcon name="video.slash" size={48} color={platformColor('tertiaryLabel')} />
+        <Text style={{ marginTop: 12, color: platformColor('secondaryLabel') }}>
           Unable to load cameras
         </Text>
         <Pressable
@@ -273,15 +270,13 @@ export default function CamerasScreen() {
       }
       ListHeaderComponent={
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-          <Text style={{ color: PlatformColor('secondaryLabel'), fontSize: 13 }}>
+          <Text style={{ color: platformColor('secondaryLabel'), fontSize: 13 }}>
             {filteredCameras.length} {showLiveOnly ? 'live' : 'cameras available'}
           </Text>
           {liveCameras.length > 0 && (
             <Pressable
               onPress={() => {
-                if (process.env.EXPO_OS === 'ios') {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 setShowLiveOnly((v) => !v);
               }}
               style={{
@@ -307,8 +302,8 @@ export default function CamerasScreen() {
       ListEmptyComponent={
         showLiveOnly ? (
           <View style={{ alignItems: 'center', paddingTop: 40, gap: 12 }}>
-            <Image source="sf:video.slash" style={{ width: 36, height: 36 }} tintColor={PlatformColor('tertiaryLabel') as unknown as string} />
-            <Text style={{ color: PlatformColor('secondaryLabel'), fontSize: 14 }}>No live cameras available</Text>
+            <AppIcon name="video.slash" size={36} color={platformColor('tertiaryLabel')} />
+            <Text style={{ color: platformColor('secondaryLabel'), fontSize: 14 }}>No live cameras available</Text>
             <Pressable
               onPress={() => setShowLiveOnly(false)}
               style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: '#e69c3a' }}

@@ -3,3 +3,4 @@
  */
 
 export * from './useDataFetching';
+export * from './usePostHogScreenTracking';

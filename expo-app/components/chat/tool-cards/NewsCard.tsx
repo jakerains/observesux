@@ -1,4 +1,5 @@
-import { View, Text, PlatformColor } from 'react-native'
+import { View, Text } from 'react-native'
+import { platformColor } from '@/lib/platformColors'
 import { ToolCardBase } from './ToolCardBase'
 import { unwrapData, formatCount } from './utils'
 
@@ -30,17 +31,17 @@ export function NewsCard({ output }: { output: unknown }) {
 
   return (
     <ToolCardBase title="News" icon="newspaper.fill" status="normal">
-      <Text selectable style={{ fontSize: 12, fontWeight: '600', color: PlatformColor('label') }}>
+      <Text selectable style={{ fontSize: 12, fontWeight: '600', color: platformColor('label') }}>
         {formatCount(articles.length, 'headline')} available
       </Text>
       <View style={{ gap: 6, marginTop: 6 }}>
         {articles.slice(0, 3).map((article) => (
           <View key={article.id} style={{ gap: 2 }}>
-            <Text selectable style={{ fontSize: 12, fontWeight: '600', color: PlatformColor('label') }}>
+            <Text selectable style={{ fontSize: 12, fontWeight: '600', color: platformColor('label') }}>
               {article.title}
             </Text>
             {article.source ? (
-              <Text selectable style={{ fontSize: 11, color: PlatformColor('secondaryLabel') }}>
+              <Text selectable style={{ fontSize: 11, color: platformColor('secondaryLabel') }}>
                 {article.source}
               </Text>
             ) : null}

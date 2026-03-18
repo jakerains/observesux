@@ -5,7 +5,8 @@
  */
 
 import { useEffect, useCallback } from 'react';
-import { View, Text, ActivityIndicator, PlatformColor } from 'react-native';
+import { View, Text, ActivityIndicator } from 'react-native';
+import { platformColor } from '@/lib/platformColors';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useAuth } from '../../lib/contexts';
 
@@ -48,22 +49,22 @@ export default function AuthCallbackScreen() {
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: PlatformColor('systemBackground'),
+        backgroundColor: platformColor('systemBackground'),
       }}
     >
       {error ? (
         <>
-          <Text style={{ color: PlatformColor('systemRed'), fontSize: 18, marginBottom: 8 }}>
+          <Text style={{ color: platformColor('systemRed'), fontSize: 18, marginBottom: 8 }}>
             Sign In Failed
           </Text>
-          <Text style={{ color: PlatformColor('secondaryLabel'), textAlign: 'center', paddingHorizontal: 20 }}>
+          <Text style={{ color: platformColor('secondaryLabel'), textAlign: 'center', paddingHorizontal: 20 }}>
             {error}
           </Text>
         </>
       ) : (
         <>
-          <ActivityIndicator size="large" color={PlatformColor('systemBlue')} />
-          <Text style={{ color: PlatformColor('secondaryLabel'), marginTop: 16 }}>
+          <ActivityIndicator size="large" color={platformColor('systemBlue')} />
+          <Text style={{ color: platformColor('secondaryLabel'), marginTop: 16 }}>
             Completing sign in...
           </Text>
         </>

@@ -1,4 +1,5 @@
-import { View, Text, PlatformColor } from 'react-native'
+import { View, Text } from 'react-native'
+import { platformColor } from '@/lib/platformColors'
 import { ToolCardBase } from './ToolCardBase'
 import { unwrapData } from './utils'
 
@@ -36,10 +37,10 @@ export function WeatherForecastCard({ output }: { output: unknown }) {
       <View style={{ gap: 8 }}>
         {periods.slice(0, 3).map((period) => (
           <View key={period.name} style={{ gap: 2 }}>
-            <Text selectable style={{ fontSize: 12, fontWeight: '600', color: PlatformColor('label') }}>
+            <Text selectable style={{ fontSize: 12, fontWeight: '600', color: platformColor('label') }}>
               {period.name} · {Math.round(period.temperature)}°{period.temperatureUnit}
             </Text>
-            <Text selectable style={{ fontSize: 11, color: PlatformColor('secondaryLabel') }}>
+            <Text selectable style={{ fontSize: 11, color: platformColor('secondaryLabel') }}>
               {period.shortForecast}
             </Text>
           </View>

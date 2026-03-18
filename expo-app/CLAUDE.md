@@ -55,6 +55,19 @@ eas update --branch preview --message "description of change"   # Test before pr
 - Channels: `production` (App Store users), `preview` (internal TestFlight), `development`
 - App checks for updates on every launch (`checkAutomatically: ON_LOAD`)
 
+## Bare Workflow Gotchas
+
+This project uses a **bare workflow** (the `ios/` directory is checked in). EAS Build does NOT sync `app.json` values to the native project. You must update both places manually:
+
+| What | `app.json` field | Native location |
+|------|-----------------|-----------------|
+| App version | `expo.version` | `MARKETING_VERSION` in `ios/SiouxlandOnline.xcodeproj/project.pbxproj` (4 occurrences: main Debug/Release + widget Debug/Release). Both plists use `$(MARKETING_VERSION)` so only the pbxproj needs updating. |
+| App icon | `expo.ios.icon` | `ios/SiouxlandOnline/Images.xcassets/AppIcon.appiconset/App-Icon-1024x1024@1x.png` |
+
+**Important reminders:**
+- iOS app icons **cannot have transparency or an alpha channel** — Apple rejects them at submission validation.
+- The widget extension (`SiouxlandWidgetsExtension`) must have a `PBXTargetDependency` linking it to the main app target in the pbxproj, or EAS won't generate its provisioning profile.
+
 ## Architecture
 
 ### Data Flow

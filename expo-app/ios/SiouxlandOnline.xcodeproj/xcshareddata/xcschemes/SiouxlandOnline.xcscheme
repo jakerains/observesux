@@ -20,6 +20,20 @@
                ReferencedContainer = "container:SiouxlandOnline.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "25C16DE056964E5E98866757"
+               BuildableName = "SiouxlandWidgetsExtension.appex"
+               BlueprintName = "SiouxlandWidgetsExtension"
+               ReferencedContainer = "container:SiouxlandOnline.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction

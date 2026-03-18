@@ -3,12 +3,13 @@
  */
 
 import { useState, useCallback } from 'react';
-import { ScrollView, View, RefreshControl, Pressable, Text, PlatformColor } from 'react-native';
+import { ScrollView, View, RefreshControl, Pressable, Text } from 'react-native';
 import { Link } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
-import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { format } from 'date-fns';
+import { AppIcon } from '@/components/AppIcon';
+import { platformColor } from '@/lib/platformColors';
 import {
   useWeather,
   useWeatherForecast,
@@ -37,9 +38,7 @@ export default function WeatherScreen() {
   const alerts = Array.isArray(alertsData?.data) ? alertsData.data : [];
 
   const onRefresh = useCallback(async () => {
-    if (process.env.EXPO_OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setRefreshing(true);
     await queryClient.invalidateQueries({ queryKey: ['weather'] });
     setTimeout(() => setRefreshing(false), 500);
@@ -69,7 +68,7 @@ export default function WeatherScreen() {
       {/* Alerts Section */}
       {alerts.length > 0 && (
         <View style={{ gap: 12 }}>
-          <Text style={{ fontSize: 20, fontWeight: '600', color: PlatformColor('label') }}>
+          <Text style={{ fontSize: 20, fontWeight: '600', color: platformColor('label') }}>
             Active Alerts
           </Text>
           {alerts.map((alert) => (
@@ -85,16 +84,16 @@ export default function WeatherScreen() {
                 }}
               >
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                  <Image source="sf:exclamationmark.triangle.fill" style={{ width: 20, height: 20 }} tintColor="rgb(245, 158, 11)" />
-                  <Text selectable style={{ flex: 1, fontWeight: '600', color: PlatformColor('label') }}>
+                  <AppIcon name="exclamationmark.triangle.fill" size={20} color="rgb(245, 158, 11)" />
+                  <Text selectable style={{ flex: 1, fontWeight: '600', color: platformColor('label') }}>
                     {alert.event}
                   </Text>
-                  <Image source="sf:chevron.right" style={{ width: 14, height: 14 }} tintColor="rgb(245, 158, 11)" />
+                  <AppIcon name="chevron.right" size={14} color="rgb(245, 158, 11)" />
                 </View>
-                <Text selectable numberOfLines={2} style={{ color: PlatformColor('secondaryLabel') }}>
+                <Text selectable numberOfLines={2} style={{ color: platformColor('secondaryLabel') }}>
                   {alert.headline}
                 </Text>
-                <Text style={{ marginTop: 4, fontSize: 12, color: PlatformColor('tertiaryLabel') }}>
+                <Text style={{ marginTop: 4, fontSize: 12, color: platformColor('tertiaryLabel') }}>
                   Expires: {format(new Date(alert.expires), 'MMM d, h:mm a')}
                 </Text>
               </Pressable>
@@ -106,7 +105,7 @@ export default function WeatherScreen() {
       {/* Current Conditions */}
       {weather && (
         <View style={{ gap: 12 }}>
-          <Text style={{ fontSize: 20, fontWeight: '600', color: PlatformColor('label') }}>
+          <Text style={{ fontSize: 20, fontWeight: '600', color: platformColor('label') }}>
             Current Conditions
           </Text>
           <View
@@ -118,14 +117,14 @@ export default function WeatherScreen() {
             }}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
-              <Text selectable style={{ fontSize: 72, fontWeight: '700', color: PlatformColor('label') }}>
+              <Text selectable style={{ fontSize: 72, fontWeight: '700', color: platformColor('label') }}>
                 {Math.round(weather.temperature)}°
               </Text>
               <View style={{ marginLeft: 16 }}>
-                <Text selectable style={{ fontSize: 16, color: PlatformColor('secondaryLabel') }}>
+                <Text selectable style={{ fontSize: 16, color: platformColor('secondaryLabel') }}>
                   {weather.conditions}
                 </Text>
-                <Text style={{ color: PlatformColor('tertiaryLabel') }}>
+                <Text style={{ color: platformColor('tertiaryLabel') }}>
                   Feels like {Math.round(weather.feelsLike)}°
                 </Text>
               </View>
@@ -143,7 +142,7 @@ export default function WeatherScreen() {
 
       {/* Forecast */}
       <View style={{ gap: 12 }}>
-        <Text style={{ fontSize: 20, fontWeight: '600', color: PlatformColor('label') }}>
+        <Text style={{ fontSize: 20, fontWeight: '600', color: platformColor('label') }}>
           7-Day Forecast
         </Text>
         {forecastLoading ? (
@@ -170,35 +169,35 @@ export default function WeatherScreen() {
                   paddingVertical: 14,
                   paddingHorizontal: 16,
                   borderBottomWidth: index < forecast.slice(0, 14).length - 1 ? 0.5 : 0,
-                  borderBottomColor: PlatformColor('separator'),
+                  borderBottomColor: platformColor('separator'),
                 }}
               >
                 <View style={{ width: 80 }}>
-                  <Text style={{ fontWeight: '500', color: PlatformColor('label') }}>{day.name}</Text>
-                  <Text style={{ fontSize: 12, color: PlatformColor('tertiaryLabel') }}>
+                  <Text style={{ fontWeight: '500', color: platformColor('label') }}>{day.name}</Text>
+                  <Text style={{ fontSize: 12, color: platformColor('tertiaryLabel') }}>
                     {format(new Date(day.date), 'MMM d')}
                   </Text>
                 </View>
                 <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', marginHorizontal: 12 }}>
-                  <Image
-                    source={`sf:${day.isDaytime ? 'sun.max.fill' : 'moon.fill'}`}
-                    style={{ width: 24, height: 24 }}
-                    tintColor={'#e69c3a'}
+                  <AppIcon
+                    name={day.isDaytime ? 'sun.max.fill' : 'moon.fill'}
+                    size={24}
+                    color="#e69c3a"
                   />
                   <Text
                     numberOfLines={1}
-                    style={{ flex: 1, marginLeft: 8, color: PlatformColor('secondaryLabel') }}
+                    style={{ flex: 1, marginLeft: 8, color: platformColor('secondaryLabel') }}
                   >
                     {day.shortForecast}
                   </Text>
                 </View>
                 <View style={{ alignItems: 'flex-end', minWidth: 60 }}>
-                  <Text style={{ fontSize: 18, fontWeight: '700', color: PlatformColor('label') }}>
+                  <Text style={{ fontSize: 18, fontWeight: '700', color: platformColor('label') }}>
                     {day.temperature}°
                   </Text>
                   {day.probabilityOfPrecipitation !== null && day.probabilityOfPrecipitation > 0 && (
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 2 }}>
-                      <Image source="sf:drop.fill" style={{ width: 12, height: 12 }} tintColor={'#e69c3a'} />
+                      <AppIcon name="drop.fill" size={12} color="#e69c3a" />
                       <Text style={{ fontSize: 12, color: '#e69c3a' }}>
                         {day.probabilityOfPrecipitation}%
                       </Text>
@@ -217,9 +216,9 @@ export default function WeatherScreen() {
 function DetailItem({ icon, label, value }: { icon: string; label: string; value: string }) {
   return (
     <View style={{ width: '45%', gap: 4 }}>
-      <Image source={`sf:${icon}`} style={{ width: 20, height: 20 }} tintColor={'#e69c3a'} />
-      <Text style={{ fontSize: 12, color: PlatformColor('tertiaryLabel') }}>{label}</Text>
-      <Text selectable style={{ fontWeight: '600', color: PlatformColor('label') }}>{value}</Text>
+      <AppIcon name={icon} size={20} color="#e69c3a" />
+      <Text style={{ fontSize: 12, color: platformColor('tertiaryLabel') }}>{label}</Text>
+      <Text selectable style={{ fontWeight: '600', color: platformColor('label') }}>{value}</Text>
     </View>
   );
 }

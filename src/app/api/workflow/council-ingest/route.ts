@@ -17,6 +17,8 @@ import {
   getCouncilIngestStats,
   getRecentMeetings,
   syncMeetingMetadata,
+  dismissMeeting,
+  undismissMeeting,
 } from '@/lib/db/council-meetings'
 import { generateEmbedding } from '@/lib/ai/embeddings'
 import { isDatabaseConfigured } from '@/lib/db'
@@ -251,6 +253,8 @@ async function sendCouncilMeetingNotification(
  *     — manual transcript upload
  *   { mode: 'add_only', videoId: string, title: string, publishedAt?: string }
  *     — add a feed video to the system without processing
+ *   { mode: 'dismiss', videoId: string }  — mark as livestream/not a VOD (hidden from public)
+ *   { mode: 'undismiss', videoId: string } — restore a dismissed meeting back to pending
  *   {}                   — normal ingestion (new + failed + no_captions)
  */
 export async function POST(request: NextRequest) {
@@ -260,7 +264,7 @@ export async function POST(request: NextRequest) {
 
   let force = false
   let singleVideoId: string | null = null
-  let mode: 'full' | 'recap_only' | 'upload' | 'add_only' = 'full'
+  let mode: 'full' | 'recap_only' | 'upload' | 'add_only' | 'dismiss' | 'undismiss' = 'full'
   const videoMeta: { title?: string; publishedAt?: string } = {}
   let uploadData: { transcript?: string; title?: string; meetingDate?: string; videoId?: string } = {}
   try {
@@ -270,6 +274,8 @@ export async function POST(request: NextRequest) {
     if (body.mode === 'recap_only') mode = 'recap_only'
     if (body.mode === 'upload') mode = 'upload'
     if (body.mode === 'add_only') mode = 'add_only'
+    if (body.mode === 'dismiss') mode = 'dismiss'
+    if (body.mode === 'undismiss') mode = 'undismiss'
     if (body.title) videoMeta.title = body.title
     if (body.publishedAt) videoMeta.publishedAt = body.publishedAt
     // Upload-specific fields
@@ -287,6 +293,18 @@ export async function POST(request: NextRequest) {
 
   if (!isDatabaseConfigured()) {
     return NextResponse.json({ error: 'Database not configured' }, { status: 500 })
+  }
+
+  // Dismiss mode: mark a meeting as a livestream / not a VOD
+  if (mode === 'dismiss' && singleVideoId) {
+    const success = await dismissMeeting(singleVideoId)
+    return NextResponse.json({ success })
+  }
+
+  // Undismiss mode: restore a dismissed meeting back to pending
+  if (mode === 'undismiss' && singleVideoId) {
+    const success = await undismissMeeting(singleVideoId)
+    return NextResponse.json({ success })
   }
 
   // Add-only mode: create or update the meeting record without processing.
@@ -714,6 +732,12 @@ export async function POST(request: NextRequest) {
 
           if (!existing) {
             newVideos.push(video)
+            continue
+          }
+
+          // Never reprocess dismissed meetings (manually marked as livestream)
+          if (existing.status === 'dismissed') {
+            skipped++
             continue
           }
 

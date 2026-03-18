@@ -3,13 +3,15 @@
  */
 
 import { useState, useEffect } from 'react';
-import { View, Pressable, Text, PlatformColor, ActivityIndicator, useWindowDimensions } from 'react-native';
+import { View, Pressable, Text, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { appendCacheBuster } from '@/lib/api';
 import { Image } from 'expo-image';
 import { WebView } from 'react-native-webview';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import { AppIcon } from '@/components/AppIcon';
+import { platformColor } from '@/lib/platformColors';
 
 type ViewMode = 'snapshot' | 'live';
 
@@ -40,9 +42,7 @@ export default function CameraDetailScreen() {
   }, []);
 
   const handleRefresh = () => {
-    if (process.env.EXPO_OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setIsRefreshing(true);
     setImageError(false);
     setImageKey((prev) => prev + 1);
@@ -91,9 +91,7 @@ export default function CameraDetailScreen() {
 </html>`;
 
   const toggleViewMode = () => {
-    if (process.env.EXPO_OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setViewMode((prev) => (prev === 'snapshot' ? 'live' : 'snapshot'));
     setStreamLoading(true);
     setStreamError(false);
@@ -114,7 +112,7 @@ export default function CameraDetailScreen() {
                 {isRefreshing ? (
                   <ActivityIndicator size="small" color={'#e69c3a'} />
                 ) : (
-                  <Image source="sf:arrow.clockwise" alt="" style={{ width: 22, height: 22 }} tintColor={'#e69c3a'} />
+                  <AppIcon name="arrow.clockwise" size={22} color="#e69c3a" />
                 )}
               </Pressable>
             ) : null,
@@ -134,8 +132,8 @@ export default function CameraDetailScreen() {
                 backgroundColor: '#1f130c',
               }}
             >
-              <Image source="sf:video.slash" alt="" style={{ width: 64, height: 64 }} tintColor={PlatformColor('tertiaryLabel') as unknown as string} />
-              <Text style={{ marginTop: 16, marginBottom: 20, color: PlatformColor('secondaryLabel') }}>
+              <AppIcon name="video.slash" size={64} color={platformColor('tertiaryLabel')} />
+              <Text style={{ marginTop: 16, marginBottom: 20, color: platformColor('secondaryLabel') }}>
                 Unable to load camera feed
               </Text>
               <Pressable
@@ -191,11 +189,11 @@ export default function CameraDetailScreen() {
                   backgroundColor: '#1f130c',
                 }}
               >
-                <Image source="sf:video.slash" alt="" style={{ width: 64, height: 64 }} tintColor={PlatformColor('tertiaryLabel') as unknown as string} />
-                <Text style={{ marginTop: 16, marginBottom: 8, color: PlatformColor('label'), fontWeight: '600' }}>
+                <AppIcon name="video.slash" size={64} color={platformColor('tertiaryLabel')} />
+                <Text style={{ marginTop: 16, marginBottom: 8, color: platformColor('label'), fontWeight: '600' }}>
                   Stream Unavailable
                 </Text>
-                <Text style={{ marginBottom: 20, color: PlatformColor('secondaryLabel'), textAlign: 'center', paddingHorizontal: 32 }}>
+                <Text style={{ marginBottom: 20, color: platformColor('secondaryLabel'), textAlign: 'center', paddingHorizontal: 32 }}>
                   The live video stream could not be loaded. Try the snapshot view instead.
                 </Text>
                 <Pressable
@@ -249,7 +247,7 @@ export default function CameraDetailScreen() {
           <View
             style={{
               flexDirection: 'row',
-              backgroundColor: PlatformColor('tertiarySystemFill'),
+              backgroundColor: platformColor('tertiarySystemFill'),
               borderRadius: 8,
               padding: 4,
               marginBottom: 12,
@@ -268,17 +266,16 @@ export default function CameraDetailScreen() {
                 backgroundColor: viewMode === 'snapshot' ? '#120905' : 'transparent',
               }}
             >
-              <Image
-                source="sf:photo"
-                alt=""
-                style={{ width: 16, height: 16 }}
-                tintColor={viewMode === 'snapshot' ? PlatformColor('label') as unknown as string : PlatformColor('secondaryLabel') as unknown as string}
+              <AppIcon
+                name="photo"
+                size={16}
+                color={viewMode === 'snapshot' ? platformColor('label') : platformColor('secondaryLabel')}
               />
               <Text
                 style={{
                   fontSize: 13,
                   fontWeight: viewMode === 'snapshot' ? '600' : '400',
-                  color: viewMode === 'snapshot' ? PlatformColor('label') : PlatformColor('secondaryLabel'),
+                  color: viewMode === 'snapshot' ? platformColor('label') : platformColor('secondaryLabel'),
                 }}
               >
                 Snapshot
@@ -297,17 +294,16 @@ export default function CameraDetailScreen() {
                 backgroundColor: viewMode === 'live' ? '#120905' : 'transparent',
               }}
             >
-              <Image
-                source="sf:video.fill"
-                alt=""
-                style={{ width: 16, height: 16 }}
-                tintColor={viewMode === 'live' ? '#ef4444' : PlatformColor('secondaryLabel') as unknown as string}
+              <AppIcon
+                name="video.fill"
+                size={16}
+                color={viewMode === 'live' ? '#ef4444' : platformColor('secondaryLabel')}
               />
               <Text
                 style={{
                   fontSize: 13,
                   fontWeight: viewMode === 'live' ? '600' : '400',
-                  color: viewMode === 'live' ? PlatformColor('label') : PlatformColor('secondaryLabel'),
+                  color: viewMode === 'live' ? platformColor('label') : platformColor('secondaryLabel'),
                 }}
               >
                 Live Video
@@ -347,12 +343,12 @@ export default function CameraDetailScreen() {
               {viewMode === 'live' ? 'STREAMING' : 'LIVE'}
             </Text>
           </View>
-          <Text style={{ fontSize: 12, color: PlatformColor('secondaryLabel') }}>
+          <Text style={{ fontSize: 12, color: platformColor('secondaryLabel') }}>
             {viewMode === 'live' ? 'Real-time video feed' : 'Auto-refreshes every 30s'}
           </Text>
         </View>
 
-        <Text style={{ fontSize: 13, color: PlatformColor('secondaryLabel') }}>{name}</Text>
+        <Text style={{ fontSize: 13, color: platformColor('secondaryLabel') }}>{name}</Text>
       </View>
     </View>
   );

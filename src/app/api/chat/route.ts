@@ -9,9 +9,10 @@ import {
 } from '@/lib/db/chat-logs';
 import { getCurrentUser } from '@/lib/auth/server';
 import { getUserProfile } from '@/lib/db/profiles';
+import { getActiveModel } from '@/lib/ai/model-config';
 
 export const runtime = 'nodejs';
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 // CORS headers for mobile app
 const corsHeaders = {
@@ -290,7 +291,7 @@ export async function POST(req: Request) {
     // Track tool calls during the stream
     const toolCallsUsed: string[] = [];
 
-    const MODEL_ID = 'anthropic/claude-sonnet-4.6';
+    const MODEL_ID = await getActiveModel('chat');
     const openrouter = createOpenRouter({
       apiKey: process.env.OPENROUTER_API_KEY,
     });

@@ -4,8 +4,8 @@
  */
 
 import { View, Text } from 'react-native';
-import { Image } from 'expo-image';
 import { Brand } from '@/constants/BrandColors';
+import { AppIcon } from '@/components/AppIcon';
 
 export interface ToolOutput {
   id: string;
@@ -66,7 +66,7 @@ export function ToolOutputCard({ toolName }: ToolOutputCardProps) {
         borderColor: `${Brand.amber}30`,
       }}
     >
-      <Image source={`sf:${icon}`} style={{ width: 12, height: 12 }} tintColor={Brand.amber} />
+      <AppIcon name={icon} size={12} color={Brand.amber} />
       <Text style={{ fontSize: 12, color: Brand.muted }}>{verb}</Text>
     </View>
   );

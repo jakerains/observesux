@@ -2,10 +2,12 @@
  * News Widget - Local news feed
  */
 
-import { View, Pressable, Linking, Text, PlatformColor } from 'react-native';
+import { View, Pressable, Linking, Text } from 'react-native';
 import { Image } from 'expo-image';
 import { formatDistanceToNow } from 'date-fns';
 import * as Haptics from 'expo-haptics';
+import { AppIcon } from '@/components/AppIcon';
+import { platformColor } from '@/lib/platformColors';
 import { useNews, getDataStatus } from '@/lib/hooks/useDataFetching';
 import { refreshIntervals } from '@/lib/api';
 import { DashboardCard } from '../DashboardCard';
@@ -18,9 +20,7 @@ interface NewsRowProps {
 
 function NewsRow({ item }: NewsRowProps) {
   const handlePress = async () => {
-    if (process.env.EXPO_OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (item.link) {
       await Linking.openURL(item.link);
     }
@@ -38,7 +38,7 @@ function NewsRow({ item }: NewsRowProps) {
         alignItems: 'center',
         paddingVertical: 12,
         borderBottomWidth: 0.5,
-        borderBottomColor: PlatformColor('separator'),
+        borderBottomColor: platformColor('separator'),
       }}
     >
       {item.imageUrl && (
@@ -49,7 +49,7 @@ function NewsRow({ item }: NewsRowProps) {
             height: 45,
             borderRadius: 6,
             marginRight: 12,
-            backgroundColor: PlatformColor('tertiarySystemFill'),
+            backgroundColor: platformColor('tertiarySystemFill'),
           }}
           contentFit="cover"
           transition={200}
@@ -59,7 +59,7 @@ function NewsRow({ item }: NewsRowProps) {
       <View style={{ flex: 1, marginRight: 8 }}>
         <Text
           numberOfLines={2}
-          style={{ fontSize: 14, fontWeight: '500', lineHeight: 18, marginBottom: 4, color: PlatformColor('label') }}
+          style={{ fontSize: 14, fontWeight: '500', lineHeight: 18, marginBottom: 4, color: platformColor('label') }}
         >
           {item.title}
         </Text>
@@ -68,14 +68,14 @@ function NewsRow({ item }: NewsRowProps) {
           <Text style={{ fontSize: 12, color: '#e69c3a' }}>{item.source}</Text>
           {timeAgo && (
             <>
-              <Text style={{ fontSize: 12, marginHorizontal: 6, color: PlatformColor('tertiaryLabel') }}>•</Text>
-              <Text style={{ fontSize: 12, color: PlatformColor('secondaryLabel') }}>{timeAgo}</Text>
+              <Text style={{ fontSize: 12, marginHorizontal: 6, color: platformColor('tertiaryLabel') }}>•</Text>
+              <Text style={{ fontSize: 12, color: platformColor('secondaryLabel') }}>{timeAgo}</Text>
             </>
           )}
         </View>
       </View>
 
-      <Image source="sf:chevron.right" style={{ width: 16, height: 16, marginLeft: 4 }} tintColor={PlatformColor('tertiaryLabel') as unknown as string} />
+      <AppIcon name="chevron.right" size={16} color={platformColor('tertiaryLabel')} style={{ marginLeft: 4 }} />
     </Pressable>
   );
 }
@@ -105,7 +105,7 @@ export function NewsWidget() {
         status="error"
         onRefresh={() => refetch()}
       >
-        <Text style={{ color: PlatformColor('secondaryLabel') }}>Unable to load news</Text>
+        <Text style={{ color: platformColor('secondaryLabel') }}>Unable to load news</Text>
       </DashboardCard>
     );
   }
@@ -120,8 +120,8 @@ export function NewsWidget() {
     >
       {displayNews.length === 0 ? (
         <View style={{ alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-          <Image source="sf:newspaper" style={{ width: 32, height: 32 }} tintColor={PlatformColor('tertiaryLabel') as unknown as string} />
-          <Text style={{ marginTop: 8, color: PlatformColor('secondaryLabel') }}>
+          <AppIcon name="newspaper" size={32} color={platformColor('tertiaryLabel')} />
+          <Text style={{ marginTop: 8, color: platformColor('secondaryLabel') }}>
             No news available
           </Text>
         </View>

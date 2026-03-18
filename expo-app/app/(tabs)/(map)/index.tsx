@@ -3,12 +3,14 @@
  */
 
 import { useState, useRef, useMemo, useCallback } from 'react';
-import { View, Pressable, ScrollView, Text, PlatformColor, useColorScheme, StyleSheet } from 'react-native';
+import { View, Pressable, ScrollView, Text, useColorScheme, StyleSheet } from 'react-native';
 import MapView, { Marker, Callout, PROVIDER_DEFAULT, Region, type UserLocationChangeEvent } from 'react-native-maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
+import { AppIcon } from '@/components/AppIcon';
+import { platformColor } from '@/lib/platformColors';
 import { useCameras, useTransit, useTrafficEvents, useGasPrices } from '@/lib/hooks/useDataFetching';
 import type { Bus, GasStation } from '@/lib/types';
 
@@ -37,9 +39,7 @@ function LayerToggle({
   return (
     <Pressable
       onPress={() => {
-        if (process.env.EXPO_OS === 'ios') {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         onPress();
       }}
       style={{
@@ -53,8 +53,8 @@ function LayerToggle({
         boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
       }}
     >
-      <Image source={`sf:${sfSymbol}`} alt="" style={{ width: 18, height: 18 }} tintColor={active ? '#fff' : PlatformColor('label') as unknown as string} />
-      <Text style={{ fontSize: 12, fontWeight: active ? '600' : '400', color: active ? '#fff' : PlatformColor('label') }}>
+      <AppIcon name={sfSymbol} size={18} color={active ? '#fff' : platformColor('label')} />
+      <Text style={{ fontSize: 12, fontWeight: active ? '600' : '400', color: active ? '#fff' : platformColor('label') }}>
         {label}
       </Text>
       {count !== undefined && count > 0 && (
@@ -130,9 +130,7 @@ export default function MapScreen() {
   }, []);
 
   const centerOnUser = useCallback(() => {
-    if (process.env.EXPO_OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     if (userCoords.current) {
       setLocationTracking(true);
       mapRef.current?.animateToRegion(
@@ -189,14 +187,12 @@ export default function MapScreen() {
                   backgroundColor: '#3b82f6',
                 }}
               >
-                <Image source="sf:video.fill" alt="" style={{ width: 14, height: 14 }} tintColor="#fff" />
+                <AppIcon name="video.fill" size={14} color="#fff" />
               </View>
               <Callout
                 tooltip
                 onPress={() => {
-                  if (process.env.EXPO_OS === 'ios') {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  }
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   router.push({
                     pathname: '/camera/[id]',
                     params: {
@@ -243,7 +239,7 @@ export default function MapScreen() {
                           gap: 4,
                         }}
                       >
-                        <Image source="sf:video.fill" alt="" style={{ width: 10, height: 10 }} tintColor="#ffffff" />
+                        <AppIcon name="video.fill" size={10} color="#ffffff" />
                         <Text style={{ color: '#ffffff', fontSize: 9, fontWeight: '600' }}>VIDEO</Text>
                       </View>
                     )}
@@ -282,7 +278,7 @@ export default function MapScreen() {
                       >
                         Tap for full view
                       </Text>
-                      <Image source="sf:chevron.right" alt="" style={{ width: 10, height: 10, marginLeft: 2 }} tintColor="#3b82f6" />
+                      <AppIcon name="chevron.right" size={10} color="#3b82f6" style={{ marginLeft: 2 }} />
                     </View>
                   </View>
                 </View>
@@ -311,7 +307,7 @@ export default function MapScreen() {
                   backgroundColor: bus.routeColor || '#22c55e',
                 }}
               >
-                <Image source="sf:bus.fill" alt="" style={{ width: 12, height: 12 }} tintColor="#fff" />
+                <AppIcon name="bus.fill" size={12} color="#fff" />
               </View>
             </Marker>
           ))}
@@ -378,7 +374,7 @@ export default function MapScreen() {
                     backgroundColor: '#f59e0b',
                   }}
                 >
-                  <Image source="sf:fuelpump.fill" alt="" style={{ width: 14, height: 14 }} tintColor="#fff" />
+                  <AppIcon name="fuelpump.fill" size={14} color="#fff" />
                 </View>
                 <Callout tooltip>
                   <View
@@ -414,7 +410,7 @@ export default function MapScreen() {
                           backgroundColor: '#f59e0b',
                         }}
                       >
-                        <Image source="sf:fuelpump.fill" alt="" style={{ width: 15, height: 15 }} tintColor="#fff" />
+                        <AppIcon name="fuelpump.fill" size={15} color="#fff" />
                       </View>
                       <View style={{ flex: 1 }}>
                         <Text
@@ -497,7 +493,7 @@ export default function MapScreen() {
                     event.severity === 'critical' ? '#ef4444' : event.severity === 'major' ? '#f97316' : '#f59e0b',
                 }}
               >
-                <Image source="sf:exclamationmark.triangle.fill" alt="" style={{ width: 14, height: 14 }} tintColor="#fff" />
+                <AppIcon name="exclamationmark.triangle.fill" size={14} color="#fff" />
               </View>
             </Marker>
           ))}
@@ -552,17 +548,16 @@ export default function MapScreen() {
             boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
           }}
         >
-          <Image
-            source={locationTracking ? 'sf:location.fill' : 'sf:location'}
-            alt=""
-            style={{ width: 22, height: 22 }}
-            tintColor={locationTracking ? '#ffffff' : '#e69c3a'}
+          <AppIcon
+            name={locationTracking ? 'location.fill' : 'location'}
+            size={22}
+            color={locationTracking ? '#ffffff' : '#e69c3a'}
           />
         </Pressable>
         {/* Reset to Sioux City */}
         <Pressable
           onPress={() => {
-            if (process.env.EXPO_OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             setLocationTracking(false);
             mapRef.current?.animateToRegion(SIOUX_CITY_CENTER, 500);
           }}
@@ -576,7 +571,7 @@ export default function MapScreen() {
             boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
           }}
         >
-          <Image source="sf:arrow.counterclockwise" alt="" style={{ width: 20, height: 20 }} tintColor="#e69c3a" />
+          <AppIcon name="arrow.counterclockwise" size={20} color="#e69c3a" />
         </Pressable>
       </View>
     </View>

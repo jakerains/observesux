@@ -17,6 +17,7 @@ import { aggregateAllData } from '@/lib/digest/fetcher-steps'
 import { getDigestSystemPrompt, buildDigestPrompt } from '@/lib/digest/system-prompt'
 import { saveDigest, getTodaysDigest, pruneOldDigests } from '@/lib/db/digest'
 import { isDatabaseConfigured } from '@/lib/db'
+import { getActiveModel } from '@/lib/ai/model-config'
 import { getCurrentEdition, type DigestEdition, type DigestData } from '@/lib/digest/types'
 import { getDeviceTokensForType } from '@/lib/db/device-push'
 import { sendExpoPushToTokens } from '@/lib/push/send-expo'
@@ -58,8 +59,10 @@ async function generateDigestContent(
     apiKey: process.env.OPENROUTER_API_KEY,
   })
 
+  const modelId = await getActiveModel('digest')
+
   const result = await generateText({
-    model: openrouter('anthropic/claude-sonnet-4.6'),
+    model: openrouter(modelId),
     system: systemPrompt,
     prompt: userPrompt,
     maxOutputTokens: 4000,

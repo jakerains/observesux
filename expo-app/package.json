@@ -1,6 +1,6 @@
 {
   "name": "siouxland-online",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@expo/metro-runtime": "^55.0.6",
+    "@expo/vector-icons": "^15.1.1",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@tanstack/react-query": "^5.62.0",
     "date-fns": "^4.1.0",
@@ -20,10 +21,12 @@
     "expo-blur": "~55.0.9",
     "expo-constants": "~55.0.7",
     "expo-device": "~55.0.9",
+    "expo-file-system": "^55.0.11",
     "expo-haptics": "~55.0.8",
     "expo-image": "~55.0.6",
     "expo-linear-gradient": "~55.0.8",
     "expo-linking": "~55.0.7",
+    "expo-localization": "^55.0.9",
     "expo-navigation-bar": "~55.0.8",
     "expo-notifications": "~55.0.12",
     "expo-router": "~55.0.5",
@@ -33,6 +36,7 @@
     "expo-system-ui": "~55.0.9",
     "expo-updates": "^55.0.13",
     "expo-web-browser": "~55.0.9",
+    "posthog-react-native": "^4.37.3",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-native": "0.83.2",

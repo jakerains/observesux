@@ -3,11 +3,12 @@
  * Matches the web app's DashboardCard pattern
  */
 
-import { View, Pressable, ActivityIndicator, Text, PlatformColor } from 'react-native';
-import { Image } from 'expo-image';
+import { View, Pressable, ActivityIndicator, Text } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import type { DataStatus } from '@/lib/types';
 import { Brand } from '@/constants/BrandColors';
+import { AppIcon } from '@/components/AppIcon';
+import { platformColor } from '@/lib/platformColors';
 
 interface DashboardCardProps {
   title: string;
@@ -33,7 +34,7 @@ export function DashboardCard({
     live: '#22c55e',
     stale: '#f59e0b',
     error: '#ef4444',
-    loading: PlatformColor('secondaryLabel') as unknown as string,
+    loading: platformColor('secondaryLabel'),
   };
 
   const statusLabels: Record<DataStatus, string> = {
@@ -44,16 +45,12 @@ export function DashboardCard({
   };
 
   const handleRefresh = () => {
-    if (process.env.EXPO_OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onRefresh?.();
   };
 
   const handleExpand = () => {
-    if (process.env.EXPO_OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onExpand?.();
   };
 
@@ -80,15 +77,11 @@ export function DashboardCard({
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
           {sfSymbol && (
-            <Image
-              source={`sf:${sfSymbol}`}
-              style={{ width: 18, height: 18, marginRight: 8 }}
-              tintColor={PlatformColor('label') as unknown as string}
-            />
+            <AppIcon name={sfSymbol} size={18} color={platformColor('label')} style={{ marginRight: 8 }} />
           )}
           <Text
             numberOfLines={1}
-            style={{ fontSize: 15, fontWeight: '600', color: PlatformColor('label') }}
+            style={{ fontSize: 15, fontWeight: '600', color: platformColor('label') }}
           >
             {title}
           </Text>
@@ -103,7 +96,7 @@ export function DashboardCard({
               paddingHorizontal: 8,
               paddingVertical: 4,
               borderRadius: 12,
-              backgroundColor: PlatformColor('tertiarySystemFill'),
+              backgroundColor: platformColor('tertiarySystemFill'),
             }}
           >
             <View
@@ -115,7 +108,7 @@ export function DashboardCard({
                 backgroundColor: statusColors[status],
               }}
             />
-            <Text style={{ fontSize: 11, fontWeight: '500', color: PlatformColor('secondaryLabel') }}>
+            <Text style={{ fontSize: 11, fontWeight: '500', color: platformColor('secondaryLabel') }}>
               {statusLabels[status]}
             </Text>
           </View>
@@ -129,9 +122,9 @@ export function DashboardCard({
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
               {isRefreshing ? (
-                <ActivityIndicator size="small" color={PlatformColor('secondaryLabel')} />
+                <ActivityIndicator size="small" color={platformColor('secondaryLabel')} />
               ) : (
-                <Image source="sf:arrow.clockwise" style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel') as unknown as string} />
+                <AppIcon name="arrow.clockwise" size={18} color={platformColor('secondaryLabel')} />
               )}
             </Pressable>
           )}
@@ -143,7 +136,7 @@ export function DashboardCard({
               style={{ padding: 4 }}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Image source="sf:arrow.up.left.and.arrow.down.right" style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel') as unknown as string} />
+              <AppIcon name="arrow.up.left.and.arrow.down.right" size={18} color={platformColor('secondaryLabel')} />
             </Pressable>
           )}
         </View>

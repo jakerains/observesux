@@ -3,9 +3,10 @@
  * Theme picker: Light, Dark, System
  */
 
-import { View, Text, Pressable, PlatformColor } from 'react-native';
-import { Image } from 'expo-image';
+import { View, Text, Pressable } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import { AppIcon } from '@/components/AppIcon';
+import { platformColor } from '@/lib/platformColors';
 import { useSettings, type Settings } from '../../../lib/contexts';
 
 type Theme = Settings['theme'];
@@ -22,9 +23,7 @@ function ThemeOption({ label, description, sfSymbol, isSelected, onSelect }: The
   return (
     <Pressable
       onPress={() => {
-        if (process.env.EXPO_OS === 'ios') {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         onSelect();
       }}
       style={{
@@ -32,7 +31,7 @@ function ThemeOption({ label, description, sfSymbol, isSelected, onSelect }: The
         alignItems: 'center',
         padding: 16,
         borderBottomWidth: 0.5,
-        borderBottomColor: PlatformColor('separator'),
+        borderBottomColor: platformColor('separator'),
       }}
     >
       <View
@@ -40,22 +39,22 @@ function ThemeOption({ label, description, sfSymbol, isSelected, onSelect }: The
           width: 40,
           height: 40,
           borderRadius: 10,
-          backgroundColor: PlatformColor('tertiarySystemFill'),
+          backgroundColor: platformColor('tertiarySystemFill'),
           alignItems: 'center',
           justifyContent: 'center',
           marginRight: 14,
         }}
       >
-        <Image source={`sf:${sfSymbol}`} style={{ width: 22, height: 22 }} tintColor={'#e69c3a'} />
+        <AppIcon name={sfSymbol} size={22} color="#e69c3a" />
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={{ fontSize: 17, color: PlatformColor('label') }}>{label}</Text>
-        <Text style={{ fontSize: 13, color: PlatformColor('secondaryLabel'), marginTop: 2 }}>
+        <Text style={{ fontSize: 17, color: platformColor('label') }}>{label}</Text>
+        <Text style={{ fontSize: 13, color: platformColor('secondaryLabel'), marginTop: 2 }}>
           {description}
         </Text>
       </View>
       {isSelected && (
-        <Image source="sf:checkmark" style={{ width: 20, height: 20 }} tintColor={'#e69c3a'} />
+        <AppIcon name="checkmark" size={20} color="#e69c3a" />
       )}
     </Pressable>
   );
@@ -110,7 +109,7 @@ export default function AppearanceScreen() {
         style={{
           marginHorizontal: 20,
           fontSize: 13,
-          color: PlatformColor('secondaryLabel'),
+          color: platformColor('secondaryLabel'),
           lineHeight: 18,
         }}
       >

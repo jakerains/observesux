@@ -1,4 +1,5 @@
-import { View, Text, PlatformColor } from 'react-native'
+import { View, Text } from 'react-native'
+import { platformColor } from '@/lib/platformColors'
 import { ToolCardBase } from './ToolCardBase'
 import { formatCount, unwrapData, type ToolStatus } from './utils'
 
@@ -41,9 +42,9 @@ function ServiceRow({ label, status, detail }: ServiceRowProps) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
       <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colorMap[status] }} />
-      <Text style={{ fontSize: 12, fontWeight: '500', color: PlatformColor('label'), flex: 1 }}>{label}</Text>
+      <Text style={{ fontSize: 12, fontWeight: '500', color: platformColor('label'), flex: 1 }}>{label}</Text>
       {detail && (
-        <Text style={{ fontSize: 11, color: PlatformColor('secondaryLabel') }}>{detail}</Text>
+        <Text style={{ fontSize: 11, color: platformColor('secondaryLabel') }}>{detail}</Text>
       )}
     </View>
   )
@@ -72,7 +73,7 @@ export function CitySummaryCard({ output }: { output: unknown }) {
       icon="sparkles"
       status={overallStatus === 'alert' ? 'alert' : overallStatus === 'attention' ? 'attention' : 'normal'}
     >
-      <Text style={{ fontSize: 12, fontWeight: '600', color: PlatformColor('label') }}>
+      <Text style={{ fontSize: 12, fontWeight: '600', color: platformColor('label') }}>
         {statusLabel(overallStatus)}
       </Text>
 
@@ -92,7 +93,7 @@ export function CitySummaryCard({ output }: { output: unknown }) {
       </View>
 
       {data.narrative_summary ? (
-        <Text selectable style={{ fontSize: 12, color: PlatformColor('secondaryLabel'), lineHeight: 18 }}>
+        <Text selectable style={{ fontSize: 12, color: platformColor('secondaryLabel'), lineHeight: 18 }}>
           {data.narrative_summary}
         </Text>
       ) : null}

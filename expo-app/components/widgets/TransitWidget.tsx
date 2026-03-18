@@ -2,9 +2,10 @@
  * Transit Widget - Real-time bus tracking
  */
 
-import { View, Pressable, Text, PlatformColor } from 'react-native';
-import { Image } from 'expo-image';
+import { View, Pressable, Text } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import { AppIcon } from '@/components/AppIcon';
+import { platformColor } from '@/lib/platformColors';
 import { useTransit, getDataStatus } from '@/lib/hooks/useDataFetching';
 import { refreshIntervals } from '@/lib/api';
 import { DashboardCard } from '../DashboardCard';
@@ -87,9 +88,7 @@ function BusRow({ bus, onPress }: BusRowProps) {
   return (
     <Pressable
       onPress={() => {
-        if (process.env.EXPO_OS === 'ios') {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         onPress?.();
       }}
       style={{
@@ -97,7 +96,7 @@ function BusRow({ bus, onPress }: BusRowProps) {
         alignItems: 'center',
         paddingVertical: 8,
         borderBottomWidth: 0.5,
-        borderBottomColor: PlatformColor('separator'),
+        borderBottomColor: platformColor('separator'),
       }}
     >
       <View
@@ -117,11 +116,11 @@ function BusRow({ bus, onPress }: BusRowProps) {
       </View>
 
       <View style={{ flex: 1, marginRight: 8 }}>
-        <Text numberOfLines={1} style={{ fontWeight: '500', color: PlatformColor('label') }}>
+        <Text numberOfLines={1} style={{ fontWeight: '500', color: platformColor('label') }}>
           {bus.routeName?.trim() || `Route ${bus.routeId}`}
         </Text>
         {bus.nextStop && (
-          <Text numberOfLines={1} style={{ color: PlatformColor('secondaryLabel') }}>
+          <Text numberOfLines={1} style={{ color: platformColor('secondaryLabel') }}>
             Next: {bus.nextStop}
           </Text>
         )}
@@ -171,7 +170,7 @@ export function TransitWidget() {
         status="error"
         onRefresh={() => refetch()}
       >
-        <Text style={{ color: PlatformColor('secondaryLabel') }}>Unable to load transit data</Text>
+        <Text style={{ color: platformColor('secondaryLabel') }}>Unable to load transit data</Text>
       </DashboardCard>
     );
   }
@@ -186,8 +185,8 @@ export function TransitWidget() {
     >
       {activeBuses.length === 0 ? (
         <View style={{ alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-          <Image source="sf:bus" style={{ width: 32, height: 32 }} tintColor={PlatformColor('tertiaryLabel') as unknown as string} />
-          <Text style={{ marginTop: 8, color: PlatformColor('secondaryLabel') }}>
+          <AppIcon name="bus" size={32} color={platformColor('tertiaryLabel')} />
+          <Text style={{ marginTop: 8, color: platformColor('secondaryLabel') }}>
             No active buses
           </Text>
         </View>
@@ -198,7 +197,7 @@ export function TransitWidget() {
           ))}
 
           {buses.length > 5 && (
-            <Text style={{ textAlign: 'center', marginTop: 8, color: PlatformColor('secondaryLabel') }}>
+            <Text style={{ textAlign: 'center', marginTop: 8, color: platformColor('secondaryLabel') }}>
               +{buses.length - 5} more active
             </Text>
           )}

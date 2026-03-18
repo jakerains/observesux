@@ -4,7 +4,8 @@
  * primary pollutant row, and 24h AQI trend chart.
  */
 
-import { View, Text, PlatformColor } from 'react-native';
+import { View, Text } from 'react-native';
+import { platformColor } from '@/lib/platformColors';
 import Svg, {
   Path,
   Defs,
@@ -84,7 +85,7 @@ function AQIScaleBar({ aqiValue }: { aqiValue: number }) {
       {/* Labels row */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
         {SCALE_LABELS.map(label => (
-          <Text key={label} style={{ fontSize: 11, color: PlatformColor('secondaryLabel') }}>
+          <Text key={label} style={{ fontSize: 11, color: platformColor('secondaryLabel') }}>
             {label}
           </Text>
         ))}
@@ -103,7 +104,7 @@ function AQIScaleBar({ aqiValue }: { aqiValue: number }) {
           style={{
             position: 'absolute',
             fontSize: 10,
-            color: PlatformColor('label'),
+            color: platformColor('label'),
             transform: [{ translateX: -4 }],
             left: `${clampedPct}%`,
           }}
@@ -164,7 +165,7 @@ function TrendIndicator({ values }: { values: number[] }) {
   const delta = values[values.length - 1] - values[0];
   const arrow = delta > 0.5 ? '↑' : delta < -0.5 ? '↓' : '→';
   return (
-    <Text style={{ fontSize: 12, color: PlatformColor('secondaryLabel') }}>
+    <Text style={{ fontSize: 12, color: platformColor('secondaryLabel') }}>
       {arrow} {Math.abs(delta).toFixed(1)}
     </Text>
   );
@@ -200,7 +201,7 @@ export function AirQualityWidget() {
         status="error"
         onRefresh={() => refetch()}
       >
-        <Text style={{ color: PlatformColor('secondaryLabel') }}>
+        <Text style={{ color: platformColor('secondaryLabel') }}>
           Unable to load air quality data
         </Text>
       </DashboardCard>
@@ -263,7 +264,7 @@ export function AirQualityWidget() {
           <Text
             style={{
               fontSize: 12,
-              color: PlatformColor('secondaryLabel'),
+              color: platformColor('secondaryLabel'),
               marginTop: 6,
               lineHeight: 17,
             }}
@@ -280,17 +281,17 @@ export function AirQualityWidget() {
       <View
         style={{
           borderTopWidth: 0.5,
-          borderTopColor: PlatformColor('separator'),
+          borderTopColor: platformColor('separator'),
           marginTop: 12,
           paddingTop: 10,
         }}
       >
         {/* Primary Pollutant */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          <Text style={{ fontSize: 13, color: PlatformColor('secondaryLabel') }}>
+          <Text style={{ fontSize: 13, color: platformColor('secondaryLabel') }}>
             Primary Pollutant
           </Text>
-          <Text style={{ fontSize: 13, fontWeight: '500', color: PlatformColor('label') }}>
+          <Text style={{ fontSize: 13, fontWeight: '500', color: platformColor('label') }}>
             {aqi.primaryPollutant}
           </Text>
         </View>
@@ -301,7 +302,7 @@ export function AirQualityWidget() {
         <View
           style={{
             borderTopWidth: 0.5,
-            borderTopColor: PlatformColor('separator'),
+            borderTopColor: platformColor('separator'),
             marginTop: 10,
             paddingTop: 10,
           }}
@@ -314,7 +315,7 @@ export function AirQualityWidget() {
               marginBottom: 6,
             }}
           >
-            <Text style={{ fontSize: 12, color: PlatformColor('secondaryLabel') }}>
+            <Text style={{ fontSize: 12, color: platformColor('secondaryLabel') }}>
               24h AQI Trend
             </Text>
             <TrendIndicator values={trendValues} />

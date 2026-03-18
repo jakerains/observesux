@@ -6,8 +6,8 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { View, ScrollView, Text, Pressable, Linking, LayoutAnimation, Share } from 'react-native';
 import { useLocalSearchParams, Stack, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Image } from 'expo-image';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { AppIcon } from '@/components/AppIcon';
 import { fetcher, endpoints } from '@/lib/api';
 import { LoadingSpinner } from '@/components/LoadingState';
 import { MarkdownText } from '@/components/MarkdownText';
@@ -52,7 +52,7 @@ export default function CouncilDetailScreen() {
     return (
       <View style={{ flex: 1, backgroundColor: Brand.background, justifyContent: 'center', alignItems: 'center' }}>
         <Stack.Screen options={{ title: 'Council Recap' }} />
-        <Image source="sf:exclamationmark.circle" alt="" style={{ width: 48, height: 48 }} tintColor={Brand.amber} />
+        <AppIcon name="exclamationmark.circle" size={48} color={Brand.amber} />
         <Text style={{ marginTop: 12, color: Brand.foreground, fontSize: 15 }}>Failed to load</Text>
         <Pressable
           onPress={() => refetch()}
@@ -70,7 +70,7 @@ export default function CouncilDetailScreen() {
     return (
       <View style={{ flex: 1, backgroundColor: Brand.background, justifyContent: 'center', alignItems: 'center' }}>
         <Stack.Screen options={{ title: 'Council Recap' }} />
-        <Image source="sf:building.columns" alt="" style={{ width: 48, height: 48 }} tintColor={Brand.amber} />
+        <AppIcon name="building.columns" size={48} color={Brand.amber} />
         <Text style={{ marginTop: 12, color: Brand.foreground, fontSize: 15 }}>Meeting not found</Text>
         <Text style={{ marginTop: 4, color: Brand.muted, fontSize: 12 }}>ID: {String(id)}</Text>
       </View>
@@ -108,7 +108,7 @@ export default function CouncilDetailScreen() {
         title: 'Council Recap',
         headerRight: () => (
           <Pressable onPress={handleShare} hitSlop={8}>
-            <Image source="sf:square.and.arrow.up" alt="" style={{ width: 20, height: 20 }} tintColor={Brand.amber} />
+            <AppIcon name="square.and.arrow.up" size={20} color={Brand.amber} />
           </Pressable>
         ),
       }} />
@@ -120,7 +120,7 @@ export default function CouncilDetailScreen() {
       >
         {!!dateLabel && (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 14 }}>
-            <Image source="sf:calendar" alt="" style={{ width: 14, height: 14 }} tintColor={Brand.amber} />
+            <AppIcon name="calendar" size={14} color={Brand.amber} />
             <Text style={{ fontSize: 13, color: Brand.amber, fontWeight: '500' }}>{dateLabel}</Text>
           </View>
         )}
@@ -186,7 +186,7 @@ export default function CouncilDetailScreen() {
             onPress={() => Linking.openURL(meeting.videoUrl!)}
             style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 12, backgroundColor: Brand.card, borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.1)', marginTop: 8 }}
           >
-            <Image source="sf:play.rectangle.fill" alt="" style={{ width: 20, height: 20 }} tintColor={Brand.amber} />
+            <AppIcon name="play.rectangle.fill" size={20} color={Brand.amber} />
             <Text style={{ fontWeight: '600', color: Brand.amber }}>Watch on YouTube</Text>
           </Pressable>
         )}
@@ -204,8 +204,8 @@ function CollapsibleSection({ icon, title, count, children }: { icon: string; ti
   return (
     <View style={{ marginBottom: 12, borderRadius: 12, backgroundColor: Brand.card, borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
       <Pressable onPress={toggle} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 14 }}>
-        <Image source={`sf:chevron.right`} alt="" style={{ width: 12, height: 12, transform: [{ rotate: open ? '90deg' : '0deg' }] }} tintColor={Brand.muted} />
-        <Image source={`sf:${icon}`} alt="" style={{ width: 16, height: 16 }} tintColor={Brand.amber} />
+        <AppIcon name="chevron.right" size={12} color={Brand.muted} style={{ transform: [{ rotate: open ? '90deg' : '0deg' }] }} />
+        <AppIcon name={icon} size={16} color={Brand.amber} />
         <Text style={{ fontSize: 14, fontWeight: '600', color: Brand.foreground, flex: 1 }}>{title}</Text>
         <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.06)' }}>
           <Text style={{ fontSize: 11, color: Brand.muted, fontWeight: '500' }}>{count}</Text>
@@ -223,7 +223,7 @@ function CollapsibleSection({ icon, title, count, children }: { icon: string; ti
 function SectionHeader({ icon, title }: { icon: string; title: string }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-      <Image source={`sf:${icon}`} alt="" style={{ width: 18, height: 18 }} tintColor={Brand.amber} />
+      <AppIcon name={icon} size={18} color={Brand.amber} />
       <Text style={{ fontSize: 15, fontWeight: '600', color: Brand.foreground }}>{title}</Text>
     </View>
   );

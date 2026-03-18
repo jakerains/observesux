@@ -3,7 +3,7 @@
  * AI-powered assistant for Sioux City information
  */
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useMemo, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,6 @@ import {
   Pressable,
   KeyboardAvoidingView,
   Platform,
-  PlatformColor,
   ActivityIndicator,
   Image,
   Animated,
@@ -27,11 +26,13 @@ import Reanimated, {
   Easing as REasing,
   type SharedValue,
 } from 'react-native-reanimated';
-import { Image as ExpoImage } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AppIcon } from '@/components/AppIcon';
+import { platformColor } from '@/lib/platformColors';
 import { API_BASE_URL } from '@/lib/api';
 import { ToolOutputCard, type ToolOutput } from '@/components/chat/ToolOutputCard';
+import { getToolCardComponent } from '@/components/chat/tool-cards';
 import { MarkdownText } from '@/components/MarkdownText';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -110,7 +111,7 @@ function getThinkingStatus(toolName: string): string {
 }
 
 function ThinkingBubble({ status }: { status?: string }) {
-  const opacity = useRef(new Animated.Value(0.35)).current;
+  const opacity = useMemo(() => new Animated.Value(0.35), []);
 
   useEffect(() => {
     const animation = Animated.loop(
@@ -136,7 +137,7 @@ function ThinkingBubble({ status }: { status?: string }) {
   const barStyle = {
     height: 8,
     borderRadius: 4,
-    backgroundColor: PlatformColor('tertiarySystemFill'),
+    backgroundColor: platformColor('tertiarySystemFill'),
   } as const;
 
   return (
@@ -207,9 +208,7 @@ export default function SuxScreen() {
     setInput('');
     setIsLoading(true);
 
-    if (process.env.EXPO_OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
     const assistantId = (Date.now() + 1).toString();
     const toolCallMap = new Map<string, string>();
@@ -292,31 +291,70 @@ export default function SuxScreen() {
         );
       };
 
+      const handleSsePayload = (payload: Record<string, unknown>) => {
+        const type = payload?.type as string;
+        if (!type) return;
+
+        if (type === 'text-delta' && typeof payload.delta === 'string') {
+          applyTextDelta(payload.delta);
+        } else if ((type === 'text-delta' || type === 'text') && typeof payload.textDelta === 'string') {
+          applyTextDelta(payload.textDelta);
+        } else if (type === 'text' && typeof payload.text === 'string') {
+          applyTextDelta(payload.text);
+        } else if ((type === 'tool-call' || type === 'tool-input-available' || type === 'tool-input-start' || type === 'tool-call-streaming-start') && payload.toolCallId && payload.toolName) {
+          toolCallMap.set(payload.toolCallId as string, payload.toolName as string);
+          setThinkingStatus(getThinkingStatus(payload.toolName as string));
+        } else if ((type === 'tool-result' || type === 'tool-output-available') && payload.toolCallId) {
+          const toolName = (payload.toolName as string) || toolCallMap.get(payload.toolCallId as string) || 'tool';
+          applyToolOutput(payload.toolCallId as string, toolName, payload.result ?? payload.output);
+        } else if (type === 'error' && (payload.errorText || payload.error)) {
+          throw new Error((payload.errorText || payload.error) as string);
+        }
+      };
+
       const processSseEvent = (data: string) => {
         const trimmed = data.trim();
         if (!trimmed) return;
         if (trimmed === '[DONE]') return;
 
         try {
-          const payload = JSON.parse(trimmed);
-          if (payload?.type === 'text-delta' && typeof payload.delta === 'string') {
-            applyTextDelta(payload.delta);
-          } else if (payload?.type === 'text' && typeof payload.text === 'string') {
-            applyTextDelta(payload.text);
-          } else if (payload?.type === 'tool-input-available' && payload.toolCallId && payload.toolName) {
-            toolCallMap.set(payload.toolCallId, payload.toolName);
-            setThinkingStatus(getThinkingStatus(payload.toolName));
-          } else if (payload?.type === 'tool-input-start' && payload.toolCallId && payload.toolName) {
-            toolCallMap.set(payload.toolCallId, payload.toolName);
-            setThinkingStatus(getThinkingStatus(payload.toolName));
-          } else if (payload?.type === 'tool-output-available' && payload.toolCallId) {
-            const toolName = payload.toolName || toolCallMap.get(payload.toolCallId) || 'tool';
-            applyToolOutput(payload.toolCallId, toolName, payload.output);
-          } else if (payload?.type === 'error' && payload.errorText) {
-            throw new Error(payload.errorText);
+          const parsed = JSON.parse(trimmed);
+          // AI SDK toUIMessageStreamResponse wraps events in arrays
+          if (Array.isArray(parsed)) {
+            for (const item of parsed) handleSsePayload(item);
+          } else {
+            handleSsePayload(parsed);
           }
         } catch {
-          // Ignore malformed SSE payloads
+          // Not JSON — might be a raw SSE protocol line like "0:text" (AI SDK data stream format)
+          // Try AI SDK data stream protocol: prefix:payload
+          const colonIdx = trimmed.indexOf(':');
+          if (colonIdx > 0 && colonIdx <= 2) {
+            const prefix = trimmed.substring(0, colonIdx);
+            const rest = trimmed.substring(colonIdx + 1);
+            try {
+              if (prefix === '0') {
+                // Text delta
+                applyTextDelta(JSON.parse(rest));
+              } else if (prefix === '9') {
+                // Tool call
+                const tc = JSON.parse(rest);
+                if (tc.toolCallId && tc.toolName) {
+                  toolCallMap.set(tc.toolCallId, tc.toolName);
+                  setThinkingStatus(getThinkingStatus(tc.toolName));
+                }
+              } else if (prefix === 'a') {
+                // Tool result
+                const tr = JSON.parse(rest);
+                if (tr.toolCallId) {
+                  const toolName = tr.toolName || toolCallMap.get(tr.toolCallId) || 'tool';
+                  applyToolOutput(tr.toolCallId, toolName, tr.result);
+                }
+              }
+            } catch {
+              // Ignore unparseable data stream lines
+            }
+          }
         }
       };
 
@@ -335,11 +373,9 @@ export default function SuxScreen() {
         }
       };
 
-      try {
-        // Handle streaming response (AI SDK UI stream protocol - SSE)
-        const reader = response.body?.getReader();
-        if (!reader) throw new Error('No reader');
-
+      if (Platform.OS === 'ios' && response.body?.getReader) {
+        // iOS: stream SSE events incrementally via ReadableStream
+        const reader = response.body.getReader();
         const decoder = new TextDecoder();
 
         while (true) {
@@ -348,9 +384,8 @@ export default function SuxScreen() {
           const chunk = decoder.decode(value, { stream: true });
           processSseChunk(chunk);
         }
-      } catch {
-        // Streaming failed - try to read full response
-        console.log('Streaming not supported, reading full response');
+      } else {
+        // Android: ReadableStream is unreliable — read full response then parse SSE
         const fullText = await response.text();
         processSseChunk(fullText + '\n\n');
       }
@@ -397,9 +432,7 @@ export default function SuxScreen() {
   }, [sendMessage]);
 
   const clearChat = useCallback(() => {
-    if (process.env.EXPO_OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setMessages([]);
   }, []);
 
@@ -419,21 +452,20 @@ export default function SuxScreen() {
             paddingHorizontal: 16,
             paddingVertical: 12,
             borderBottomWidth: 0.5,
-            borderBottomColor: PlatformColor('separator'),
+            borderBottomColor: platformColor('separator'),
           }}
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <Image
               source={suxImage}
-              alt="SUX mascot"
               style={{ width: 36, height: 36, borderRadius: 18 }}
               accessibilityLabel="SUX mascot"
             />
             <View>
-              <Text style={{ fontSize: 17, fontWeight: '600', color: PlatformColor('label') }}>
+              <Text style={{ fontSize: 17, fontWeight: '600', color: platformColor('label') }}>
                 SUX
               </Text>
-              <Text style={{ fontSize: 12, color: PlatformColor('secondaryLabel') }}>
+              <Text style={{ fontSize: 12, color: platformColor('secondaryLabel') }}>
                 Siouxland Assistant
               </Text>
             </View>
@@ -446,7 +478,7 @@ export default function SuxScreen() {
                 borderRadius: 8,
               }}
             >
-              <ExpoImage source="sf:arrow.counterclockwise" style={{ width: 20, height: 20 }} tintColor={'#e69c3a'} />
+              <AppIcon name="arrow.counterclockwise" size={20} color="#e69c3a" />
             </Pressable>
           )}
         </View>
@@ -463,14 +495,13 @@ export default function SuxScreen() {
             <View style={{ alignItems: 'center', paddingVertical: 40 }}>
               <Image
                 source={suxImage}
-                alt="SUX mascot"
                 style={{ width: 100, height: 100, marginBottom: 16 }}
                 accessibilityLabel="SUX mascot"
               />
               <Text
                 style={{
                   fontSize: 15,
-                  color: PlatformColor('secondaryLabel'),
+                  color: platformColor('secondaryLabel'),
                   textAlign: 'center',
                   marginBottom: 24,
                   paddingHorizontal: 20,
@@ -481,7 +512,7 @@ export default function SuxScreen() {
               <Text
                 style={{
                   fontSize: 12,
-                  color: PlatformColor('tertiaryLabel'),
+                  color: platformColor('tertiaryLabel'),
                   marginBottom: 12,
                 }}
               >
@@ -500,7 +531,7 @@ export default function SuxScreen() {
                       borderRadius: 16,
                     }}
                   >
-                    <Text style={{ fontSize: 14, color: PlatformColor('label') }}>{question}</Text>
+                    <Text style={{ fontSize: 14, color: platformColor('label') }}>{question}</Text>
                   </Pressable>
                 ))}
               </View>
@@ -509,7 +540,17 @@ export default function SuxScreen() {
 
           {/* Chat messages */}
           {messages.map((message) => {
-            const hasText = message.content.trim().length > 0;
+            // Strip raw JSON tool data the model embeds in its text
+            let cleanContent = message.content;
+            if (message.role === 'assistant') {
+              // Strip code blocks with JSON
+              cleanContent = cleanContent.replace(/```[\w]*\s*\n?\{[\s\S]*?```/g, '');
+              // Strip JSON objects that look like tool output (contain "name":, "title":, etc.)
+              cleanContent = cleanContent.replace(/,?\s*\{[^{}]*"(?:name|title|restaurants|temperature|alerts?|forecast|stations|routes|articles|readings|events|meetings)"[^]*$/s, '');
+              // Strip leading/trailing commas and whitespace
+              cleanContent = cleanContent.replace(/[,\s]+$/, '').trim();
+            }
+            const hasText = cleanContent.trim().length > 0;
             const showBubble = message.role === 'user' || hasText;
             const hasToolOutputs = message.role === 'assistant' && (message.toolOutputs?.length || 0) > 0;
 
@@ -544,7 +585,7 @@ export default function SuxScreen() {
                           color: '#1a0f07',
                         }}
                       >
-                        {message.content}
+                        {cleanContent}
                       </Text>
                     )}
                     {hasText && message.role === 'assistant' && (
@@ -552,10 +593,10 @@ export default function SuxScreen() {
                         style={{
                           fontSize: 15,
                           lineHeight: 22,
-                          color: PlatformColor('label'),
+                          color: platformColor('label'),
                         }}
                       >
-                        {message.content}
+                        {cleanContent}
                       </MarkdownText>
                     )}
                   </View>
@@ -563,9 +604,13 @@ export default function SuxScreen() {
 
                 {hasToolOutputs && (
                   <View style={{ marginTop: 8, gap: 8 }}>
-                    {message.toolOutputs?.map((toolOutput) => (
-                      <ToolOutputCard key={toolOutput.id} toolName={toolOutput.toolName} output={toolOutput.output} />
-                    ))}
+                    {message.toolOutputs?.map((toolOutput) => {
+                      const RichCard = getToolCardComponent(toolOutput.toolName);
+                      if (RichCard) {
+                        return <RichCard key={toolOutput.id} output={toolOutput.output} />;
+                      }
+                      return <ToolOutputCard key={toolOutput.id} toolName={toolOutput.toolName} output={toolOutput.output} />;
+                    })}
                   </View>
                 )}
               </View>
@@ -589,7 +634,7 @@ export default function SuxScreen() {
             paddingVertical: 12,
             paddingBottom: 12 + insets.bottom,
             borderTopWidth: 0.5,
-            borderTopColor: PlatformColor('separator'),
+            borderTopColor: platformColor('separator'),
             backgroundColor: '#120905',
             gap: 10,
           }}
@@ -598,7 +643,7 @@ export default function SuxScreen() {
             value={input}
             onChangeText={setInput}
             placeholder="Ask about Sioux City..."
-            placeholderTextColor={PlatformColor('placeholderText')}
+            placeholderTextColor={platformColor('placeholderText')}
             style={{
               flex: 1,
               backgroundColor: '#1f130c',
@@ -606,7 +651,7 @@ export default function SuxScreen() {
               paddingHorizontal: 16,
               paddingVertical: 10,
               fontSize: 15,
-              color: PlatformColor('label'),
+              color: platformColor('label'),
             }}
             onSubmitEditing={handleSubmit}
             returnKeyType="send"
@@ -619,7 +664,7 @@ export default function SuxScreen() {
               width: 36,
               height: 36,
               borderRadius: 18,
-              backgroundColor: input.trim() && !isLoading ? '#e69c3a' : PlatformColor('systemGray4'),
+              backgroundColor: input.trim() && !isLoading ? '#e69c3a' : platformColor('systemGray4'),
               alignItems: 'center',
               justifyContent: 'center',
             }}
@@ -627,7 +672,7 @@ export default function SuxScreen() {
             {isLoading ? (
               <ActivityIndicator size="small" color="#ffffff" />
             ) : (
-              <ExpoImage source="sf:arrow.up" style={{ width: 18, height: 18 }} tintColor="#ffffff" />
+              <AppIcon name="arrow.up" size={18} color="#ffffff" />
             )}
           </Pressable>
         </View>

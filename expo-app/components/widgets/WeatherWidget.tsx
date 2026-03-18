@@ -5,8 +5,8 @@
 import { useState } from 'react';
 import { View, Pressable, Text, ImageBackground, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
+import { AppIcon } from '@/components/AppIcon';
 import { BlurView } from 'expo-blur';
 import Svg, { Defs, Pattern, Rect, Circle } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
@@ -125,7 +125,7 @@ function StatChip({ icon, label, value }: { icon: string; label: string; value: 
         borderColor: 'rgba(255,255,255,0.18)',
       }}
     >
-      <Image source={`sf:${icon}`} alt="" style={{ width: 20, height: 20 }} tintColor={Brand.amber} />
+      <AppIcon name={icon} size={20} color={Brand.amber} />
       <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: 0.6 }}>
         {label}
       </Text>
@@ -199,9 +199,7 @@ export function WeatherWidget() {
           <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 8 }}>
             <Pressable
               onPress={() => {
-                if (process.env.EXPO_OS === 'ios') {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 refetch();
               }}
               style={{
@@ -228,11 +226,10 @@ export function WeatherWidget() {
               <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)', fontWeight: '500' }}>
                 {status === 'error' ? 'Error' : status === 'stale' ? 'Stale' : 'Live'}
               </Text>
-              <Image
-                source="sf:arrow.clockwise"
-                alt=""
-                style={{ width: 10, height: 10 }}
-                tintColor={isFetching ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.4)'}
+              <AppIcon
+                name="arrow.clockwise"
+                size={10}
+                color={isFetching ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.4)'}
               />
             </Pressable>
           </View>
@@ -241,9 +238,7 @@ export function WeatherWidget() {
           {hasAlerts && (
             <Pressable
               onPress={() => {
-                if (process.env.EXPO_OS === 'ios') {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 router.push({ pathname: '/alert/[id]', params: { id: alerts[0].id } });
               }}
               style={{
@@ -260,11 +255,11 @@ export function WeatherWidget() {
                 borderColor: 'rgba(245, 158, 11, 0.6)',
               }}
             >
-              <Image source="sf:exclamationmark.triangle.fill" alt="" style={{ width: 14, height: 14 }} tintColor="#f59e0b" />
+              <AppIcon name="exclamationmark.triangle.fill" size={14} color="#f59e0b" />
               <Text numberOfLines={1} style={{ flex: 1, fontSize: 12, fontWeight: '500', color: '#f59e0b' }}>
                 {alerts[0].event}
               </Text>
-              <Image source="sf:chevron.right" alt="" style={{ width: 10, height: 10 }} tintColor="#f59e0b" />
+              <AppIcon name="chevron.right" size={10} color="#f59e0b" />
             </Pressable>
           )}
 
@@ -301,9 +296,7 @@ export function WeatherWidget() {
           <>
             <Pressable
               onPress={() => {
-                if (process.env.EXPO_OS === 'ios') {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 setForecastExpanded((v) => !v);
               }}
               style={{
@@ -324,11 +317,10 @@ export function WeatherWidget() {
               <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.85)', fontWeight: '400' }}>
                 7-Day Forecast
               </Text>
-              <Image
-                source={`sf:chevron.${forecastExpanded ? 'up' : 'down'}`}
-                alt=""
-                style={{ width: 13, height: 13 }}
-                tintColor="rgba(255,255,255,0.6)"
+              <AppIcon
+                name={`chevron.${forecastExpanded ? 'up' : 'down'}`}
+                size={13}
+                color="rgba(255,255,255,0.6)"
               />
             </Pressable>
 
@@ -359,12 +351,7 @@ export function WeatherWidget() {
                       <Text style={{ width: 52, fontSize: 13, fontWeight: '500', color: 'rgba(255,255,255,0.85)' }}>
                         {day.name?.length > 6 ? day.name.slice(0, 3) : day.name}
                       </Text>
-                      <Image
-                        source={`sf:${getForecastIcon(day.shortForecast)}`}
-                        alt=""
-                        style={{ width: 18, height: 18, marginRight: 10 }}
-                        tintColor={Brand.amber}
-                      />
+                      <AppIcon name={getForecastIcon(day.shortForecast)} size={18} color={Brand.amber} style={{ marginRight: 10 }} />
                       <Text numberOfLines={1} style={{ flex: 1, fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>
                         {day.shortForecast}
                       </Text>

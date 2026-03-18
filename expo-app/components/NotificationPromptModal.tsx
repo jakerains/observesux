@@ -21,13 +21,13 @@ import {
   StyleSheet,
   Linking,
 } from 'react-native';
-import { Image } from 'expo-image';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import * as Application from 'expo-application';
 import Constants from 'expo-constants';
 import * as Haptics from 'expo-haptics';
 import { Brand } from '@/constants/BrandColors';
+import { AppIcon } from '@/components/AppIcon';
 import { API_BASE_URL } from '@/lib/api';
 import { getStorageItem, setStorageItem, STORAGE_KEYS } from '@/lib/storage';
 
@@ -137,9 +137,7 @@ export function NotificationPromptModal({ onDismiss }: Props) {
   }, [fadeAnim, slideAnim]);
 
   const handleAllow = async () => {
-    if (process.env.EXPO_OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setLoading(true);
 
     const { status: existing } = await Notifications.getPermissionsAsync();
@@ -163,17 +161,13 @@ export function NotificationPromptModal({ onDismiss }: Props) {
   };
 
   const handleNotNow = async () => {
-    if (process.env.EXPO_OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     await snooze();
     dismiss(false);
   };
 
   const handleOpenSettings = async () => {
-    if (process.env.EXPO_OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     await Linking.openSettings();
     dismiss(false);
   };
@@ -203,7 +197,7 @@ export function NotificationPromptModal({ onDismiss }: Props) {
               {/* Header icon */}
               <View style={styles.iconRow}>
                 <View style={styles.iconBadge}>
-                  <Image source="sf:bell.badge.fill" alt="" style={{ width: 32, height: 32 }} tintColor={Brand.amber} />
+                  <AppIcon name="bell.badge.fill" size={32} color={Brand.amber} />
                 </View>
               </View>
 
@@ -216,7 +210,7 @@ export function NotificationPromptModal({ onDismiss }: Props) {
                 {ALERT_TYPES.map((t) => (
                   <View key={t.symbol} style={styles.typeRow}>
                     <View style={[styles.typeIconBadge, { backgroundColor: t.color + '22' }]}>
-                      <Image source={`sf:${t.symbol}`} alt="" style={{ width: 16, height: 16 }} tintColor={t.color} />
+                      <AppIcon name={t.symbol} size={16} color={t.color} />
                     </View>
                     <Text style={styles.typeLabel}>{t.label}</Text>
                   </View>
@@ -242,7 +236,7 @@ export function NotificationPromptModal({ onDismiss }: Props) {
               {/* Denied state — redirect to Settings */}
               <View style={styles.iconRow}>
                 <View style={[styles.iconBadge, styles.iconBadgeDenied]}>
-                  <Image source="sf:bell.slash.fill" alt="" style={{ width: 32, height: 32 }} tintColor={Brand.muted} />
+                  <AppIcon name="bell.slash.fill" size={32} color={Brand.muted} />
                 </View>
               </View>
 

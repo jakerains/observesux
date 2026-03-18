@@ -3,9 +3,10 @@
  */
 
 import { useState } from 'react';
-import { View, Pressable, Text, PlatformColor } from 'react-native';
-import { Image } from 'expo-image';
+import { View, Pressable, Text } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import { AppIcon } from '@/components/AppIcon';
+import { platformColor } from '@/lib/platformColors';
 import { useGasPrices, getDataStatus } from '@/lib/hooks/useDataFetching';
 import { refreshIntervals } from '@/lib/api';
 import { DashboardCard } from '../DashboardCard';
@@ -39,14 +40,14 @@ function StationRow({ station, fuelType, isLowest }: StationRowProps) {
         alignItems: 'center',
         paddingVertical: 10,
         borderBottomWidth: 0.5,
-        borderBottomColor: PlatformColor('separator'),
+        borderBottomColor: platformColor('separator'),
       }}
     >
       <View style={{ flex: 1, marginRight: 12 }}>
-        <Text numberOfLines={1} style={{ fontWeight: '500', color: PlatformColor('label') }}>
+        <Text numberOfLines={1} style={{ fontWeight: '500', color: platformColor('label') }}>
           {station.name}
         </Text>
-        <Text numberOfLines={1} style={{ color: PlatformColor('secondaryLabel') }}>
+        <Text numberOfLines={1} style={{ color: platformColor('secondaryLabel') }}>
           {station.address}
         </Text>
       </View>
@@ -56,7 +57,7 @@ function StationRow({ station, fuelType, isLowest }: StationRowProps) {
           style={{
             fontSize: 18,
             fontWeight: '700',
-            color: isLowest ? '#22c55e' : PlatformColor('label'),
+            color: isLowest ? '#22c55e' : platformColor('label'),
           }}
         >
           ${price.toFixed(2)}
@@ -140,7 +141,7 @@ export function GasPricesWidget() {
         status="error"
         onRefresh={() => refetch()}
       >
-        <Text style={{ color: PlatformColor('secondaryLabel') }}>Unable to load gas prices</Text>
+        <Text style={{ color: platformColor('secondaryLabel') }}>Unable to load gas prices</Text>
       </DashboardCard>
     );
   }
@@ -159,9 +160,7 @@ export function GasPricesWidget() {
           <Pressable
             key={fuel.key}
             onPress={() => {
-              if (process.env.EXPO_OS === 'ios') {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setSelectedFuel(fuel.key);
             }}
             style={{
@@ -173,14 +172,14 @@ export function GasPricesWidget() {
               alignItems: 'center',
               backgroundColor: selectedFuel === fuel.key
                 ? '#e69c3a'
-                : PlatformColor('tertiarySystemFill'),
+                : platformColor('tertiarySystemFill'),
             }}
           >
             <Text
               style={{
                 fontSize: 12,
                 fontWeight: selectedFuel === fuel.key ? '600' : '400',
-                color: selectedFuel === fuel.key ? '#fff' : PlatformColor('label'),
+                color: selectedFuel === fuel.key ? '#fff' : platformColor('label'),
               }}
             >
               {fuel.label}
@@ -192,8 +191,8 @@ export function GasPricesWidget() {
       {/* Station List */}
       {sortedStations.length === 0 ? (
         <View style={{ alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-          <Image source="sf:fuelpump" style={{ width: 32, height: 32 }} tintColor={PlatformColor('tertiaryLabel') as unknown as string} />
-          <Text style={{ marginTop: 8, color: PlatformColor('secondaryLabel') }}>
+          <AppIcon name="fuelpump" size={32} color={platformColor('tertiaryLabel')} />
+          <Text style={{ marginTop: 8, color: platformColor('secondaryLabel') }}>
             No prices available
           </Text>
         </View>

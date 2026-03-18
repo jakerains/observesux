@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ScrollView, Text, View, Pressable, ActivityIndicator, PlatformColor } from 'react-native';
+import { ScrollView, Text, View, Pressable, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { Brand } from '@/constants/BrandColors';
+import { AppIcon } from '@/components/AppIcon';
+import { platformColor } from '@/lib/platformColors';
 import { SunWidget } from '@/components/widgets/SunWidget';
 import { useSunTimes } from '@/lib/hooks/useDataFetching';
 import { buildSunLiveActivityPayload } from '@/lib/sun';
@@ -60,11 +61,7 @@ function ActionButton({
       {loading ? (
         <ActivityIndicator color={isPrimary ? Brand.background : Brand.amber} />
       ) : (
-        <Image
-          source={`sf:${icon}`}
-          style={{ width: 16, height: 16 }}
-          tintColor={isPrimary ? Brand.background : Brand.amber}
-        />
+        <AppIcon name={icon} size={16} color={isPrimary ? Brand.background : Brand.amber} />
       )}
       <Text style={{ color: isPrimary ? Brand.background : Brand.amber, fontWeight: '700', fontSize: 15 }}>
         {title}
@@ -97,9 +94,7 @@ export function SunWidgetsScreen() {
       return;
     }
 
-    if (process.env.EXPO_OS === 'ios') {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    }
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
     setPendingAction('start');
     try {
@@ -115,9 +110,7 @@ export function SunWidgetsScreen() {
       return;
     }
 
-    if (process.env.EXPO_OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
     setPendingAction('stop');
     try {
@@ -217,9 +210,7 @@ export function SunWidgetsScreen() {
 
           <Pressable
             onPress={() => {
-              if (process.env.EXPO_OS === 'ios') {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               void refetch();
               void refreshActivityState();
             }}
@@ -234,7 +225,7 @@ export function SunWidgetsScreen() {
             {isFetching ? (
               <ActivityIndicator color={Brand.amber} />
             ) : (
-              <Image source="sf:arrow.clockwise" style={{ width: 14, height: 14 }} tintColor={Brand.amber} />
+              <AppIcon name="arrow.clockwise" size={14} color={Brand.amber} />
             )}
             <Text style={{ color: Brand.amber, fontSize: 14, fontWeight: '600' }}>
               Refresh live state
@@ -258,7 +249,7 @@ export function SunWidgetsScreen() {
             The iPhone widgets and this Live Activity fetch their own data natively from
             `siouxland.online`, so they can refresh even when the Expo app is not open.
           </Text>
-          <Text style={{ color: PlatformColor('secondaryLabel'), fontSize: 13, lineHeight: 18 }}>
+          <Text style={{ color: platformColor('secondaryLabel'), fontSize: 13, lineHeight: 18 }}>
             Home Screen and Lock Screen widgets are backed by WidgetKit. This screen lives under
             More so the setup tools feel like a device preference instead of part of the main
             dashboard flow.

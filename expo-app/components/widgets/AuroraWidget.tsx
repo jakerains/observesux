@@ -4,8 +4,9 @@
  * Kp gauge, and visibility status.
  */
 
-import { useMemo, useEffect, useRef } from 'react';
-import { View, Text, PlatformColor, Animated, Easing } from 'react-native';
+import { useMemo, useEffect } from 'react';
+import { View, Text, Animated, Easing } from 'react-native';
+import { platformColor } from '@/lib/platformColors';
 import Svg, {
   Rect, Circle, Defs,
   LinearGradient as SvgLinearGradient, Stop,
@@ -15,9 +16,9 @@ import { useAurora, getDataStatus } from '@/lib/hooks/useDataFetching';
 import { refreshIntervals } from '@/lib/api';
 import { DashboardCard } from '../DashboardCard';
 import { Skeleton } from '../LoadingState';
-import { Brand } from '@/constants/BrandColors';
 
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 const VISIBILITY_CONFIG = {
   none: { label: 'Quiet', color: '#6b7280' },
@@ -32,7 +33,7 @@ const VISIBILITY_CONFIG = {
 function TwinklingStar({ cx, cy, r, delay, duration }: {
   cx: number; cy: number; r: number; delay: number; duration: number;
 }) {
-  const opacity = useRef(new Animated.Value(0.15)).current;
+  const opacity = useMemo(() => new Animated.Value(0.15), []);
 
   useEffect(() => {
     const anim = Animated.loop(
@@ -45,8 +46,6 @@ function TwinklingStar({ cx, cy, r, delay, duration }: {
     return () => anim.stop();
   }, [opacity, delay, duration]);
 
-  const AnimatedCircle = Animated.createAnimatedComponent(Circle);
-
   return <AnimatedCircle cx={cx} cy={cy} r={r} fill="white" opacity={opacity} />;
 }
 
@@ -56,7 +55,7 @@ function AuroraCurtain({ y, height, color, opacityRange, duration, delay }: {
   y: number; height: number; color: string;
   opacityRange: [number, number]; duration: number; delay: number;
 }) {
-  const opacity = useRef(new Animated.Value(opacityRange[0])).current;
+  const opacity = useMemo(() => new Animated.Value(opacityRange[0]), [opacityRange]);
 
   useEffect(() => {
     const anim = Animated.loop(
@@ -215,7 +214,7 @@ export function AuroraWidget() {
   if (isError || !aurora) {
     return (
       <DashboardCard title="Aurora Watch" sfSymbol="moon.stars.fill" status="error" onRefresh={() => refetch()}>
-        <Text style={{ fontSize: 13, color: PlatformColor('secondaryLabel') }}>
+        <Text style={{ fontSize: 13, color: platformColor('secondaryLabel') }}>
           Unable to load aurora data
         </Text>
       </DashboardCard>
@@ -238,19 +237,19 @@ export function AuroraWidget() {
       {/* Kp Gauge */}
       <View style={{ gap: 4 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          <Text style={{ fontSize: 10, color: PlatformColor('secondaryLabel') }}>Quiet</Text>
-          <Text style={{ fontSize: 10, color: PlatformColor('secondaryLabel') }}>Storm</Text>
+          <Text style={{ fontSize: 10, color: platformColor('secondaryLabel') }}>Quiet</Text>
+          <Text style={{ fontSize: 10, color: platformColor('secondaryLabel') }}>Storm</Text>
         </View>
         <KpGauge kp={aurora.kpIndex} />
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          <Text style={{ fontSize: 9, color: PlatformColor('tertiaryLabel') }}>1</Text>
-          <Text style={{ fontSize: 9, color: PlatformColor('tertiaryLabel') }}>5 — visible at 42°N</Text>
-          <Text style={{ fontSize: 9, color: PlatformColor('tertiaryLabel') }}>9</Text>
+          <Text style={{ fontSize: 9, color: platformColor('tertiaryLabel') }}>1</Text>
+          <Text style={{ fontSize: 9, color: platformColor('tertiaryLabel') }}>5 — visible at 42°N</Text>
+          <Text style={{ fontSize: 9, color: platformColor('tertiaryLabel') }}>9</Text>
         </View>
       </View>
 
       {/* Description */}
-      <Text style={{ fontSize: 12, color: PlatformColor('secondaryLabel'), marginTop: 10 }}>
+      <Text style={{ fontSize: 12, color: platformColor('secondaryLabel'), marginTop: 10 }}>
         {aurora.visibilityLabel}
       </Text>
 

@@ -3,10 +3,11 @@
  * App information, version, and links
  */
 
-import { View, Text, Pressable, PlatformColor, Linking, Image } from 'react-native';
-import { Image as ExpoImage } from 'expo-image';
+import { View, Text, Pressable, Linking, Image } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import Constants from 'expo-constants';
+import { AppIcon } from '@/components/AppIcon';
+import { platformColor } from '@/lib/platformColors';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const logoImage = require('../../../assets/logo.png');
@@ -25,9 +26,7 @@ function LinkItem({ sfSymbol, label, subtitle, onPress, tintColor }: LinkItemPro
   return (
     <Pressable
       onPress={() => {
-        if (process.env.EXPO_OS === 'ios') {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         onPress();
       }}
       style={{
@@ -35,7 +34,7 @@ function LinkItem({ sfSymbol, label, subtitle, onPress, tintColor }: LinkItemPro
         alignItems: 'center',
         padding: 14,
         borderBottomWidth: 0.5,
-        borderBottomColor: PlatformColor('separator'),
+        borderBottomColor: platformColor('separator'),
       }}
     >
       <View
@@ -46,20 +45,20 @@ function LinkItem({ sfSymbol, label, subtitle, onPress, tintColor }: LinkItemPro
           alignItems: 'center',
           justifyContent: 'center',
           marginRight: 12,
-          backgroundColor: PlatformColor('tertiarySystemFill'),
+          backgroundColor: platformColor('tertiarySystemFill'),
         }}
       >
-        <ExpoImage source={`sf:${sfSymbol}`} style={{ width: 20, height: 20 }} tintColor={iconColor} />
+        <AppIcon name={sfSymbol} size={20} color={iconColor} />
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={{ fontWeight: '500', color: PlatformColor('label') }}>{label}</Text>
+        <Text style={{ fontWeight: '500', color: platformColor('label') }}>{label}</Text>
         {subtitle && (
-          <Text style={{ fontSize: 12, marginTop: 2, color: PlatformColor('secondaryLabel') }}>
+          <Text style={{ fontSize: 12, marginTop: 2, color: platformColor('secondaryLabel') }}>
             {subtitle}
           </Text>
         )}
       </View>
-      <ExpoImage source="sf:chevron.right" style={{ width: 16, height: 16 }} tintColor={PlatformColor('tertiaryLabel') as unknown as string} />
+      <AppIcon name="chevron.right" size={16} color={platformColor('tertiaryLabel')} />
     </Pressable>
   );
 }
@@ -95,10 +94,10 @@ export default function AboutScreen() {
             accessibilityLabel="Siouxland Online logo"
           />
         </View>
-        <Text style={{ fontSize: 22, fontWeight: '600', color: PlatformColor('label') }}>
+        <Text style={{ fontSize: 22, fontWeight: '600', color: platformColor('label') }}>
           Siouxland Online
         </Text>
-        <Text style={{ fontSize: 15, color: PlatformColor('secondaryLabel'), marginTop: 4 }}>
+        <Text style={{ fontSize: 15, color: platformColor('secondaryLabel'), marginTop: 4 }}>
           Version {version} ({buildNumber})
         </Text>
       </View>
@@ -108,7 +107,7 @@ export default function AboutScreen() {
         <Text
           style={{
             fontSize: 15,
-            color: PlatformColor('secondaryLabel'),
+            color: platformColor('secondaryLabel'),
             textAlign: 'center',
             lineHeight: 22,
           }}
@@ -160,7 +159,7 @@ export default function AboutScreen() {
           fontSize: 12,
           fontWeight: '600',
           letterSpacing: 0.5,
-          color: PlatformColor('secondaryLabel'),
+          color: platformColor('secondaryLabel'),
         }}
       >
         DATA SOURCES
@@ -174,7 +173,7 @@ export default function AboutScreen() {
           padding: 16,
         }}
       >
-        <Text style={{ fontSize: 13, color: PlatformColor('secondaryLabel'), lineHeight: 20 }}>
+        <Text style={{ fontSize: 13, color: platformColor('secondaryLabel'), lineHeight: 20 }}>
           Weather data from National Weather Service. Traffic cameras from Iowa DOT and KTIV. Transit
           data from Sioux City Transit. News from local news sources. Air quality from AirNow.
         </Text>
@@ -182,7 +181,7 @@ export default function AboutScreen() {
 
       {/* Footer */}
       <View style={{ alignItems: 'center', paddingVertical: 32 }}>
-        <Text style={{ fontSize: 12, color: PlatformColor('tertiaryLabel') }}>
+        <Text style={{ fontSize: 12, color: platformColor('tertiaryLabel') }}>
           Made with care in Sioux City
         </Text>
       </View>

@@ -1,4 +1,5 @@
-import { Text, PlatformColor } from 'react-native'
+import { Text } from 'react-native'
+import { platformColor } from '@/lib/platformColors'
 import { ToolCardBase } from './ToolCardBase'
 import { unwrapData } from './utils'
 
@@ -36,19 +37,19 @@ export function GasPricesCard({ output }: { output: unknown }) {
 
   return (
     <ToolCardBase title="Gas Prices" icon="fuelpump.fill" status="normal">
-      <Text selectable style={{ fontSize: 12, fontWeight: '600', color: PlatformColor('label') }}>
+      <Text selectable style={{ fontSize: 12, fontWeight: '600', color: platformColor('label') }}>
         Regular (avg) {stats.averageRegular ? `$${stats.averageRegular.toFixed(2)}` : '--'}
       </Text>
-      <Text selectable style={{ fontSize: 11, color: PlatformColor('secondaryLabel') }}>
+      <Text selectable style={{ fontSize: 11, color: platformColor('secondaryLabel') }}>
         Low {stats.lowestRegular ? `$${stats.lowestRegular.toFixed(2)}` : '--'} · High{' '}
         {stats.highestRegular ? `$${stats.highestRegular.toFixed(2)}` : '--'}
       </Text>
       {stats.cheapestStation ? (
-        <Text selectable style={{ fontSize: 11, color: PlatformColor('secondaryLabel') }}>
+        <Text selectable style={{ fontSize: 11, color: platformColor('secondaryLabel') }}>
           Cheapest: {stats.cheapestStation}
         </Text>
       ) : null}
-      <Text selectable style={{ fontSize: 11, color: PlatformColor('tertiaryLabel') }}>
+      <Text selectable style={{ fontSize: 11, color: platformColor('tertiaryLabel') }}>
         {stats.stationCount} stations reporting
       </Text>
     </ToolCardBase>

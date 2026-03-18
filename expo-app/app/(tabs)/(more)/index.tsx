@@ -2,11 +2,12 @@
  * More Screen - Settings and additional sections
  */
 
-import { View, ScrollView, Pressable, Linking, Text, PlatformColor } from 'react-native';
-import { Image } from 'expo-image';
+import { View, ScrollView, Pressable, Linking, Text } from 'react-native';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Constants from 'expo-constants';
+import { AppIcon } from '@/components/AppIcon';
+import { platformColor } from '@/lib/platformColors';
 import { useSettings, getThemeLabel, getUnitsLabel, getRefreshLabel } from '../../../lib/contexts';
 
 interface MenuItemProps {
@@ -35,7 +36,7 @@ function MenuItem({
         alignItems: 'center',
         padding: 14,
         borderBottomWidth: 0.5,
-        borderBottomColor: PlatformColor('separator'),
+        borderBottomColor: platformColor('separator'),
       }}
     >
       <View
@@ -46,20 +47,20 @@ function MenuItem({
           alignItems: 'center',
           justifyContent: 'center',
           marginRight: 12,
-          backgroundColor: PlatformColor('tertiarySystemFill'),
+          backgroundColor: platformColor('tertiarySystemFill'),
         }}
       >
-        <Image source={`sf:${sfSymbol}`} style={{ width: 20, height: 20 }} tintColor={iconColor} />
+        <AppIcon name={sfSymbol} size={20} color={iconColor} />
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={{ fontWeight: '500', color: PlatformColor('label') }}>{label}</Text>
+        <Text style={{ fontWeight: '500', color: platformColor('label') }}>{label}</Text>
         {subtitle && (
-          <Text style={{ fontSize: 12, marginTop: 2, color: PlatformColor('secondaryLabel') }}>
+          <Text style={{ fontSize: 12, marginTop: 2, color: platformColor('secondaryLabel') }}>
             {subtitle}
           </Text>
         )}
       </View>
-      {rightElement || (onPress && <Image source="sf:chevron.right" style={{ width: 16, height: 16 }} tintColor={PlatformColor('tertiaryLabel') as unknown as string} />)}
+      {rightElement || (onPress && <AppIcon name="chevron.right" size={16} color={platformColor('tertiaryLabel')} />)}
     </View>
   );
 
@@ -67,9 +68,7 @@ function MenuItem({
     return (
       <Pressable
         onPress={() => {
-          if (process.env.EXPO_OS === 'ios') {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          }
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           onPress();
         }}
       >
@@ -97,7 +96,7 @@ function MenuSection({
           fontSize: 12,
           fontWeight: '600',
           letterSpacing: 0.5,
-          color: PlatformColor('secondaryLabel'),
+          color: platformColor('secondaryLabel'),
         }}
       >
         {title}
@@ -162,7 +161,7 @@ export default function MoreScreen() {
                   backgroundColor: settings.notificationsEnabled ? '#22c55e' : '#6b7280',
                 }}
               />
-              <Image source="sf:chevron.right" style={{ width: 16, height: 16 }} tintColor={PlatformColor('tertiaryLabel') as unknown as string} />
+              <AppIcon name="chevron.right" size={16} color={platformColor('tertiaryLabel')} />
             </View>
           }
         />
@@ -249,10 +248,10 @@ export default function MoreScreen() {
 
       {/* Footer */}
       <View style={{ alignItems: 'center', paddingVertical: 20 }}>
-        <Text style={{ fontSize: 12, color: PlatformColor('tertiaryLabel'), marginBottom: 4 }}>
+        <Text style={{ fontSize: 12, color: platformColor('tertiaryLabel'), marginBottom: 4 }}>
           Real-time data for Sioux City, Iowa
         </Text>
-        <Text style={{ fontSize: 12, color: PlatformColor('tertiaryLabel') }}>
+        <Text style={{ fontSize: 12, color: platformColor('tertiaryLabel') }}>
           Data refreshes automatically
         </Text>
       </View>

@@ -2,8 +2,9 @@
  * Loading state components - skeletons and spinners
  */
 
-import { useEffect, useRef } from 'react';
-import { View, ActivityIndicator, Animated, Easing, Text, PlatformColor } from 'react-native';
+import { useEffect, useMemo } from 'react';
+import { View, ActivityIndicator, Animated, Easing, Text } from 'react-native';
+import { platformColor } from '@/lib/platformColors';
 
 interface SkeletonProps {
   width?: number | string;
@@ -18,7 +19,7 @@ export function Skeleton({
   borderRadius = 4,
   style,
 }: SkeletonProps) {
-  const opacity = useRef(new Animated.Value(0.3)).current;
+  const opacity = useMemo(() => new Animated.Value(0.3), []);
 
   useEffect(() => {
     const animation = Animated.loop(
@@ -48,7 +49,7 @@ export function Skeleton({
           width,
           height,
           borderRadius,
-          backgroundColor: PlatformColor('tertiarySystemFill'),
+          backgroundColor: platformColor('tertiarySystemFill'),
           opacity,
         },
         style,
@@ -67,7 +68,7 @@ export function LoadingSpinner({ size = 'large', message }: LoadingSpinnerProps)
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: '#120905' }}>
       <ActivityIndicator size={size} color={'#e69c3a'} />
       {message && (
-        <Text style={{ marginTop: 12, color: PlatformColor('secondaryLabel') }}>{message}</Text>
+        <Text style={{ marginTop: 12, color: platformColor('secondaryLabel') }}>{message}</Text>
       )}
     </View>
   );

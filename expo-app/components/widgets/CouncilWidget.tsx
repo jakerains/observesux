@@ -2,10 +2,11 @@
  * City Council Widget - Latest meeting recap
  */
 
-import { View, Pressable, Text, PlatformColor } from 'react-native';
-import { Image } from 'expo-image';
+import { View, Pressable, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import { AppIcon } from '@/components/AppIcon';
+import { platformColor } from '@/lib/platformColors';
 import { format, parseISO } from 'date-fns';
 import { useCouncilMeetings, getDataStatus } from '@/lib/hooks/useDataFetching';
 import { refreshIntervals } from '@/lib/api';
@@ -40,7 +41,7 @@ export function CouncilWidget() {
         status="error"
         onRefresh={() => refetch()}
       >
-        <Text style={{ color: PlatformColor('secondaryLabel') }}>Unable to load council data</Text>
+        <Text style={{ color: platformColor('secondaryLabel') }}>Unable to load council data</Text>
       </DashboardCard>
     );
   }
@@ -54,7 +55,7 @@ export function CouncilWidget() {
         onRefresh={() => refetch()}
         isRefreshing={isFetching}
       >
-        <Text style={{ color: PlatformColor('secondaryLabel') }}>No meetings available</Text>
+        <Text style={{ color: platformColor('secondaryLabel') }}>No meetings available</Text>
       </DashboardCard>
     );
   }
@@ -76,7 +77,7 @@ export function CouncilWidget() {
       {/* Meeting date */}
       {dateLabel && (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 }}>
-          <Image source="sf:calendar" style={{ width: 14, height: 14 }} tintColor="#e69c3a" />
+          <AppIcon name="calendar" size={14} color="#e69c3a" />
           <Text style={{ fontSize: 12, color: '#e69c3a', fontWeight: '500' }}>{dateLabel}</Text>
         </View>
       )}
@@ -84,7 +85,7 @@ export function CouncilWidget() {
       {/* Title */}
       <Text
         numberOfLines={2}
-        style={{ fontSize: 15, fontWeight: '600', color: PlatformColor('label'), marginBottom: 8 }}
+        style={{ fontSize: 15, fontWeight: '600', color: platformColor('label'), marginBottom: 8 }}
       >
         {latest.title}
       </Text>
@@ -95,7 +96,7 @@ export function CouncilWidget() {
           numberOfLines={3}
           style={{
             fontSize: 13,
-            color: PlatformColor('secondaryLabel'),
+            color: platformColor('secondaryLabel'),
             lineHeight: 19,
             marginBottom: 12,
           }}
@@ -120,7 +121,7 @@ export function CouncilWidget() {
               />
               <Text
                 numberOfLines={2}
-                style={{ flex: 1, fontSize: 12, color: PlatformColor('secondaryLabel'), lineHeight: 18 }}
+                style={{ flex: 1, fontSize: 12, color: platformColor('secondaryLabel'), lineHeight: 18 }}
               >
                 {decision}
               </Text>
@@ -132,9 +133,7 @@ export function CouncilWidget() {
       {/* Read Full Recap */}
       <Pressable
         onPress={() => {
-          if (process.env.EXPO_OS === 'ios') {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          }
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           router.push(`/council/${String(latest.id)}`);
         }}
         style={{
@@ -152,7 +151,7 @@ export function CouncilWidget() {
         }}
       >
         <Text style={{ fontSize: 13, fontWeight: '500', color: '#e69c3a' }}>Read Full Recap</Text>
-        <Image source="sf:chevron.right" style={{ width: 10, height: 10 }} tintColor="#e69c3a" />
+        <AppIcon name="chevron.right" size={10} color="#e69c3a" />
       </Pressable>
     </DashboardCard>
   );

@@ -1,6 +1,7 @@
-import { View, Text, PlatformColor } from 'react-native'
-import { Image } from 'expo-image'
+import { View, Text } from 'react-native'
 import type { ToolStatus } from './utils'
+import { AppIcon } from '@/components/AppIcon'
+import { platformColor } from '@/lib/platformColors'
 
 interface ToolCardBaseProps {
   title: string
@@ -27,19 +28,19 @@ export function ToolCardBase({ title, icon, status = 'normal', error, children }
         padding: 12,
         backgroundColor: '#1f130c',
         borderWidth: 0.5,
-        borderColor: PlatformColor('separator'),
+        borderColor: platformColor('separator'),
         gap: 8,
       }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <Image source={`sf:${icon}`} style={{ width: 18, height: 18 }} tintColor={'#e69c3a'} />
-        <Text style={{ fontSize: 13, fontWeight: '600', color: PlatformColor('label'), flex: 1 }}>
+        <AppIcon name={icon} size={18} color="#e69c3a" />
+        <Text style={{ fontSize: 13, fontWeight: '600', color: platformColor('label'), flex: 1 }}>
           {title}
         </Text>
         <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: statusColor }} />
       </View>
       {error ? (
-        <Text selectable style={{ fontSize: 12, color: PlatformColor('secondaryLabel') }}>
+        <Text selectable style={{ fontSize: 12, color: platformColor('secondaryLabel') }}>
           {error}
         </Text>
       ) : (

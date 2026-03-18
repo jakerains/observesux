@@ -5,13 +5,14 @@
  */
 
 import { useState, useEffect } from 'react';
-import { View, Text, Switch, ScrollView, Pressable, Linking, PlatformColor, Alert } from 'react-native';
-import { Image } from 'expo-image';
+import { View, Text, Switch, ScrollView, Pressable, Linking, Alert } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import * as Application from 'expo-application';
+import { AppIcon } from '@/components/AppIcon';
+import { platformColor } from '@/lib/platformColors';
 import { useSettings } from '../../../lib/contexts';
 import { Brand } from '@/constants/BrandColors';
 import { API_BASE_URL } from '@/lib/api';
@@ -169,9 +170,7 @@ export default function NotificationsScreen() {
   };
 
   const handleMasterToggle = async (enabled: boolean) => {
-    if (process.env.EXPO_OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
     if (enabled) {
       setEnabling(true);
@@ -204,9 +203,7 @@ export default function NotificationsScreen() {
     key: NotificationTypeConfig['key'],
     value: boolean
   ) => {
-    if (process.env.EXPO_OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     await updateSetting(key, value);
     // Sync updated preferences to server
     syncWithServer({ ...currentPrefs, [key]: value });
@@ -237,7 +234,7 @@ export default function NotificationsScreen() {
             marginBottom: 20,
           }}
         >
-          <Image source="sf:exclamationmark.triangle.fill" alt="" style={{ width: 18, height: 18 }} tintColor="#ef4444" />
+          <AppIcon name="exclamationmark.triangle.fill" size={18} color="#ef4444" />
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: 14, fontWeight: '600', color: '#ef4444' }}>
               Notifications blocked in Settings
@@ -246,7 +243,7 @@ export default function NotificationsScreen() {
               Tap to open device Settings and enable notifications for this app.
             </Text>
           </View>
-          <Image source="sf:arrow.up.right" alt="" style={{ width: 12, height: 12 }} tintColor="#ef4444" />
+          <AppIcon name="arrow.up.right" size={12} color="#ef4444" />
         </Pressable>
       )}
 
@@ -272,21 +269,20 @@ export default function NotificationsScreen() {
               alignItems: 'center',
               justifyContent: 'center',
               marginRight: 12,
-              backgroundColor: masterEnabled ? 'rgba(230,156,58,0.15)' : PlatformColor('tertiarySystemFill'),
+              backgroundColor: masterEnabled ? 'rgba(230,156,58,0.15)' : platformColor('tertiarySystemFill'),
             }}
           >
-            <Image
-              source={`sf:${masterEnabled ? 'bell.badge.fill' : 'bell.slash'}`}
-              alt=""
-              style={{ width: 20, height: 20 }}
-              tintColor={masterEnabled ? Brand.amber : Brand.muted}
+            <AppIcon
+              name={masterEnabled ? 'bell.badge.fill' : 'bell.slash'}
+              size={20}
+              color={masterEnabled ? Brand.amber : Brand.muted}
             />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontWeight: '600', color: PlatformColor('label'), fontSize: 15 }}>
+            <Text style={{ fontWeight: '600', color: platformColor('label'), fontSize: 15 }}>
               Enable Notifications
             </Text>
-            <Text style={{ fontSize: 12, marginTop: 2, color: PlatformColor('secondaryLabel') }}>
+            <Text style={{ fontSize: 12, marginTop: 2, color: platformColor('secondaryLabel') }}>
               {masterEnabled ? 'Receiving selected alert types' : 'No notifications will be sent'}
             </Text>
           </View>
@@ -322,7 +318,7 @@ export default function NotificationsScreen() {
                   alignItems: 'center',
                   padding: 14,
                   borderBottomWidth: index < NOTIFICATION_TYPES.length - 1 ? 0.5 : 0,
-                  borderBottomColor: PlatformColor('separator'),
+                  borderBottomColor: platformColor('separator'),
                 }}
               >
                 <View
@@ -333,19 +329,18 @@ export default function NotificationsScreen() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     marginRight: 12,
-                    backgroundColor: PlatformColor('tertiarySystemFill'),
+                    backgroundColor: platformColor('tertiarySystemFill'),
                   }}
                 >
-                  <Image
-                    source={`sf:${type.sfSymbol}`}
-                    alt=""
-                    style={{ width: 20, height: 20 }}
-                    tintColor={type.tintColor}
+                  <AppIcon
+                    name={type.sfSymbol}
+                    size={20}
+                    color={type.tintColor}
                   />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontWeight: '500', color: PlatformColor('label') }}>{type.label}</Text>
-                  <Text style={{ fontSize: 12, marginTop: 2, color: PlatformColor('secondaryLabel') }}>
+                  <Text style={{ fontWeight: '500', color: platformColor('label') }}>{type.label}</Text>
+                  <Text style={{ fontSize: 12, marginTop: 2, color: platformColor('secondaryLabel') }}>
                     {type.description}
                   </Text>
                 </View>

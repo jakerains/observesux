@@ -4,7 +4,8 @@
  */
 
 import { useEffect, useState } from 'react';
-import { View, Text, PlatformColor } from 'react-native';
+import { View, Text } from 'react-native';
+import { platformColor } from '@/lib/platformColors';
 import Svg, {
   Path, Line, Circle, Text as SvgText,
   Defs, RadialGradient, LinearGradient as SvgLinearGradient, Stop,
@@ -206,7 +207,7 @@ function TimeRow({ label, value, color }: { label: string; value: string; color:
       paddingVertical: 6, borderBottomWidth: 0.5, borderBottomColor: Brand.separator,
     }}>
       <Text style={{ fontSize: 13, color }}>{label}</Text>
-      <Text style={{ fontSize: 13, fontVariant: ['tabular-nums'], color: PlatformColor('label') }}>
+      <Text style={{ fontSize: 13, fontVariant: ['tabular-nums'], color: platformColor('label') }}>
         {value}
       </Text>
     </View>
@@ -242,7 +243,7 @@ export function SunWidget() {
   if (isError || !sun) {
     return (
       <DashboardCard title="Sun & Daylight" sfSymbol="sun.max.fill" status="error" onRefresh={() => refetch()}>
-        <Text style={{ fontSize: 13, color: PlatformColor('secondaryLabel') }}>
+        <Text style={{ fontSize: 13, color: platformColor('secondaryLabel') }}>
           Unable to load sun data
         </Text>
       </DashboardCard>
@@ -291,36 +292,36 @@ export function SunWidget() {
               {cH > 0 && (
                 <>
                   <Text style={{ fontSize: 22, fontWeight: '700', color: accentColor }}>{cH}</Text>
-                  <Text style={{ fontSize: 11, color: PlatformColor('secondaryLabel'), marginLeft: 2, marginRight: 8 }}>
+                  <Text style={{ fontSize: 11, color: platformColor('secondaryLabel'), marginLeft: 2, marginRight: 8 }}>
                     {cH === 1 ? 'hour' : 'hours'}
                   </Text>
                 </>
               )}
               <Text style={{ fontSize: 22, fontWeight: '700', color: accentColor }}>{cM}</Text>
-              <Text style={{ fontSize: 11, color: PlatformColor('secondaryLabel'), marginLeft: 2, marginRight: 8 }}>min</Text>
+              <Text style={{ fontSize: 11, color: platformColor('secondaryLabel'), marginLeft: 2, marginRight: 8 }}>min</Text>
               <Text style={{ fontSize: 22, fontWeight: '700', color: accentColor }}>{cS}</Text>
-              <Text style={{ fontSize: 11, color: PlatformColor('secondaryLabel'), marginLeft: 2 }}>sec</Text>
+              <Text style={{ fontSize: 11, color: platformColor('secondaryLabel'), marginLeft: 2 }}>sec</Text>
             </>
           ) : countdown.untilSunrise > 0 ? (
             <>
               {sH > 0 && (
                 <>
                   <Text style={{ fontSize: 22, fontWeight: '700', color: accentColor }}>{sH}</Text>
-                  <Text style={{ fontSize: 11, color: PlatformColor('secondaryLabel'), marginLeft: 2, marginRight: 8 }}>
+                  <Text style={{ fontSize: 11, color: platformColor('secondaryLabel'), marginLeft: 2, marginRight: 8 }}>
                     {sH === 1 ? 'hour' : 'hours'}
                   </Text>
                 </>
               )}
               <Text style={{ fontSize: 22, fontWeight: '700', color: accentColor }}>{sM}</Text>
-              <Text style={{ fontSize: 11, color: PlatformColor('secondaryLabel'), marginLeft: 2, marginRight: 8 }}>min</Text>
+              <Text style={{ fontSize: 11, color: platformColor('secondaryLabel'), marginLeft: 2, marginRight: 8 }}>min</Text>
               <Text style={{ fontSize: 22, fontWeight: '700', color: accentColor }}>{sS}</Text>
-              <Text style={{ fontSize: 11, color: PlatformColor('secondaryLabel'), marginLeft: 2 }}>sec</Text>
+              <Text style={{ fontSize: 11, color: platformColor('secondaryLabel'), marginLeft: 2 }}>sec</Text>
             </>
           ) : (
-            <Text style={{ fontSize: 14, color: PlatformColor('secondaryLabel') }}>Sun has set</Text>
+            <Text style={{ fontSize: 14, color: platformColor('secondaryLabel') }}>Sun has set</Text>
           )}
         </View>
-        <Text style={{ fontSize: 11, color: PlatformColor('tertiaryLabel'), marginTop: 2 }}>
+        <Text style={{ fontSize: 11, color: platformColor('tertiaryLabel'), marginTop: 2 }}>
           {countdown.isDaytime ? 'of daylight remaining' : countdown.untilSunrise > 0 ? 'until sunrise' : ''}
         </Text>
       </View>
@@ -349,7 +350,7 @@ export function SunWidget() {
       {/* Total daylight */}
       {dayParts && (
         <View style={{ alignItems: 'center', marginBottom: 8 }}>
-          <Text style={{ fontSize: 11, color: PlatformColor('tertiaryLabel') }}>
+          <Text style={{ fontSize: 11, color: platformColor('tertiaryLabel') }}>
             {dayParts.hours} hr {dayParts.minutes} min {dayParts.seconds} sec of daylight today
           </Text>
         </View>
@@ -364,7 +365,7 @@ export function SunWidget() {
         flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 6,
       }}>
         <Text style={{ fontSize: 13, color: '#818cf8' }}>Last Light</Text>
-        <Text style={{ fontSize: 13, fontVariant: ['tabular-nums'], color: PlatformColor('label') }}>
+        <Text style={{ fontSize: 13, fontVariant: ['tabular-nums'], color: platformColor('label') }}>
           {sun.lastLight}
         </Text>
       </View>

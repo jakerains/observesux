@@ -1,8 +1,9 @@
 import { generateText, generateObject } from 'ai'
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
 import { z } from 'zod'
-import Firecrawl from '@mendable/firecrawl-js'
+import { fetchTranscript as ytFetchTranscript } from 'youtube-transcript'
 import { SUX_PERSONALITY } from '@/lib/ai/sux-personality'
+import { getActiveModel } from '@/lib/ai/model-config'
 import type { TranscriptSegment, CouncilMeetingRecap } from '@/types/council-meetings'
 
 // Sioux City Council YouTube channel
@@ -46,6 +47,62 @@ export interface RSSVideoEntry {
   publishedAt: string
   videoUrl: string
   channelId: string
+}
+
+// InnerTube API constants for video metadata checks
+const INNERTUBE_PLAYER_URL = 'https://www.youtube.com/youtubei/v1/player?prettyPrint=false'
+const INNERTUBE_CLIENT = { client: { clientName: 'ANDROID', clientVersion: '20.10.38' } }
+const INNERTUBE_UA = 'com.google.android.youtube/20.10.38 (Linux; U; Android 14)'
+
+interface VideoMetadata {
+  isLiveContent: boolean
+  isUpcoming: boolean
+  lengthSeconds: number
+  captionTrackCount: number
+}
+
+/**
+ * Lightweight check of a YouTube video's metadata via the InnerTube API.
+ * Used to distinguish VODs (real duration, captions) from dead live stream
+ * links (zero duration, no captions, isUpcoming still set).
+ */
+async function getVideoMetadata(videoId: string): Promise<VideoMetadata | null> {
+  try {
+    const res = await fetch(INNERTUBE_PLAYER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'User-Agent': INNERTUBE_UA },
+      body: JSON.stringify({ context: INNERTUBE_CLIENT, videoId }),
+    })
+    if (!res.ok) return null
+
+    const data = await res.json()
+    const details = data.videoDetails || {}
+    const captions = data.captions?.playerCaptionsTracklistRenderer?.captionTracks
+
+    return {
+      isLiveContent: details.isLiveContent === true,
+      isUpcoming: details.isUpcoming === true,
+      lengthSeconds: parseInt(details.lengthSeconds, 10) || 0,
+      captionTrackCount: Array.isArray(captions) ? captions.length : 0,
+    }
+  } catch (error) {
+    console.warn(`[VideoMeta] Failed to check metadata for ${videoId}:`, error)
+    return null
+  }
+}
+
+/**
+ * Score a video for VOD preference. Higher = more likely to be a usable VOD.
+ * Dead live stream links score 0; VODs with captions and real duration score highest.
+ */
+function vodScore(meta: VideoMetadata | null): number {
+  if (!meta) return 1 // Unknown — treat as neutral
+  if (meta.isUpcoming) return 0 // Dead/upcoming stream link
+  if (meta.lengthSeconds === 0) return 0 // No real content
+  let score = 1
+  if (meta.lengthSeconds > 0) score += 2
+  if (meta.captionTrackCount > 0) score += 3
+  return score
 }
 
 /**
@@ -138,7 +195,9 @@ export function parseYouTubeRSS(xml: string): RSSVideoEntry[] {
 }
 
 /**
- * Fetch the RSS feed for the Sioux City Council YouTube channel
+ * Fetch the RSS feed for the Sioux City Council YouTube channel.
+ * When duplicate titles exist (live stream + VOD), uses the InnerTube API
+ * to pick the VOD (real duration, captions available) over the dead stream link.
  */
 export async function fetchCouncilRSS(): Promise<RSSVideoEntry[]> {
   const response = await fetch(RSS_URL, { cache: 'no-store' })
@@ -154,74 +213,101 @@ export async function fetchCouncilRSS(): Promise<RSSVideoEntry[]> {
     return !lowerTitle.includes('test') && !lowerTitle.includes('placeholder')
   })
 
-  // Deduplicate by title — YouTube often publishes both a live stream link
-  // (which dies after the stream ends) and the actual VOD with the same title.
-  // Keep the most recently published entry for each title (the VOD).
-  const byTitle = new Map<string, RSSVideoEntry>()
+  // Group entries by title to find duplicates (live stream + VOD pairs)
+  const titleGroups = new Map<string, RSSVideoEntry[]>()
   for (const entry of filtered) {
-    const existing = byTitle.get(entry.title)
-    if (!existing || new Date(entry.publishedAt) > new Date(existing.publishedAt)) {
-      byTitle.set(entry.title, entry)
-    }
+    const group = titleGroups.get(entry.title) || []
+    group.push(entry)
+    titleGroups.set(entry.title, group)
   }
-  return Array.from(byTitle.values())
+
+  const results: RSSVideoEntry[] = []
+
+  for (const [title, group] of titleGroups) {
+    if (group.length === 1) {
+      results.push(group[0])
+      continue
+    }
+
+    // Multiple videos with the same title — check metadata to pick the VOD.
+    // Dead stream links have lengthSeconds=0, isUpcoming=true, no captions.
+    // VODs have real duration and caption tracks.
+    console.log(`[RSS] Duplicate title "${title}" — ${group.length} videos, checking metadata...`)
+
+    const scored = await Promise.all(
+      group.map(async (entry) => {
+        const meta = await getVideoMetadata(entry.videoId)
+        const score = vodScore(meta)
+        console.log(`[RSS]   ${entry.videoId}: score=${score} (len=${meta?.lengthSeconds ?? '?'}s, captions=${meta?.captionTrackCount ?? '?'}, upcoming=${meta?.isUpcoming ?? '?'})`)
+        return { entry, score, meta }
+      })
+    )
+
+    // Pick highest-scoring video (VOD). Tie-break by most recent publishedAt.
+    scored.sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score
+      return new Date(b.entry.publishedAt).getTime() - new Date(a.entry.publishedAt).getTime()
+    })
+
+    results.push(scored[0].entry)
+    console.log(`[RSS]   Winner: ${scored[0].entry.videoId}`)
+  }
+
+  return results
 }
 
 /**
- * Fetch transcript for a YouTube video using Firecrawl.
+ * Fetch transcript for a YouTube video using the InnerTube API.
  * Throws NoCaptionsError if no transcript is available.
  *
- * Firecrawl renders the page with a real browser, bypassing YouTube's
- * datacenter IP blocking. The transcript text comes back without
- * per-segment timestamps, so we split into synthetic segments by
- * sentence to keep the downstream chunking pipeline working.
+ * Uses the youtube-transcript package which calls YouTube's InnerTube
+ * ANDROID API — this bypasses datacenter IP blocking that breaks
+ * browser-based scraping approaches. Returns real per-segment timestamps.
  */
 export async function fetchTranscript(videoId: string): Promise<TranscriptSegment[]> {
-  const apiKey = process.env.FIRECRAWL_API_KEY
-  if (!apiKey) {
-    throw new Error('FIRECRAWL_API_KEY is not configured')
-  }
-
   try {
-    console.log(`[Transcript] Fetching via Firecrawl for ${videoId}`)
-    const firecrawl = new Firecrawl({ apiKey })
+    console.log(`[Transcript] Fetching via InnerTube API for ${videoId}`)
 
-    const result = await firecrawl.scrape(
-      `https://www.youtube.com/watch?v=${videoId}`,
-      { formats: ['markdown'] }
-    )
+    const rawSegments = await ytFetchTranscript(videoId)
 
-    if (!result.markdown) {
-      console.error(`[Transcript] Firecrawl scrape returned no markdown for ${videoId}`)
+    if (!rawSegments || rawSegments.length === 0) {
+      console.log(`[Transcript] No segments returned for ${videoId}`)
       throw new NoCaptionsError(videoId)
     }
 
-    // Extract the transcript section from the markdown
-    const transcriptMatch = result.markdown.match(/## Transcript\n\n([\s\S]+?)(?:\n## |\n---|\n\n\[|$)/)
-    if (!transcriptMatch) {
-      console.log(`[Transcript] No transcript section in Firecrawl result for ${videoId}`)
+    // Map to our TranscriptSegment format (youtube-transcript returns offset/duration in ms)
+    const segments: TranscriptSegment[] = rawSegments.map(seg => ({
+      text: seg.text,
+      offset: seg.offset,
+      duration: seg.duration,
+    }))
+
+    const totalChars = segments.reduce((sum, s) => sum + s.text.length, 0)
+    console.log(`[Transcript] Got ${segments.length} segments (${totalChars} chars) for ${videoId}`)
+
+    if (totalChars < 100) {
+      console.log(`[Transcript] Transcript too short (${totalChars} chars) for ${videoId}`)
       throw new NoCaptionsError(videoId)
     }
 
-    const transcriptText = transcriptMatch[1].trim()
-    if (transcriptText.length < 100) {
-      console.log(`[Transcript] Transcript too short (${transcriptText.length} chars) for ${videoId}`)
-      throw new NoCaptionsError(videoId)
-    }
-
-    console.log(`[Transcript] Got ${transcriptText.length} chars of transcript for ${videoId}`)
-
-    // Convert raw text to segments with synthetic timestamps
-    const segments = textToSegments(transcriptText)
-    console.log(`[Transcript] Created ${segments.length} segments for ${videoId}`)
     return segments
   } catch (error) {
     if (error instanceof NoCaptionsError) throw error
 
-    const errorName = error instanceof Error ? error.constructor.name : 'Unknown'
     const errorMsg = error instanceof Error ? error.message : String(error)
-    console.error(`[Transcript] Failed for ${videoId}: [${errorName}] ${errorMsg}`)
 
+    // youtube-transcript throws specific errors for disabled/unavailable transcripts
+    if (errorMsg.includes('Transcript is disabled') || errorMsg.includes('No transcripts are available')) {
+      console.log(`[Transcript] No captions for ${videoId}: ${errorMsg}`)
+      throw new NoCaptionsError(videoId)
+    }
+
+    // Too many requests = captcha block
+    if (errorMsg.includes('too many requests') || errorMsg.includes('captcha')) {
+      console.error(`[Transcript] Rate limited for ${videoId}: ${errorMsg}`)
+    }
+
+    console.error(`[Transcript] Failed for ${videoId}: ${errorMsg}`)
     throw error
   }
 }
@@ -315,6 +401,8 @@ export async function generateMeetingRecap(rawTranscript: string): Promise<Counc
     apiKey: process.env.OPENROUTER_API_KEY,
   })
 
+  const modelId = await getActiveModel('council')
+
   const RECAP_SYSTEM_PROMPT = `${SUX_PERSONALITY}
 
 Your job right now is to make a city council meeting transparent and accessible to everyday people. You write blog-post style recaps addressed directly to Siouxland residents.
@@ -352,7 +440,7 @@ If a section has no entries, use an empty array. Focus on substance over procedu
     for (let i = 0; i < sections.length; i++) {
       console.log(`[Council Recap] Summarizing section ${i + 1}/${sections.length}`)
       const result = await generateText({
-        model: openrouter('anthropic/claude-sonnet-4.6'),
+        model: openrouter(modelId),
         system: `${SUX_PERSONALITY}\n\nYou're covering a Sioux City council meeting for local residents. Summarize the key points, decisions, discussions, and any public comments from this portion of the transcript. Be thorough — include specifics like vote counts, dollar amounts, names of projects, and what things mean for residents.\n\n**Current Sioux City Council members** (use as authoritative name reference — transcripts often misspell them): Mayor Bob Scott, Mayor Pro Tem Julie Schoenherr, Councilmembers Craig Berenstein, Rick Bertrand, and Ike Rayford.`,
         prompt: sections[i],
         maxOutputTokens: 8000,
@@ -363,7 +451,7 @@ If a section has no entries, use an empty array. Focus on substance over procedu
     // Combine and generate final structured recap
     const combinedSummary = sectionSummaries.join('\n\n---\n\n')
     const result = await generateObject({
-      model: openrouter('anthropic/claude-sonnet-4.6'),
+      model: openrouter(modelId),
       schema: RecapSchema,
       system: RECAP_SYSTEM_PROMPT,
       prompt: `Here are detailed summaries of different sections of a city council meeting:\n\n${combinedSummary}`,
@@ -375,7 +463,7 @@ If a section has no entries, use an empty array. Focus on substance over procedu
 
   // Direct generation — send full transcript in one call
   const result = await generateObject({
-    model: openrouter('anthropic/claude-sonnet-4.6'),
+    model: openrouter(modelId),
     schema: RecapSchema,
     system: RECAP_SYSTEM_PROMPT,
     prompt: rawTranscript,

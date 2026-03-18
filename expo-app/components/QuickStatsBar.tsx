@@ -3,10 +3,10 @@
  */
 
 import { View, ScrollView, Text } from 'react-native';
-import { Image } from 'expo-image';
 import { useWeather, useAirQuality, useTransit } from '@/lib/hooks/useDataFetching';
 import { Skeleton } from './LoadingState';
 import { Brand } from '@/constants/BrandColors';
+import { AppIcon } from '@/components/AppIcon';
 
 interface StatItemProps {
   sfSymbol: string;
@@ -33,11 +33,7 @@ function StatItem({ sfSymbol, label, value, tintColor }: StatItemProps) {
         gap: 4,
       }}
     >
-      <Image
-        source={`sf:${sfSymbol}`}
-        style={{ width: 18, height: 18 }}
-        tintColor={color}
-      />
+      <AppIcon name={sfSymbol} size={18} color={color} />
       <Text style={{ fontSize: 20, fontWeight: '700', color: Brand.foreground, lineHeight: 24 }}>
         {value}
       </Text>

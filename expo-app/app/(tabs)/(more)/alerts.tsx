@@ -3,10 +3,11 @@
  * Manage weather, river, air quality, and traffic alert subscriptions
  */
 
-import { View, Text, Switch, ActivityIndicator, Pressable, ScrollView, PlatformColor } from 'react-native';
-import { Image } from 'expo-image';
+import { View, Text, Switch, ActivityIndicator, Pressable, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import { AppIcon } from '@/components/AppIcon';
+import { platformColor } from '@/lib/platformColors';
 import { useAuth } from '../../../lib/contexts';
 import {
   useAlertSubscriptions,
@@ -65,9 +66,7 @@ function AlertRow({ config, subscription, onToggle, isToggling }: AlertRowProps)
   const isEnabled = subscription?.enabled ?? false;
 
   const handleToggle = (value: boolean) => {
-    if (process.env.EXPO_OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onToggle(config.alertType, value);
   };
 
@@ -79,7 +78,7 @@ function AlertRow({ config, subscription, onToggle, isToggling }: AlertRowProps)
           alignItems: 'center',
           padding: 14,
           borderBottomWidth: isEnabled ? 0 : 0.5,
-          borderBottomColor: PlatformColor('separator'),
+          borderBottomColor: platformColor('separator'),
         }}
       >
         <View
@@ -90,18 +89,18 @@ function AlertRow({ config, subscription, onToggle, isToggling }: AlertRowProps)
             alignItems: 'center',
             justifyContent: 'center',
             marginRight: 12,
-            backgroundColor: PlatformColor('tertiarySystemFill'),
+            backgroundColor: platformColor('tertiarySystemFill'),
           }}
         >
-          <Image
-            source={`sf:${config.sfSymbol}`}
-            style={{ width: 20, height: 20 }}
-            tintColor="#e69c3a"
+          <AppIcon
+            name={config.sfSymbol}
+            size={20}
+            color="#e69c3a"
           />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontWeight: '500', color: PlatformColor('label') }}>{config.label}</Text>
-          <Text style={{ fontSize: 12, marginTop: 2, color: PlatformColor('secondaryLabel') }}>
+          <Text style={{ fontWeight: '500', color: platformColor('label') }}>{config.label}</Text>
+          <Text style={{ fontSize: 12, marginTop: 2, color: platformColor('secondaryLabel') }}>
             {config.description}
           </Text>
         </View>
@@ -123,7 +122,7 @@ function AlertRow({ config, subscription, onToggle, isToggling }: AlertRowProps)
             paddingVertical: 10,
             backgroundColor: 'rgba(230, 156, 58, 0.08)',
             borderBottomWidth: 0.5,
-            borderBottomColor: PlatformColor('separator'),
+            borderBottomColor: platformColor('separator'),
           }}
         >
           <AlertConfigDetails alertType={config.alertType} subscriptionConfig={subscription?.config ?? config.defaultConfig} />
@@ -143,7 +142,7 @@ function AlertConfigDetails({ alertType, subscriptionConfig }: AlertConfigDetail
     const severities = (subscriptionConfig.severities as string[]) ?? ['Moderate', 'Severe', 'Extreme'];
     return (
       <View>
-        <Text style={{ fontSize: 12, color: PlatformColor('secondaryLabel'), marginBottom: 6 }}>
+        <Text style={{ fontSize: 12, color: platformColor('secondaryLabel'), marginBottom: 6 }}>
           Alert on severity:
         </Text>
         <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
@@ -160,7 +159,7 @@ function AlertConfigDetails({ alertType, subscriptionConfig }: AlertConfigDetail
               <Text
                 style={{
                   fontSize: 12,
-                  color: severities.includes(level) ? '#e69c3a' : PlatformColor('tertiaryLabel'),
+                  color: severities.includes(level) ? '#e69c3a' : platformColor('tertiaryLabel'),
                 }}
               >
                 {level}
@@ -174,7 +173,7 @@ function AlertConfigDetails({ alertType, subscriptionConfig }: AlertConfigDetail
 
   if (alertType === 'river') {
     return (
-      <Text style={{ fontSize: 12, color: PlatformColor('secondaryLabel') }}>
+      <Text style={{ fontSize: 12, color: platformColor('secondaryLabel') }}>
         Alerts when river reaches action or flood stage
       </Text>
     );
@@ -183,7 +182,7 @@ function AlertConfigDetails({ alertType, subscriptionConfig }: AlertConfigDetail
   if (alertType === 'air_quality') {
     const minAqi = (subscriptionConfig.minAqi as number) ?? 101;
     return (
-      <Text style={{ fontSize: 12, color: PlatformColor('secondaryLabel') }}>
+      <Text style={{ fontSize: 12, color: platformColor('secondaryLabel') }}>
         Alert when AQI exceeds {minAqi} (Unhealthy for Sensitive Groups)
       </Text>
     );
@@ -193,7 +192,7 @@ function AlertConfigDetails({ alertType, subscriptionConfig }: AlertConfigDetail
     const severities = (subscriptionConfig.severities as string[]) ?? ['major', 'critical'];
     return (
       <View>
-        <Text style={{ fontSize: 12, color: PlatformColor('secondaryLabel'), marginBottom: 6 }}>
+        <Text style={{ fontSize: 12, color: platformColor('secondaryLabel'), marginBottom: 6 }}>
           Alert on severity:
         </Text>
         <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
@@ -210,7 +209,7 @@ function AlertConfigDetails({ alertType, subscriptionConfig }: AlertConfigDetail
               <Text
                 style={{
                   fontSize: 12,
-                  color: severities.includes(level) ? '#e69c3a' : PlatformColor('tertiaryLabel'),
+                  color: severities.includes(level) ? '#e69c3a' : platformColor('tertiaryLabel'),
                   textTransform: 'capitalize',
                 }}
               >
@@ -247,13 +246,14 @@ export default function AlertsScreen() {
   if (!isAuthenticated) {
     return (
       <View style={{ flex: 1, backgroundColor: '#120905', alignItems: 'center', justifyContent: 'center', padding: 32 }}>
-        <Image source="sf:bell.badge" style={{ width: 48, height: 48, marginBottom: 16 }} tintColor="#e69c3a" />
+        <AppIcon name="bell.badge" size={48} color="#e69c3a" />
         <Text
           style={{
             fontSize: 20,
             fontWeight: '600',
-            color: PlatformColor('label'),
+            color: platformColor('label'),
             marginBottom: 8,
+            marginTop: 16,
             textAlign: 'center',
           }}
         >
@@ -262,7 +262,7 @@ export default function AlertsScreen() {
         <Text
           style={{
             fontSize: 15,
-            color: PlatformColor('secondaryLabel'),
+            color: platformColor('secondaryLabel'),
             textAlign: 'center',
             marginBottom: 24,
             lineHeight: 22,
@@ -272,9 +272,7 @@ export default function AlertsScreen() {
         </Text>
         <Pressable
           onPress={() => {
-            if (process.env.EXPO_OS === 'ios') {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            }
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             router.push('/auth/sign-in');
           }}
           style={{
@@ -294,7 +292,7 @@ export default function AlertsScreen() {
     return (
       <View style={{ flex: 1, backgroundColor: '#120905', alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator size="large" color="#e69c3a" />
-        <Text style={{ marginTop: 12, color: PlatformColor('secondaryLabel'), fontSize: 14 }}>
+        <Text style={{ marginTop: 12, color: platformColor('secondaryLabel'), fontSize: 14 }}>
           Loading subscriptions...
         </Text>
       </View>
@@ -320,7 +318,7 @@ export default function AlertsScreen() {
           fontSize: 12,
           fontWeight: '600',
           letterSpacing: 0.5,
-          color: PlatformColor('secondaryLabel'),
+          color: platformColor('secondaryLabel'),
         }}
       >
         ALERT TYPES
@@ -349,7 +347,7 @@ export default function AlertsScreen() {
         style={{
           marginHorizontal: 4,
           fontSize: 13,
-          color: PlatformColor('secondaryLabel'),
+          color: platformColor('secondaryLabel'),
           lineHeight: 18,
         }}
       >

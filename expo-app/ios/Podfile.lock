@@ -41,7 +41,7 @@ PODS:
     - ExpoModulesCore
   - ExpoDomWebView (0.2.8):
     - ExpoModulesCore
-  - ExpoFileSystem (55.0.10):
+  - ExpoFileSystem (55.0.11):
     - ExpoModulesCore
   - ExpoFont (55.0.4):
     - ExpoModulesCore
@@ -61,6 +61,8 @@ PODS:
   - ExpoLinearGradient (55.0.8):
     - ExpoModulesCore
   - ExpoLinking (55.0.7):
+    - ExpoModulesCore
+  - ExpoLocalization (55.0.9):
     - ExpoModulesCore
   - ExpoLogBox (55.0.7):
     - React-Core
@@ -2384,7 +2386,7 @@ DEPENDENCIES:
   - "ExpoBlur (from `../node_modules/.pnpm/expo-blur@55.0.9_expo@55.0.6_react-native@0.83.2_@babel+core@7.28.6_@types+react@19.2.14_react@19.2.0__react@19.2.0/node_modules/expo-blur/ios`)"
   - "ExpoDevice (from `../node_modules/.pnpm/expo-device@55.0.9_expo@55.0.6/node_modules/expo-device/ios`)"
   - "ExpoDomWebView (from `../node_modules/.pnpm/@expo+dom-webview@0.2.8_expo@55.0.6_react-native@0.83.2_@babel+core@7.28.6_@types+react_932e72620a9857e05de67810c284966d/node_modules/@expo/dom-webview/ios`)"
-  - "ExpoFileSystem (from `../node_modules/.pnpm/expo-file-system@55.0.10_expo@55.0.6_react-native@0.83.2_@babel+core@7.28.6_@types+react@19.2.14_react@19.2.0_/node_modules/expo-file-system/ios`)"
+  - "ExpoFileSystem (from `../node_modules/.pnpm/expo-file-system@55.0.11_expo@55.0.6_react-native@0.83.2_@babel+core@7.28.6_@types+react@19.2.14_react@19.2.0_/node_modules/expo-file-system/ios`)"
   - "ExpoFont (from `../node_modules/.pnpm/expo-font@55.0.4_expo@55.0.6_react-native@0.83.2_@babel+core@7.28.6_@types+react@19.2.14_react@19.2.0__react@19.2.0/node_modules/expo-font/ios`)"
   - "ExpoGlassEffect (from `../node_modules/.pnpm/expo-glass-effect@55.0.8_expo@55.0.6_react-native@0.83.2_@babel+core@7.28.6_@types+reac_0c845147896550f4a8ecbd4b45f204ba/node_modules/expo-glass-effect/ios`)"
   - "ExpoHaptics (from `../node_modules/.pnpm/expo-haptics@55.0.8_expo@55.0.6/node_modules/expo-haptics/ios`)"
@@ -2392,6 +2394,7 @@ DEPENDENCIES:
   - "ExpoKeepAwake (from `../node_modules/.pnpm/expo-keep-awake@55.0.4_expo@55.0.6_react@19.2.0/node_modules/expo-keep-awake/ios`)"
   - "ExpoLinearGradient (from `../node_modules/.pnpm/expo-linear-gradient@55.0.8_expo@55.0.6_react-native@0.83.2_@babel+core@7.28.6_@types+r_dd62197cc36f81edd37b4b701c8948d5/node_modules/expo-linear-gradient/ios`)"
   - "ExpoLinking (from `../node_modules/.pnpm/expo-linking@55.0.7_expo@55.0.6_react-native@0.83.2_@babel+core@7.28.6_@types+react@19._dbdb4a6293019e1c4c629cfdc9330ac3/node_modules/expo-linking/ios`)"
+  - "ExpoLocalization (from `../node_modules/.pnpm/expo-localization@55.0.9_expo@55.0.6_react@19.2.0/node_modules/expo-localization/ios`)"
   - "ExpoLogBox (from `../node_modules/.pnpm/@expo+log-box@55.0.7_@expo+dom-webview@0.2.8_expo@55.0.6_react-native@0.83.2_@babel+cor_244fe51e1a3ab71c4dd5f51faae4dd88/node_modules/@expo/log-box`)"
   - "ExpoModulesCore (from `../node_modules/.pnpm/expo-modules-core@55.0.15_react-native@0.83.2_@babel+core@7.28.6_@types+react@19.2.14_react@19.2.0__react@19.2.0/node_modules/expo-modules-core`)"
   - "ExpoModulesJSI (from `../node_modules/.pnpm/expo-modules-core@55.0.15_react-native@0.83.2_@babel+core@7.28.6_@types+react@19.2.14_react@19.2.0__react@19.2.0/node_modules/expo-modules-core`)"
@@ -2523,7 +2526,7 @@ EXTERNAL SOURCES:
   ExpoDomWebView:
     :path: "../node_modules/.pnpm/@expo+dom-webview@0.2.8_expo@55.0.6_react-native@0.83.2_@babel+core@7.28.6_@types+react_932e72620a9857e05de67810c284966d/node_modules/@expo/dom-webview/ios"
   ExpoFileSystem:
-    :path: "../node_modules/.pnpm/expo-file-system@55.0.10_expo@55.0.6_react-native@0.83.2_@babel+core@7.28.6_@types+react@19.2.14_react@19.2.0_/node_modules/expo-file-system/ios"
+    :path: "../node_modules/.pnpm/expo-file-system@55.0.11_expo@55.0.6_react-native@0.83.2_@babel+core@7.28.6_@types+react@19.2.14_react@19.2.0_/node_modules/expo-file-system/ios"
   ExpoFont:
     :path: "../node_modules/.pnpm/expo-font@55.0.4_expo@55.0.6_react-native@0.83.2_@babel+core@7.28.6_@types+react@19.2.14_react@19.2.0__react@19.2.0/node_modules/expo-font/ios"
   ExpoGlassEffect:
@@ -2538,6 +2541,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/.pnpm/expo-linear-gradient@55.0.8_expo@55.0.6_react-native@0.83.2_@babel+core@7.28.6_@types+r_dd62197cc36f81edd37b4b701c8948d5/node_modules/expo-linear-gradient/ios"
   ExpoLinking:
     :path: "../node_modules/.pnpm/expo-linking@55.0.7_expo@55.0.6_react-native@0.83.2_@babel+core@7.28.6_@types+react@19._dbdb4a6293019e1c4c629cfdc9330ac3/node_modules/expo-linking/ios"
+  ExpoLocalization:
+    :path: "../node_modules/.pnpm/expo-localization@55.0.9_expo@55.0.6_react@19.2.0/node_modules/expo-localization/ios"
   ExpoLogBox:
     :path: "../node_modules/.pnpm/@expo+log-box@55.0.7_@expo+dom-webview@0.2.8_expo@55.0.6_react-native@0.83.2_@babel+cor_244fe51e1a3ab71c4dd5f51faae4dd88/node_modules/@expo/log-box"
   ExpoModulesCore:
@@ -2743,7 +2748,7 @@ SPEC CHECKSUMS:
   ExpoBlur: 74d9356a03efef7a699802d0ebd431fe627040a7
   ExpoDevice: 8fb20656b96e38f8928cd069210a1aad0c759ac3
   ExpoDomWebView: d82055ac57c98a2e419f39bf86a15bf7be6adea5
-  ExpoFileSystem: e1a42d7f69f7faae33f4d7d01708f7861f7bd757
+  ExpoFileSystem: ccbe192dde132e6e97bedcd51018a1642f4fa01c
   ExpoFont: 1aa465cf9f8ac6b670405becba8b15473581b2dd
   ExpoGlassEffect: 42361543f2c0c383df0cb779e3cd2496b47a585e
   ExpoHaptics: 8952528daeafbb20d147c33f8cc6ab648cd34c58
@@ -2751,6 +2756,7 @@ SPEC CHECKSUMS:
   ExpoKeepAwake: 7f3b28c361c37389b18841bb52a58003b39fcb33
   ExpoLinearGradient: 499856f296f83c05279d18447bdb57ab0e06d294
   ExpoLinking: 88ba36a28c83525e564b8229e02d451347accb70
+  ExpoLocalization: 59339ee12069a7cca674cd8082912a3b16735863
   ExpoLogBox: 89b634d5a8a64c4a6a7caad8f9985a28463c7002
   ExpoModulesCore: 261e10ce5a14a92ba70bba45fb560a60ed1ff3dc
   ExpoModulesJSI: 46dab6c6d9e181bf94757367a0d569bfc7fffd99

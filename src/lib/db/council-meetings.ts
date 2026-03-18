@@ -155,6 +155,55 @@ export async function updateMeetingStatus(
 }
 
 /**
+ * Dismiss a meeting (mark as livestream / not a VOD).
+ * Dismissed meetings are hidden from public views and skipped during ingestion.
+ * Can be undone by setting status back to 'pending'.
+ */
+export async function dismissMeeting(
+  videoId: string,
+  reason?: string
+): Promise<boolean> {
+  if (!isDatabaseConfigured()) return false
+
+  try {
+    const result = await sql`
+      UPDATE council_meetings
+      SET status = 'dismissed',
+          error_message = ${reason || 'Manually dismissed (livestream / not a VOD)'},
+          updated_at = NOW()
+      WHERE video_id = ${videoId}
+      RETURNING id
+    `
+    return result.length > 0
+  } catch (error) {
+    console.error('Error dismissing meeting:', error)
+    return false
+  }
+}
+
+/**
+ * Restore a dismissed meeting back to pending so it can be reprocessed.
+ */
+export async function undismissMeeting(videoId: string): Promise<boolean> {
+  if (!isDatabaseConfigured()) return false
+
+  try {
+    const result = await sql`
+      UPDATE council_meetings
+      SET status = 'pending',
+          error_message = NULL,
+          updated_at = NOW()
+      WHERE video_id = ${videoId} AND status = 'dismissed'
+      RETURNING id
+    `
+    return result.length > 0
+  } catch (error) {
+    console.error('Error undismissing meeting:', error)
+    return false
+  }
+}
+
+/**
  * Store meeting results (recap, transcript, chunk count).
  * If the meeting already has a completed recap, snapshot it as a version first.
  */
@@ -442,6 +491,7 @@ export async function getCouncilIngestStats(): Promise<CouncilIngestStats> {
       failedCount: 0,
       noCaptionsCount: 0,
       pendingCount: 0,
+      dismissedCount: 0,
       latestMeetingDate: null,
     }
   }
@@ -449,12 +499,13 @@ export async function getCouncilIngestStats(): Promise<CouncilIngestStats> {
   try {
     const result = await sql`
       SELECT
-        COUNT(*) as total,
+        COUNT(*) FILTER (WHERE status != 'dismissed') as total,
         COUNT(*) FILTER (WHERE status = 'completed') as completed,
         COUNT(*) FILTER (WHERE status = 'failed') as failed,
         COUNT(*) FILTER (WHERE status = 'no_captions') as no_captions,
         COUNT(*) FILTER (WHERE status IN ('pending', 'processing')) as pending,
-        MAX(meeting_date) as latest_date
+        COUNT(*) FILTER (WHERE status = 'dismissed') as dismissed,
+        MAX(meeting_date) FILTER (WHERE status != 'dismissed') as latest_date
       FROM council_meetings
     `
 
@@ -465,6 +516,7 @@ export async function getCouncilIngestStats(): Promise<CouncilIngestStats> {
       failedCount: parseInt(row.failed as string, 10),
       noCaptionsCount: parseInt(row.no_captions as string, 10),
       pendingCount: parseInt(row.pending as string, 10),
+      dismissedCount: parseInt(row.dismissed as string, 10),
       latestMeetingDate: row.latest_date ? String(row.latest_date) : null,
     }
   } catch (error) {
@@ -475,6 +527,7 @@ export async function getCouncilIngestStats(): Promise<CouncilIngestStats> {
       failedCount: 0,
       noCaptionsCount: 0,
       pendingCount: 0,
+      dismissedCount: 0,
       latestMeetingDate: null,
     }
   }

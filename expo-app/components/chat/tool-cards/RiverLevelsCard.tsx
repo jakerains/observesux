@@ -1,4 +1,5 @@
-import { View, Text, PlatformColor } from 'react-native'
+import { View, Text } from 'react-native'
+import { platformColor } from '@/lib/platformColors'
 import { ToolCardBase } from './ToolCardBase'
 import { unwrapData, formatCount, type ToolStatus } from './utils'
 
@@ -41,16 +42,16 @@ export function RiverLevelsCard({ output }: { output: unknown }) {
 
   return (
     <ToolCardBase title="River Levels" icon="drop.fill" status={worstStage}>
-      <Text selectable style={{ fontSize: 12, fontWeight: '600', color: PlatformColor('label') }}>
+      <Text selectable style={{ fontSize: 12, fontWeight: '600', color: platformColor('label') }}>
         {formatCount(readings.length, 'gauge')} reporting
       </Text>
       <View style={{ gap: 6, marginTop: 6 }}>
         {readings.slice(0, 3).map((reading) => (
           <View key={reading.siteId} style={{ gap: 2 }}>
-            <Text selectable style={{ fontSize: 12, fontWeight: '600', color: PlatformColor('label') }}>
+            <Text selectable style={{ fontSize: 12, fontWeight: '600', color: platformColor('label') }}>
               {reading.siteName}
             </Text>
-            <Text selectable style={{ fontSize: 11, color: PlatformColor('secondaryLabel') }}>
+            <Text selectable style={{ fontSize: 11, color: platformColor('secondaryLabel') }}>
               Stage {reading.gaugeHeight !== null ? `${reading.gaugeHeight.toFixed(2)} ft` : '--'} · {reading.floodStage}
             </Text>
           </View>

@@ -23,6 +23,7 @@ import {
   Youtube,
   Upload,
   Plus,
+  EyeOff,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -79,6 +80,7 @@ const statusBadgeVariant: Record<string, 'default' | 'secondary' | 'destructive'
   no_captions: 'outline',
   processing: 'secondary',
   pending: 'outline',
+  dismissed: 'secondary',
 }
 
 const stepIcons: Record<string, typeof Globe> = {
@@ -269,6 +271,22 @@ export function CouncilIngestPanel() {
         noCaptions: 0,
         error: error instanceof Error ? error.message : 'Request failed',
       })
+    }
+  }
+
+  const dismissVideo = async (videoId: string, undismiss = false) => {
+    try {
+      const res = await fetch('/api/workflow/council-ingest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoId, mode: undismiss ? 'undismiss' : 'dismiss' }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        await fetchData()
+      }
+    } catch (error) {
+      console.error('Failed to dismiss/undismiss video:', error)
     }
   }
 
@@ -560,11 +578,13 @@ export function CouncilIngestPanel() {
     }
   }
 
-  const sortedMeetings = [...meetings].sort((a, b) => {
-    const dateA = a.meetingDate ? new Date(a.meetingDate).getTime() : 0
-    const dateB = b.meetingDate ? new Date(b.meetingDate).getTime() : 0
-    return sortAsc ? dateA - dateB : dateB - dateA
-  })
+  const sortedMeetings = [...meetings]
+    .filter(m => m.status !== 'dismissed')
+    .sort((a, b) => {
+      const dateA = a.meetingDate ? new Date(a.meetingDate).getTime() : 0
+      const dateB = b.meetingDate ? new Date(b.meetingDate).getTime() : 0
+      return sortAsc ? dateA - dateB : dateB - dateA
+    })
 
   return (
     <div className="space-y-6">
@@ -796,7 +816,7 @@ export function CouncilIngestPanel() {
             </div>
           ) : (
             <div className="max-h-[400px] overflow-y-auto space-y-2 pr-1">
-              {feedVideos.map((video) => {
+              {feedVideos.filter(v => v.dbStatus !== 'dismissed').map((video) => {
                 const isNew = video.dbStatus === null
                 const isProcessable = isNew || video.dbStatus === 'failed' || video.dbStatus === 'no_captions'
                 const isProcessing = video.dbStatus === 'processing' || retryingVideoId === video.videoId
@@ -900,6 +920,19 @@ export function CouncilIngestPanel() {
                         >
                           <Loader2 className="h-3 w-3 animate-spin" />
                           Processing...
+                        </Button>
+                      )}
+                      {!isProcessing && video.dbStatus !== 'completed' && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 gap-1.5 text-xs text-muted-foreground"
+                          disabled={ingesting || retryingVideoId !== null}
+                          onClick={() => dismissVideo(video.videoId)}
+                          title="Mark as livestream (not a VOD) — removes from list"
+                        >
+                          <EyeOff className="h-3 w-3" />
+                          Livestream
                         </Button>
                       )}
                     </div>
@@ -1186,6 +1219,22 @@ export function CouncilIngestPanel() {
                                 <RotateCcw className="h-3 w-3" />
                                 Full Reprocess
                               </Button>
+                              {meeting.status !== 'completed' && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 gap-1.5 text-xs text-muted-foreground"
+                                  disabled={ingesting || retryingVideoId !== null}
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    dismissVideo(meeting.videoId)
+                                  }}
+                                  title="Mark as livestream — removes from list"
+                                >
+                                  <EyeOff className="h-3 w-3" />
+                                  Livestream
+                                </Button>
+                              )}
                             </>
                           )}
                         </div>

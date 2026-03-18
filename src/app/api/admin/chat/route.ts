@@ -5,6 +5,7 @@ import { getAdminSystemPrompt, type CanvasContent } from '@/lib/ai/admin-system-
 import { isAdminWithUser, getCurrentUser } from '@/lib/auth/server'
 import { getUserProfile } from '@/lib/db/profiles'
 import type { UserContext } from '@/lib/ai/system-prompt'
+import { getActiveModel } from '@/lib/ai/model-config'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -44,7 +45,7 @@ export async function POST(req: Request) {
     const user = await getCurrentUser()
 
     const body = await req.json()
-    const { messages: incomingMessages, canvasContent } = body ?? {}
+    const { messages: incomingMessages, canvasContent, modelOverride } = body ?? {}
 
     if (!Array.isArray(incomingMessages)) {
       return new Response(JSON.stringify({ error: 'Invalid request: messages must be an array' }), {
@@ -135,7 +136,7 @@ export async function POST(req: Request) {
       }
     }
 
-    const MODEL_ID = 'anthropic/claude-sonnet-4.6'
+    const MODEL_ID = modelOverride || await getActiveModel('admin-chat')
     const openrouter = createOpenRouter({
       apiKey: process.env.OPENROUTER_API_KEY,
     })

@@ -11,6 +11,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { PostHogProvider } from 'posthog-react-native';
 import { AuthProvider, SettingsProvider, useAuth, useSettings } from '../lib/contexts';
 import {
   addNotificationResponseListener,
@@ -19,6 +20,7 @@ import {
   getLastNotificationResponse,
   getNotificationNavigationPathFromResponse,
 } from '../lib/notifications';
+import { usePostHogScreenTracking } from '../lib/hooks';
 import { NotificationPromptModal } from '../components/NotificationPromptModal';
 
 // Prevent the splash screen from auto-hiding before assets load
@@ -43,6 +45,7 @@ const queryClient = new QueryClient({
  * Innermost layout — consumes SettingsContext (must be inside SettingsProvider)
  */
 function AppShell() {
+  usePostHogScreenTracking();
   const { updateSetting } = useSettings();
   const router = useRouter();
   const navigationState = useRootNavigationState();
@@ -123,14 +126,14 @@ function AppShell() {
 
   const detailModalOptions = Platform.OS === 'ios'
     ? {
-        presentation: 'modal' as const,
-        headerShown: true,
-      }
-    : {
         presentation: 'formSheet' as const,
         sheetGrabberVisible: true,
         sheetAllowedDetents: [0.85, 1.0],
         sheetExpandsWhenScrolledToEdge: false,
+        headerShown: true,
+      }
+    : {
+        presentation: 'modal' as const,
         headerShown: true,
       };
 
@@ -143,20 +146,20 @@ function AppShell() {
           name="camera/[id]"
           options={{
             title: 'Camera',
-            presentation: 'formSheet',
-            sheetGrabberVisible: true,
-            sheetAllowedDetents: [0.75, 1.0],
             headerShown: true,
+            ...(Platform.OS === 'ios'
+              ? { presentation: 'formSheet', sheetGrabberVisible: true, sheetAllowedDetents: [0.75, 1.0] }
+              : { presentation: 'modal' }),
           }}
         />
         <Stack.Screen
           name="alert/[id]"
           options={{
             title: 'Alert',
-            presentation: 'formSheet',
-            sheetGrabberVisible: true,
-            sheetAllowedDetents: [0.6, 1.0],
             headerShown: true,
+            ...(Platform.OS === 'ios'
+              ? { presentation: 'formSheet', sheetGrabberVisible: true, sheetAllowedDetents: [0.6, 1.0] }
+              : { presentation: 'modal' }),
           }}
         />
         <Stack.Screen
@@ -207,12 +210,20 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#120905' }}>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <RootLayoutInner />
-        </AuthProvider>
-      </QueryClientProvider>
-    </GestureHandlerRootView>
+    <PostHogProvider
+      apiKey="phc_OJZKloKphJQgmN3ttPpQSONDTaMbdFA1en7Yc2T7C0e"
+      options={{
+        host: 'https://us.i.posthog.com',
+        enableSessionReplay: false,
+      }}
+    >
+      <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#120905' }}>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <RootLayoutInner />
+          </AuthProvider>
+        </QueryClientProvider>
+      </GestureHandlerRootView>
+    </PostHogProvider>
   );
 }

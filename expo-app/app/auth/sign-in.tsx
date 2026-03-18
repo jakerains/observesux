@@ -13,12 +13,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  PlatformColor,
   Alert,
 } from 'react-native';
 import { router } from 'expo-router';
-import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
+import { AppIcon } from '@/components/AppIcon';
+import { platformColor } from '@/lib/platformColors';
 import { useAuth } from '../../lib/contexts';
 import { signInWithEmail } from '../../lib/auth';
 
@@ -35,9 +35,7 @@ export default function SignInScreen() {
       return;
     }
 
-    if (process.env.EXPO_OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     setIsLoading(true);
 
@@ -59,16 +57,14 @@ export default function SignInScreen() {
   };
 
   const goToSignUp = () => {
-    if (process.env.EXPO_OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push('/auth/sign-up');
   };
 
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={{ flex: 1, backgroundColor: PlatformColor('systemBackground') }}
+      style={{ flex: 1, backgroundColor: platformColor('systemBackground') }}
     >
       <ScrollView
         contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24 }}
@@ -81,19 +77,19 @@ export default function SignInScreen() {
               width: 80,
               height: 80,
               borderRadius: 20,
-              backgroundColor: PlatformColor('systemBlue'),
+              backgroundColor: platformColor('systemBlue'),
               alignItems: 'center',
               justifyContent: 'center',
               marginBottom: 16,
             }}
           >
-            <Image source="sf:person.fill" style={{ width: 40, height: 40 }} tintColor="white" />
+            <AppIcon name="person.fill" size={40} color="white" />
           </View>
           <Text
             style={{
               fontSize: 28,
               fontWeight: '700',
-              color: PlatformColor('label'),
+              color: platformColor('label'),
               marginBottom: 8,
             }}
           >
@@ -102,7 +98,7 @@ export default function SignInScreen() {
           <Text
             style={{
               fontSize: 16,
-              color: PlatformColor('secondaryLabel'),
+              color: platformColor('secondaryLabel'),
               textAlign: 'center',
             }}
           >
@@ -118,7 +114,7 @@ export default function SignInScreen() {
               style={{
                 fontSize: 14,
                 fontWeight: '600',
-                color: PlatformColor('label'),
+                color: platformColor('label'),
                 marginBottom: 8,
               }}
             >
@@ -128,17 +124,17 @@ export default function SignInScreen() {
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
-                backgroundColor: PlatformColor('secondarySystemBackground'),
+                backgroundColor: platformColor('secondarySystemBackground'),
                 borderRadius: 12,
                 paddingHorizontal: 16,
               }}
             >
-              <Image source="sf:envelope.fill" style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel') as unknown as string} />
+              <AppIcon name="envelope.fill" size={18} color={platformColor('secondaryLabel')} />
               <TextInput
                 value={email}
                 onChangeText={setEmail}
                 placeholder="you@example.com"
-                placeholderTextColor={PlatformColor('placeholderText')}
+                placeholderTextColor={platformColor('placeholderText')}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -148,7 +144,7 @@ export default function SignInScreen() {
                   paddingVertical: 16,
                   paddingHorizontal: 12,
                   fontSize: 16,
-                  color: PlatformColor('label'),
+                  color: platformColor('label'),
                 }}
               />
             </View>
@@ -160,7 +156,7 @@ export default function SignInScreen() {
               style={{
                 fontSize: 14,
                 fontWeight: '600',
-                color: PlatformColor('label'),
+                color: platformColor('label'),
                 marginBottom: 8,
               }}
             >
@@ -170,17 +166,17 @@ export default function SignInScreen() {
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
-                backgroundColor: PlatformColor('secondarySystemBackground'),
+                backgroundColor: platformColor('secondarySystemBackground'),
                 borderRadius: 12,
                 paddingHorizontal: 16,
               }}
             >
-              <Image source="sf:lock.fill" style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel') as unknown as string} />
+              <AppIcon name="lock.fill" size={18} color={platformColor('secondaryLabel')} />
               <TextInput
                 value={password}
                 onChangeText={setPassword}
                 placeholder="Your password"
-                placeholderTextColor={PlatformColor('placeholderText')}
+                placeholderTextColor={platformColor('placeholderText')}
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -190,11 +186,11 @@ export default function SignInScreen() {
                   paddingVertical: 16,
                   paddingHorizontal: 12,
                   fontSize: 16,
-                  color: PlatformColor('label'),
+                  color: platformColor('label'),
                 }}
               />
               <Pressable onPress={() => setShowPassword(!showPassword)}>
-                <Image source={`sf:${showPassword ? 'eye.slash.fill' : 'eye.fill'}`} style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel') as unknown as string} />
+                <AppIcon name={showPassword ? 'eye.slash.fill' : 'eye.fill'} size={18} color={platformColor('secondaryLabel')} />
               </Pressable>
             </View>
           </View>
@@ -204,7 +200,7 @@ export default function SignInScreen() {
             onPress={handleSignIn}
             disabled={isLoading}
             style={{
-              backgroundColor: PlatformColor('systemBlue'),
+              backgroundColor: platformColor('systemBlue'),
               borderRadius: 12,
               paddingVertical: 16,
               alignItems: 'center',
@@ -223,11 +219,11 @@ export default function SignInScreen() {
 
           {/* Sign Up Link */}
           <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 16 }}>
-            <Text style={{ color: PlatformColor('secondaryLabel'), fontSize: 15 }}>
+            <Text style={{ color: platformColor('secondaryLabel'), fontSize: 15 }}>
               Don&apos;t have an account?{' '}
             </Text>
             <Pressable onPress={goToSignUp}>
-              <Text style={{ color: PlatformColor('systemBlue'), fontSize: 15, fontWeight: '600' }}>
+              <Text style={{ color: platformColor('systemBlue'), fontSize: 15, fontWeight: '600' }}>
                 Sign Up
               </Text>
             </Pressable>
@@ -239,7 +235,7 @@ export default function SignInScreen() {
           onPress={() => router.back()}
           style={{ alignItems: 'center', marginTop: 32 }}
         >
-          <Text style={{ color: PlatformColor('secondaryLabel'), fontSize: 15 }}>
+          <Text style={{ color: platformColor('secondaryLabel'), fontSize: 15 }}>
             Cancel
           </Text>
         </Pressable>

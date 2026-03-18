@@ -3,7 +3,8 @@
  * Shows overall pollen level, dominant allergen, individual readings, and UV index.
  */
 
-import { View, Text, PlatformColor } from 'react-native';
+import { View, Text } from 'react-native';
+import { platformColor } from '@/lib/platformColors';
 import { usePollen, getDataStatus } from '@/lib/hooks/useDataFetching';
 import { refreshIntervals } from '@/lib/api';
 import { DashboardCard } from '../DashboardCard';
@@ -26,13 +27,13 @@ function PollenBar({ label, value }: { label: string; value: number | null }) {
 
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginVertical: 3 }}>
-      <Text style={{ fontSize: 12, color: PlatformColor('secondaryLabel'), width: 64 }}>
+      <Text style={{ fontSize: 12, color: platformColor('secondaryLabel'), width: 64 }}>
         {label}
       </Text>
       <View style={{ flex: 1, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.06)' }}>
         <View style={{ height: 6, borderRadius: 3, backgroundColor: color, width: `${barWidth}%` }} />
       </View>
-      <Text style={{ fontSize: 11, fontVariant: ['tabular-nums'], color: PlatformColor('secondaryLabel'), width: 28, textAlign: 'right' }}>
+      <Text style={{ fontSize: 11, fontVariant: ['tabular-nums'], color: platformColor('secondaryLabel'), width: 28, textAlign: 'right' }}>
         {value !== null ? Math.round(value) : '—'}
       </Text>
     </View>
@@ -61,7 +62,7 @@ export function PollenWidget() {
   if (isError || !pollen) {
     return (
       <DashboardCard title="Pollen & Allergy" sfSymbol="leaf.fill" status="error" onRefresh={() => refetch()}>
-        <Text style={{ fontSize: 13, color: PlatformColor('secondaryLabel') }}>
+        <Text style={{ fontSize: 13, color: platformColor('secondaryLabel') }}>
           Unable to load pollen data
         </Text>
       </DashboardCard>
@@ -98,7 +99,7 @@ export function PollenWidget() {
             paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6,
             borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.15)',
           }}>
-            <Text style={{ fontSize: 12, fontWeight: '600', color: PlatformColor('label') }}>
+            <Text style={{ fontSize: 12, fontWeight: '600', color: platformColor('label') }}>
               UV {Math.round(pollen.uvIndex)}
             </Text>
           </View>
@@ -116,7 +117,7 @@ export function PollenWidget() {
         flexDirection: 'row', alignItems: 'center', gap: 6,
         marginTop: 10, paddingTop: 8, borderTopWidth: 0.5, borderTopColor: Brand.separator,
       }}>
-        <Text style={{ fontSize: 10, color: PlatformColor('secondaryLabel') }}>grains/m³:</Text>
+        <Text style={{ fontSize: 10, color: platformColor('secondaryLabel') }}>grains/m³:</Text>
         {(['low', 'moderate', 'high', 'very_high'] as const).map(level => (
           <View key={level} style={{
             paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4,

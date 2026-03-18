@@ -3,9 +3,10 @@
  * Temperature (F/C) and Distance (mi/km) preferences
  */
 
-import { View, Text, Pressable, PlatformColor } from 'react-native';
-import { Image } from 'expo-image';
+import { View, Text, Pressable } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import { AppIcon } from '@/components/AppIcon';
+import { platformColor } from '@/lib/platformColors';
 import { useSettings, type Settings } from '../../../lib/contexts';
 
 interface OptionProps {
@@ -18,9 +19,7 @@ function Option({ label, isSelected, onSelect }: OptionProps) {
   return (
     <Pressable
       onPress={() => {
-        if (process.env.EXPO_OS === 'ios') {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         onSelect();
       }}
       style={{
@@ -29,12 +28,12 @@ function Option({ label, isSelected, onSelect }: OptionProps) {
         justifyContent: 'space-between',
         padding: 16,
         borderBottomWidth: 0.5,
-        borderBottomColor: PlatformColor('separator'),
+        borderBottomColor: platformColor('separator'),
       }}
     >
-      <Text style={{ fontSize: 17, color: PlatformColor('label') }}>{label}</Text>
+      <Text style={{ fontSize: 17, color: platformColor('label') }}>{label}</Text>
       {isSelected && (
-        <Image source="sf:checkmark" style={{ width: 20, height: 20 }} tintColor={'#e69c3a'} />
+        <AppIcon name="checkmark" size={20} color="#e69c3a" />
       )}
     </Pressable>
   );
@@ -50,7 +49,7 @@ function SectionHeader({ title }: { title: string }) {
         fontSize: 12,
         fontWeight: '600',
         letterSpacing: 0.5,
-        color: PlatformColor('secondaryLabel'),
+        color: platformColor('secondaryLabel'),
       }}
     >
       {title}
@@ -114,7 +113,7 @@ export default function UnitsScreen() {
           marginTop: 16,
           marginHorizontal: 4,
           fontSize: 13,
-          color: PlatformColor('secondaryLabel'),
+          color: platformColor('secondaryLabel'),
           lineHeight: 18,
         }}
       >

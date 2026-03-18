@@ -1,4 +1,5 @@
-import { View, Text, PlatformColor } from 'react-native'
+import { View, Text } from 'react-native'
+import { platformColor } from '@/lib/platformColors'
 import { ToolCardBase } from './ToolCardBase'
 import { unwrapData, formatCount, type ToolStatus } from './utils'
 
@@ -33,7 +34,7 @@ export function TrafficEventsCard({ output }: { output: unknown }) {
   if (!events || events.length === 0) {
     return (
       <ToolCardBase title="Traffic" icon="car.fill" status="normal">
-        <Text selectable style={{ fontSize: 12, color: PlatformColor('secondaryLabel') }}>
+        <Text selectable style={{ fontSize: 12, color: platformColor('secondaryLabel') }}>
           Clear roads — no active incidents.
         </Text>
       </ToolCardBase>
@@ -46,10 +47,10 @@ export function TrafficEventsCard({ output }: { output: unknown }) {
 
   return (
     <ToolCardBase title="Traffic" icon="car.fill" status={severityStatus(events)}>
-      <Text selectable style={{ fontSize: 12, fontWeight: '600', color: PlatformColor('label') }}>
+      <Text selectable style={{ fontSize: 12, fontWeight: '600', color: platformColor('label') }}>
         {formatCount(events.length, 'event')} active
       </Text>
-      <Text selectable style={{ fontSize: 11, color: PlatformColor('secondaryLabel') }}>
+      <Text selectable style={{ fontSize: 11, color: platformColor('secondaryLabel') }}>
         {incidents > 0 ? `${formatCount(incidents, 'incident')}` : 'No incidents'}
         {construction > 0 ? ` · ${formatCount(construction, 'construction')}` : ''}
         {closures > 0 ? ` · ${formatCount(closures, 'closure')}` : ''}
@@ -57,11 +58,11 @@ export function TrafficEventsCard({ output }: { output: unknown }) {
       <View style={{ gap: 6, marginTop: 6 }}>
         {events.slice(0, 3).map((event) => (
           <View key={event.id} style={{ gap: 2 }}>
-            <Text selectable style={{ fontSize: 12, fontWeight: '600', color: PlatformColor('label') }}>
+            <Text selectable style={{ fontSize: 12, fontWeight: '600', color: platformColor('label') }}>
               {event.headline || event.description || 'Traffic event'}
             </Text>
             {event.roadway ? (
-              <Text selectable style={{ fontSize: 11, color: PlatformColor('secondaryLabel') }}>
+              <Text selectable style={{ fontSize: 11, color: platformColor('secondaryLabel') }}>
                 {event.roadway}
               </Text>
             ) : null}

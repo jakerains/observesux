@@ -3,9 +3,11 @@
  */
 
 import { useState, useMemo } from 'react';
-import { View, Pressable, Text, PlatformColor, Linking } from 'react-native';
+import { View, Pressable, Text, Linking } from 'react-native';
 import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
+import { AppIcon } from '@/components/AppIcon';
+import { platformColor } from '@/lib/platformColors';
 import { useLocalEats, getDataStatus } from '@/lib/hooks/useDataFetching';
 import { refreshIntervals } from '@/lib/api';
 import { DashboardCard } from '../DashboardCard';
@@ -17,30 +19,15 @@ function StarRating({ rating }: { rating: number }) {
   for (let i = 1; i <= 5; i++) {
     if (rating >= i) {
       stars.push(
-        <Image
-          key={i}
-          source="sf:star.fill"
-          style={{ width: 12, height: 12 }}
-          tintColor="#f59e0b"
-        />
+        <AppIcon key={i} name="star.fill" size={12} color="#f59e0b" />
       );
     } else if (rating >= i - 0.5) {
       stars.push(
-        <Image
-          key={i}
-          source="sf:star.leadinghalf.filled"
-          style={{ width: 12, height: 12 }}
-          tintColor="#f59e0b"
-        />
+        <AppIcon key={i} name="star.leadinghalf.filled" size={12} color="#f59e0b" />
       );
     } else {
       stars.push(
-        <Image
-          key={i}
-          source="sf:star"
-          style={{ width: 12, height: 12 }}
-          tintColor={PlatformColor('tertiaryLabel') as unknown as string}
-        />
+        <AppIcon key={i} name="star" size={12} color={platformColor('tertiaryLabel')} />
       );
     }
   }
@@ -51,9 +38,7 @@ function RestaurantRow({ restaurant }: { restaurant: LocalEatsRestaurant }) {
   return (
     <Pressable
       onPress={() => {
-        if (process.env.EXPO_OS === 'ios') {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         Linking.openURL(restaurant.yelpUrl);
       }}
       style={{
@@ -61,7 +46,7 @@ function RestaurantRow({ restaurant }: { restaurant: LocalEatsRestaurant }) {
         alignItems: 'center',
         paddingVertical: 10,
         borderBottomWidth: 0.5,
-        borderBottomColor: PlatformColor('separator'),
+        borderBottomColor: platformColor('separator'),
         gap: 10,
       }}
     >
@@ -73,16 +58,16 @@ function RestaurantRow({ restaurant }: { restaurant: LocalEatsRestaurant }) {
         />
       ) : null}
       <View style={{ flex: 1 }}>
-        <Text numberOfLines={1} style={{ fontWeight: '600', color: PlatformColor('label') }}>
+        <Text numberOfLines={1} style={{ fontWeight: '600', color: platformColor('label') }}>
           {restaurant.name}
         </Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 }}>
           <StarRating rating={restaurant.rating} />
-          <Text style={{ fontSize: 11, color: PlatformColor('secondaryLabel') }}>
+          <Text style={{ fontSize: 11, color: platformColor('secondaryLabel') }}>
             {restaurant.reviewCount}
           </Text>
           {restaurant.price && (
-            <Text style={{ fontSize: 11, color: PlatformColor('secondaryLabel') }}>
+            <Text style={{ fontSize: 11, color: platformColor('secondaryLabel') }}>
               · {restaurant.price}
             </Text>
           )}
@@ -95,10 +80,10 @@ function RestaurantRow({ restaurant }: { restaurant: LocalEatsRestaurant }) {
                 paddingHorizontal: 6,
                 paddingVertical: 2,
                 borderRadius: 8,
-                backgroundColor: PlatformColor('tertiarySystemFill'),
+                backgroundColor: platformColor('tertiarySystemFill'),
               }}
             >
-              <Text style={{ fontSize: 10, color: PlatformColor('secondaryLabel') }}>
+              <Text style={{ fontSize: 10, color: platformColor('secondaryLabel') }}>
                 {cat.title}
               </Text>
             </View>
@@ -119,10 +104,12 @@ export function LocalEatsWidget() {
   const status = getDataStatus(fetchedAt, refreshIntervals.localEats, isLoading, isError);
 
   // Extract top categories
+  const restaurants = eatsData?.restaurants;
+
   const topCategories = useMemo(() => {
-    if (!eatsData?.restaurants) return [];
+    if (!restaurants) return [];
     const counts = new Map<string, { alias: string; title: string; count: number }>();
-    for (const r of eatsData.restaurants) {
+    for (const r of restaurants) {
       for (const cat of r.categories) {
         const existing = counts.get(cat.alias);
         if (existing) {
@@ -135,16 +122,16 @@ export function LocalEatsWidget() {
     return Array.from(counts.values())
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
-  }, [eatsData?.restaurants]);
+  }, [restaurants]);
 
   // Filter client-side
   const filteredRestaurants = useMemo(() => {
-    if (!eatsData?.restaurants) return [];
-    if (!selectedCategory) return eatsData.restaurants;
-    return eatsData.restaurants.filter((r) =>
+    if (!restaurants) return [];
+    if (!selectedCategory) return restaurants;
+    return restaurants.filter((r) =>
       r.categories.some((c) => c.alias === selectedCategory)
     );
-  }, [eatsData?.restaurants, selectedCategory]);
+  }, [restaurants, selectedCategory]);
 
   if (isLoading) {
     return (
@@ -162,7 +149,7 @@ export function LocalEatsWidget() {
         status="error"
         onRefresh={() => refetch()}
       >
-        <Text style={{ color: PlatformColor('secondaryLabel') }}>
+        <Text style={{ color: platformColor('secondaryLabel') }}>
           Unable to load restaurant data
         </Text>
       </DashboardCard>
@@ -182,9 +169,7 @@ export function LocalEatsWidget() {
         <View style={{ flexDirection: 'row', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
           <Pressable
             onPress={() => {
-              if (process.env.EXPO_OS === 'ios') {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setSelectedCategory(null);
             }}
             style={{
@@ -193,14 +178,14 @@ export function LocalEatsWidget() {
               borderRadius: 16,
               backgroundColor: selectedCategory === null
                 ? '#f97316'
-                : PlatformColor('tertiarySystemFill'),
+                : platformColor('tertiarySystemFill'),
             }}
           >
             <Text
               style={{
                 fontSize: 12,
                 fontWeight: selectedCategory === null ? '600' : '400',
-                color: selectedCategory === null ? '#fff' : PlatformColor('label'),
+                color: selectedCategory === null ? '#fff' : platformColor('label'),
               }}
             >
               All
@@ -210,9 +195,7 @@ export function LocalEatsWidget() {
             <Pressable
               key={cat.alias}
               onPress={() => {
-                if (process.env.EXPO_OS === 'ios') {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 setSelectedCategory(selectedCategory === cat.alias ? null : cat.alias);
               }}
               style={{
@@ -221,14 +204,14 @@ export function LocalEatsWidget() {
                 borderRadius: 16,
                 backgroundColor: selectedCategory === cat.alias
                   ? '#f97316'
-                  : PlatformColor('tertiarySystemFill'),
+                  : platformColor('tertiarySystemFill'),
               }}
             >
               <Text
                 style={{
                   fontSize: 12,
                   fontWeight: selectedCategory === cat.alias ? '600' : '400',
-                  color: selectedCategory === cat.alias ? '#fff' : PlatformColor('label'),
+                  color: selectedCategory === cat.alias ? '#fff' : platformColor('label'),
                 }}
               >
                 {cat.title}
@@ -241,12 +224,8 @@ export function LocalEatsWidget() {
       {/* Restaurant List */}
       {filteredRestaurants.length === 0 ? (
         <View style={{ alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-          <Image
-            source="sf:fork.knife"
-            style={{ width: 32, height: 32 }}
-            tintColor={PlatformColor('tertiaryLabel') as unknown as string}
-          />
-          <Text style={{ marginTop: 8, color: PlatformColor('secondaryLabel') }}>
+          <AppIcon name="fork.knife" size={32} color={platformColor('tertiaryLabel')} />
+          <Text style={{ marginTop: 8, color: platformColor('secondaryLabel') }}>
             No restaurants found
           </Text>
         </View>
@@ -263,7 +242,7 @@ export function LocalEatsWidget() {
         onPress={() => Linking.openURL('https://www.yelp.com/search?find_desc=restaurants&find_loc=Sioux+City%2C+IA')}
         style={{ marginTop: 12, alignItems: 'center' }}
       >
-        <Text style={{ fontSize: 11, color: PlatformColor('tertiaryLabel') }}>
+        <Text style={{ fontSize: 11, color: platformColor('tertiaryLabel') }}>
           Powered by Yelp
         </Text>
       </Pressable>

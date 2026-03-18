@@ -2,11 +2,12 @@
  * Weather Alert Detail Modal
  */
 
-import { View, ScrollView, Text, PlatformColor } from 'react-native';
+import { View, ScrollView, Text } from 'react-native';
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Image } from 'expo-image';
 import { format } from 'date-fns';
+import { AppIcon } from '@/components/AppIcon';
+import { platformColor } from '@/lib/platformColors';
 import { useWeatherAlerts } from '@/lib/hooks/useDataFetching';
 import { LoadingSpinner } from '@/components/LoadingState';
 
@@ -39,8 +40,8 @@ export default function AlertDetailScreen() {
         <LoadingSpinner message="Loading alert..." />
       ) : !alert ? (
         <View style={{ flex: 1, backgroundColor: '#120905', justifyContent: 'center', alignItems: 'center' }}>
-          <Image source="sf:exclamationmark.circle" alt="" style={{ width: 64, height: 64 }} tintColor={PlatformColor('tertiaryLabel') as unknown as string} />
-          <Text style={{ marginTop: 16, color: PlatformColor('secondaryLabel') }}>
+          <AppIcon name="exclamationmark.circle" size={64} color={platformColor('tertiaryLabel')} />
+          <Text style={{ marginTop: 16, color: platformColor('secondaryLabel') }}>
             Alert not found
           </Text>
         </View>
@@ -64,11 +65,10 @@ export default function AlertDetailScreen() {
               backgroundColor: severityColors[alert.severity]?.bg || severityColors.Unknown.bg,
             }}
           >
-            <Image
-              source="sf:exclamationmark.triangle.fill"
-              alt=""
-              style={{ width: 20, height: 20 }}
-              tintColor={severityColors[alert.severity]?.text || severityColors.Unknown.text}
+            <AppIcon
+              name="exclamationmark.triangle.fill"
+              size={20}
+              color={severityColors[alert.severity]?.text || severityColors.Unknown.text}
             />
             <Text
               style={{
@@ -82,7 +82,7 @@ export default function AlertDetailScreen() {
           </View>
 
           {/* Headline */}
-          <Text selectable style={{ fontSize: 17, fontWeight: '600', marginBottom: 16, color: PlatformColor('label') }}>
+          <Text selectable style={{ fontSize: 17, fontWeight: '600', marginBottom: 16, color: platformColor('label') }}>
             {alert.headline}
           </Text>
 
@@ -97,20 +97,20 @@ export default function AlertDetailScreen() {
             }}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <Image source="sf:clock" alt="" style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel') as unknown as string} />
+              <AppIcon name="clock" size={18} color={platformColor('secondaryLabel')} />
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 12, color: PlatformColor('secondaryLabel') }}>Onset</Text>
-                <Text style={{ fontWeight: '500', color: PlatformColor('label') }}>
+                <Text style={{ fontSize: 12, color: platformColor('secondaryLabel') }}>Onset</Text>
+                <Text style={{ fontWeight: '500', color: platformColor('label') }}>
                   {format(new Date(alert.onset), 'MMM d, yyyy h:mm a')}
                 </Text>
               </View>
             </View>
-            <View style={{ height: 0.5, backgroundColor: PlatformColor('separator'), marginVertical: 12 }} />
+            <View style={{ height: 0.5, backgroundColor: platformColor('separator'), marginVertical: 12 }} />
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <Image source="sf:timer" alt="" style={{ width: 18, height: 18 }} tintColor={PlatformColor('secondaryLabel') as unknown as string} />
+              <AppIcon name="timer" size={18} color={platformColor('secondaryLabel')} />
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 12, color: PlatformColor('secondaryLabel') }}>Expires</Text>
-                <Text style={{ fontWeight: '500', color: PlatformColor('label') }}>
+                <Text style={{ fontSize: 12, color: platformColor('secondaryLabel') }}>Expires</Text>
+                <Text style={{ fontWeight: '500', color: platformColor('label') }}>
                   {format(new Date(alert.expires), 'MMM d, yyyy h:mm a')}
                 </Text>
               </View>
@@ -120,27 +120,27 @@ export default function AlertDetailScreen() {
           {/* Area */}
           <View style={{ marginBottom: 20 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-              <Image source="sf:location" alt="" style={{ width: 18, height: 18 }} tintColor={'#e69c3a'} />
-              <Text style={{ fontSize: 15, fontWeight: '600', color: PlatformColor('label') }}>Affected Area</Text>
+              <AppIcon name="location" size={18} color="#e69c3a" />
+              <Text style={{ fontSize: 15, fontWeight: '600', color: platformColor('label') }}>Affected Area</Text>
             </View>
-            <Text selectable style={{ color: PlatformColor('secondaryLabel'), lineHeight: 20 }}>{alert.areaDesc}</Text>
+            <Text selectable style={{ color: platformColor('secondaryLabel'), lineHeight: 20 }}>{alert.areaDesc}</Text>
           </View>
 
           {/* Description */}
           <View style={{ marginBottom: 20 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-              <Image source="sf:doc.text" alt="" style={{ width: 18, height: 18 }} tintColor={'#e69c3a'} />
-              <Text style={{ fontSize: 15, fontWeight: '600', color: PlatformColor('label') }}>Description</Text>
+              <AppIcon name="doc.text" size={18} color="#e69c3a" />
+              <Text style={{ fontSize: 15, fontWeight: '600', color: platformColor('label') }}>Description</Text>
             </View>
-            <Text selectable style={{ color: PlatformColor('secondaryLabel'), lineHeight: 22 }}>{alert.description}</Text>
+            <Text selectable style={{ color: platformColor('secondaryLabel'), lineHeight: 22 }}>{alert.description}</Text>
           </View>
 
           {/* Instructions */}
           {alert.instruction && (
             <View style={{ marginBottom: 20 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                <Image source="sf:shield.checkered" alt="" style={{ width: 18, height: 18 }} tintColor={'#e69c3a'} />
-                <Text style={{ fontSize: 15, fontWeight: '600', color: PlatformColor('label') }}>Safety Instructions</Text>
+                <AppIcon name="shield.checkered" size={18} color="#e69c3a" />
+                <Text style={{ fontSize: 15, fontWeight: '600', color: platformColor('label') }}>Safety Instructions</Text>
               </View>
               <View
                 style={{
@@ -158,14 +158,14 @@ export default function AlertDetailScreen() {
           )}
 
           {/* Meta Info */}
-          <View style={{ paddingTop: 16, borderTopWidth: 0.5, borderTopColor: PlatformColor('separator') }}>
+          <View style={{ paddingTop: 16, borderTopWidth: 0.5, borderTopColor: platformColor('separator') }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-              <Text style={{ fontSize: 12, color: PlatformColor('secondaryLabel') }}>Urgency:</Text>
-              <Text style={{ fontSize: 12, fontWeight: '500', color: PlatformColor('secondaryLabel') }}>{alert.urgency}</Text>
+              <Text style={{ fontSize: 12, color: platformColor('secondaryLabel') }}>Urgency:</Text>
+              <Text style={{ fontSize: 12, fontWeight: '500', color: platformColor('secondaryLabel') }}>{alert.urgency}</Text>
             </View>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-              <Text style={{ fontSize: 12, color: PlatformColor('secondaryLabel') }}>Certainty:</Text>
-              <Text style={{ fontSize: 12, fontWeight: '500', color: PlatformColor('secondaryLabel') }}>{alert.certainty}</Text>
+              <Text style={{ fontSize: 12, color: platformColor('secondaryLabel') }}>Certainty:</Text>
+              <Text style={{ fontSize: 12, fontWeight: '500', color: platformColor('secondaryLabel') }}>{alert.certainty}</Text>
             </View>
           </View>
         </ScrollView>

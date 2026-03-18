@@ -3,10 +3,11 @@
  * Shows the latest AI-generated community digest summary
  */
 
-import { View, Text, Pressable, PlatformColor } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
+import { AppIcon } from '@/components/AppIcon';
+import { platformColor } from '@/lib/platformColors';
 import { DashboardCard } from '../DashboardCard';
 import { CardSkeleton } from '../LoadingState';
 import { MarkdownText } from '../MarkdownText';
@@ -67,9 +68,7 @@ export function DigestWidget() {
 
   const handlePress = () => {
     if (!digest?.id) return;
-    if (process.env.EXPO_OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push(`/digest/${digest.id}`);
   };
 
@@ -83,16 +82,12 @@ export function DigestWidget() {
     >
       {!digest ? (
         <View style={{ alignItems: 'center', paddingVertical: 16 }}>
-          <Image
-            source="sf:newspaper"
-            style={{ width: 40, height: 40 }}
-            tintColor={PlatformColor('tertiaryLabel') as unknown as string}
-          />
+          <AppIcon name="newspaper" size={40} color={platformColor('tertiaryLabel')} />
           <Text
             style={{
               marginTop: 12,
               fontSize: 14,
-              color: PlatformColor('secondaryLabel'),
+              color: platformColor('secondaryLabel'),
               textAlign: 'center',
             }}
           >
@@ -108,22 +103,22 @@ export function DigestWidget() {
                 flexDirection: 'row',
                 alignItems: 'center',
                 gap: 4,
-                backgroundColor: PlatformColor('tertiarySystemFill'),
+                backgroundColor: platformColor('tertiarySystemFill'),
                 paddingHorizontal: 8,
                 paddingVertical: 4,
                 borderRadius: 6,
               }}
             >
-              <Image
-                source={`sf:${edition ? editionIcons[edition] : 'newspaper.fill'}`}
-                style={{ width: 12, height: 12 }}
-                tintColor={PlatformColor('secondaryLabel') as unknown as string}
+              <AppIcon
+                name={edition ? editionIcons[edition] : 'newspaper.fill'}
+                size={12}
+                color={platformColor('secondaryLabel')}
               />
               <Text
                 style={{
                   fontSize: 12,
                   fontWeight: '500',
-                  color: PlatformColor('secondaryLabel'),
+                  color: platformColor('secondaryLabel'),
                 }}
               >
                 {edition ? editionLabels[edition] : 'Digest'}
@@ -132,7 +127,7 @@ export function DigestWidget() {
             <Text
               style={{
                 fontSize: 12,
-                color: PlatformColor('tertiaryLabel'),
+                color: platformColor('tertiaryLabel'),
               }}
             >
               {formatDigestDate(digest.date, digest.createdAt)}
@@ -144,7 +139,7 @@ export function DigestWidget() {
             style={{
               fontSize: 14,
               lineHeight: 20,
-              color: PlatformColor('label'),
+              color: platformColor('label'),
             }}
             numberOfLines={4}
           >
@@ -161,7 +156,7 @@ export function DigestWidget() {
               gap: 4,
               paddingVertical: 8,
               paddingHorizontal: 12,
-              backgroundColor: PlatformColor('tertiarySystemFill'),
+              backgroundColor: platformColor('tertiarySystemFill'),
               borderRadius: 8,
             }}
           >
@@ -174,11 +169,7 @@ export function DigestWidget() {
             >
               Read Full Digest
             </Text>
-            <Image
-              source="sf:arrow.right"
-              style={{ width: 12, height: 12 }}
-              tintColor={'#e69c3a'}
-            />
+            <AppIcon name="arrow.right" size={12} color="#e69c3a" />
           </Pressable>
         </View>
       )}

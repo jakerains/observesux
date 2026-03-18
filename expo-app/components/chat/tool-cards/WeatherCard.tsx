@@ -1,4 +1,5 @@
-import { View, Text, PlatformColor } from 'react-native'
+import { View, Text } from 'react-native'
+import { platformColor } from '@/lib/platformColors'
 import { ToolCardBase } from './ToolCardBase'
 import { unwrapData, formatMaybeNumber } from './utils'
 
@@ -40,19 +41,19 @@ export function WeatherCard({ output }: { output: unknown }) {
   return (
     <ToolCardBase title="Weather" icon="cloud.sun.fill" status={hasWindGustWarning ? 'attention' : 'normal'}>
       <View style={{ gap: 6 }}>
-        <Text selectable style={{ fontSize: 18, fontWeight: '600', color: PlatformColor('label') }}>
+        <Text selectable style={{ fontSize: 18, fontWeight: '600', color: platformColor('label') }}>
           {formatMaybeNumber(weather.temperature, '°')}
           {unit} · {weather.conditions || 'Unknown'}
         </Text>
-        <Text selectable style={{ fontSize: 12, color: PlatformColor('secondaryLabel') }}>
+        <Text selectable style={{ fontSize: 12, color: platformColor('secondaryLabel') }}>
           Feels like {formatMaybeNumber(feelsLike, '°')}
           {unit}
         </Text>
-        <Text selectable style={{ fontSize: 12, color: PlatformColor('secondaryLabel') }}>
+        <Text selectable style={{ fontSize: 12, color: platformColor('secondaryLabel') }}>
           Wind {formatMaybeNumber(weather.windSpeed, ' mph')}
           {weather.windDirection ? ` ${weather.windDirection}` : ''} · Humidity {formatMaybeNumber(weather.humidity, '%')}
         </Text>
-        <Text selectable style={{ fontSize: 12, color: PlatformColor('secondaryLabel') }}>
+        <Text selectable style={{ fontSize: 12, color: platformColor('secondaryLabel') }}>
           Visibility {formatMaybeNumber(weather.visibility, ' mi')}
         </Text>
       </View>

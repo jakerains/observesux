@@ -29,9 +29,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
 
   const onRefresh = useCallback(async () => {
-    if (process.env.EXPO_OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setRefreshing(true);
     await queryClient.invalidateQueries();
     setTimeout(() => setRefreshing(false), 500);
