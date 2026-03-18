@@ -821,37 +821,99 @@ export function CouncilIngestPanel() {
           </div>
 
           {/* Live progress log */}
-          {(ingesting || retryingVideoId || isUploading) && progressLog.length > 0 && (
-            <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20 overflow-hidden">
-              <div className="flex items-center gap-3 mb-3">
-                <Loader2 className="h-5 w-5 animate-spin text-blue-500 shrink-0" />
-                <span className="font-medium text-blue-700 dark:text-blue-400 truncate">
-                  {latestProgress?.message || 'Processing...'}
-                </span>
-              </div>
-              <div className="max-h-[200px] overflow-y-auto">
-                <div className="text-xs text-blue-600 dark:text-blue-400 space-y-1 font-mono">
-                  {progressLog.map((event, i) => {
-                    const Icon = stepIcons[event.step] || FileText
+          {(ingesting || retryingVideoId || isUploading) && progressLog.length > 0 && (() => {
+            // Extract the latest embedding progress for the progress bar
+            const latestEmbedding = [...progressLog].reverse().find(
+              e => e.step === 'embeddings' && e.embeddingsDone !== undefined
+            )
+            const embeddingsDone = (latestEmbedding?.embeddingsDone as number) || 0
+            const embeddingsTotal = (latestEmbedding?.embeddingsTotal as number) || 0
+            const embeddingPct = embeddingsTotal > 0 ? Math.round((embeddingsDone / embeddingsTotal) * 100) : 0
+            const isEmbedding = latestProgress?.step === 'embeddings'
+
+            // Determine which high-level step we're on
+            const stepOrder = ['transcript', 'chunk', 'recap', 'embeddings', 'store', 'done']
+            const currentStepName = latestProgress?.step || ''
+            const currentStepIdx = stepOrder.indexOf(currentStepName)
+
+            return (
+              <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20 overflow-hidden space-y-3">
+                {/* Current step headline */}
+                <div className="flex items-center gap-3">
+                  <Loader2 className="h-5 w-5 animate-spin text-blue-500 shrink-0" />
+                  <span className="font-medium text-blue-700 dark:text-blue-400 truncate">
+                    {latestProgress?.message || 'Processing...'}
+                  </span>
+                </div>
+
+                {/* Pipeline step indicators */}
+                <div className="flex items-center gap-1">
+                  {stepOrder.slice(0, -1).map((step, i) => {
+                    const isDone = i < currentStepIdx || currentStepName === 'done'
+                    const isCurrent = i === currentStepIdx && currentStepName !== 'done'
                     return (
-                      <p key={i} className={cn(
-                        'flex items-center gap-2',
-                        event.step === 'error' && 'text-red-500',
-                        event.step === 'done' && 'text-green-500',
-                      )}>
-                        <Icon className={cn(
-                          'h-3 w-3 shrink-0',
-                          event.step === 'embeddings' && i === progressLog.length - 1 && 'animate-spin'
+                      <div key={step} className="flex items-center gap-1 flex-1">
+                        <div className={cn(
+                          'h-1.5 rounded-full flex-1 transition-all',
+                          isDone ? 'bg-blue-500' :
+                          isCurrent ? 'bg-blue-500/50 animate-pulse' :
+                          'bg-blue-500/15'
                         )} />
-                        <span className="break-all">{event.message}</span>
-                      </p>
+                      </div>
                     )
                   })}
-                  <div ref={logEndRef} />
                 </div>
+                <div className="flex justify-between text-[10px] text-blue-600/60 dark:text-blue-400/60">
+                  <span>Transcript</span>
+                  <span>Chunk</span>
+                  <span>Recap</span>
+                  <span>Embed</span>
+                  <span>Store</span>
+                </div>
+
+                {/* Embedding progress bar */}
+                {isEmbedding && embeddingsTotal > 0 && (
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs text-blue-600 dark:text-blue-400">
+                      <span>Embedding chunks</span>
+                      <span>{embeddingsDone}/{embeddingsTotal} ({embeddingPct}%)</span>
+                    </div>
+                    <div className="h-2 bg-blue-500/15 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-blue-500 rounded-full transition-all duration-300"
+                        style={{ width: `${embeddingPct}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Detailed log (collapsed by default) */}
+                <details className="text-xs">
+                  <summary className="cursor-pointer text-blue-600/60 dark:text-blue-400/60 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    Show detailed log ({progressLog.length} events)
+                  </summary>
+                  <div className="max-h-[150px] overflow-y-auto mt-2">
+                    <div className="text-blue-600 dark:text-blue-400 space-y-1 font-mono">
+                      {progressLog.map((event, i) => {
+                        const Icon = stepIcons[event.step] || FileText
+                        return (
+                          <p key={i} className={cn(
+                            'flex items-center gap-2',
+                            event.step === 'error' && 'text-red-500',
+                            event.step === 'done' && 'text-green-500',
+                          )}>
+                            <Icon className="h-3 w-3 shrink-0" />
+                            <span className="break-all">{event.message}</span>
+                          </p>
+                        )
+                      })}
+                      <div ref={logEndRef} />
+                    </div>
+                  </div>
+                </details>
               </div>
-            </div>
-          )}
+            )
+          })()}
 
           {/* Result */}
           {result && !ingesting && !isUploading && (
