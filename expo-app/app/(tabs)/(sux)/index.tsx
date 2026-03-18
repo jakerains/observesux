@@ -373,22 +373,12 @@ export default function SuxScreen() {
         }
       };
 
-      if (Platform.OS === 'ios' && response.body?.getReader) {
-        // iOS: stream SSE events incrementally via ReadableStream
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          const chunk = decoder.decode(value, { stream: true });
-          processSseChunk(chunk);
-        }
-      } else {
-        // Android: ReadableStream is unreliable — read full response then parse SSE
-        const fullText = await response.text();
-        processSseChunk(fullText + '\n\n');
-      }
+      // Always read full response — React Native's ReadableStream polyfill
+      // is unreliable for large SSE payloads (tool results can be 2-5KB+).
+      // Text deltas stream fine but larger events get dropped/corrupted.
+      setThinkingStatus('Searching...');
+      const fullText = await response.text();
+      processSseChunk(fullText + '\n\n');
 
       // Update final message
       if (assistantContent.trim()) {
