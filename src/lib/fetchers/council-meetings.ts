@@ -457,10 +457,11 @@ For the article field: structure it with clear sections using markdown headings 
 
 If a section has no entries, use an empty array. Focus on substance over procedure.`
 
-  // Staged summarization only for exceptionally long transcripts (>600K chars / ~150K tokens)
-  if (rawTranscript.length > 600000) {
-    console.log('[Council Recap] Transcript exceeds 600K chars, using staged summarization')
-    const sectionSize = 400000
+  // Staged summarization for long transcripts (>200K chars / ~50K tokens).
+  // Splitting into sections ensures each AI call completes within Vercel's timeout.
+  if (rawTranscript.length > 200000) {
+    console.log(`[Council Recap] Transcript is ${(rawTranscript.length / 1000).toFixed(0)}K chars, using staged summarization`)
+    const sectionSize = 150000
     const sections: string[] = []
 
     for (let i = 0; i < rawTranscript.length; i += sectionSize) {

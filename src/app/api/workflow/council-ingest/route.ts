@@ -637,7 +637,9 @@ export async function POST(request: NextRequest) {
               return
             }
 
-            await updateMeetingStatus(meeting.id, 'processing')
+            // Keep status as 'draft' (not 'processing') so if recap times out,
+            // the meeting isn't stuck — the admin can see it and retry.
+            await updateMeetingStatus(meeting.id, 'draft')
 
             sendEvent(controller, encoder, 'progress', {
               step: 'recap',
@@ -712,9 +714,11 @@ export async function POST(request: NextRequest) {
           console.error(`[Council Ingest] Failed to ${recapOnly ? 'regenerate recap for' : 'retry'} ${videoId}:`, error)
           const existing = await getMeetingByVideoId(videoId)
           if (existing) {
+            // For recap_only failures, set to draft (transcript is still good)
+            // For full reprocess failures, set to failed
             await updateMeetingStatus(
               existing.id,
-              'failed',
+              recapOnly && existing.transcriptRaw ? 'draft' : 'failed',
               error instanceof Error ? error.message : 'Unknown error'
             )
           }
