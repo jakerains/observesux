@@ -832,7 +832,7 @@ export function CouncilIngestPanel() {
             const isEmbedding = latestProgress?.step === 'embeddings'
 
             // Determine which high-level step we're on
-            const stepOrder = ['transcript', 'chunk', 'recap', 'embeddings', 'store', 'done']
+            const stepOrder = ['transcript', 'chunk', 'embeddings', 'store', 'recap', 'done']
             const currentStepName = latestProgress?.step || ''
             const currentStepIdx = stepOrder.indexOf(currentStepName)
 
@@ -866,9 +866,9 @@ export function CouncilIngestPanel() {
                 <div className="flex justify-between text-[10px] text-blue-600/60 dark:text-blue-400/60">
                   <span>Transcript</span>
                   <span>Chunk</span>
-                  <span>Recap</span>
                   <span>Embed</span>
-                  <span>Store</span>
+                  <span>Save</span>
+                  <span>Recap</span>
                 </div>
 
                 {/* Embedding progress bar */}
@@ -1373,9 +1373,9 @@ export function CouncilIngestPanel() {
                             </Button>
                           ) : (
                             <>
-                              {meeting.status === 'completed' && meeting.transcriptRaw && (
+                              {meeting.transcriptRaw && (
                                 <Button
-                                  variant="outline"
+                                  variant={meeting.recap ? 'outline' : 'default'}
                                   size="sm"
                                   className="h-7 gap-1.5 text-xs"
                                   disabled={ingesting || retryingVideoId !== null}
@@ -1385,7 +1385,7 @@ export function CouncilIngestPanel() {
                                   }}
                                 >
                                   <Sparkles className="h-3 w-3" />
-                                  Regenerate Recap
+                                  {meeting.recap ? 'Regenerate Recap' : 'Generate Recap'}
                                 </Button>
                               )}
                               <Button

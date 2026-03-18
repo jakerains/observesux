@@ -23,7 +23,7 @@ import {
   unpublishMeeting,
 } from '@/lib/db/council-meetings'
 import { generateEmbedding } from '@/lib/ai/embeddings'
-import { isDatabaseConfigured } from '@/lib/db'
+import { isDatabaseConfigured, sql } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth/server'
 import { getDeviceTokensForType, hasDeviceAlertBeenTriggered, recordDeviceTriggeredAlert } from '@/lib/db/device-push'
 import { sendExpoPushToTokens, type ExpoPushPayload } from '@/lib/push/send-expo'
@@ -139,24 +139,10 @@ async function processVideo(
     chunkCount: chunks.length,
   })
 
-  // Generate recap
-  sendEvent(controller, encoder, 'progress', {
-    step: 'recap',
-    message: `${label} Generating AI recap...`,
-    videoId,
-  })
-
   const rawTranscript = segments.map(s => s.text).join(' ')
-  const recap = await generateMeetingRecap(rawTranscript, meeting.meetingType)
-  sendEvent(controller, encoder, 'progress', {
-    step: 'recap',
-    message: `${label} Recap: ${recap.topics.length} topics, ${recap.decisions.length} decisions`,
-    videoId,
-    topicCount: recap.topics.length,
-    decisionCount: recap.decisions.length,
-  })
 
-  // Generate embeddings
+  // Generate embeddings BEFORE recap (embeddings are fast and deterministic,
+  // recap is the slow AI call that's most likely to timeout on long transcripts)
   sendEvent(controller, encoder, 'progress', {
     step: 'embeddings',
     message: `${label} Generating embeddings for ${chunks.length} chunks...`,
@@ -184,10 +170,10 @@ async function processVideo(
     })
   }
 
-  // Store results
+  // Store transcript + chunks with embeddings first (checkpoint — survives timeout)
   sendEvent(controller, encoder, 'progress', {
     step: 'store',
-    message: `${label} Storing results...`,
+    message: `${label} Saving transcript & ${chunks.length} chunks...`,
     videoId,
   })
 
@@ -203,6 +189,39 @@ async function processVideo(
   }))
 
   await insertMeetingChunks(chunkData)
+  // Save transcript + chunk count now, even without a recap yet.
+  // This ensures we don't lose work if recap generation times out.
+  await sql`
+    UPDATE council_meetings
+    SET transcript_raw = ${rawTranscript},
+        chunk_count = ${chunks.length},
+        updated_at = NOW()
+    WHERE id = ${meeting.id}
+  `
+
+  sendEvent(controller, encoder, 'progress', {
+    step: 'store',
+    message: `${label} Transcript & embeddings saved. Starting recap...`,
+    videoId,
+  })
+
+  // Generate recap (the slow part — if this times out, transcript + embeddings are safe)
+  sendEvent(controller, encoder, 'progress', {
+    step: 'recap',
+    message: `${label} Generating AI recap (${(rawTranscript.length / 1000).toFixed(0)}K chars)...`,
+    videoId,
+  })
+
+  const recap = await generateMeetingRecap(rawTranscript, meeting.meetingType)
+  sendEvent(controller, encoder, 'progress', {
+    step: 'recap',
+    message: `${label} Recap: ${recap.topics.length} topics, ${recap.decisions.length} decisions`,
+    videoId,
+    topicCount: recap.topics.length,
+    decisionCount: recap.decisions.length,
+  })
+
+  // Final store — save the recap and set target status
   await storeMeetingResults(meeting.id, recap, rawTranscript, chunks.length, targetStatus)
 
   return targetStatus
