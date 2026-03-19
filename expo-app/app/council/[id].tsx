@@ -4,10 +4,11 @@
 
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { View, ScrollView, Text, Pressable, Linking, LayoutAnimation, Share } from 'react-native';
-import { useLocalSearchParams, Stack, useFocusEffect } from 'expo-router';
+import { useLocalSearchParams, Stack, useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AppIcon } from '@/components/AppIcon';
+import { HeaderActionButton } from '@/components/HeaderActionButton';
 import { fetcher, endpoints } from '@/lib/api';
 import { LoadingSpinner } from '@/components/LoadingState';
 import { MarkdownText } from '@/components/MarkdownText';
@@ -15,6 +16,7 @@ import { Brand } from '@/constants/BrandColors';
 import type { CouncilResponse } from '@/lib/types';
 
 export default function CouncilDetailScreen() {
+  const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
@@ -23,6 +25,15 @@ export default function CouncilDetailScreen() {
   const cachedCouncilResponse = queryClient.getQueryData<CouncilResponse>(['council']);
   const cachedCouncilUpdatedAt = queryClient.getQueryState(['council'])?.dataUpdatedAt;
   const cachedMeeting = cachedCouncilResponse?.meetings?.find((m) => String(m.id) === String(meetingId));
+  const topContentPadding = 20;
+
+  const renderCloseButton = () => (
+    <HeaderActionButton
+      icon="xmark"
+      label="Close council recap"
+      onPress={() => router.dismissTo('/')}
+    />
+  );
 
   // Reset scroll position every time the sheet is presented (including reopen)
   useFocusEffect(useCallback(() => {
@@ -42,7 +53,7 @@ export default function CouncilDetailScreen() {
   if (!meetingId || isPending) {
     return (
       <View style={{ flex: 1, backgroundColor: Brand.background }}>
-        <Stack.Screen options={{ title: 'Council Recap' }} />
+        <Stack.Screen options={{ title: 'Council Recap', headerLeft: renderCloseButton }} />
         <LoadingSpinner message="Loading recap..." />
       </View>
     );
@@ -51,7 +62,7 @@ export default function CouncilDetailScreen() {
   if (isError || !data) {
     return (
       <View style={{ flex: 1, backgroundColor: Brand.background, justifyContent: 'center', alignItems: 'center' }}>
-        <Stack.Screen options={{ title: 'Council Recap' }} />
+        <Stack.Screen options={{ title: 'Council Recap', headerLeft: renderCloseButton }} />
         <AppIcon name="exclamationmark.circle" size={48} color={Brand.amber} />
         <Text style={{ marginTop: 12, color: Brand.foreground, fontSize: 15 }}>Failed to load</Text>
         <Pressable
@@ -69,7 +80,7 @@ export default function CouncilDetailScreen() {
   if (!meeting) {
     return (
       <View style={{ flex: 1, backgroundColor: Brand.background, justifyContent: 'center', alignItems: 'center' }}>
-        <Stack.Screen options={{ title: 'Council Recap' }} />
+        <Stack.Screen options={{ title: 'Council Recap', headerLeft: renderCloseButton }} />
         <AppIcon name="building.columns" size={48} color={Brand.amber} />
         <Text style={{ marginTop: 12, color: Brand.foreground, fontSize: 15 }}>Meeting not found</Text>
         <Text style={{ marginTop: 4, color: Brand.muted, fontSize: 12 }}>ID: {String(id)}</Text>
@@ -106,17 +117,26 @@ export default function CouncilDetailScreen() {
     <View style={{ flex: 1, backgroundColor: Brand.background }}>
       <Stack.Screen options={{
         title: 'Council Recap',
+        headerLeft: renderCloseButton,
         headerRight: () => (
-          <Pressable onPress={handleShare} hitSlop={8}>
-            <AppIcon name="square.and.arrow.up" size={20} color={Brand.amber} />
-          </Pressable>
+          <HeaderActionButton
+            icon="square.and.arrow.up"
+            label="Share council recap"
+            onPress={handleShare}
+          />
         ),
       }} />
       <ScrollView
         ref={scrollRef}
         style={{ flex: 1 }}
-        contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 32 }}
+        // `automatic` can push all body content below the visible area inside iOS form sheets.
+        contentInsetAdjustmentBehavior="never"
+        scrollIndicatorInsets={{ top: topContentPadding, bottom: insets.bottom }}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingTop: topContentPadding,
+          paddingBottom: insets.bottom + 32,
+        }}
       >
         {!!dateLabel && (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 14 }}>

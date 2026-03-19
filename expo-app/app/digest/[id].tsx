@@ -5,11 +5,12 @@
 
 import { useCallback, useMemo, useRef } from 'react';
 import { View, ScrollView, Text, Pressable, Share } from 'react-native';
-import { useLocalSearchParams, Stack, useFocusEffect } from 'expo-router';
+import { useLocalSearchParams, Stack, useFocusEffect, useRouter } from 'expo-router';
 import { MarkdownText } from '@/components/MarkdownText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AppIcon } from '@/components/AppIcon';
+import { HeaderActionButton } from '@/components/HeaderActionButton';
 import { fetcher, endpoints } from '@/lib/api';
 import { LoadingSpinner } from '@/components/LoadingState';
 import type { DigestResponse } from '@/lib/types';
@@ -149,6 +150,7 @@ function DigestBody({ text }: { text: string }) {
 }
 
 export default function DigestDetailScreen() {
+  const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
@@ -179,11 +181,20 @@ export default function DigestDetailScreen() {
   const edition = digest?.edition as DigestEdition | undefined;
   const editionLabel = edition ? editionLabels[edition] : 'Siouxland Digest';
   const editionIcon = edition ? editionIcons[edition] : 'newspaper.fill';
+  const topContentPadding = 20;
+
+  const renderCloseButton = () => (
+    <HeaderActionButton
+      icon="xmark"
+      label="Close digest"
+      onPress={() => router.dismissTo('/')}
+    />
+  );
 
   if (!digestId || isPending) {
     return (
       <View style={{ flex: 1, backgroundColor: Brand.background }}>
-        <Stack.Screen options={{ title: editionLabel }} />
+        <Stack.Screen options={{ title: editionLabel, headerLeft: renderCloseButton }} />
         <LoadingSpinner message="Loading digest..." />
       </View>
     );
@@ -192,7 +203,7 @@ export default function DigestDetailScreen() {
   if (isError || !digest) {
     return (
       <View style={{ flex: 1, backgroundColor: Brand.background, justifyContent: 'center', alignItems: 'center' }}>
-        <Stack.Screen options={{ title: 'Siouxland Digest' }} />
+        <Stack.Screen options={{ title: 'Siouxland Digest', headerLeft: renderCloseButton }} />
         <AppIcon name="newspaper" size={64} color="#8e8e93" />
         <Text style={{ marginTop: 16, color: Brand.muted }}>
           {isError ? 'Failed to load digest' : 'Digest not found'}
@@ -220,19 +231,27 @@ export default function DigestDetailScreen() {
     <View style={{ flex: 1, backgroundColor: Brand.background }}>
       <Stack.Screen options={{
         title: editionLabel,
+        headerLeft: renderCloseButton,
         headerRight: () => (
-          <Pressable onPress={handleShare} hitSlop={8}>
-            <AppIcon name="square.and.arrow.up" size={20} color={Brand.amber} />
-          </Pressable>
+          <HeaderActionButton
+            icon="square.and.arrow.up"
+            label="Share digest"
+            onPress={handleShare}
+          />
         ),
       }} />
       <ScrollView
         ref={scrollRef}
         style={{ flex: 1 }}
-        contentInsetAdjustmentBehavior="automatic"
-        scrollIndicatorInsets={{ bottom: insets.bottom }}
+        // `automatic` can push all body content below the visible area inside iOS form sheets.
+        contentInsetAdjustmentBehavior="never"
+        scrollIndicatorInsets={{ top: topContentPadding, bottom: insets.bottom }}
         removeClippedSubviews={false}
-        contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 32 }}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingTop: topContentPadding,
+          paddingBottom: insets.bottom + 32,
+        }}
       >
         {/* Hero header */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 6 }}>

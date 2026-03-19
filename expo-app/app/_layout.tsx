@@ -126,10 +126,9 @@ function AppShell() {
 
   const detailModalOptions = Platform.OS === 'ios'
     ? {
-        presentation: 'formSheet' as const,
-        sheetGrabberVisible: true,
-        sheetAllowedDetents: [0.85, 1.0],
-        sheetExpandsWhenScrolledToEdge: false,
+        // `formSheet` has been unreliable for these long scrollable detail views on iOS.
+        presentation: 'modal' as const,
+        gestureEnabled: true,
         headerShown: true,
       }
     : {
