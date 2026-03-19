@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 import { usePathname, useSegments } from 'expo-router';
-import Constants from 'expo-constants';
 import { usePostHog } from 'posthog-react-native';
 
 /**
@@ -20,10 +19,13 @@ export function usePostHogScreenTracking() {
     if (!posthog || identifiedRef.current) return;
     identifiedRef.current = true;
 
-    posthog.capture('app_opened', {
-      platform: Platform.OS,
-      app_version: Constants.expoConfig?.version ?? 'unknown',
-    });
+    try {
+      posthog.capture('app_opened', {
+        platform: Platform.OS,
+      });
+    } catch (error) {
+      console.warn('PostHog app_opened capture failed', error);
+    }
   }, [posthog]);
 
   // Track screen views on navigation
@@ -35,6 +37,10 @@ export function usePostHogScreenTracking() {
       .filter((s) => !(s.startsWith('(') && s.endsWith(')')))
       .join('/') || 'Home';
 
-    posthog.screen(screenName, { path: pathname });
+    try {
+      posthog.screen(screenName, { path: pathname });
+    } catch (error) {
+      console.warn('PostHog screen tracking failed', error);
+    }
   }, [posthog, pathname, segments]);
 }
