@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
-import { AppState, Platform } from 'react-native';
+import { Platform } from 'react-native';
 import { usePathname, useSegments } from 'expo-router';
+import Constants from 'expo-constants';
 import { usePostHog } from 'posthog-react-native';
 
 /**
@@ -21,7 +22,7 @@ export function usePostHogScreenTracking() {
 
     posthog.capture('app_opened', {
       platform: Platform.OS,
-      app_version: require('../../app.json').expo.version,
+      app_version: Constants.expoConfig?.version ?? 'unknown',
     });
   }, [posthog]);
 

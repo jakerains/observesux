@@ -63,7 +63,6 @@ function parseInline(raw: string): InlineSegment[] {
 
 function renderInline(
   segments: InlineSegment[],
-  baseStyle?: StyleProp<TextStyle>,
 ) {
   return segments.map((seg, i) => {
     if (seg.url) {
@@ -163,6 +162,8 @@ function parseBlocks(input: string): Block[] {
 // ── Main component ─────────────────────────────────────────────────
 
 export function MarkdownText({ children, style, numberOfLines }: Props) {
+  const blocks = useMemo(() => parseBlocks(children), [children]);
+
   // If numberOfLines is set, fall back to a simple flat rendering so the
   // native line-clamp works (View-based layout can't be line-clamped).
   if (numberOfLines != null) {
@@ -175,12 +176,10 @@ export function MarkdownText({ children, style, numberOfLines }: Props) {
 
     return (
       <Text style={style} numberOfLines={numberOfLines}>
-        {renderInline(segments, style)}
+        {renderInline(segments)}
       </Text>
     );
   }
-
-  const blocks = useMemo(() => parseBlocks(children), [children]);
 
   return (
     <View>
@@ -201,7 +200,7 @@ export function MarkdownText({ children, style, numberOfLines }: Props) {
                   },
                 ]}
               >
-                {renderInline(parseInline(block.text), style)}
+                {renderInline(parseInline(block.text))}
               </Text>
             );
           }
@@ -222,7 +221,7 @@ export function MarkdownText({ children, style, numberOfLines }: Props) {
                   {'\u2022'}
                 </Text>
                 <Text style={[style, { flex: 1, lineHeight: 20 }]}>
-                  {renderInline(parseInline(block.text), style)}
+                  {renderInline(parseInline(block.text))}
                 </Text>
               </View>
             );
@@ -244,7 +243,7 @@ export function MarkdownText({ children, style, numberOfLines }: Props) {
                   {block.number}.
                 </Text>
                 <Text style={[style, { flex: 1, lineHeight: 20 }]}>
-                  {renderInline(parseInline(block.text), style)}
+                  {renderInline(parseInline(block.text))}
                 </Text>
               </View>
             );
@@ -263,7 +262,7 @@ export function MarkdownText({ children, style, numberOfLines }: Props) {
                   },
                 ]}
               >
-                {renderInline(parseInline(block.text), style)}
+                {renderInline(parseInline(block.text))}
               </Text>
             );
           }
