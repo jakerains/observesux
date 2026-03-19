@@ -3,12 +3,11 @@
  * Handles: paragraphs, bullet lists, numbered lists, headers, **bold**, [text](url)
  */
 
-import { useMemo } from 'react';
 import { Text, View, Linking } from 'react-native';
 import type { TextStyle, StyleProp } from 'react-native';
 
 interface Props {
-  children: string;
+  children?: string | null;
   style?: StyleProp<TextStyle>;
   numberOfLines?: number;
 }
@@ -95,6 +94,10 @@ type Block =
   | { type: 'bullet'; text: string }
   | { type: 'numbered'; number: string; text: string };
 
+function normalizeMarkdownInput(input: Props['children']) {
+  return typeof input === 'string' ? input : '';
+}
+
 // ── Block parser ───────────────────────────────────────────────────
 
 function parseBlocks(input: string): Block[] {
@@ -162,12 +165,12 @@ function parseBlocks(input: string): Block[] {
 // ── Main component ─────────────────────────────────────────────────
 
 export function MarkdownText({ children, style, numberOfLines }: Props) {
-  const blocks = useMemo(() => parseBlocks(children), [children]);
+  const content = normalizeMarkdownInput(children);
 
   // If numberOfLines is set, fall back to a simple flat rendering so the
   // native line-clamp works (View-based layout can't be line-clamped).
   if (numberOfLines != null) {
-    const cleaned = children
+    const cleaned = content
       .replace(/^#{1,3}\s+/gm, '')
       .replace(/\n{3,}/g, '\n\n')
       .trim();
@@ -180,6 +183,8 @@ export function MarkdownText({ children, style, numberOfLines }: Props) {
       </Text>
     );
   }
+
+  const blocks = parseBlocks(content);
 
   return (
     <View>
