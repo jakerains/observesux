@@ -2,7 +2,7 @@
   "expo": {
     "name": "Siouxland Online",
     "slug": "siouxland-online",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "siouxland",
@@ -42,7 +42,7 @@
       "output": "static",
       "favicon": "./assets/favicon.png"
     },
-    "runtimeVersion": "1.0.5",
+    "runtimeVersion": "1.0.6",
     "updates": {
       "url": "https://u.expo.dev/7177e8d6-7bd1-4995-80e8-5286ee3b0720",
       "enabled": true,
