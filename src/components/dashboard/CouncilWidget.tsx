@@ -9,6 +9,7 @@ import { Landmark, ArrowRight } from 'lucide-react'
 import { track } from '@vercel/analytics'
 import useSWR from 'swr'
 import type { CouncilMeeting } from '@/types/council-meetings'
+import { MEETING_TYPE_LABELS } from '@/types/council-meetings'
 
 interface RecapsResponse {
   meetings: CouncilMeeting[]
@@ -29,7 +30,7 @@ function formatMeetingDate(dateStr: string | null): string {
 
 export function CouncilWidget() {
   const { data, error, isLoading } = useSWR<RecapsResponse>(
-    '/api/council-meetings/recaps?type=city_council',
+    '/api/council-meetings/recaps',
     fetcher,
     { refreshInterval: 1800000 } // 30 minutes
   )
@@ -91,11 +92,18 @@ export function CouncilWidget() {
       lastUpdated={new Date(meeting.updatedAt)}
     >
       <div className="flex flex-col h-full">
-        {/* Meeting date + title */}
+        {/* Meeting date + type + title */}
         <div className="mb-3">
-          <Badge variant="secondary" className="text-xs mb-2">
-            {formatMeetingDate(meeting.meetingDate)}
-          </Badge>
+          <div className="flex items-center gap-1.5 mb-2">
+            <Badge variant="secondary" className="text-xs">
+              {formatMeetingDate(meeting.meetingDate)}
+            </Badge>
+            {meeting.meetingType && meeting.meetingType !== 'city_council' && (
+              <Badge variant="outline" className="text-xs">
+                {MEETING_TYPE_LABELS[meeting.meetingType] || meeting.meetingType}
+              </Badge>
+            )}
+          </div>
           <h3 className="text-sm font-medium leading-snug line-clamp-1">
             {meeting.title}
           </h3>
@@ -127,7 +135,9 @@ export function CouncilWidget() {
         <div className="mt-auto pt-3">
           <Button asChild variant="outline" size="sm" className="gap-2">
             <Link
-              href={meeting.meetingDate ? `/council/${meeting.meetingDate}` : '/council'}
+              href={meeting.meetingDate
+                ? `/council/${meeting.meetingDate}${meeting.meetingType && meeting.meetingType !== 'city_council' ? `-${meeting.meetingType}` : ''}`
+                : '/council'}
               onClick={() => track('council_recap_clicked', {
                 source: 'widget',
                 meetingDate: meeting.meetingDate,
