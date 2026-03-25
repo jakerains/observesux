@@ -67,8 +67,8 @@ export default async function Image({ params }: { params: Promise<{ slug: string
       footerNote: 'Decisions, debate, and what changed',
       imageTopBadge: 'Sioux City, Iowa',
       imagePanelEyebrow: `${typeLabel} coverage`,
-      imagePanelTitle: 'What changed at City Hall',
-      imagePanelBody: 'Faster context from the official meeting transcript.',
+      imagePanelTitle: 'What it means for the 712',
+      imagePanelBody: 'Key decisions, public comments, and what happens next.',
     }
   )
 }

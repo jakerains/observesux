@@ -16,6 +16,13 @@ import { cn } from '@/lib/utils'
 // Changelog data - update this when releasing new versions
 const CHANGELOG = [
   {
+    version: '0.15.1',
+    date: '2026-03-25',
+    changed: [
+      'Updated council meeting share images with more personal, community-focused copy',
+    ],
+  },
+  {
     version: '0.15.0',
     date: '2026-03-18',
     added: [
