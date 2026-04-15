@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { fetchAirQuality } from '@/lib/fetchers/airnow'
-import { storeAirQualityReading } from '@/lib/db/historical'
 import type { AirQualityReading, ApiResponse } from '@/types'
 
 export const dynamic = 'force-dynamic'
@@ -8,16 +7,6 @@ export const dynamic = 'force-dynamic'
 export async function GET() {
   try {
     const reading = await fetchAirQuality()
-
-    // Store reading to database for historical tracking (non-blocking)
-    storeAirQualityReading({
-      aqi: reading.aqi,
-      category: reading.category,
-      primaryPollutant: reading.primaryPollutant,
-      pm25: reading.pm25,
-      source: reading.source,
-      observedAt: new Date(reading.timestamp)
-    }).catch(() => {}) // Silently fail
 
     const response: ApiResponse<AirQualityReading> = {
       data: reading,

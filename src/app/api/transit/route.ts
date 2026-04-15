@@ -445,7 +445,7 @@ export async function GET() {
     }
 
     return NextResponse.json(apiResponse, {
-      headers: { 'Cache-Control': 'public, max-age=0, s-maxage=30' }
+      headers: { 'Cache-Control': 'public, max-age=0, s-maxage=60' }
     })
   } catch (error) {
     console.error('Transit API error:', error)

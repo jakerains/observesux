@@ -107,7 +107,7 @@ export async function GET() {
     timestamp: new Date().toISOString(),
   }, {
     headers: {
-      'Cache-Control': 'public, max-age=0, s-maxage=15',
+      'Cache-Control': 'public, max-age=0, s-maxage=60',
     },
   })
 }

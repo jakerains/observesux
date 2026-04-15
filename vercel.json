@@ -33,6 +33,7 @@
       "path": "/api/cron/ingest-meetings",
       "schedule": "0 16 * * 2"
     },
-    { "path": "/api/cron/check-expo-receipts", "schedule": "30 * * * *" }
+    { "path": "/api/cron/check-expo-receipts", "schedule": "30 * * * *" },
+    { "path": "/api/cron/historical-snapshot", "schedule": "*/15 * * * *" }
   ]
 }

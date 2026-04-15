@@ -5,6 +5,13 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.15.2] - 2026-04-14
+
+### Changed
+- Dashboard API routes no longer write historical data on the hot path — weather, rivers, and air-quality snapshots are now captured by a dedicated cron (`/api/cron/historical-snapshot` every 15 min) instead of on every cache-miss visit. Drops per-visit DB wake-ups substantially.
+- Extended CDN cache windows for short-cached routes: weather (30s → 5 min), status (15s → 1 min), transit (30s → 1 min), cameras (1 min → 3 min), city-summary (1 min → 5 min).
+- Neon compute autoscaling floor reduced from 1 CU to 0.25 CU to cut compute cost.
+
 ## [0.15.1] - 2026-03-25
 
 ### Changed

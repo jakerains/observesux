@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server'
-import { storeWeatherObservation } from '@/lib/db/historical'
 import type { WeatherObservation, ApiResponse } from '@/types'
 
 // Best-effort fetch of NWS KSUX station temp for secondary "airport reading" display.
@@ -96,20 +95,6 @@ export async function GET() {
   // Compute feelsLike from apparent_temperature (windChill) / heatIndex / temperature fallback
   const feelsLike = observation.windChill ?? observation.heatIndex ?? observation.temperature
 
-  // Store observation to database for historical tracking (non-blocking)
-  storeWeatherObservation({
-    temperature: observation.temperature,
-    feelsLike,
-    humidity: observation.humidity,
-    windSpeed: observation.windSpeed,
-    windDirection: observation.windDirection,
-    windGust: observation.windGust,
-    conditions: observation.conditions,
-    visibility: observation.visibility,
-    pressure: observation.pressure,
-    observedAt: new Date(observation.timestamp)
-  }).catch(() => {})
-
   const response: ApiResponse<WeatherObservation> & { airportTemp: number | null } = {
     data: { ...observation, feelsLike },
     timestamp: new Date(),
@@ -118,6 +103,6 @@ export async function GET() {
   }
 
   return NextResponse.json(response, {
-    headers: { 'Cache-Control': 'public, max-age=0, s-maxage=30' }
+    headers: { 'Cache-Control': 'public, max-age=0, s-maxage=300' }
   })
 }
