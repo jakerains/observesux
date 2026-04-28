@@ -6,6 +6,29 @@ import { verifyCronRequest } from '@/lib/utils/cron-auth'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
 
+function getWorkflowBaseUrl(): string {
+  const explicitBaseUrl =
+    process.env.NEXT_PUBLIC_BASE_URL?.trim()
+    || process.env.NEXT_PUBLIC_SITE_URL?.trim()
+    || process.env.SITE_URL?.trim()
+
+  if (explicitBaseUrl) {
+    return explicitBaseUrl.replace(/\/$/, '')
+  }
+
+  // Production cron must use the public domain. Deployment URLs can be protected
+  // by Vercel auth, which turns the self-call into a 401 before our route runs.
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://siouxland.online'
+  }
+
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`
+  }
+
+  return 'http://localhost:3000'
+}
+
 /**
  * GET /api/cron/ingest-meetings
  * Triggers council meeting ingestion by calling the SSE ingest endpoint.
@@ -27,9 +50,7 @@ export async function GET(request: NextRequest) {
     console.log('[Council Cron] Triggering council meeting ingestion')
 
     // Call our own SSE ingestion endpoint and consume the stream
-    const baseUrl = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : 'http://localhost:3000'
+    const baseUrl = getWorkflowBaseUrl()
 
     const res = await fetch(`${baseUrl}/api/workflow/council-ingest`, {
       method: 'POST',
@@ -43,7 +64,10 @@ export async function GET(request: NextRequest) {
     })
 
     if (!res.ok) {
-      throw new Error(`Ingest endpoint returned ${res.status}`)
+      const responseBody = (await res.text()).slice(0, 300)
+      throw new Error(
+        `Ingest endpoint returned ${res.status}${responseBody ? `: ${responseBody}` : ''}`
+      )
     }
 
     // Consume the SSE stream to get the final result

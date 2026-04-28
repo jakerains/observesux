@@ -163,6 +163,53 @@ export async function recordBrowserTriggeredAlert(
 }
 
 /**
+ * Get browsers that have already received a specific alert source.
+ */
+export async function getTriggeredBrowserIds(
+  alertType: string,
+  sourceId: string,
+  browserIds: string[]
+): Promise<Set<string>> {
+  if (browserIds.length === 0) return new Set()
+
+  const result = await sql`
+    WITH requested AS (
+      SELECT value AS browser_id
+      FROM jsonb_array_elements_text(${JSON.stringify(browserIds)}::jsonb)
+    )
+    SELECT t.browser_id as "browserId"
+    FROM browser_triggered_alerts t
+    JOIN requested r ON r.browser_id = t.browser_id
+    WHERE t.alert_type = ${alertType}
+      AND t.source_id = ${sourceId}
+  ` as Array<{ browserId: string }>
+
+  return new Set(result.map(row => row.browserId))
+}
+
+/**
+ * Record multiple browser-triggered alerts in one query.
+ */
+export async function recordBrowserTriggeredAlertBatch(
+  alertType: string,
+  rows: Array<{ browserId: string; sourceId: string }>
+): Promise<void> {
+  if (rows.length === 0) return
+
+  await sql`
+    WITH rows AS (
+      SELECT *
+      FROM jsonb_to_recordset(${JSON.stringify(rows)}::jsonb)
+        AS row("browserId" text, "sourceId" text)
+    )
+    INSERT INTO browser_triggered_alerts (browser_id, alert_type, source_id)
+    SELECT "browserId", ${alertType}, "sourceId"
+    FROM rows
+    ON CONFLICT (browser_id, alert_type, source_id) DO NOTHING
+  `
+}
+
+/**
  * Clean up browser triggered alerts older than 7 days.
  */
 export async function cleanupOldBrowserTriggeredAlerts(): Promise<number> {

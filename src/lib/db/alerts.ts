@@ -241,6 +241,69 @@ export async function recordTriggeredAlert(
 }
 
 /**
+ * Get users that have already received a specific alert source.
+ * Used by the alert cron to avoid N+1 triggered_alerts lookups.
+ */
+export async function getTriggeredUserIds(
+  alertType: AlertType,
+  alertSourceId: string,
+  userIds: string[]
+): Promise<Set<string>> {
+  if (!isDatabaseConfigured() || userIds.length === 0) return new Set()
+
+  try {
+    const result = await sql`
+      WITH requested AS (
+        SELECT value AS user_id
+        FROM jsonb_array_elements_text(${JSON.stringify(userIds)}::jsonb)
+      )
+      SELECT t.user_id as "userId"
+      FROM triggered_alerts t
+      JOIN requested r ON r.user_id = t.user_id
+      WHERE t.alert_type = ${alertType}
+        AND t.alert_source_id = ${alertSourceId}
+    ` as Array<{ userId: string }>
+
+    return new Set(result.map(row => row.userId))
+  } catch (error) {
+    console.error('Failed to get triggered user ids:', error)
+    return new Set()
+  }
+}
+
+/**
+ * Record multiple triggered alerts in one query.
+ */
+export async function recordTriggeredAlertBatch(
+  alertType: AlertType,
+  rows: Array<{
+    userId: string
+    alertSourceId: string
+    alertData: Record<string, unknown>
+  }>
+): Promise<boolean> {
+  if (!isDatabaseConfigured() || rows.length === 0) return true
+
+  try {
+    await sql`
+      WITH rows AS (
+        SELECT *
+        FROM jsonb_to_recordset(${JSON.stringify(rows)}::jsonb)
+          AS row("userId" text, "alertSourceId" text, "alertData" jsonb)
+      )
+      INSERT INTO triggered_alerts (user_id, alert_type, alert_source_id, alert_data)
+      SELECT "userId", ${alertType}, "alertSourceId", "alertData"
+      FROM rows
+      ON CONFLICT (user_id, alert_type, alert_source_id) DO NOTHING
+    `
+    return true
+  } catch (error) {
+    console.error('Failed to record triggered alert batch:', error)
+    return false
+  }
+}
+
+/**
  * Clean up old triggered alerts (older than 7 days)
  */
 export async function cleanupOldTriggeredAlerts(): Promise<number> {

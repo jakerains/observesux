@@ -73,6 +73,59 @@ interface VideoMetadata {
   captionTrackCount: number
 }
 
+interface CaptionTrack {
+  baseUrl: string
+  languageCode?: string
+  kind?: string
+  name?: {
+    simpleText?: string
+    runs?: Array<{ text: string }>
+  }
+}
+
+interface InnerTubeTranscriptClient {
+  name: 'ANDROID' | 'IOS'
+  userAgent: string
+  acceptLanguage: string
+  context: {
+    client: {
+      clientName: 'ANDROID' | 'IOS'
+      clientVersion: string
+      hl: string
+      gl: string
+    }
+  }
+}
+
+const TRANSCRIPT_INNERTUBE_CLIENTS: InnerTubeTranscriptClient[] = [
+  {
+    name: 'ANDROID',
+    userAgent: 'com.google.android.youtube/20.10.38 (Linux; U; Android 14)',
+    acceptLanguage: 'en-US,en;q=0.9',
+    context: {
+      client: {
+        clientName: 'ANDROID',
+        clientVersion: '20.10.38',
+        hl: 'en',
+        gl: 'US',
+      },
+    },
+  },
+  {
+    name: 'IOS',
+    userAgent: 'com.google.ios.youtube/20.10.4 (iPhone16,2; U; CPU iOS 18_3 like Mac OS X)',
+    acceptLanguage: 'en-US,en;q=0.9',
+    context: {
+      client: {
+        clientName: 'IOS',
+        clientVersion: '20.10.4',
+        hl: 'en',
+        gl: 'US',
+      },
+    },
+  },
+]
+
 /**
  * Lightweight check of a YouTube video's metadata via the InnerTube API.
  * Used to distinguish VODs (real duration, captions) from dead live stream
@@ -121,10 +174,199 @@ function vodScore(meta: VideoMetadata | null): number {
  * Custom error for videos without captions
  */
 export class NoCaptionsError extends Error {
-  constructor(videoId: string) {
-    super(`No captions available for video ${videoId}`)
+  reason: string
+
+  constructor(videoId: string, reason: string = 'No usable caption tracks were available') {
+    super(`No captions available for video ${videoId}: ${reason}`)
     this.name = 'NoCaptionsError'
+    this.reason = reason
   }
+}
+
+function decodeTranscriptEntities(value: string): string {
+  return value
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, codePoint) => String.fromCodePoint(parseInt(codePoint, 16)))
+    .replace(/&#(\d+);/g, (_, codePoint) => String.fromCodePoint(parseInt(codePoint, 10)))
+}
+
+function parseTranscriptXml(xml: string): TranscriptSegment[] {
+  const segments: TranscriptSegment[] = []
+  const paragraphRegex = /<p\s+t="(\d+)"\s+d="(\d+)"[^>]*>([\s\S]*?)<\/p>/g
+
+  for (const match of xml.matchAll(paragraphRegex)) {
+    const offset = parseInt(match[1], 10)
+    const duration = parseInt(match[2], 10)
+    const rawContent = match[3]
+
+    let text = ''
+    for (const segmentMatch of rawContent.matchAll(/<s[^>]*>([^<]*)<\/s>/g)) {
+      text += segmentMatch[1]
+    }
+
+    const cleaned = decodeTranscriptEntities((text || rawContent.replace(/<[^>]+>/g, '')).trim())
+    if (cleaned) {
+      segments.push({ text: cleaned, offset, duration })
+    }
+  }
+
+  if (segments.length > 0) return segments
+
+  const fallbackSegments: TranscriptSegment[] = []
+  for (const match of xml.matchAll(/<text start="([^"]*)" dur="([^"]*)">([^<]*)<\/text>/g)) {
+    const offsetSeconds = parseFloat(match[1])
+    const durationSeconds = parseFloat(match[2])
+    const cleaned = decodeTranscriptEntities(match[3]).trim()
+
+    if (cleaned) {
+      fallbackSegments.push({
+        text: cleaned,
+        offset: Math.round(offsetSeconds * 1000),
+        duration: Math.round(durationSeconds * 1000),
+      })
+    }
+  }
+
+  return fallbackSegments
+}
+
+function finalizeTranscriptSegments(
+  segments: TranscriptSegment[],
+  videoId: string,
+  source: string
+): TranscriptSegment[] {
+  if (!segments.length) {
+    throw new Error(`${source} returned no transcript segments for ${videoId}`)
+  }
+
+  const totalChars = segments.reduce((sum, segment) => sum + segment.text.length, 0)
+  if (totalChars < 100) {
+    throw new Error(`${source} returned an implausibly short transcript (${totalChars} chars) for ${videoId}`)
+  }
+
+  console.log(`[Transcript] ${source} got ${segments.length} segments (${totalChars} chars) for ${videoId}`)
+  return segments
+}
+
+function selectCaptionTrack(tracks: CaptionTrack[]): CaptionTrack {
+  return (
+    tracks.find(track => track.languageCode === 'en' && track.kind !== 'asr')
+    || tracks.find(track => track.languageCode?.startsWith('en') && track.kind !== 'asr')
+    || tracks.find(track => track.languageCode === 'en')
+    || tracks.find(track => track.languageCode?.startsWith('en'))
+    || tracks.find(track => track.kind !== 'asr')
+    || tracks[0]
+  )
+}
+
+function describeCaptionTrack(track: CaptionTrack): string {
+  const label = track.name?.simpleText
+    || track.name?.runs?.map(run => run.text).join('')
+    || track.languageCode
+    || 'unknown'
+
+  return track.kind === 'asr' ? `${label} (auto-generated)` : label
+}
+
+async function getCaptionTracksFromInnerTube(
+  videoId: string,
+  client: InnerTubeTranscriptClient
+): Promise<CaptionTrack[]> {
+  const res = await fetch(INNERTUBE_PLAYER_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'User-Agent': client.userAgent,
+    },
+    body: JSON.stringify({ context: client.context, videoId }),
+    cache: 'no-store',
+  })
+
+  if (!res.ok) {
+    throw new Error(`${client.name} player request returned ${res.status}`)
+  }
+
+  const data = await res.json()
+  const tracks = data.captions?.playerCaptionsTracklistRenderer?.captionTracks
+  return Array.isArray(tracks) ? tracks : []
+}
+
+async function fetchTranscriptFromCaptionTrack(
+  videoId: string,
+  track: CaptionTrack,
+  client: InnerTubeTranscriptClient
+): Promise<TranscriptSegment[]> {
+  let transcriptUrl: URL
+
+  try {
+    transcriptUrl = new URL(track.baseUrl)
+  } catch {
+    throw new Error(`${client.name} returned an invalid caption track URL for ${videoId}`)
+  }
+
+  if (!transcriptUrl.hostname.endsWith('.youtube.com')) {
+    throw new Error(`${client.name} returned a non-YouTube caption host for ${videoId}`)
+  }
+
+  const res = await fetch(transcriptUrl.toString(), {
+    headers: {
+      'Accept-Language': client.acceptLanguage,
+      'User-Agent': client.userAgent,
+    },
+    cache: 'no-store',
+  })
+
+  if (!res.ok) {
+    throw new Error(`${client.name} caption track request returned ${res.status}`)
+  }
+
+  const xml = await res.text()
+  const segments = parseTranscriptXml(xml)
+  return finalizeTranscriptSegments(
+    segments,
+    videoId,
+    `${client.name} caption track (${describeCaptionTrack(track)})`
+  )
+}
+
+async function fetchTranscriptViaFallbackClients(videoId: string): Promise<{
+  segments: TranscriptSegment[] | null
+  sawCaptionTracks: boolean
+  diagnostics: string[]
+}> {
+  const diagnostics: string[] = []
+  let sawCaptionTracks = false
+
+  for (const client of TRANSCRIPT_INNERTUBE_CLIENTS) {
+    try {
+      const tracks = await getCaptionTracksFromInnerTube(videoId, client)
+      diagnostics.push(`${client.name}: ${tracks.length} caption tracks`)
+
+      if (tracks.length === 0) {
+        continue
+      }
+
+      sawCaptionTracks = true
+      const selectedTrack = selectCaptionTrack(tracks)
+      const segments = await fetchTranscriptFromCaptionTrack(videoId, selectedTrack, client)
+      return { segments, sawCaptionTracks, diagnostics }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      diagnostics.push(`${client.name}: ${message}`)
+      console.warn(`[Transcript] ${client.name} fallback failed for ${videoId}: ${message}`)
+    }
+  }
+
+  return { segments: null, sawCaptionTracks, diagnostics }
+}
+
+function looksLikeUnavailableTranscript(message: string): boolean {
+  return message.includes('Transcript is disabled') || message.includes('No transcripts are available')
 }
 
 /**
@@ -277,51 +519,49 @@ export async function fetchCouncilRSS(): Promise<RSSVideoEntry[]> {
  * browser-based scraping approaches. Returns real per-segment timestamps.
  */
 export async function fetchTranscript(videoId: string): Promise<TranscriptSegment[]> {
+  const metadata = await getVideoMetadata(videoId)
+  const diagnostics: string[] = []
+
   try {
-    console.log(`[Transcript] Fetching via InnerTube API for ${videoId}`)
+    console.log(`[Transcript] Fetching via youtube-transcript for ${videoId}`)
 
     const rawSegments = await ytFetchTranscript(videoId)
-
-    if (!rawSegments || rawSegments.length === 0) {
-      console.log(`[Transcript] No segments returned for ${videoId}`)
-      throw new NoCaptionsError(videoId)
-    }
-
-    // Map to our TranscriptSegment format (youtube-transcript returns offset/duration in ms)
-    const segments: TranscriptSegment[] = rawSegments.map(seg => ({
+    const segments: TranscriptSegment[] = (rawSegments || []).map(seg => ({
       text: seg.text,
       offset: seg.offset,
       duration: seg.duration,
     }))
 
-    const totalChars = segments.reduce((sum, s) => sum + s.text.length, 0)
-    console.log(`[Transcript] Got ${segments.length} segments (${totalChars} chars) for ${videoId}`)
-
-    if (totalChars < 100) {
-      console.log(`[Transcript] Transcript too short (${totalChars} chars) for ${videoId}`)
-      throw new NoCaptionsError(videoId)
-    }
-
-    return segments
+    return finalizeTranscriptSegments(segments, videoId, 'youtube-transcript')
   } catch (error) {
-    if (error instanceof NoCaptionsError) throw error
-
     const errorMsg = error instanceof Error ? error.message : String(error)
+    diagnostics.push(`youtube-transcript: ${errorMsg}`)
 
-    // youtube-transcript throws specific errors for disabled/unavailable transcripts
-    if (errorMsg.includes('Transcript is disabled') || errorMsg.includes('No transcripts are available')) {
-      console.log(`[Transcript] No captions for ${videoId}: ${errorMsg}`)
-      throw new NoCaptionsError(videoId)
-    }
-
-    // Too many requests = captcha block
     if (errorMsg.includes('too many requests') || errorMsg.includes('captcha')) {
       console.error(`[Transcript] Rate limited for ${videoId}: ${errorMsg}`)
+    } else {
+      console.warn(`[Transcript] youtube-transcript failed for ${videoId}: ${errorMsg}`)
     }
-
-    console.error(`[Transcript] Failed for ${videoId}: ${errorMsg}`)
-    throw error
   }
+
+  const fallback = await fetchTranscriptViaFallbackClients(videoId)
+  diagnostics.push(...fallback.diagnostics)
+
+  if (fallback.segments) {
+    return fallback.segments
+  }
+
+  const failureSummary = diagnostics.join(' | ') || 'No transcript source returned usable captions'
+  const metadataShowsCaptions = (metadata?.captionTrackCount ?? 0) > 0
+  const unavailableByError = diagnostics.some(looksLikeUnavailableTranscript)
+
+  if (!fallback.sawCaptionTracks && !metadataShowsCaptions && unavailableByError) {
+    console.log(`[Transcript] No captions for ${videoId}: ${failureSummary}`)
+    throw new NoCaptionsError(videoId, failureSummary)
+  }
+
+  console.error(`[Transcript] Failed for ${videoId}: ${failureSummary}`)
+  throw new Error(`Transcript retrieval failed for ${videoId}: ${failureSummary}`)
 }
 
 /**

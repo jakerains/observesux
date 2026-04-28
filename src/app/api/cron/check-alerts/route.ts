@@ -3,20 +3,21 @@ import { isDatabaseConfigured } from '@/lib/db'
 import { logCronRun } from '@/lib/db/historical'
 import {
   getEnabledSubscriptionsByType,
-  hasAlertBeenTriggered,
-  recordTriggeredAlert,
+  getTriggeredUserIds,
+  recordTriggeredAlertBatch,
   cleanupOldTriggeredAlerts,
+  type AlertType,
 } from '@/lib/db/alerts'
 import {
   getDeviceTokensForType,
-  hasDeviceAlertBeenTriggered,
-  recordDeviceTriggeredAlert,
+  getTriggeredDeviceIds,
+  recordDeviceTriggeredAlertBatch,
   cleanupOldDeviceTriggeredAlerts,
 } from '@/lib/db/device-push'
 import {
   getBrowserSubscriptionsForType,
-  hasBrowserAlertBeenTriggered,
-  recordBrowserTriggeredAlert,
+  getTriggeredBrowserIds,
+  recordBrowserTriggeredAlertBatch,
   cleanupOldBrowserTriggeredAlerts,
 } from '@/lib/db/browser-push'
 import { sendPushToUser, type PushPayload } from '@/lib/push/send'
@@ -39,6 +40,52 @@ import { verifyCronRequest } from '@/lib/utils/cron-auth'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
+interface AlertCheckResult {
+  checked: number
+  matched: number
+  notified: number
+  timings: Record<string, number>
+}
+
+interface AuthAlertSubscription {
+  userId: string
+  config: Record<string, unknown>
+}
+
+interface DeviceAlertTarget {
+  deviceId: string
+  expoPushToken: string
+}
+
+interface BrowserAlertTarget {
+  browserId: string
+  endpoint: string
+  p256dh: string
+  authKey: string
+}
+
+function createAlertCheckResult(): AlertCheckResult {
+  return {
+    checked: 0,
+    matched: 0,
+    notified: 0,
+    timings: {},
+  }
+}
+
+async function timeStep<T>(
+  timings: Record<string, number>,
+  name: string,
+  step: () => Promise<T>
+): Promise<T> {
+  const started = Date.now()
+  try {
+    return await step()
+  } finally {
+    timings[name] = (timings[name] ?? 0) + Date.now() - started
+  }
+}
+
 function buildExpoAlertData(payload: PushPayload): Record<string, unknown> | undefined {
   const data = {
     ...(payload.data ?? {}),
@@ -47,6 +94,117 @@ function buildExpoAlertData(payload: PushPayload): Record<string, unknown> | und
   }
 
   return Object.keys(data).length > 0 ? data : undefined
+}
+
+async function notifyAuthSubscribers(
+  alertType: AlertType,
+  sourceId: string,
+  alertData: Record<string, unknown>,
+  subscriptions: AuthAlertSubscription[],
+  payload: PushPayload,
+  expoPayload: ExpoPushPayload,
+  timings: Record<string, number>,
+  matchesConfig: (config: Record<string, unknown>) => boolean
+): Promise<{ matched: number; notified: number }> {
+  const matchingSubs = subscriptions.filter(sub => matchesConfig(sub.config))
+  if (matchingSubs.length === 0) {
+    return { matched: 0, notified: 0 }
+  }
+
+  const alreadyTriggered = await timeStep(timings, 'authDedupeMs', () =>
+    getTriggeredUserIds(alertType, sourceId, matchingSubs.map(sub => sub.userId))
+  )
+
+  let notified = 0
+  const triggeredRows: Array<{
+    userId: string
+    alertSourceId: string
+    alertData: Record<string, unknown>
+  }> = []
+
+  for (const sub of matchingSubs) {
+    if (alreadyTriggered.has(sub.userId)) continue
+
+    const [webResult, expoResult] = await timeStep(timings, 'authPushMs', () =>
+      Promise.all([
+        sendPushToUser(sub.userId, payload),
+        sendExpoPushToUser(sub.userId, expoPayload),
+      ])
+    )
+
+    if (webResult.sent > 0 || expoResult.sent > 0) {
+      notified++
+      triggeredRows.push({
+        userId: sub.userId,
+        alertSourceId: sourceId,
+        alertData,
+      })
+    }
+  }
+
+  await timeStep(timings, 'authRecordMs', () =>
+    recordTriggeredAlertBatch(alertType, triggeredRows)
+  )
+
+  return { matched: matchingSubs.length, notified }
+}
+
+async function notifyDeviceSubscribers(
+  alertType: AlertType,
+  sourceId: string,
+  deviceSubs: DeviceAlertTarget[],
+  expoPayload: ExpoPushPayload,
+  timings: Record<string, number>
+): Promise<number> {
+  if (deviceSubs.length === 0) return 0
+
+  const alreadyTriggered = await timeStep(timings, 'deviceDedupeMs', () =>
+    getTriggeredDeviceIds(alertType, sourceId, deviceSubs.map(sub => sub.deviceId))
+  )
+  const pendingSubs = deviceSubs.filter(sub => !alreadyTriggered.has(sub.deviceId))
+
+  if (pendingSubs.length === 0) return 0
+
+  await timeStep(timings, 'deviceRecordMs', () =>
+    recordDeviceTriggeredAlertBatch(
+      alertType,
+      pendingSubs.map(sub => ({ deviceId: sub.deviceId, sourceId }))
+    )
+  )
+
+  const result = await timeStep(timings, 'devicePushMs', () =>
+    sendExpoPushToTokens(pendingSubs.map(sub => sub.expoPushToken), expoPayload)
+  )
+  return result.sent
+}
+
+async function notifyBrowserSubscribers(
+  alertType: AlertType,
+  sourceId: string,
+  browserSubs: BrowserAlertTarget[],
+  payload: PushPayload,
+  timings: Record<string, number>
+): Promise<number> {
+  if (browserSubs.length === 0) return 0
+
+  const alreadyTriggered = await timeStep(timings, 'browserDedupeMs', () =>
+    getTriggeredBrowserIds(alertType, sourceId, browserSubs.map(sub => sub.browserId))
+  )
+  const pendingSubs = browserSubs.filter(sub => !alreadyTriggered.has(sub.browserId))
+
+  if (pendingSubs.length === 0) return 0
+
+  await timeStep(timings, 'browserRecordMs', () =>
+    recordBrowserTriggeredAlertBatch(
+      alertType,
+      pendingSubs.map(sub => ({ browserId: sub.browserId, sourceId }))
+    )
+  )
+
+  const result = await timeStep(timings, 'browserPushMs', () =>
+    sendBrowserPushToSubscribers(pendingSubs, payload)
+  )
+  return result.sent
 }
 
 /**
@@ -64,19 +222,24 @@ export async function GET(request: NextRequest) {
   }
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
-  const results: Record<string, { checked: number; matched: number; notified: number }> = {}
+  const results: Record<string, AlertCheckResult> = {}
   const startedAt = new Date()
+  const timings: Record<string, number> = {}
 
   try {
     console.log('[Check Alerts Cron] Starting alert check...')
 
     // Check each alert type in parallel
-    const [weatherResult, riverResult, airQualityResult, trafficResult] = await Promise.all([
-      checkWeatherAlerts(baseUrl),
-      checkRiverAlerts(baseUrl),
-      checkAirQualityAlerts(baseUrl),
-      checkTrafficAlerts(baseUrl)
-    ])
+    const [weatherResult, riverResult, airQualityResult, trafficResult] = await timeStep(
+      timings,
+      'checksMs',
+      () => Promise.all([
+        checkWeatherAlerts(baseUrl),
+        checkRiverAlerts(baseUrl),
+        checkAirQualityAlerts(baseUrl),
+        checkTrafficAlerts(baseUrl)
+      ])
+    )
 
     results.weather = weatherResult
     results.river = riverResult
@@ -84,11 +247,15 @@ export async function GET(request: NextRequest) {
     results.traffic = trafficResult
 
     // Cleanup old triggered alerts (auth, device, and browser)
-    const [cleanedUp, deviceCleanedUp, browserCleanedUp] = await Promise.all([
-      cleanupOldTriggeredAlerts(),
-      cleanupOldDeviceTriggeredAlerts(),
-      cleanupOldBrowserTriggeredAlerts(),
-    ])
+    const [cleanedUp, deviceCleanedUp, browserCleanedUp] = await timeStep(
+      timings,
+      'cleanupMs',
+      () => Promise.all([
+        cleanupOldTriggeredAlerts(),
+        cleanupOldDeviceTriggeredAlerts(),
+        cleanupOldBrowserTriggeredAlerts(),
+      ])
+    )
 
     const totalNotified = Object.values(results).reduce((sum, r) => sum + r.notified, 0)
     console.log(`[Check Alerts Cron] Complete: ${totalNotified} notifications sent, ${cleanedUp + deviceCleanedUp + browserCleanedUp} old alerts cleaned`)
@@ -99,6 +266,13 @@ export async function GET(request: NextRequest) {
       river: riverResult.notified,
       airQuality: airQualityResult.notified,
       traffic: trafficResult.notified,
+      timings: {
+        ...timings,
+        weather: weatherResult.timings,
+        river: riverResult.timings,
+        airQuality: airQualityResult.timings,
+        traffic: trafficResult.timings,
+      },
     })
 
     return NextResponse.json({
@@ -130,21 +304,24 @@ export async function POST(request: NextRequest) {
 /**
  * Check weather alerts
  */
-async function checkWeatherAlerts(baseUrl: string): Promise<{ checked: number; matched: number; notified: number }> {
-  let checked = 0, matched = 0, notified = 0
+async function checkWeatherAlerts(baseUrl: string): Promise<AlertCheckResult> {
+  const result = createAlertCheckResult()
+  const { timings } = result
 
   try {
     // Fetch current weather alerts
-    const response = await fetch(`${baseUrl}/api/weather/alerts`, {
-      next: { revalidate: 0 }
-    })
+    const response = await timeStep(timings, 'fetchMs', () =>
+      fetch(`${baseUrl}/api/weather/alerts`, {
+        next: { revalidate: 0 }
+      })
+    )
 
     if (!response.ok) {
       console.warn('[Weather Alerts] API returned', response.status)
-      return { checked, matched, notified }
+      return result
     }
 
-    const data = await response.json()
+    const data = await timeStep(timings, 'parseMs', () => response.json())
     const alerts: WeatherAlert[] = (data.alerts || []).map((a: Record<string, unknown>) => ({
       id: a.id as string,
       event: a.event as string,
@@ -159,22 +336,23 @@ async function checkWeatherAlerts(baseUrl: string): Promise<{ checked: number; m
       areaDesc: a.areaDesc as string
     }))
 
-    checked = alerts.length
+    result.checked = alerts.length
 
     if (alerts.length === 0) {
-      return { checked, matched, notified }
+      return result
     }
 
-    // Get users subscribed to weather alerts (auth-based)
-    const subscriptions = await getEnabledSubscriptionsByType('weather')
-    // Get anonymous device subscribers
-    const deviceSubs = await getDeviceTokensForType('weather')
-    // Get anonymous browser subscribers
-    const browserSubs = await getBrowserSubscriptionsForType('weather')
+    const [subscriptions, deviceSubs, browserSubs] = await timeStep(timings, 'loadSubscribersMs', () =>
+      Promise.all([
+        getEnabledSubscriptionsByType('weather'),
+        getDeviceTokensForType('weather'),
+        getBrowserSubscriptionsForType('weather'),
+      ])
+    )
 
     for (const alert of alerts) {
       const sourceId = getAlertSourceId('weather', alert)
-      const payload = createAlertNotificationPayload('weather', alert)
+      const payload = createAlertNotificationPayload('weather', alert) as PushPayload
       const expoPayload: ExpoPushPayload = {
         title: payload.title,
         body: payload.body,
@@ -182,78 +360,50 @@ async function checkWeatherAlerts(baseUrl: string): Promise<{ checked: number; m
         sound: 'default',
         priority: 'high',
       }
+      const alertData = alert as unknown as Record<string, unknown>
 
-      // Auth-based users
-      for (const sub of subscriptions) {
-        if (matchesWeatherAlert(alert, sub.config as { severities: string[]; events: string[] })) {
-          matched++
-          const alreadyTriggered = await hasAlertBeenTriggered(sub.userId, 'weather', sourceId)
-          if (!alreadyTriggered) {
-            const [webResult, expoResult] = await Promise.all([
-              sendPushToUser(sub.userId, payload as PushPayload),
-              sendExpoPushToUser(sub.userId, expoPayload),
-            ])
-            if (webResult.sent > 0 || expoResult.sent > 0) {
-              notified++
-              await recordTriggeredAlert(sub.userId, 'weather', sourceId, alert as unknown as Record<string, unknown>)
-            }
-          }
-        }
-      }
-
-      // Anonymous device subscribers
-      const pendingDeviceTokens: string[] = []
-      for (const dev of deviceSubs) {
-        const alreadyTriggered = await hasDeviceAlertBeenTriggered(dev.deviceId, 'weather', sourceId)
-        if (!alreadyTriggered) {
-          pendingDeviceTokens.push(dev.expoPushToken)
-          // Record immediately to prevent duplicates in this cron run
-          await recordDeviceTriggeredAlert(dev.deviceId, 'weather', sourceId)
-        }
-      }
-      if (pendingDeviceTokens.length > 0) {
-        const result = await sendExpoPushToTokens(pendingDeviceTokens, expoPayload)
-        notified += result.sent
-      }
-
-      // Anonymous browser push
-      const pendingBrowserSubs = []
-      for (const sub of browserSubs) {
-        const alreadyTriggered = await hasBrowserAlertBeenTriggered(sub.browserId, 'weather', sourceId)
-        if (!alreadyTriggered) {
-          pendingBrowserSubs.push(sub)
-          await recordBrowserTriggeredAlert(sub.browserId, 'weather', sourceId)
-        }
-      }
-      if (pendingBrowserSubs.length > 0) {
-        const result = await sendBrowserPushToSubscribers(pendingBrowserSubs, payload as PushPayload)
-        notified += result.sent
-      }
+      const authResult = await notifyAuthSubscribers(
+        'weather',
+        sourceId,
+        alertData,
+        subscriptions,
+        payload,
+        expoPayload,
+        timings,
+        config => matchesWeatherAlert(alert, config as { severities: string[]; events: string[] })
+      )
+      result.matched += authResult.matched
+      result.notified += authResult.notified
+      result.notified += await notifyDeviceSubscribers('weather', sourceId, deviceSubs, expoPayload, timings)
+      result.notified += await notifyBrowserSubscribers('weather', sourceId, browserSubs, payload, timings)
     }
   } catch (error) {
     console.error('[Weather Alerts] Error:', error)
   }
 
-  return { checked, matched, notified }
+  return result
 }
 
 /**
  * Check river alerts
  */
-async function checkRiverAlerts(baseUrl: string): Promise<{ checked: number; matched: number; notified: number }> {
-  let checked = 0, matched = 0, notified = 0
+async function checkRiverAlerts(baseUrl: string): Promise<AlertCheckResult> {
+  const result = createAlertCheckResult()
+  const { timings } = result
 
   try {
-    const response = await fetch(`${baseUrl}/api/rivers`, {
-      next: { revalidate: 0 }
-    })
+    const response = await timeStep(timings, 'fetchMs', () =>
+      fetch(`${baseUrl}/api/rivers`, {
+        next: { revalidate: 0 }
+      })
+    )
 
     if (!response.ok) {
       console.warn('[River Alerts] API returned', response.status)
-      return { checked, matched, notified }
+      return result
     }
 
-    const data = await response.json()
+    const data = await timeStep(timings, 'parseMs', () => response.json())
     const readings: RiverReading[] = (data.sites || []).map((s: Record<string, unknown>) => ({
       siteId: s.siteId as string,
       siteName: s.siteName as string,
@@ -262,22 +412,26 @@ async function checkRiverAlerts(baseUrl: string): Promise<{ checked: number; mat
       timestamp: s.timestamp as string
     }))
 
-    checked = readings.length
+    result.checked = readings.length
 
     // Filter to only readings at flood stages
     const alertReadings = readings.filter(r => r.floodStage !== 'normal')
 
     if (alertReadings.length === 0) {
-      return { checked, matched, notified }
+      return result
     }
 
-    const subscriptions = await getEnabledSubscriptionsByType('river')
-    const deviceSubs = await getDeviceTokensForType('river')
-    const browserSubs = await getBrowserSubscriptionsForType('river')
+    const [subscriptions, deviceSubs, browserSubs] = await timeStep(timings, 'loadSubscribersMs', () =>
+      Promise.all([
+        getEnabledSubscriptionsByType('river'),
+        getDeviceTokensForType('river'),
+        getBrowserSubscriptionsForType('river'),
+      ])
+    )
 
     for (const reading of alertReadings) {
       const sourceId = getAlertSourceId('river', reading)
-      const payload = createAlertNotificationPayload('river', reading)
+      const payload = createAlertNotificationPayload('river', reading) as PushPayload
       const expoPayload: ExpoPushPayload = {
         title: payload.title,
         body: payload.body,
@@ -285,75 +439,50 @@ async function checkRiverAlerts(baseUrl: string): Promise<{ checked: number; mat
         sound: 'default',
         priority: 'high',
       }
+      const alertData = reading as unknown as Record<string, unknown>
 
-      for (const sub of subscriptions) {
-        if (matchesRiverAlert(reading, sub.config as { siteIds: string[]; stages: string[] })) {
-          matched++
-          const alreadyTriggered = await hasAlertBeenTriggered(sub.userId, 'river', sourceId)
-          if (!alreadyTriggered) {
-            const [webResult, expoResult] = await Promise.all([
-              sendPushToUser(sub.userId, payload as PushPayload),
-              sendExpoPushToUser(sub.userId, expoPayload),
-            ])
-            if (webResult.sent > 0 || expoResult.sent > 0) {
-              notified++
-              await recordTriggeredAlert(sub.userId, 'river', sourceId, reading as unknown as Record<string, unknown>)
-            }
-          }
-        }
-      }
-
-      const pendingDeviceTokens: string[] = []
-      for (const dev of deviceSubs) {
-        const alreadyTriggered = await hasDeviceAlertBeenTriggered(dev.deviceId, 'river', sourceId)
-        if (!alreadyTriggered) {
-          pendingDeviceTokens.push(dev.expoPushToken)
-          await recordDeviceTriggeredAlert(dev.deviceId, 'river', sourceId)
-        }
-      }
-      if (pendingDeviceTokens.length > 0) {
-        const result = await sendExpoPushToTokens(pendingDeviceTokens, expoPayload)
-        notified += result.sent
-      }
-
-      // Anonymous browser push
-      const pendingBrowserSubs = []
-      for (const sub of browserSubs) {
-        const alreadyTriggered = await hasBrowserAlertBeenTriggered(sub.browserId, 'river', sourceId)
-        if (!alreadyTriggered) {
-          pendingBrowserSubs.push(sub)
-          await recordBrowserTriggeredAlert(sub.browserId, 'river', sourceId)
-        }
-      }
-      if (pendingBrowserSubs.length > 0) {
-        const result = await sendBrowserPushToSubscribers(pendingBrowserSubs, payload as PushPayload)
-        notified += result.sent
-      }
+      const authResult = await notifyAuthSubscribers(
+        'river',
+        sourceId,
+        alertData,
+        subscriptions,
+        payload,
+        expoPayload,
+        timings,
+        config => matchesRiverAlert(reading, config as { siteIds: string[]; stages: string[] })
+      )
+      result.matched += authResult.matched
+      result.notified += authResult.notified
+      result.notified += await notifyDeviceSubscribers('river', sourceId, deviceSubs, expoPayload, timings)
+      result.notified += await notifyBrowserSubscribers('river', sourceId, browserSubs, payload, timings)
     }
   } catch (error) {
     console.error('[River Alerts] Error:', error)
   }
 
-  return { checked, matched, notified }
+  return result
 }
 
 /**
  * Check air quality alerts
  */
-async function checkAirQualityAlerts(baseUrl: string): Promise<{ checked: number; matched: number; notified: number }> {
-  let checked = 0, matched = 0, notified = 0
+async function checkAirQualityAlerts(baseUrl: string): Promise<AlertCheckResult> {
+  const result = createAlertCheckResult()
+  const { timings } = result
 
   try {
-    const response = await fetch(`${baseUrl}/api/air-quality`, {
-      next: { revalidate: 0 }
-    })
+    const response = await timeStep(timings, 'fetchMs', () =>
+      fetch(`${baseUrl}/api/air-quality`, {
+        next: { revalidate: 0 }
+      })
+    )
 
     if (!response.ok) {
       console.warn('[Air Quality Alerts] API returned', response.status)
-      return { checked, matched, notified }
+      return result
     }
 
-    const data = await response.json()
+    const data = await timeStep(timings, 'parseMs', () => response.json())
     const reading: AirQualityReading = {
       aqi: data.aqi || 0,
       category: data.category || 'Unknown',
@@ -361,13 +490,17 @@ async function checkAirQualityAlerts(baseUrl: string): Promise<{ checked: number
       timestamp: data.timestamp || new Date().toISOString()
     }
 
-    checked = 1
+    result.checked = 1
 
-    const subscriptions = await getEnabledSubscriptionsByType('air_quality')
-    const deviceSubs = await getDeviceTokensForType('air_quality')
-    const browserSubs = await getBrowserSubscriptionsForType('air_quality')
+    const [subscriptions, deviceSubs, browserSubs] = await timeStep(timings, 'loadSubscribersMs', () =>
+      Promise.all([
+        getEnabledSubscriptionsByType('air_quality'),
+        getDeviceTokensForType('air_quality'),
+        getBrowserSubscriptionsForType('air_quality'),
+      ])
+    )
     const sourceId = getAlertSourceId('air_quality', reading)
-    const payload = createAlertNotificationPayload('air_quality', reading)
+    const payload = createAlertNotificationPayload('air_quality', reading) as PushPayload
     const expoPayload: ExpoPushPayload = {
       title: payload.title,
       body: payload.body,
@@ -375,76 +508,52 @@ async function checkAirQualityAlerts(baseUrl: string): Promise<{ checked: number
       sound: 'default',
       priority: 'high',
     }
+    const alertData = reading as unknown as Record<string, unknown>
 
-    for (const sub of subscriptions) {
-      if (matchesAirQualityAlert(reading, sub.config as { minAqi: number })) {
-        matched++
-        const alreadyTriggered = await hasAlertBeenTriggered(sub.userId, 'air_quality', sourceId)
-        if (!alreadyTriggered) {
-          const [webResult, expoResult] = await Promise.all([
-            sendPushToUser(sub.userId, payload as PushPayload),
-            sendExpoPushToUser(sub.userId, expoPayload),
-          ])
-          if (webResult.sent > 0 || expoResult.sent > 0) {
-            notified++
-            await recordTriggeredAlert(sub.userId, 'air_quality', sourceId, reading as unknown as Record<string, unknown>)
-          }
-        }
-      }
-    }
+    const authResult = await notifyAuthSubscribers(
+      'air_quality',
+      sourceId,
+      alertData,
+      subscriptions,
+      payload,
+      expoPayload,
+      timings,
+      config => matchesAirQualityAlert(reading, config as { minAqi: number })
+    )
+    result.matched += authResult.matched
+    result.notified += authResult.notified
 
     if (matchesAirQualityAlert(reading, { minAqi: 101 })) {
-      const pendingDeviceTokens: string[] = []
-      for (const dev of deviceSubs) {
-        const alreadyTriggered = await hasDeviceAlertBeenTriggered(dev.deviceId, 'air_quality', sourceId)
-        if (!alreadyTriggered) {
-          pendingDeviceTokens.push(dev.expoPushToken)
-          await recordDeviceTriggeredAlert(dev.deviceId, 'air_quality', sourceId)
-        }
-      }
-      if (pendingDeviceTokens.length > 0) {
-        const result = await sendExpoPushToTokens(pendingDeviceTokens, expoPayload)
-        notified += result.sent
-      }
-
-      // Anonymous browser push
-      const pendingBrowserSubs = []
-      for (const sub of browserSubs) {
-        const alreadyTriggered = await hasBrowserAlertBeenTriggered(sub.browserId, 'air_quality', sourceId)
-        if (!alreadyTriggered) {
-          pendingBrowserSubs.push(sub)
-          await recordBrowserTriggeredAlert(sub.browserId, 'air_quality', sourceId)
-        }
-      }
-      if (pendingBrowserSubs.length > 0) {
-        const result = await sendBrowserPushToSubscribers(pendingBrowserSubs, payload as PushPayload)
-        notified += result.sent
-      }
+      result.notified += await notifyDeviceSubscribers('air_quality', sourceId, deviceSubs, expoPayload, timings)
+      result.notified += await notifyBrowserSubscribers('air_quality', sourceId, browserSubs, payload, timings)
     }
   } catch (error) {
     console.error('[Air Quality Alerts] Error:', error)
   }
 
-  return { checked, matched, notified }
+  return result
 }
 
 /**
  * Check traffic alerts
  */
-async function checkTrafficAlerts(baseUrl: string): Promise<{ checked: number; matched: number; notified: number }> {
-  let checked = 0, matched = 0, notified = 0
+async function checkTrafficAlerts(baseUrl: string): Promise<AlertCheckResult> {
+  const result = createAlertCheckResult()
+  const { timings } = result
 
   try {
-    const response = await fetch(`${baseUrl}/api/traffic-events`, {
-      next: { revalidate: 0 }
-    })
+    const response = await timeStep(timings, 'fetchMs', () =>
+      fetch(`${baseUrl}/api/traffic-events`, {
+        next: { revalidate: 0 }
+      })
+    )
 
     if (!response.ok) {
       console.warn('[Traffic Alerts] API returned', response.status)
-      return { checked, matched, notified }
+      return result
     }
 
-    const data = await response.json()
+    const data = await timeStep(timings, 'parseMs', () => response.json())
     const incidents: TrafficIncident[] = (data.events || []).map((e: Record<string, unknown>) => ({
       id: e.id as string,
       type: e.type as string,
@@ -456,19 +565,23 @@ async function checkTrafficAlerts(baseUrl: string): Promise<{ checked: number; m
       startTime: e.startTime as string
     }))
 
-    checked = incidents.length
+    result.checked = incidents.length
 
     if (incidents.length === 0) {
-      return { checked, matched, notified }
+      return result
     }
 
-    const subscriptions = await getEnabledSubscriptionsByType('traffic')
-    const deviceSubs = await getDeviceTokensForType('traffic')
-    const browserSubs = await getBrowserSubscriptionsForType('traffic')
+    const [subscriptions, deviceSubs, browserSubs] = await timeStep(timings, 'loadSubscribersMs', () =>
+      Promise.all([
+        getEnabledSubscriptionsByType('traffic'),
+        getDeviceTokensForType('traffic'),
+        getBrowserSubscriptionsForType('traffic'),
+      ])
+    )
 
     for (const incident of incidents) {
       const sourceId = getAlertSourceId('traffic', incident)
-      const payload = createAlertNotificationPayload('traffic', incident)
+      const payload = createAlertNotificationPayload('traffic', incident) as PushPayload
       const expoPayload: ExpoPushPayload = {
         title: payload.title,
         body: payload.body,
@@ -476,57 +589,30 @@ async function checkTrafficAlerts(baseUrl: string): Promise<{ checked: number; m
         sound: 'default',
         priority: 'high',
       }
+      const alertData = incident as unknown as Record<string, unknown>
 
-      for (const sub of subscriptions) {
-        if (matchesTrafficAlert(incident, sub.config as { severities: string[] })) {
-          matched++
-          const alreadyTriggered = await hasAlertBeenTriggered(sub.userId, 'traffic', sourceId)
-          if (!alreadyTriggered) {
-            const [webResult, expoResult] = await Promise.all([
-              sendPushToUser(sub.userId, payload as PushPayload),
-              sendExpoPushToUser(sub.userId, expoPayload),
-            ])
-            if (webResult.sent > 0 || expoResult.sent > 0) {
-              notified++
-              await recordTriggeredAlert(sub.userId, 'traffic', sourceId, incident as unknown as Record<string, unknown>)
-            }
-          }
-        }
-      }
+      const authResult = await notifyAuthSubscribers(
+        'traffic',
+        sourceId,
+        alertData,
+        subscriptions,
+        payload,
+        expoPayload,
+        timings,
+        config => matchesTrafficAlert(incident, config as { severities: string[] })
+      )
+      result.matched += authResult.matched
+      result.notified += authResult.notified
 
       // All device and browser subscribers get major/critical traffic incidents
       if (['major', 'critical'].includes(incident.severity ?? '')) {
-        const pendingDeviceTokens: string[] = []
-        for (const dev of deviceSubs) {
-          const alreadyTriggered = await hasDeviceAlertBeenTriggered(dev.deviceId, 'traffic', sourceId)
-          if (!alreadyTriggered) {
-            pendingDeviceTokens.push(dev.expoPushToken)
-            await recordDeviceTriggeredAlert(dev.deviceId, 'traffic', sourceId)
-          }
-        }
-        if (pendingDeviceTokens.length > 0) {
-          const result = await sendExpoPushToTokens(pendingDeviceTokens, expoPayload)
-          notified += result.sent
-        }
-
-        // Anonymous browser push
-        const pendingBrowserSubs = []
-        for (const sub of browserSubs) {
-          const alreadyTriggered = await hasBrowserAlertBeenTriggered(sub.browserId, 'traffic', sourceId)
-          if (!alreadyTriggered) {
-            pendingBrowserSubs.push(sub)
-            await recordBrowserTriggeredAlert(sub.browserId, 'traffic', sourceId)
-          }
-        }
-        if (pendingBrowserSubs.length > 0) {
-          const result = await sendBrowserPushToSubscribers(pendingBrowserSubs, payload as PushPayload)
-          notified += result.sent
-        }
+        result.notified += await notifyDeviceSubscribers('traffic', sourceId, deviceSubs, expoPayload, timings)
+        result.notified += await notifyBrowserSubscribers('traffic', sourceId, browserSubs, payload, timings)
       }
     }
   } catch (error) {
     console.error('[Traffic Alerts] Error:', error)
   }
 
-  return { checked, matched, notified }
+  return result
 }

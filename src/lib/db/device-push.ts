@@ -152,6 +152,53 @@ export async function recordDeviceTriggeredAlert(
 }
 
 /**
+ * Get devices that have already received a specific alert source.
+ */
+export async function getTriggeredDeviceIds(
+  alertType: string,
+  sourceId: string,
+  deviceIds: string[]
+): Promise<Set<string>> {
+  if (deviceIds.length === 0) return new Set()
+
+  const result = await sql`
+    WITH requested AS (
+      SELECT value AS device_id
+      FROM jsonb_array_elements_text(${JSON.stringify(deviceIds)}::jsonb)
+    )
+    SELECT t.device_id as "deviceId"
+    FROM device_triggered_alerts t
+    JOIN requested r ON r.device_id = t.device_id
+    WHERE t.alert_type = ${alertType}
+      AND t.source_id = ${sourceId}
+  ` as Array<{ deviceId: string }>
+
+  return new Set(result.map(row => row.deviceId))
+}
+
+/**
+ * Record multiple device-triggered alerts in one query.
+ */
+export async function recordDeviceTriggeredAlertBatch(
+  alertType: string,
+  rows: Array<{ deviceId: string; sourceId: string }>
+): Promise<void> {
+  if (rows.length === 0) return
+
+  await sql`
+    WITH rows AS (
+      SELECT *
+      FROM jsonb_to_recordset(${JSON.stringify(rows)}::jsonb)
+        AS row("deviceId" text, "sourceId" text)
+    )
+    INSERT INTO device_triggered_alerts (device_id, alert_type, source_id)
+    SELECT "deviceId", ${alertType}, "sourceId"
+    FROM rows
+    ON CONFLICT (device_id, alert_type, source_id) DO NOTHING
+  `
+}
+
+/**
  * Clean up device triggered alerts older than 7 days.
  */
 export async function cleanupOldDeviceTriggeredAlerts(): Promise<number> {

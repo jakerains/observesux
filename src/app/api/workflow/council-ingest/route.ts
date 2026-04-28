@@ -27,7 +27,7 @@ import { isDatabaseConfigured, sql } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth/server'
 import { getDeviceTokensForType, hasDeviceAlertBeenTriggered, recordDeviceTriggeredAlert } from '@/lib/db/device-push'
 import { sendExpoPushToTokens, type ExpoPushPayload } from '@/lib/push/send-expo'
-import type { TranscriptSegment, MeetingType } from '@/types/council-meetings'
+import type { CouncilMeeting, TranscriptSegment, MeetingType } from '@/types/council-meetings'
 import { MEETING_TYPE_LABELS } from '@/types/council-meetings'
 
 export const dynamic = 'force-dynamic'
@@ -63,6 +63,61 @@ function sendEvent(
   controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`))
 }
 
+type BulkIngestTask =
+  | {
+      kind: 'full'
+      video: Awaited<ReturnType<typeof fetchCouncilRSS>>[number]
+    }
+  | {
+      kind: 'recap_only'
+      video: Awaited<ReturnType<typeof fetchCouncilRSS>>[number]
+      meeting: CouncilMeeting
+    }
+
+async function generateRecapFromSavedTranscript(
+  meeting: Pick<CouncilMeeting, 'id' | 'transcriptRaw' | 'meetingType' | 'chunkCount'>,
+  videoId: string,
+  controller: ReadableStreamDefaultController,
+  encoder: TextEncoder,
+  label: string,
+  targetStatus: 'completed' | 'draft'
+): Promise<'completed' | 'draft'> {
+  if (!meeting.transcriptRaw) {
+    throw new Error(`No saved transcript is available for video ${videoId}`)
+  }
+
+  sendEvent(controller, encoder, 'progress', {
+    step: 'recap',
+    message: `${label} Generating AI recap from saved transcript...`,
+    videoId,
+  })
+
+  const recap = await generateMeetingRecap(meeting.transcriptRaw, meeting.meetingType)
+  sendEvent(controller, encoder, 'progress', {
+    step: 'recap',
+    message: `${label} Recap: ${recap.topics.length} topics, ${recap.decisions.length} decisions`,
+    videoId,
+    topicCount: recap.topics.length,
+    decisionCount: recap.decisions.length,
+  })
+
+  sendEvent(controller, encoder, 'progress', {
+    step: 'store',
+    message: `${label} Storing results...`,
+    videoId,
+  })
+
+  await storeMeetingResults(
+    meeting.id,
+    recap,
+    meeting.transcriptRaw,
+    meeting.chunkCount,
+    targetStatus
+  )
+
+  return targetStatus
+}
+
 /**
  * Process a single video: transcript → chunk → recap → embeddings → store.
  * Used by both bulk ingestion and single-meeting retry.
@@ -78,6 +133,7 @@ async function processVideo(
   targetStatus: 'completed' | 'draft' = 'completed'
 ): Promise<'completed' | 'draft' | 'no_captions'> {
   let segments: TranscriptSegment[] | null = preloadedSegments || null
+  let noCaptionsError: NoCaptionsError | null = null
 
   // Fetch transcript only if not preloaded (manual upload provides preloaded segments)
   if (!segments) {
@@ -91,6 +147,7 @@ async function processVideo(
       segments = await fetchTranscript(videoId)
     } catch (error) {
       if (error instanceof NoCaptionsError) {
+        noCaptionsError = error
         segments = null
       } else {
         throw error
@@ -98,7 +155,11 @@ async function processVideo(
     }
 
     if (!segments || segments.length === 0) {
-      await updateMeetingStatus(meeting.id, 'no_captions')
+      await updateMeetingStatus(
+        meeting.id,
+        'no_captions',
+        noCaptionsError?.message || `No captions available for video ${videoId}`
+      )
       sendEvent(controller, encoder, 'progress', {
         step: 'transcript',
         message: `${label} No captions available`,
@@ -641,29 +702,14 @@ export async function POST(request: NextRequest) {
             // the meeting isn't stuck — the admin can see it and retry.
             await updateMeetingStatus(meeting.id, 'draft')
 
-            sendEvent(controller, encoder, 'progress', {
-              step: 'recap',
-              message: '[1/1] Generating AI recap from existing transcript...',
+            await generateRecapFromSavedTranscript(
+              meeting,
               videoId,
-            })
-
-            const recap = await generateMeetingRecap(meeting.transcriptRaw, meeting.meetingType)
-
-            sendEvent(controller, encoder, 'progress', {
-              step: 'recap',
-              message: `[1/1] Recap: ${recap.topics.length} topics, ${recap.decisions.length} decisions`,
-              videoId,
-              topicCount: recap.topics.length,
-              decisionCount: recap.decisions.length,
-            })
-
-            sendEvent(controller, encoder, 'progress', {
-              step: 'store',
-              message: '[1/1] Storing results...',
-              videoId,
-            })
-
-            await storeMeetingResults(meeting.id, recap, meeting.transcriptRaw, meeting.chunkCount, 'draft')
+              controller,
+              encoder,
+              '[1/1]',
+              'draft'
+            )
 
             sendEvent(controller, encoder, 'progress', {
               step: 'done',
@@ -772,12 +818,12 @@ export async function POST(request: NextRequest) {
           message: 'Checking for new videos...',
         })
 
-        const newVideos = []
+        const ingestTasks: BulkIngestTask[] = []
         for (const video of videos) {
           const existing = await getMeetingByVideoId(video.videoId)
 
           if (!existing) {
-            newVideos.push(video)
+            ingestTasks.push({ kind: 'full', video })
             continue
           }
 
@@ -788,13 +834,14 @@ export async function POST(request: NextRequest) {
           }
 
           if (force) {
-            newVideos.push(video)
+            ingestTasks.push({ kind: 'full', video })
             continue
           }
 
-          // Always retry no_captions and failed — the transcript library was fixed
+          // Retry failed transcript/retrieval states. YouTube captions can
+          // appear late, and transport failures should not strand meetings.
           if (existing.status === 'no_captions' || existing.status === 'failed') {
-            newVideos.push(video)
+            ingestTasks.push({ kind: 'full', video })
             continue
           }
 
@@ -803,10 +850,21 @@ export async function POST(request: NextRequest) {
             const updatedAt = new Date(existing.updatedAt).getTime()
             const fifteenMinutesAgo = Date.now() - 15 * 60 * 1000
             if (updatedAt < fifteenMinutesAgo) {
-              newVideos.push(video)
+              ingestTasks.push({ kind: 'full', video })
               continue
             }
             skipped++
+            continue
+          }
+
+          // If transcript/chunks were checkpointed but recap never completed,
+          // resume from the saved transcript instead of re-fetching YouTube.
+          if (existing.status === 'draft' && !existing.recap) {
+            if (existing.transcriptRaw) {
+              ingestTasks.push({ kind: 'recap_only', video, meeting: existing })
+            } else {
+              ingestTasks.push({ kind: 'full', video })
+            }
             continue
           }
 
@@ -831,12 +889,12 @@ export async function POST(request: NextRequest) {
 
         sendEvent(controller, encoder, 'progress', {
           step: 'filter',
-          message: `${newVideos.length} new/retry videos, ${skipped} skipped`,
-          newCount: newVideos.length,
+          message: `${ingestTasks.length} new/retry videos, ${skipped} skipped`,
+          newCount: ingestTasks.length,
           skipped,
         })
 
-        if (newVideos.length === 0) {
+        if (ingestTasks.length === 0) {
           sendEvent(controller, encoder, 'complete', {
             success: true,
             processed: 0,
@@ -849,17 +907,20 @@ export async function POST(request: NextRequest) {
         }
 
         // Step 3: Process each video
-        for (let vi = 0; vi < newVideos.length; vi++) {
-          const video = newVideos[vi]
-          const label = `[${vi + 1}/${newVideos.length}]`
+        for (let vi = 0; vi < ingestTasks.length; vi++) {
+          const task = ingestTasks[vi]
+          const { video } = task
+          const label = `[${vi + 1}/${ingestTasks.length}]`
 
           try {
             sendEvent(controller, encoder, 'progress', {
               step: 'upsert',
-              message: `${label} Upserting meeting: ${video.title}`,
+              message: task.kind === 'recap_only'
+                ? `${label} Resuming saved transcript: ${video.title}`
+                : `${label} Upserting meeting: ${video.title}`,
               videoId: video.videoId,
               current: vi + 1,
-              total: newVideos.length,
+              total: ingestTasks.length,
             })
 
             // Parse meeting date from title, fall back to publishedAt date
@@ -884,7 +945,21 @@ export async function POST(request: NextRequest) {
               continue
             }
 
-            const result = await processVideo(video.videoId, meeting, controller, encoder, label)
+            const result = task.kind === 'recap_only'
+              ? await generateRecapFromSavedTranscript(
+                  {
+                    id: meeting.id,
+                    transcriptRaw: meeting.transcriptRaw || task.meeting.transcriptRaw,
+                    chunkCount: meeting.chunkCount || task.meeting.chunkCount,
+                    meetingType: meeting.meetingType || task.meeting.meetingType,
+                  },
+                  video.videoId,
+                  controller,
+                  encoder,
+                  label,
+                  'completed'
+                )
+              : await processVideo(video.videoId, meeting, controller, encoder, label)
 
             if (result === 'completed') {
               processed++
@@ -896,7 +971,12 @@ export async function POST(request: NextRequest) {
               })
 
               // Send push notifications to devices subscribed to council meeting alerts
-              sendCouncilMeetingNotification(meeting.id, video.videoId, video.title, 'city_council').catch(err =>
+              sendCouncilMeetingNotification(
+                meeting.id,
+                video.videoId,
+                video.title,
+                meeting.meetingType || 'city_council'
+              ).catch(err =>
                 console.error('[Council Ingest] Failed to send council meeting notification:', err)
               )
             } else {

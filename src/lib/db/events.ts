@@ -89,13 +89,25 @@ export async function cacheEvents(events: CommunityEvent[], source: string): Pro
       WHERE source = ${source}
     `
 
-    // Insert new events
-    for (const event of events) {
-      await sql`
-        INSERT INTO community_events (title, date, time, location, description, url, source)
-        VALUES (${event.title}, ${event.date}, ${event.time || null}, ${event.location || null}, ${event.description || null}, ${event.url || null}, ${source})
-      `
-    }
+    const rows = events.map(event => ({
+      title: event.title,
+      date: event.date,
+      time: event.time || null,
+      location: event.location || null,
+      description: event.description || null,
+      url: event.url || null,
+    }))
+
+    await sql`
+      WITH rows AS (
+        SELECT *
+        FROM jsonb_to_recordset(${JSON.stringify(rows)}::jsonb)
+          AS row(title text, date text, time text, location text, description text, url text)
+      )
+      INSERT INTO community_events (title, date, time, location, description, url, source)
+      SELECT title, date, time, location, description, url, ${source}
+      FROM rows
+    `
 
     console.log(`[Events DB] Cached ${events.length} events for ${source}`)
   } catch (error) {
